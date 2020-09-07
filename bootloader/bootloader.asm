@@ -22,6 +22,18 @@ start:
   ;dl - number of boot device drive is defined by BIOS
   int 13h ;read BleskOS code
 
+  ;SET VESA GRAPHIC MODE
+  mov ax, 0x2000
+  mov es, ax
+  mov di, 0
+  mov ax, 0x4F01  ;get VBE mode information block
+  mov cx, 0x4114  ;get graphic mode 800x600 16 bpp
+  int 0x10  ;load informations
+
+  mov ax, 0x4F02  ;set VBE graphic mode
+  mov bx, 0x4114  ;set graphic mode 800x600 16bpp
+  int 0x10  ;start BIOS interrupt
+
   ;SWITCH TO PROTECTED MODE
   ;load gdt
   cli
