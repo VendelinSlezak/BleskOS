@@ -1,4 +1,4 @@
-;BleskOS bootloader
+;BleskOS real mode edition bootloader
 
 org 0x7C00
 
@@ -22,60 +22,35 @@ start:
   ;dl - number of boot device drive is defined by BIOS
   int 13h ;read BleskOS code
 
-  ;SET VESA GRAPHIC MODE
-  mov ax, 0x2000
-  mov es, ax
-  mov di, 0
-  mov ax, 0x4F01  ;get VBE mode information block
-  mov cx, 0x4114  ;get graphic mode 800x600 16 bpp
-  int 0x10  ;load informations
-
-  mov ax, 0x4F02  ;set VBE graphic mode
-  mov bx, 0x4114  ;set graphic mode 800x600 16bpp
-  int 0x10  ;start BIOS interrupt
-
-  ;SWITCH TO PROTECTED MODE
-  ;load gdt
-  cli
-  lgdt [gdt_wrap]
-
-  ;jump into protected mode
-  mov eax, cr0
-  or eax, 1
-  mov cr0, eax
-  jmp 0x0008:clear_pipe
-
-  ;NOW WE ARE IN PROTECTED MODE
-  bits 32
-
-  clear_pipe:
-  mov ax, 0x0010
-  mov ds, ax
-  mov es, ax
-  mov fs, ax
-  mov gs, ax
-  mov ss, ax
-
-  mov esp, 0x80000  ;set stack pointer
+  jc .error ;if error by read
 
   ;JUMP TO EXECUTE BLESKOS
-  jmp 0x10000
+  jmp 0x1000:0x0
 
-  gdt:
-  dq 0 ;null segment
+  .error:
+    mov ah, 0x0E
+    mov al, 'E'
+    int 10h
+  halt:
+    hlt
+  jmp halt
 
-  ;gdt code
-  dw 0xFFFF, 0
-  db 0, 0x9A, 0xCF, 0
-
-  ;gdt_data
-  dw 0xFFFF, 0
-  db 0, 0x92, 0xCF, 0
-  gdt_end:
-
-  gdt_wrap:
-   dw gdt_end - gdt - 1
-   dd gdt
-
-times 510-($-$$) db 0
+times 0x1B4-($-$$) db 0
+times 10 db 0
+;partition 1
+db 0x80
+;first sector
+db 0 ;head
+db 2 ;sector
+db 0 ;cylinder
+db 0 ;free partition
+;last sector
+db 0 ;head
+db 18 ;sector
+db 0
+dd 1
+dd 10000
+times 16 db 0
+times 16 db 0
+times 16 db 0
 dw 0xAA55
