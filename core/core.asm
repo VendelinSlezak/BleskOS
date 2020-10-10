@@ -1,28 +1,40 @@
-;BleskOS
-
-%include "core/system_ports.asm"
-%include "core/system_idt.asm"
-%include "core/system_time.asm"
-%include "core/system_pci.asm"
-%include "core/system_shutdown.asm"
-
-%include "core/graphic_font.asm"
-%include "core/graphic_vesa.asm"
-%include "core/graphic_vga.asm"
-
-%include "core/sound_pc_speaker.asm"
-%include "core/sound_hda.asm"
-
-%include "core/hardware_keyboard.asm"
-%include "core/hardware_hard_disc.asm"
-%include "core/hardware_cdrom.asm"
+;BleskOS real mode edition
 
 init_core:
-  call read_vesa_info
+  mov bl, 0x20
   call draw_background
 
-  call init_idt
+  mov ah, 0x02
+  mov bh, 0
+  mov dx, 0x0101
+  int 10h
+  mov si, str1
+  call print
 
-  call init_keyboard
+  mov ah, 0x02
+  mov bh, 0
+  mov dx, 0x0201
+  int 10h
+  mov si, str2
+  call print
+  call stop_pc_speaker
+
+  mov ah, 0x02
+  mov bh, 0
+  mov dx, 0x0301
+  int 10h
+  mov si, str3
+  call print
+  mov byte [keyboard_langunge], 2
 
   ret
+
+  str1 db '> initalizing core', 0
+  str2 db '> stopping pc speaker', 0
+  str3 db '> setting keyboard', 0
+
+%include "core/vga.asm"
+%include "core/pc_speaker.asm"
+%include "core/keyboard.asm"
+%include "core/memory_devices.asm"
+%include "core/jus.asm"
