@@ -1,10 +1,13 @@
-# BleskOS
-Operation system working in protected mode with legacy boot.
+# BleskOS real mode editon
+Operation system working in real mode with legacy boot.
 
 ## Drivers
-* Graphic: VESA, VGA
+* Graphic: VGA
 * Sound: PC speaker
-* Base hardware: PS/2 Keyboard, Hard disc
-* Filesystem: FAT32
+* Base hardware: Keyboard, Hard disc, USB mass storage
+* Filesystem: JUS
+* System drivers: RTC time
 
-And some low level drivers.
+## Programs
+* Text editor
+* Graphic editor
