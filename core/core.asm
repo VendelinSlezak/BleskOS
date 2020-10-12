@@ -16,5 +16,4 @@ init_core:
 %include "core/memory_devices.asm"
 %include "core/jus.asm"
 %include "core/time.asm"
-%include "core/shutdown.asm"
 %include "core/wait.asm"
