@@ -7,29 +7,67 @@
 %define KEY_CAPSLOCK 0x3A
 %define KEY_ESCAPE 0x01
 %define KEY_DELETE 0x53
+%define KEY_LEFT_SHIFT 0x2A
+%define KEY_RIGHT_SHIFT 0x36
 %define KEY_UP 0x48 
 %define KEY_DOWN 0x50
 %define KEY_LEFT 0x4B
 %define KEY_RIGHT 0x4D
-%define KEY_LEFT_SHIFT 0x2A
 
-key_code db 0
-keyboard_shift db 0
+key_code dd 0
+keyboard_shift dd 0
 key_ascii db 0
 keyboard_wait db 0
+selected_keyboard_set dd 0
+
+english_keyboard_layout:
+ times 256 db ' '
+english_shift_keyboard_layout:
+ times 256 db ' '
+
+init_keyboard:
+ mov dword [keyboard_shift], 0
+ ret
 
 keyboard_irq:
  pusha
  mov eax, 0
  INB 0x60
- mov byte [key_code], al
- 
-;under development, new update will be 21.1.2021
-; mov dword [selected_keyboard_set], english
-; add eax, dword [selected_keyboard_set]
-; mov bl, byte [eax] ;read ascii value of key
-; mov byte [key_ascii], bl
+ mov dword [key_code], eax
 
+ ;if some shift key is presses
+ cmp al, KEY_CAPSLOCK
+ je .reverse_shift_state
+ cmp al, KEY_LEFT_SHIFT
+ je .reverse_shift_state
+ cmp al, KEY_LEFT_SHIFT+0x80
+ je .reverse_shift_state
+ cmp al, KEY_RIGHT_SHIFT
+ je .reverse_shift_state
+ cmp al, KEY_RIGHT_SHIFT+0x80
+ je .reverse_shift_state
+ jmp .select_layout ;no shift key is pressed
+
+ .reverse_shift_state:
+ or dword [keyboard_shift], 0xFFFFFFFE ;other bytes will be zero
+ not dword [keyboard_shift] ;reverse
+
+ ;select layout
+ .select_layout:
+ mov byte [key_ascii], 0
+ cmp dword [key_code], 0x79
+ jg .clear_wait ;released key
+
+ mov eax, english_keyboard_layout
+ IF_E dword [keyboard_shift], 1, if_shift_yes
+  mov eax, english_shift_keyboard_layout
+ ENDIF if_shift_yes
+ add eax, dword [key_code]
+
+ mov bl, byte [eax] ;read ascii value of key
+ mov byte [key_ascii], bl
+
+ .clear_wait:
  mov dword [keyboard_wait], 0
 
  EOI_MASTER_PIC
