@@ -1,10 +1,4 @@
 # BleskOS
 Operation system working in protected mode with legacy boot.
 
-## Drivers
-* Graphic: VESA, VGA
-* Sound: PC speaker
-* Base hardware: PS/2 Keyboard, Hard disc
-* Filesystem: FAT32
-
-And some low level drivers.
+I did not update this last four months, I was rebuilding my code, I will update github in next two weeks. You can expect driver for sound card AC97, USB UHCI controller, USB mouse and and JUS filesystem for acces on hard disk.
