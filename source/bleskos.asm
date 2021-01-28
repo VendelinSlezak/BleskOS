@@ -20,9 +20,9 @@ start:
  %include "source/drivers/hardware_ps2_mouse.asm"
  %include "source/drivers/hardware_ide.asm"
  %include "source/drivers/hardware_paralel_ata.asm"
- %include "source/drivers/filesystem_jus.asm"
- %include "source/gui/program_library.asm"
- %include "source/gui/main.asm"
+ ;;%include "source/drivers/filesystem_jus.asm" in progres
+ ;;%include "source/gui/program_library.asm" in progres
+ ;;%include "source/gui/main.asm" in progres
 
 start_bleskos:
  call init_graphic
@@ -43,6 +43,6 @@ start_bleskos:
  call init_ps2_controller
  call init_ps2_mouse
 
- call main_gui
+ ;;call main_gui
 
  HALT
