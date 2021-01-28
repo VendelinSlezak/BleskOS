@@ -22,7 +22,9 @@ idt:
  times 32 EMPTY_IDT_ENTRY
  IDT_ENTRY timer_irq
  IDT_ENTRY keyboard_irq
- times 256-34 EMPTY_IDT_ENTRY
+ times 10 EMPTY_IDT_ENTRY
+ IDT_ENTRY mouse_irq
+ times 256-24 EMPTY_IDT_ENTRY
 
 idt_wrap:
  dw 2047 ;lenght
@@ -40,8 +42,8 @@ init_idt:
  OUTB 0xA1, 0x02
  OUTB 0x21, 0x01
  OUTB 0xA1, 0x01
- OUTB 0x21, 0xFC ;irq 0, 1
- OUTB 0xA1, 0xFF ;no irq
+ OUTB 0x21, 0xF8 ;irq 0, 1, 2
+ OUTB 0xA1, 0xEF ;irq 12
 
  ;load idt
  mov edx, idt_wrap
