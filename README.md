@@ -6,16 +6,21 @@ First version ALPHA 1 will be released on first of march 2021.
 ### Drivers
 Graphic:
 * VESA
+
 Sound:
 * Audio Codec 97
+
 Inbuilt hardware:
 * PS/2 keyboard
 * PS/2 mouse
 * Paralel hard disk
+
 Filesystems:
 * JUS(in progress, not aviable on GitHub now)
+
 USB controllers:
 * UHCI throught legacy USB support
+
 USB devices:
 * USB keyboard
 * USB mouse
