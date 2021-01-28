@@ -1,4 +1,27 @@
 # BleskOS
 Operation system working in protected mode with legacy boot.
 
-I did not update this last four months, I was rebuilding my code, I will update github in next two weeks. You can expect driver for sound card AC97, USB UHCI controller, USB mouse and and JUS filesystem for acces on hard disk.
+First version ALPHA 1 will be released on first of march 2021.
+
+### Drivers
+Graphic:
+* VESA
+Sound:
+* Audio Codec 97
+Inbuilt hardware:
+* PS/2 keyboard
+* PS/2 mouse
+* Paralel hard disk
+Filesystems:
+* JUS(in progress, not aviable on GitHub now)
+USB controllers:
+* UHCI throught legacy USB support
+USB devices:
+* USB keyboard
+* USB mouse
+
+### Programs
+Currently nothing, but text editor and graphic editor are on the way.
+
+## How to build
+BleskOS is completly written in NASM. You should use last version 2.1
