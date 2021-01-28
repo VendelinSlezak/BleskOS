@@ -88,6 +88,7 @@ keyboard_irq:
 
 wait_for_keyboard:
  mov dword [keyboard_wait], 1
+
  .wait:
   cmp dword [keyboard_wait], 0
   je .done
