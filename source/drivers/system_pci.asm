@@ -8,6 +8,7 @@ pci_return dd 0
 pci_write_value dd 0
 
 %define BAR0 0x10
+%define BAR1 0x14
 %define BAR4 0x20
 
 %macro PCI_READ 1
@@ -102,7 +103,15 @@ pci_read_device:
 
  PCI_READ 0x08
  and eax, 0xFFFFFF00 ;class, subclass, progif
- PHEX eax
+
+ IF_E eax, 0x04010000, pci_ac97_if ;AC97
+  PCI_ENABLE_BUSMASTERING
+  PCI_READ_IO_BAR BAR0
+  mov word [ac97_nam_base], ax
+  PCI_READ_IO_BAR BAR1
+  mov word [ac97_nabm_base], ax
+  ret
+ ENDIF pci_ac97_if
 
  IF_E eax, 0x04030000, pci_hda_if ;Intel HD Audio
   PCI_ENABLE_BUSMASTERING
@@ -117,10 +126,15 @@ pci_read_device:
   ret
  ENDIF pci_nic_if
 
+ PCI_SET_IRQ 3 ;for all other devices
+
  .done:
  ret
 
 scan_pci:
+ mov word [ac97_nam_base], 0
+ mov word [ac97_nabm_base], 0
+
  FOR_VAR 256, dword [pci_bus], pci_for1
   FOR_VAR 32, dword [pci_dev], pci_for2
 
