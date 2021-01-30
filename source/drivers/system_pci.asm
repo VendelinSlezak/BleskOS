@@ -150,6 +150,8 @@ pci_read_device:
  ENDIF pci_xhci_if
 
  IF_E eax, 0x02000000, pci_nic_if ;Network card
+  PCI_READ_DEVICE_ID
+  mov dword [ethernet_card_id], eax
   ret
  ENDIF pci_nic_if
 
