@@ -9,9 +9,23 @@
 %define WHITE 0xFFFF
 %define BLACK 0x0000
 
+%define LINESZ 10
+%define COLUMNSZ 8
+%define LINE(x) x*LINESZ+1
+%define COLUMN(x) x*COLUMNSZ
+%macro SCREEN_X_SUB 2
+ mov %1, dword [screen_x]
+ sub %1, %2
+%endmacro
+%macro SCREEN_Y_SUB 2
+ mov %1, dword [screen_y]
+ sub %1, %2
+%endmacro
+
 screen_lfb dd 0
 screen_x dd 0
 screen_y dd 0
+screen_bites_per_pixel dd 0
 screen_bpp dd 0
 screen_all_pixels dd 0
 screen_pixels_per_line dd 0
@@ -194,6 +208,8 @@ init_graphic:
 
  ;calculate bytes per pixel
  mov al, byte [0x70019]
+ mov dword [screen_bites_per_pixel], 0
+ mov byte [screen_bites_per_pixel], al
  mov dword [screen_bpp], 0
 
  IF_E al, 16, if_bpp16
@@ -248,12 +264,12 @@ redraw_lines_screen:
  mov ebx, dword [screen_pixels_per_line]
  mul ebx
 
- FOR eax, redraw_lines_screen
+ FOR eax, cycle_redraw_lines_screen
   mov dx, word [esi]
   mov word [edi], dx
   add esi, 2
   add edi, 2
- ENDFOR redraw_lines_screen
+ ENDFOR cycle_redraw_lines_screen
 
  ret
 
@@ -306,6 +322,129 @@ draw_square:
 
   MOVE_CURSOR_NEXT_LINE
  ENDFOR cycle1
+
+ ret
+
+draw_cursor:
+ CALCULATE_CURSOR_POSITION
+
+ ;line 1
+ mov ebx, dword [screen_pointer]
+ mov word [ebx], BLACK
+
+ ;line 2
+ MOVE_CURSOR_NEXT_LINE
+ mov ebx, dword [screen_pointer]
+ mov word [ebx], BLACK
+ add ebx, 2
+ mov word [ebx], BLACK
+
+ ;line 3
+ MOVE_CURSOR_NEXT_LINE
+ mov ebx, dword [screen_pointer]
+ mov word [ebx], BLACK
+ add ebx, 2
+ mov word [ebx], WHITE
+ add ebx, 2
+ mov word [ebx], BLACK
+
+ ;line 4
+ MOVE_CURSOR_NEXT_LINE
+ mov ebx, dword [screen_pointer]
+ mov word [ebx], BLACK
+ add ebx, 2
+ mov word [ebx], WHITE
+ add ebx, 2
+ mov word [ebx], WHITE
+ add ebx, 2
+ mov word [ebx], BLACK
+
+ ;line 5
+ MOVE_CURSOR_NEXT_LINE
+ mov ebx, dword [screen_pointer]
+ mov word [ebx], BLACK
+ add ebx, 2
+ mov word [ebx], WHITE
+ add ebx, 2
+ mov word [ebx], WHITE
+ add ebx, 2
+ mov word [ebx], WHITE
+ add ebx, 2
+ mov word [ebx], BLACK
+
+ ;line 6
+ MOVE_CURSOR_NEXT_LINE
+ mov ebx, dword [screen_pointer]
+ mov word [ebx], BLACK
+ add ebx, 2
+ mov word [ebx], WHITE
+ add ebx, 2
+ mov word [ebx], WHITE
+ add ebx, 2
+ mov word [ebx], WHITE
+ add ebx, 2
+ mov word [ebx], WHITE
+ add ebx, 2
+ mov word [ebx], BLACK
+
+ ;line 7
+ MOVE_CURSOR_NEXT_LINE
+ mov ebx, dword [screen_pointer]
+ mov word [ebx], BLACK
+ add ebx, 2
+ mov word [ebx], WHITE
+ add ebx, 2
+ mov word [ebx], WHITE
+ add ebx, 2
+ mov word [ebx], WHITE
+ add ebx, 2
+ mov word [ebx], WHITE
+ add ebx, 2
+ mov word [ebx], WHITE
+ add ebx, 2
+ mov word [ebx], BLACK
+
+ ;line 8
+ MOVE_CURSOR_NEXT_LINE
+ mov ebx, dword [screen_pointer]
+ mov word [ebx], BLACK
+ add ebx, 2
+ mov word [ebx], WHITE
+ add ebx, 2
+ mov word [ebx], WHITE
+ add ebx, 2
+ mov word [ebx], WHITE
+ add ebx, 2
+ mov word [ebx], WHITE
+ add ebx, 2
+ mov word [ebx], BLACK
+
+ ;line 9
+ MOVE_CURSOR_NEXT_LINE
+ mov ebx, dword [screen_pointer]
+ mov word [ebx], BLACK
+ add ebx, 2
+ mov word [ebx], WHITE
+ add ebx, 2
+ mov word [ebx], WHITE
+ add ebx, 2
+ mov word [ebx], BLACK
+ add ebx, 2
+ mov word [ebx], BLACK
+
+ ;line 10
+ MOVE_CURSOR_NEXT_LINE
+ mov ebx, dword [screen_pointer]
+ mov word [ebx], BLACK
+ add ebx, 2
+ mov word [ebx], BLACK
+ add ebx, 2
+ mov word [ebx], BLACK
+
+ ;line 11
+ MOVE_CURSOR_NEXT_LINE
+ mov ebx, dword [screen_pointer]
+ mov word [ebx], BLACK
 
  ret
 
