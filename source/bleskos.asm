@@ -20,21 +20,26 @@ start:
  %include "source/drivers/hardware_ps2_mouse.asm"
  %include "source/drivers/hardware_ide.asm"
  %include "source/drivers/hardware_paralel_ata.asm"
- ;;%include "source/drivers/filesystem_jus.asm" in progres
- ;;%include "source/gui/program_library.asm" in progres
- ;;%include "source/gui/main.asm" in progres
+ ;;%include "source/drivers/filesystem_jus.asm" in progress
+ %include "source/drivers/usb_center.asm"
+
+ %include "source/gui/program_library.asm"
+ %include "source/gui/main.asm"
+ %include "source/gui/developer_zone.asm"
+
+ %include "source/programs/dp_hardware_info.asm"
 
 start_bleskos:
  call init_graphic
- CLEAR_SCREEN WHITE
+ CLEAR_SCREEN 0x0600
  call redraw_screen
 
- PSTR 'Scanning PCI...', bootstr_pci
- call scan_pci
- call init_keyboard
  PSTR 'Enabling interrupts...', bootstr_interrupts
  call init_idt
  call set_pit
+ PSTR 'Scanning PCI...', bootstr_pci
+ call scan_pci
+ call init_keyboard
  PSTR 'Initalizing IDE drives...', bootstr_ide
  call init_ide_devices
  PSTR 'Initalizing sound card...', bootstr_sound_card
@@ -43,6 +48,6 @@ start_bleskos:
  call init_ps2_controller
  call init_ps2_mouse
 
- ;;call main_gui
+ call main_window
 
  HALT
