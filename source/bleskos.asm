@@ -22,6 +22,7 @@ start:
  %include "source/drivers/hardware_paralel_ata.asm"
  ;;%include "source/drivers/filesystem_jus.asm" in progress
  %include "source/drivers/usb_center.asm"
+ %include "source/drivers/network_center.asm"
 
  %include "source/gui/program_library.asm"
  %include "source/gui/main.asm"
