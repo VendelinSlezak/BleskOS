@@ -19,7 +19,7 @@ pci_write_value dd 0
 %macro PCI_WRITE 2
  mov dword [pci_offset], %1
  mov dword [pci_write_value], %2
- call pci_read
+ call pci_write
 %endmacro
 
 %macro PCI_READ_DEVICE_ID 0
@@ -27,10 +27,18 @@ pci_write_value dd 0
  call pci_read
 %endmacro
 
-%macro PCI_ENABLE_BUSMASTERING 0
+%macro PCI_IO_ENABLE_BUSMASTERING 0
  mov dword [pci_offset], 0x04
  call pci_read
  or eax, 0x5
+ mov dword [pci_write_value], eax
+ call pci_write
+%endmacro
+
+%macro PCI_MMIO_ENABLE_BUSMASTERING 0
+ mov dword [pci_offset], 0x04
+ call pci_read
+ or eax, 0x6
  mov dword [pci_write_value], eax
  call pci_write
 %endmacro
@@ -105,7 +113,7 @@ pci_read_device:
  and eax, 0xFFFFFF00 ;class, subclass, progif
 
  IF_E eax, 0x04010000, pci_ac97_if ;AC97
-  PCI_ENABLE_BUSMASTERING
+  PCI_IO_ENABLE_BUSMASTERING
   PCI_READ_IO_BAR BAR0
   mov word [ac97_nam_base], ax
   PCI_READ_IO_BAR BAR1
@@ -114,13 +122,32 @@ pci_read_device:
  ENDIF pci_ac97_if
 
  IF_E eax, 0x04030000, pci_hda_if ;Intel HD Audio
-  PCI_ENABLE_BUSMASTERING
+  PCI_MMIO_ENABLE_BUSMASTERING
   ret
  ENDIF pci_hda_if
 
+ IF_E eax, 0x0C031000, pci_ohci_if ;OHCI
+  inc dword [ohci_num_of_ports]
+  PCI_READ_MMIO_BAR BAR0
+  add eax, 0x100 ;legacy control register
+  mov dword [eax], 0x9 ;enable legacy support
+  ret
+ ENDIF pci_ohci_if
+
  IF_E eax, 0x0C030000, pci_uhci_if ;UHCI
+  inc dword [uhci_num_of_ports]
   ret
  ENDIF pci_uhci_if
+
+ IF_E eax, 0x0C032000, pci_ehci_if ;EHCI
+  inc dword [ehci_num_of_ports]
+  ret
+ ENDIF pci_ehci_if
+
+ IF_E eax, 0x0C033000, pci_xhci_if ;xHCI
+  inc dword [xhci_num_of_ports]
+  ret
+ ENDIF pci_xhci_if
 
  IF_E eax, 0x02000000, pci_nic_if ;Network card
   ret
