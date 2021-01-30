@@ -2,7 +2,7 @@
 
 mouse_packet_bytes dd 0
 mouse_data_pointer dd 0
-mouse_data db 0, 0, 0
+mouse_data db 0, 0, 0, 0
 mouse_wait dd 0
 
 %macro WRITE_PS2_MOUSE 1
@@ -15,26 +15,10 @@ mouse_wait dd 0
 %endmacro
 
 init_ps2_mouse:
- ;disable sending packets
- WRITE_PS2_MOUSE 0xF5
+ ;normal settings
+ WRITE_PS2_MOUSE 0xF6
  READ_PS2_MOUSE
-
- ;enable scrolling
- WRITE_PS2_MOUSE 0xF3
- READ_PS2_MOUSE
- WRITE_PS2_MOUSE 200
- READ_PS2_MOUSE
- WRITE_PS2_MOUSE 0xF3
- READ_PS2_MOUSE
- WRITE_PS2_MOUSE 100
- READ_PS2_MOUSE
- WRITE_PS2_MOUSE 0xF3
- READ_PS2_MOUSE
- WRITE_PS2_MOUSE 80
- READ_PS2_MOUSE
-
- ;set mouse type
- mov dword [mouse_packet_bytes], 4
+ mov dword [mouse_packet_bytes], 3
 
  ;enable sending packets
  WRITE_PS2_MOUSE 0xF4
