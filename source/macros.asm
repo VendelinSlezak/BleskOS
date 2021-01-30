@@ -1,8 +1,10 @@
 ;BleskOS
 
-;This macros make other code more readable, you do not need to know how this work
+;This macros make other code more readable
 
-%define MEMORY_RAM_SCREEN 0x00200000
+%define MEMORY_RAM_SCREEN 0x01000000
+%define MEMORY_JUS_BNF 0x01100000
+%define MEMORY_AC97_BDL 0x01200000
 
 %macro INB 1
  %if %1!=dx
@@ -94,6 +96,11 @@
 %macro IF_E 3
  cmp %1, %2
  jne .%3
+%endmacro
+
+%macro IF_NE 3
+ cmp %1, %2
+ je .%3
 %endmacro
 
 %macro IF_H 3
