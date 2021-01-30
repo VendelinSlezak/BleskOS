@@ -28,6 +28,8 @@ init_ps2_mouse:
  ret
 
 mouse_irq:
+ pusha
+ 
  mov eax, 0
  INB 0x60
 
@@ -45,6 +47,7 @@ mouse_irq:
  ENDIF if_new_cycle
 
  EOI_SLAVE_PIC
+ popa
  iret
 
 wait_for_mouse_or_keyboard:
