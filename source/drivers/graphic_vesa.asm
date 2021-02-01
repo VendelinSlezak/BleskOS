@@ -8,6 +8,7 @@
 
 %define WHITE 0xFFFF
 %define BLACK 0x0000
+%define COLOR(red, green, blue) ( ((red & 0xF8) << 8) | ((green & 0xFC) << 3) | ((blue & 0xF8) >> 3) )
 
 %define LINESZ 10
 %define COLUMNSZ 8
