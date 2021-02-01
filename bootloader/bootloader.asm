@@ -1,6 +1,7 @@
 ;BleskOS bootloader
 
 ;What this code do:
+; - enable A20 for acess to all RAM memory
 ; - find highest VESA video mode with 16 bpp
 ; - load VESA info mode block to memory 0x70000 (it includes mode x, y, bpp, linear frame buffer pointer)
 ; - set VESA graphic mode 0x114 what means mode 800x600x16
@@ -19,8 +20,13 @@ start:
  mov ss, ax
  mov sp, 0x7C00
 
+ ;ENABLE A20
+ in al, 0x92
+ or al, 0x2
+ out 0x92, al
+
  ;FIND HIGHEST 16 BPP VESA MODE
- mov word [vesa_actual_mode], 0x100
+ mov word [vesa_actual_mode], 0x4100
  .scan_vesa_mode:
   mov ax, 0x7000
   mov es, ax
@@ -43,7 +49,7 @@ start:
 
  .next_scan_cycle:
  inc word [vesa_actual_mode]
- cmp word [vesa_actual_mode], 0x150
+ cmp word [vesa_actual_mode], 0x4120
  jl .scan_vesa_mode
  
  ;LOAD VESA INFO
