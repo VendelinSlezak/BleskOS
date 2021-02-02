@@ -16,7 +16,7 @@ Inbuilt hardware:
 * Paralel hard disk
 
 Filesystems:
-* JUS(in progress, not aviable on GitHub now)
+* FAT32 (in progress, not aviable on GitHub now)
 
 USB controllers:
 * UHCI throught legacy USB support
