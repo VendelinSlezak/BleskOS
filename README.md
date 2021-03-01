@@ -1,7 +1,7 @@
 # BleskOS
 Operation system working in protected mode with legacy boot.
 
-First version ALPHA 1 of VGA edition(repository https://github.com/Klaykap/BleskOS-VGA-edition) will be released on first of march 2021.
+Alpha 1 version of VGA edition is already released! Check it on https://github.com/Klaykap/BleskOS-VGA-edition/releases/tag/alpha-1
 
 ### Drivers
 Graphic:
