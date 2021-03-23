@@ -2,8 +2,6 @@
 
 ;What this code do:
 ; - enable A20 for acess to all RAM memory
-; - find highest VESA video mode with 16 bpp
-; - load VESA info mode block to memory 0x70000 (it includes mode x, y, bpp, linear frame buffer pointer)
 ; - set VESA graphic mode 0x114 what means mode 800x600x16
 ; - read 128 KB from boot device(must be emulated as hard disk) after bootloader sector - this contains BleskOS code
 ; - load Global Descriptor Table for acces max 4 GB of RAM memory
@@ -24,44 +22,17 @@ start:
  in al, 0x92
  or al, 0x2
  out 0x92, al
-
- ;FIND HIGHEST 16 BPP VESA MODE
- mov word [vesa_actual_mode], 0x4100
- .scan_vesa_mode:
-  mov ax, 0x7000
-  mov es, ax
-  mov word [es:0x00], 0 ;clear
-  mov byte [es:0x19], 0 ;clear
-  mov di, 0x00
-  mov ax, 0x4F01
-  mov cx, word [vesa_actual_mode]
-  int 0x10 ;load info
-
-  mov bx, word [es:0x00]
-  and bx, 0x90
-  cmp bx, 0x90 ;is mode graphic with linear frame buffer?
-  jne .next_scan_cycle
-
-  cmp byte [es:0x19], 16 ;16 bpp mode?
-  jne .if_16_bpp
-   mov word [vesa_mode], cx ;if yes, save it
-  .if_16_bpp:
-
- .next_scan_cycle:
- inc word [vesa_actual_mode]
- cmp word [vesa_actual_mode], 0x4120
- jl .scan_vesa_mode
  
+ ;SET VESA MODE
+ mov ax, 0x4F02
+ mov bx, 0x4114
+ int 0x10
  ;LOAD VESA INFO
  mov ax, 0x7000
  mov es, ax
  mov di, 0
  mov ax, 0x4F01
- mov cx, word [vesa_mode]
- int 0x10
- ;SET VESA MODE
- mov ax, 0x4F02
- mov bx, word [vesa_mode]
+ mov cx, 0x4114
  int 0x10
 
  ;READ BLESKOS 128 KB, drive in dl is defined by BIOS
@@ -100,9 +71,6 @@ start:
  jmp 0x10000
 
 ;;; variabiles ;;;
- vesa_actual_mode dd 0
- vesa_mode dd 0
-
  gdt:
  dq 0 ;first item is null
 
