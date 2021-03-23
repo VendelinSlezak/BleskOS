@@ -237,7 +237,8 @@ init_graphic:
 redraw_screen:
  mov eax, MEMORY_RAM_SCREEN
  mov ebx, dword [screen_lfb]
- mov ecx, dword [screen_all_pixels]
+ ;;mov ecx, dword [screen_all_pixels] ;for any mode
+ mov ecx, 480000 ;for 800x600x16 mode
 
  .redraw_screen_loop:
   mov edx, dword [eax]
