@@ -13,8 +13,6 @@ start:
  %include "source/drivers/system_pci.asm"
  %include "source/drivers/system_interrupts.asm"
  %include "source/drivers/system_wait.asm"
- %include "source/drivers/sound_ac97.asm"
- %include "source/drivers/sound_center.asm"
  %include "source/drivers/hardware_ps2_controller.asm"
  %include "source/drivers/hardware_ps2_keyboard.asm"
  %include "source/drivers/hardware_ps2_mouse.asm"
