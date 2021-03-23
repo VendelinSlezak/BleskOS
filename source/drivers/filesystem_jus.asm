@@ -75,6 +75,20 @@ write_block:
  pop ebx
 
  ret
+ 
+jus_read_root_dir:
+ mov eax, 0
+ mov dword [jus_file_memory], MEMORY_ROOT_DIR
+ call read_block
+
+ ret
+
+jus_write_root_dir:
+ mov eax, 0
+ mov dword [jus_file_memory], MEMORY_ROOT_DIR
+ call write_block
+
+ ret
 
 jus_read_file:
  ;clear file block numbers
