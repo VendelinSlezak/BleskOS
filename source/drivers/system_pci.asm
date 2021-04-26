@@ -112,35 +112,42 @@ pci_read_device:
  PCI_READ 0x08
  and eax, 0xFFFFFF00 ;class, subclass, progif
 
- IF_E eax, 0x04010000, pci_ac97_if ;AC97
-  PCI_IO_ENABLE_BUSMASTERING
-  PCI_READ_IO_BAR BAR0
-  mov word [ac97_nam_base], ax
-  PCI_READ_IO_BAR BAR1
-  mov word [ac97_nabm_base], ax
-  ret
- ENDIF pci_ac97_if
-
- IF_E eax, 0x04030000, pci_hda_if ;Intel HD Audio
+ IF_E eax, 0x04030000, pci_hda_if ;HD Audio
   PCI_MMIO_ENABLE_BUSMASTERING
+  PCI_READ_MMIO_BAR BAR0
+  mov dword [hda_base], eax
   ret
  ENDIF pci_hda_if
 
  IF_E eax, 0x0C031000, pci_ohci_if ;OHCI
   inc dword [ohci_num_of_ports]
-  PCI_READ_MMIO_BAR BAR0
-  add eax, 0x100 ;legacy control register
-  mov dword [eax], 0x9 ;enable legacy support
   ret
  ENDIF pci_ohci_if
 
  IF_E eax, 0x0C030000, pci_uhci_if ;UHCI
+  PCI_WRITE 0xC0, 0x8F00 ;disable legacy support
   inc dword [uhci_num_of_ports]
+  PCI_READ_IO_BAR BAR4
+  mov ebx, dword [uhci_pointer]
+  mov word [ebx], ax
+  add dword [uhci_pointer], 2
   ret
  ENDIF pci_uhci_if
 
  IF_E eax, 0x0C032000, pci_ehci_if ;EHCI
   inc dword [ehci_num_of_ports]
+  PCI_READ_MMIO_BAR BAR0
+  mov dword [ehci_base], eax
+
+  ;disable legacy support
+  add eax, 0x08
+  mov ebx, dword [eax]
+  shr ebx, 8
+  and ebx, 0xFF
+  PCI_WRITE ebx, (1 << 24)
+  hlt
+  hlt
+  hlt
   ret
  ENDIF pci_ehci_if
 
@@ -161,9 +168,6 @@ pci_read_device:
  ret
 
 scan_pci:
- mov word [ac97_nam_base], 0
- mov word [ac97_nabm_base], 0
-
  FOR_VAR 256, dword [pci_bus], pci_for1
   FOR_VAR 32, dword [pci_dev], pci_for2
 
