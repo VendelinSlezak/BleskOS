@@ -182,7 +182,7 @@ jus_write_file:
   add edi, 4
  loop .write_file
 
- ;write bnf part
- call write_bnf_part
+ ;write bfn part
+ call write_bfn_part
 
  ret
