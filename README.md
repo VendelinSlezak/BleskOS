@@ -8,7 +8,7 @@ Graphic:
 * VESA
 
 Sound:
-* Audio Codec 97
+* Intel HD Audio (in progress, today I will upload it on GitHub)
 
 Inbuilt hardware:
 * PS/2 keyboard
