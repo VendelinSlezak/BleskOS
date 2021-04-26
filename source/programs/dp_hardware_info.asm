@@ -25,13 +25,13 @@ hardware_info:
  mov eax, dword [screen_lfb]
  PRINT_HEX eax, LINE(9), COLUMN(27)
 
- IF_E word [sound_card_type], 0, if_sc_none
+ IF_E dword [hda_base], 0, if_sc_none
   PRINT 'Sound card: none', dz_hw_sc_none_str, LINE(11), COLUMN(1)
  ENDIF if_sc_none
 
- IF_E word [sound_card_type], SOUND_CARD_AC97, if_sc_ac97
-  PRINT 'Sound card: Audio Codec 97', dz_hw_sc_ac97_str, LINE(11), COLUMN(1)
- ENDIF if_sc_ac97
+ IF_NE dword [hda_base], 0, if_sc_hda
+  PRINT 'Sound card: High Definition Audio', dz_hw_sc_hda, LINE(11), COLUMN(1)
+ ENDIF if_sc_hda
 
  PRINT 'Primary IDE:', dz_hw_str5, LINE(13), COLUMN(1)
  mov eax, 0
