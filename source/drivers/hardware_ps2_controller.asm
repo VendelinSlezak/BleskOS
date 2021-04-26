@@ -1,38 +1,24 @@
 ;BleskOS
 
-%macro READ_PS2_DATA 0
- WAIT 5
- INB 0x60
-%endmacro
+%define PS2_DATA_PORT 0x60
+%define PS2_COMMAND_PORT 0x64
 
-%macro WRITE_PS2_DATA 1
- WAIT 5
- OUTB 0x60, %1
-%endmacro
-
-%macro WRITE_PS2_COMMAND 1
- WAIT 5
- OUTB 0x64, %1
-%endmacro
+ps2_command db 0
 
 init_ps2_controller:
- ;disable PS/2 controllers
- WRITE_PS2_COMMAND 0xAD
- WRITE_PS2_COMMAND 0xA7
+ ;read configuration byte
+ OUTB PS2_COMMAND_PORT, 0x20
+ INB PS2_DATA_PORT
+ mov byte [ps2_command], al
 
  ;enable interrupts
- WRITE_PS2_COMMAND 0x20
- READ_PS2_DATA
- or al, 0x3 ;enable interrupts bits
- push eax ;save value
-
- WRITE_PS2_COMMAND 0x60
- pop eax
- mov bl, al
- WRITE_PS2_DATA al
+ OUTB PS2_COMMAND_PORT, 0x60
+ or byte [ps2_command], 0x3 ;enable interrupts bits
+ mov al, byte [ps2_command]
+ OUTB PS2_DATA_PORT, al
 
  ;enable PS/2 controllers
- WRITE_PS2_COMMAND 0xAE
- WRITE_PS2_COMMAND 0xA8
+ OUTB PS2_COMMAND_PORT, 0xAE
+ OUTB PS2_COMMAND_PORT, 0xA8
 
  ret
