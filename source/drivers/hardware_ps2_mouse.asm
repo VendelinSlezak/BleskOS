@@ -1,35 +1,42 @@
 ;BleskOS
 
+;Touchpad is emulating PS/2 mouse
+
 mouse_packet_bytes dd 0
 mouse_data_pointer dd 0
 mouse_data db 0, 0, 0, 0
 mouse_wait dd 0
 
 %macro WRITE_PS2_MOUSE 1
- WRITE_PS2_COMMAND 0xD4
- WRITE_PS2_DATA %1
+ OUTB PS2_COMMAND_PORT, 0xD4
+ OUTB PS2_DATA_PORT, %1
 %endmacro
 
 %macro READ_PS2_MOUSE 0
- READ_PS2_DATA
+ INB PS2_DATA_PORT
 %endmacro
 
-init_ps2_mouse:
- ;normal settings
- WRITE_PS2_MOUSE 0xF6
- READ_PS2_MOUSE
+enable_touchpad:
  mov dword [mouse_packet_bytes], 3
 
  ;enable sending packets
  WRITE_PS2_MOUSE 0xF4
  READ_PS2_MOUSE
+ WAIT 10 ;wait 100 miliseconds for right enable
  mov dword [mouse_data_pointer], 0
+
+ ret
+
+disable_touchpad:
+ ;disable sending packets
+ WRITE_PS2_MOUSE 0xF5
+ READ_PS2_MOUSE
 
  ret
 
 mouse_irq:
  pusha
- 
+
  mov eax, 0
  INB 0x60
 
