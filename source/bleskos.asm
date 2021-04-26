@@ -26,10 +26,10 @@ start:
  %include "source/drivers/hardware_paralel_ata.asm"
 
  %include "source/drivers/filesystem_jus.asm"
- %include "source/drivers/filesystem_fat32.asm"
+ ;;%include "source/drivers/filesystem_fat32.asm"
 
- %include "source/drivers/usb_uhci.asm"
- %include "source/drivers/usb_ehci.asm"
+ ;;%include "source/drivers/usb_uhci.asm"
+ ;;%include "source/drivers/usb_ehci.asm"
  %include "source/drivers/usb_center.asm"
 
  %include "source/drivers/network_center.asm"
@@ -40,7 +40,6 @@ start:
 
  %include "source/programs/dp_hardware_info.asm"
  %include "source/programs/dp_mouse.asm"
- %include "source/programs/dp_jus.asm"
 
 start_bleskos:
  call init_graphic
@@ -59,7 +58,7 @@ start_bleskos:
  call init_sound_card
  PSTR 'Initalizing PS/2 devices...', bootstr_ps2
  call init_ps2_controller
- call init_ps2_mouse
+ call enable_touchpad
 
  call main_window
 
