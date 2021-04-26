@@ -8,18 +8,30 @@ start:
  jmp start_bleskos
 
  %include "source/macros.asm"
+
  %include "source/drivers/graphic_vesa.asm"
  %include "source/drivers/graphic_font.asm"
+
  %include "source/drivers/system_pci.asm"
  %include "source/drivers/system_interrupts.asm"
  %include "source/drivers/system_wait.asm"
+
+ %include "source/drivers/sound_hda.asm"
+
  %include "source/drivers/hardware_ps2_controller.asm"
  %include "source/drivers/hardware_ps2_keyboard.asm"
  %include "source/drivers/hardware_ps2_mouse.asm"
+
  %include "source/drivers/hardware_ide.asm"
  %include "source/drivers/hardware_paralel_ata.asm"
+
  %include "source/drivers/filesystem_jus.asm"
+ %include "source/drivers/filesystem_fat32.asm"
+
+ %include "source/drivers/usb_uhci.asm"
+ %include "source/drivers/usb_ehci.asm"
  %include "source/drivers/usb_center.asm"
+
  %include "source/drivers/network_center.asm"
 
  %include "source/gui/program_library.asm"
@@ -27,6 +39,8 @@ start:
  %include "source/gui/developer_zone.asm"
 
  %include "source/programs/dp_hardware_info.asm"
+ %include "source/programs/dp_mouse.asm"
+ %include "source/programs/dp_jus.asm"
 
 start_bleskos:
  call init_graphic
