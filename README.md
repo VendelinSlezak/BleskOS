@@ -16,6 +16,7 @@ Inbuilt hardware:
 * Paralel hard disk
 
 Filesystems:
+* JUS
 * FAT32 (in progress, not aviable on GitHub now)
 
 USB controllers:
@@ -29,4 +30,4 @@ USB devices:
 Currently nothing, but text editor and graphic editor are on the way.
 
 ## How to build
-BleskOS is completly written in NASM. You should use last version 2.1
+BleskOS is completly written in NASM. You should use  last version 2.1
