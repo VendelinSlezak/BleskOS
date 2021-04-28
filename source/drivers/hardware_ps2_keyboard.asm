@@ -20,6 +20,7 @@
 %define KEY_F4 0x3E
 
 %define KEY_A 0x1E
+%define KEY_B 0x1F
 
 key_code dd 0
 keyboard_shift dd 0
