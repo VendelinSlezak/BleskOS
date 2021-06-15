@@ -15,6 +15,7 @@ start:
  %include "source/drivers/system_pci.asm"
  %include "source/drivers/system_interrupts.asm"
  %include "source/drivers/system_wait.asm"
+ %include "source/drivers/system_memory_managment.asm"
 
  %include "source/drivers/sound_hda.asm"
 
@@ -39,7 +40,8 @@ start:
  %include "source/gui/developer_zone.asm"
 
  %include "source/programs/dp_hardware_info.asm"
- %include "source/programs/dp_mouse.asm"
+ %include "source/programs/dp_vesa.asm"
+ %include "source/programs/dp_intel_hd_audio.asm"
 
 start_bleskos:
  call init_graphic
