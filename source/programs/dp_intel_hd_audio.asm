@@ -16,7 +16,7 @@ dp_hda:
  PRINT 'Selected widget:', dz_hda_ao_selected_str, LINE(7), COLUMN(1)
  mov eax, dword [dp_hda_selected_output]
  PRINT_VAR eax, LINE(7), COLUMN(19)
- PRINT '[arrow up/down] +1/-1 [space] Test sound', dz_hda_ao_keys_str, LINE(9), COLUMN(1)
+ PRINT '[arrow up/down] +1/-1', dz_hda_ao_keys_str, LINE(9), COLUMN(1)
 
  call redraw_screen
 
