@@ -113,8 +113,10 @@ hda_codec_id dd 0
 hda_max_volume dd 0
 hda_volume dd 0 ;range from 0(no volume) to 100(max volume)
 hda_audio_output_list_pointer dd hda_audio_output_list
+hda_audio_output_numof dd 0
 hda_audio_output_list times 32 dd 0
 hda_audio_input_list_pointer dd hda_audio_input_list
+hda_audio_input_numof dd 0
 hda_audio_input_list times 32 dd 0
 
 hda_data_pointer dd 0
@@ -190,6 +192,7 @@ init_sound_card:
 
   IF_E dword [hda_response], 0x0, if_audio_output
    PSTR 'Audio Output', audio_output_str
+   inc dword [hda_audio_output_numof]
    mov eax, dword [verb_node]
    mov esi, dword [hda_audio_output_list_pointer]
    mov dword [esi], eax
@@ -200,6 +203,7 @@ init_sound_card:
 
   IF_E dword [hda_response], 0x1, if_audio_input
    PSTR 'Audio Input', audio_input_str
+   inc dword [hda_audio_input_numof]
    mov eax, dword [verb_node]
    mov esi, dword [hda_audio_input_list_pointer]
    mov dword [esi], eax
