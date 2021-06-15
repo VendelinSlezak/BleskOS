@@ -76,7 +76,7 @@ deallocate_memory:
  ret
 
  .deallocate_1_mb:
-  dec dword [memory_block_pointer], 0x1000000 ;skip BleskOS memory
+  sub dword [memory_block_pointer], 0x1000000 ;skip BleskOS memory
   mov eax, dword [memory_block_pointer]
   mov ebx, 0x100000
   mov edx, 0
@@ -87,7 +87,7 @@ deallocate_memory:
  ret
 
  .deallocate_4_mb:
-  dec dword [memory_block_pointer], 0x1000000 ;skip BleskOS memory
+  sub dword [memory_block_pointer], 0x1000000 ;skip BleskOS memory
   mov eax, dword [memory_block_pointer]
   mov ebx, 0x100000
   mov edx, 0
