@@ -37,7 +37,7 @@ cursor_column dd 0
 first_redraw_line dd 0
 how_much_lines_redraw dd 0
 line_lenght dd 0
-line_height dd 0
+column_height dd 0
 square_lenght dd 0
 square_height dd 0
 color dd 0
@@ -93,7 +93,7 @@ debug_line dd 0
 %macro DRAW_COLUMN 4
  mov dword [cursor_line], %1
  mov dword [cursor_column], %2
- mov dword [line_height], %3
+ mov dword [column_height], %3
  mov dword [color], %4
  call draw_column
 %endmacro
@@ -105,6 +105,15 @@ debug_line dd 0
  mov dword [square_height], %4
  mov dword [color], %5
  call draw_square
+%endmacro
+
+%macro DRAW_EMPTY_SQUARE 5
+ mov dword [cursor_line], %1
+ mov dword [cursor_column], %2
+ mov dword [square_lenght], %3
+ mov dword [square_height], %4
+ mov dword [color], %5
+ call draw_empty_square
 %endmacro
 
 %macro DRAW_PIXEL_OF_CHAR 1
@@ -304,7 +313,7 @@ draw_column:
  mov eax, dword [screen_pointer]
  mov ebx, dword [color]
 
- FOR dword [line_height], draw_column_cycle
+ FOR dword [column_height], draw_column_cycle
   mov word [eax], bx
   add eax, dword [screen_pixels_per_line]
  ENDFOR draw_column_cycle
@@ -324,6 +333,31 @@ draw_square:
 
   MOVE_CURSOR_NEXT_LINE
  ENDFOR cycle1
+
+ ret
+
+draw_empty_square:
+ mov eax, dword [square_lenght]
+ mov dword [line_lenght], eax
+ call draw_line
+
+ mov eax, dword [square_height]
+ mov dword [column_height], eax
+ call draw_column
+
+ mov eax, dword [square_lenght]
+ add dword [cursor_column], eax
+ mov eax, dword [square_height]
+ mov dword [column_height], eax
+ call draw_column
+
+ mov eax, dword [square_lenght]
+ sub dword [cursor_column], eax
+ mov eax, dword [square_height]
+ add dword [cursor_line], eax
+ mov eax, dword [square_lenght]
+ mov dword [line_lenght], eax
+ call draw_line
 
  ret
 
