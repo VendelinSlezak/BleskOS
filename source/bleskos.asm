@@ -25,6 +25,7 @@ start:
 
  %include "source/drivers/hardware_ide.asm"
  %include "source/drivers/hardware_paralel_ata.asm"
+ %include "source/drivers/hardware_storage_center.asm"
 
  %include "source/drivers/filesystem_jus.asm"
  ;;%include "source/drivers/filesystem_fat32.asm"
@@ -38,6 +39,7 @@ start:
  %include "source/gui/program_library.asm"
  %include "source/gui/main.asm"
  %include "source/gui/developer_zone.asm"
+ %include "source/gui/elements.asm"
 
  %include "source/programs/dp_hardware_info.asm"
  %include "source/programs/dp_vesa.asm"
