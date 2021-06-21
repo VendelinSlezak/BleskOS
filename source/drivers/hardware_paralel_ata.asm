@@ -1,48 +1,71 @@
 ;BleskOS
 
+%define ATA_ERROR 0
+%define ATA_OK 1
+
+pata_base dw 0
+
 %macro PATA_SELECT_SECTOR 0
  ;number of sectors >> 8
  mov ax, word [ata_number_of_sectors]
  shr ax, 8
- OUTB 0x1F2, al
+ mov dx, word [pata_base]
+ add dx, 2
+ OUTB dx, al
 
  ;sector >> 24
  mov eax, dword [ata_sector]
  shr eax, 24
- OUTB 0x1F3, al
+ mov dx, word [pata_base]
+ add dx, 3
+ OUTB dx, al
 
  ;sector >> 32
  mov eax, dword [ata_sector+4]
- OUTB 0x1F4, al
+ mov dx, word [pata_base]
+ add dx, 4
+ OUTB dx, al
 
  ;sector >> 40
  mov eax, dword [ata_sector+4]
  shr eax, 8
- OUTB 0x1F5, al
+ mov dx, word [pata_base]
+ add dx, 5
+ OUTB dx, al
 
  ;number of sectors >> 0
  mov ax, word [ata_number_of_sectors]
- OUTB 0x1F2, al
+ mov dx, word [pata_base]
+ add dx, 2
+ OUTB dx, al
 
  ;sector >> 0
  mov al, byte [ata_sector]
- OUTB 0x1F3, al
+ mov dx, word [pata_base]
+ add dx, 3
+ OUTB dx, al
 
  ;sector >> 8
  mov eax, dword [ata_sector]
  shr eax, 8
- OUTB 0x1F4, al
+ mov dx, word [pata_base]
+ add dx, 4
+ OUTB dx, al
 
  ;sector >> 16
  mov eax, dword [ata_sector]
  shr eax, 16
- OUTB 0x1F5, al
+ mov dx, word [pata_base]
+ add dx, 5
+ OUTB dx, al
 %endmacro
 
 %macro PATA_WAIT 1
  mov ecx, %1
  .ata_wait_%1:
-  INB 0x1F7
+  mov dx, word [pata_base]
+  add dx, 7
+  INB dx
   and al, 0x88
   cmp al, 0x08 ;transfer is ready
   je .transfer_%1
@@ -61,23 +84,27 @@ pata_read:
  mov dword [ata_status], ATA_OK
 
  PATA_SELECT_SECTOR
- OUTB 0x1F7, 0xC4 ;read command
+ mov dx, word [pata_base]
+ add dx, 7
+ OUTB dx, 0xC4 ;read command
  PATA_WAIT 100000
 
  ;read sectors
  FOR dword [ata_number_of_sectors], ata_nos_cycle
   FOR 256, ata_sector_cycle
-   INW 0x1F0
+   mov dx, word [pata_base]
+   INW dx
    mov ebx, dword [ata_memory]
    mov word [ebx], ax ;write into memory
    add dword [ata_memory], 2
   ENDFOR ata_sector_cycle
 
   ;wait for prepare transfer
-  INB 0x1F7
-  INB 0x1F7
-  INB 0x1F7
-  INB 0x1F7
+  mov dx, word [pata_base]
+  INB dx
+  INB dx
+  INB dx
+  INB dx
  ENDFOR ata_nos_cycle
 
  ret
@@ -86,7 +113,9 @@ pata_write:
  mov dword [ata_status], ATA_OK
 
  PATA_SELECT_SECTOR
- OUTB 0x1F7, 0xC5 ;write command
+ mov dx, word [pata_base]
+ add dx, 7
+ OUTB dx, 0xC5 ;write command
  PATA_WAIT 100000
 
  ;write sectors
@@ -94,15 +123,17 @@ pata_write:
   FOR 256, ata_sector_cycle
    mov ebx, dword [ata_memory]
    mov ax, word [ebx]
-   OUTW 0x1F0, ax ;write into hard disk
+   mov dx, word [pata_base]
+   OUTW dx, ax ;write into hard disk
    add dword [ata_memory], 2
   ENDFOR ata_sector_cycle
 
   ;wait for prepare transfer
-  INB 0x1F7
-  INB 0x1F7
-  INB 0x1F7
-  INB 0x1F7
+  mov dx, word [pata_base]
+  INB dx
+  INB dx
+  INB dx
+  INB dx
  ENDFOR ata_nos_cycle
 
  ret
@@ -111,20 +142,24 @@ pata_delete:
  mov dword [ata_status], ATA_OK
 
  PATA_SELECT_SECTOR
- OUTB 0x1F7, 0xC5 ;write command
+ mov dx, word [pata_base]
+ add dx, 7
+ OUTB dx, 0xC5 ;write command
  PATA_WAIT 100000
 
  ;write sectors
  FOR dword [ata_number_of_sectors], ata_nos_cycle
   FOR 256, ata_sector_cycle
-   OUTW 0x1F0, 0 ;write into hard disk
+   mov dx, word [pata_base]
+   OUTW dx, 0 ;write into hard disk
   ENDFOR ata_sector_cycle
 
   ;wait for prepare transfer
-  INB 0x1F7
-  INB 0x1F7
-  INB 0x1F7
-  INB 0x1F7
+  mov dx, word [pata_base]
+  INB dx
+  INB dx
+  INB dx
+  INB dx
  ENDFOR ata_nos_cycle
 
  ret
