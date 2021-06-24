@@ -43,6 +43,7 @@ start:
  %include "source/programs/dp_hardware_info.asm"
  %include "source/programs/dp_vesa.asm"
  %include "source/programs/dp_intel_hd_audio.asm"
+ %include "source/programs/dp_ide.asm"
 
 start_bleskos:
  call init_graphic
