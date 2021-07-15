@@ -16,6 +16,8 @@ pata_select_slave:
  ret
 
 pata_detect_drive:
+ mov dword [pata_size], 0
+ mov dword [pata_size+4], 0
  mov dword [ata_status], ATA_OK
 
  BASE_OUTB pata_base, 1, 0
