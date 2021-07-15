@@ -9,7 +9,10 @@ pci_write_value dd 0
 
 %define BAR0 0x10
 %define BAR1 0x14
+%define BAR2 0x18
+%define BAR3 0x1C
 %define BAR4 0x20
+%define BAR5 0x24
 
 %macro PCI_READ 1
  mov dword [pci_offset], %1
@@ -125,12 +128,30 @@ pci_read_device:
  ENDIF pci_ohci_if
 
  IF_E eax, 0x0C030000, pci_uhci_if ;UHCI
+  PCI_WRITE 0xC0, 0x8F00 ;disable legacy support
   inc dword [uhci_num_of_ports]
+  PCI_READ_IO_BAR BAR4
+  mov ebx, dword [uhci_pointer]
+  mov word [ebx], ax
+  add dword [uhci_pointer], 2
   ret
  ENDIF pci_uhci_if
 
  IF_E eax, 0x0C032000, pci_ehci_if ;EHCI
   inc dword [ehci_num_of_ports]
+
+  PCI_READ_MMIO_BAR BAR0
+  mov dword [ehci_base], eax
+
+  ;disable legacy support
+  add eax, 0x08
+  mov ebx, dword [eax]
+  shr ebx, 8
+  and ebx, 0xFF ;get PCI extend register position
+  PCI_WRITE ebx, (1 << 24)
+  PCI_READ_MMIO_BAR 0x64
+  PHEX eax
+
   ret
  ENDIF pci_ehci_if
 
@@ -145,12 +166,55 @@ pci_read_device:
   ret
  ENDIF pci_nic_if
 
+ mov ebx, eax
+ and ebx, 0xFFFF0000 ;remove progif
+ IF_E ebx, 0x01010000, pci_ide_if ;IDE controller
+  PSTR 'IDE controller', ide_string
+
+  mov edi, dword [ide_pointer]
+
+  PCI_READ_IO_BAR BAR0
+  cmp ax, 0
+  je .if_first_controller_native
+  cmp ax, 0x1F0
+  je .if_first_controller_native
+   mov word [edi], ax
+   PCI_READ_IO_BAR BAR1
+   mov word [edi+2], ax
+
+   add edi, 20 ;next item
+   add dword [ide_pointer], 20
+  .if_first_controller_native:
+
+  PCI_READ_IO_BAR BAR2
+  cmp ax, 0
+  je .if_second_controller_native
+  cmp ax, 0x170
+  je .if_second_controller_native
+   mov word [edi], ax
+   PCI_READ_IO_BAR BAR3
+   mov word [edi+2], ax
+
+   add dword [ide_pointer], 20 ;next item
+  .if_second_controller_native:
+
+  ret
+ ENDIF pci_ide_if
+
  PCI_SET_IRQ 3 ;for all other devices
 
  .done:
  ret
 
 scan_pci:
+ ;clear
+ mov esi, native_ide_controllers
+ mov ecx, 160
+ .clear_ide:
+  mov byte [esi], 0
+  inc esi
+ loop .clear_ide
+
  FOR_VAR 256, dword [pci_bus], pci_for1
   FOR_VAR 32, dword [pci_dev], pci_for2
 
