@@ -1,8 +1,6 @@
 ;BleskOS
 
-%define DP_IDE_COLOR 0x35A1
-%define MASTER 1
-%define SLAVE 2
+%define DP_IDE_COLOR 0x9F60
 
 dp_ide_drive db 0
 
@@ -14,13 +12,7 @@ dp_ide:
  mov ax, word [pata_base]
  PRINT_HEX eax, LINE(1), COLUMN(22)
 
- PRINT 'Selected drive:', drive_str, LINE(3), COLUMN(1)
- cmp byte [dp_ide_drive], SLAVE
- je .slave
- PRINT 'Master', master_str, LINE(3), COLUMN(17)
- jmp .info
- .slave:
- PRINT 'Slave', slave_str, LINE(3), COLUMN(17)
+ PRINT 'Selected drive: Master', drive_str, LINE(3), COLUMN(1)
 
  .info:
  PRINT 'Type:       Size in MB:', type_str, LINE(5), COLUMN(1)
@@ -33,12 +25,13 @@ dp_ide:
  .atapi:
  PRINT 'ATAPI', atapi_str, LINE(5), COLUMN(7)
  .size:
- mov eax, dword [pata_info+200]
+ mov eax, dword [pata_size]
  mov ebx, 2000
  mov edx, 0
  div ebx ;calculate MB
- PRINT_VAR eax, LINE(5), COLUMN(20)
- PRINT '[a] 0x1F0 [b] 0x170 [c] master [d] slave [F1] read info', keys_str, LINE(7), COLUMN(1)
+ PRINT_VAR eax, LINE(5), COLUMN(25)
+
+ PRINT '[a] 0x1F0 [b] 0x170 [c] native first [d] native second', keys_str, LINE(7), COLUMN(1)
 
  cmp dword [ata_status], ATA_OK
  je .redraw
@@ -63,29 +56,34 @@ dp_ide:
 
   cmp byte [key_code], KEY_D
   je .key_d
-
-  cmp byte [key_code], KEY_F1
-  je .key_f1
  jmp .dp_ide_halt
 
  .key_a:
   mov word [pata_base], 0x1F0
+  call pata_select_master
+  call pata_detect_drive
  jmp dp_ide
 
  .key_b:
   mov word [pata_base], 0x170
+  call pata_select_master
+  call pata_detect_drive
  jmp dp_ide
 
  .key_c:
+  mov ax, word [native_ide_controllers]
+  cmp ax, 0
+  je .dp_ide_halt
+  mov word [pata_base], ax
   call pata_select_master
-  mov byte [dp_ide_drive], MASTER
+  call pata_detect_drive
  jmp dp_ide
 
  .key_d:
-  call pata_select_slave
-  mov byte [dp_ide_drive], SLAVE
- jmp dp_ide
-
- .key_f1:
+  mov ax, word [native_ide_controllers+20]
+  cmp ax, 0
+  je .dp_ide_halt
+  mov word [pata_base], ax
+  call pata_select_master
   call pata_detect_drive
  jmp dp_ide
