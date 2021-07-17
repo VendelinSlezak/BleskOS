@@ -114,11 +114,18 @@ hda_max_volume dd 0
 hda_volume dd 0 ;range from 0(no volume) to 100(max volume)
 hda_audio_output_numof dd 0
 hda_audio_input_numof dd 0
+hda_pin_output_numof dd 0
+hda_pin_input_numof dd 0
 
 hda_audio_output_list_pointer dd hda_audio_output_list
 hda_audio_output_list times 128 dd 0
 hda_audio_input_list_pointer dd hda_audio_input_list
 hda_audio_input_list times 128 dd 0
+
+hda_pin_output_list_pointer dd hda_pin_output_list
+hda_pin_output_list times 128 dd 0
+hda_pin_input_list_pointer dd hda_pin_input_list
+hda_pin_input_list times 128 dd 0
 
 hda_data_pointer dd 0
 hda_data_lenght dd 0
@@ -212,6 +219,37 @@ init_sound_card:
    PHEX eax
    jmp .next_cycle
   ENDIF if_audio_input
+
+  IF_E dword [hda_response], 0x4, if_pin_complex
+   mov dword [verb_command], 0xC ;pin type
+   call hda_send_verb
+
+   mov eax, dword [hda_response]
+   and eax, 0x10
+   IF_E eax, 0x10, if_pin_output
+    PSTR 'Pin Output', pin_output_str
+    inc dword [hda_pin_output_numof]
+    mov eax, dword [verb_node]
+    mov esi, dword [hda_pin_output_list_pointer]
+    mov dword [esi], eax
+    add dword [hda_pin_output_list_pointer], 4
+    PHEX eax
+   ENDIF if_pin_output
+
+   mov eax, dword [hda_response]
+   and eax, 0x20
+   IF_E eax, 0x20, if_pin_input
+    PSTR 'Pin Input', pin_input_str
+    inc dword [hda_pin_input_numof]
+    mov eax, dword [verb_node]
+    mov esi, dword [hda_pin_input_list_pointer]
+    mov dword [esi], eax
+    add dword [hda_pin_input_list_pointer], 4
+    PHEX eax
+   ENDIF if_pin_input
+
+   jmp .next_cycle
+  ENDIF if_pin_complex
 
  .next_cycle:
  pop ecx
