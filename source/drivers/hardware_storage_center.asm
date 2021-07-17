@@ -10,12 +10,13 @@ times 8 dd 0, 0, 0, 0, 0
 
 ide_pointer dd native_ide_controllers
 
+sata_devices_type:
+times 32 dd 0
+
 ata_sector dq 0
 ata_number_of_sectors dw 0
 ata_memory dd 0
 ata_status dd 0
-
-atapi_status dd 0
 
 %macro READ_HARD_DISK 3
  mov dword [ata_sector], %1
@@ -32,6 +33,9 @@ atapi_status dd 0
 %endmacro
 
 init_ide_devices:
+ cmp dword [sata_base], 0
+ jne .init_sata
+
  mov edi, ide_controllers
  mov ecx, 10
  .scan_controller:
@@ -86,6 +90,41 @@ init_ide_devices:
  WAIT 2 ;wait for enable drive
  OUTB 0x3F6, 0x2 ;disable interrupt
  call pata_detect_drive
+
+ ret
+
+ .init_sata:
+ PSTR 'Serial ATA', serial_ata_str
+
+ ;disable BIOS
+ MMIO_OUTD sata_base, 0x28, 0x2
+ WAIT 10
+
+ ;enable AHCI
+ MMIO_OUTD sata_base, 0x04, 0x80000000
+
+ ;read capabilites
+ mov esi, sata_devices_type
+ mov eax, 0
+ mov ecx, 32
+ .read_port:
+  call sata_set_port
+  MMIO_IND sata_port_base, 0x24
+  mov dword [esi], eax
+  cmp eax, 0
+  je .next_loop
+
+  MMIO_OUTD sata_port_base, 0x18, 0x0
+  MMIO_OUTD sata_port_base, 0x40, 0x0
+  MMIO_OUTD sata_port_base, 0x00, MEMORY_SATA
+  MMIO_OUTD sata_port_base, 0x04, 0x0
+  MMIO_OUTD sata_port_base, 0x08, 0x0
+  MMIO_OUTD sata_port_base, 0x0C, 0x0
+ .next_loop:
+ loop .read_port
+
+ mov eax, 0
+ call sata_set_port
 
  ret
 
