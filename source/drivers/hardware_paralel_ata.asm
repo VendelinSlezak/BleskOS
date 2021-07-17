@@ -5,7 +5,7 @@
 
 pata_base dw 0
 pata_info times 512 db 0
-pata_size dq 0
+pata_size dd 0
 
 pata_select_master:
  BASE_OUTB pata_base, 6, 0x40
@@ -17,7 +17,6 @@ pata_select_slave:
 
 pata_detect_drive:
  mov dword [pata_size], 0
- mov dword [pata_size+4], 0
  mov dword [ata_status], ATA_OK
 
  BASE_OUTB pata_base, 1, 0
@@ -47,8 +46,13 @@ pata_detect_drive:
  loop .read_info
 
  mov eax, dword [pata_info+200]
- mov dword [pata_size], eax
+ mov ebx, dword [pata_info+120]
+ mov dword [pata_size], ebx ;size in 28 bits
+ cmp eax, 0
+ je .done
+ mov dword [pata_size], eax ;size in 48 bits
 
+ .done:
  ret
 
 pata_select_sector:
