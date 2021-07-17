@@ -129,13 +129,28 @@ pci_read_device:
  ENDIF pci_ohci_if
 
  IF_E eax, 0x0C030000, pci_uhci_if ;UHCI
-  PCI_WRITE 0xC0, 0x8F00 ;disable legacy support
+  ;PCI_WRITE 0xC0, 0x8F00 ;disable legacy support
   inc dword [uhci_num_of_ports]
+  PCI_READ_IO_BAR BAR4
+  mov ebx, dword [uhci_pointer]
+  mov word [ebx], ax
+  add dword [uhci_pointer], 2
   ret
  ENDIF pci_uhci_if
 
  IF_E eax, 0x0C032000, pci_ehci_if ;EHCI
   inc dword [ehci_num_of_ports]
+
+  PCI_READ_MMIO_BAR BAR0
+  mov dword [ehci_base], eax
+
+  ;disable legacy support
+  add eax, 0x08
+  mov ebx, dword [eax]
+  shr ebx, 8
+  and ebx, 0xFF ;get PCI extend register position
+  PCI_WRITE ebx, (1 << 24)
+
   ret
  ENDIF pci_ehci_if
 
@@ -153,8 +168,6 @@ pci_read_device:
  mov ebx, eax
  and ebx, 0xFFFF0000 ;remove progif
  IF_E ebx, 0x01010000, pci_ide_if ;IDE controller
-  PSTR 'IDE controller', ide_string
-
   mov edi, dword [ide_pointer]
 
   PCI_READ_IO_BAR BAR0
@@ -184,6 +197,15 @@ pci_read_device:
 
   ret
  ENDIF pci_ide_if
+
+ mov ebx, eax
+ and ebx, 0xFFFF0000 ;remove progif
+ IF_E ebx, 0x01060000, pci_sata_if ;Serial ATA controller
+  PCI_READ_MMIO_BAR BAR5
+  mov dword [sata_base], eax
+
+  ret
+ ENDIF pci_sata_if
 
  PCI_SET_IRQ 3 ;for all other devices
 
