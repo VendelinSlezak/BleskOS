@@ -119,6 +119,7 @@ pci_read_device:
   PCI_MMIO_ENABLE_BUSMASTERING
   PCI_READ_MMIO_BAR BAR0
   mov dword [hda_base], eax
+  PCI_WRITE 0x44, 0x00 ;set TD0
   ret
  ENDIF pci_hda_if
 
