@@ -15,6 +15,8 @@ ata_number_of_sectors dw 0
 ata_memory dd 0
 ata_status dd 0
 
+atapi_status dd 0
+
 %macro READ_HARD_DISK 3
  mov dword [ata_sector], %1
  mov dword [ata_number_of_sectors], %2
@@ -48,23 +50,35 @@ init_ide_devices:
   call pata_select_master
   call pata_detect_drive
   mov eax, dword [pata_size]
-  mov dword [edi+4], eax
-  mov eax, dword [pata_size+4]
   mov dword [edi+8], eax
+
+  mov ebx, 0
+  BASE_INB pata_base, 4
+  mov bl, al
+  BASE_INB pata_base, 5
+  mov bh, al
+  mov dword [edi+4], ebx
 
   ;scan slave drive
   call pata_select_slave
   call pata_detect_drive
   mov eax, dword [pata_size]
-  mov dword [edi+12], eax
-  mov eax, dword [pata_size+4]
   mov dword [edi+16], eax
+
+  mov ebx, 0
+  BASE_INB pata_base, 4
+  mov bl, al
+  BASE_INB pata_base, 5
+  mov bh, al
+  mov dword [edi+12], ebx
 
   ;next item
   add edi, 20
  .next_cycle:
  pop ecx
- loop .scan_controller
+ dec ecx
+ cmp ecx, 0
+ jne .scan_controller
 
  ;set first controller master drive
  mov word [pata_base], 0x1F0
@@ -72,15 +86,6 @@ init_ide_devices:
  WAIT 2 ;wait for enable drive
  OUTB 0x3F6, 0x2 ;disable interrupt
  call pata_detect_drive
-
- mov eax, dword [ide_controllers+4]
- PHEX eax
- mov eax, dword [ide_controllers+24]
- PHEX eax
- mov eax, dword [ide_controllers+44]
- PHEX eax
- mov eax, dword [ide_controllers+64]
- PHEX eax
 
  ret
 
