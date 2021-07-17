@@ -129,28 +129,13 @@ pci_read_device:
  ENDIF pci_ohci_if
 
  IF_E eax, 0x0C030000, pci_uhci_if ;UHCI
-  ;PCI_WRITE 0xC0, 0x8F00 ;disable legacy support
+  PCI_WRITE 0xC0, 0x8F00 ;disable legacy support
   inc dword [uhci_num_of_ports]
-  PCI_READ_IO_BAR BAR4
-  mov ebx, dword [uhci_pointer]
-  mov word [ebx], ax
-  add dword [uhci_pointer], 2
   ret
  ENDIF pci_uhci_if
 
  IF_E eax, 0x0C032000, pci_ehci_if ;EHCI
   inc dword [ehci_num_of_ports]
-
-  PCI_READ_MMIO_BAR BAR0
-  mov dword [ehci_base], eax
-
-  ;disable legacy support
-  add eax, 0x08
-  mov ebx, dword [eax]
-  shr ebx, 8
-  and ebx, 0xFF ;get PCI extend register position
-  PCI_WRITE ebx, (1 << 24)
-
   ret
  ENDIF pci_ehci_if
 
