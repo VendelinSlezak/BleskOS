@@ -9,11 +9,12 @@ mouse_wait dd 0
 
 %macro WRITE_PS2_MOUSE 1
  OUTB PS2_COMMAND_PORT, 0xD4
- OUTB PS2_DATA_PORT, %1
+ mov byte [ps2_command], %1
+ call write_ps2_controller
 %endmacro
 
 %macro READ_PS2_MOUSE 0
- INB PS2_DATA_PORT
+ call read_ps2_controller
 %endmacro
 
 enable_touchpad:
@@ -22,7 +23,6 @@ enable_touchpad:
  ;enable sending packets
  WRITE_PS2_MOUSE 0xF4
  READ_PS2_MOUSE
- WAIT 10 ;wait 100 miliseconds for right enable
  mov dword [mouse_data_pointer], 0
 
  ret
