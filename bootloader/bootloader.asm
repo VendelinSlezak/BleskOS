@@ -2,7 +2,7 @@
 
 ;What this code do:
 ; - enable A20 for acess to all RAM memory
-; - set VESA graphic mode 0x114 what means mode 800x600x16
+; - set VESA graphic mode 800x600x16
 ; - read 128 KB from boot device(must be emulated as hard disk) after bootloader sector - this contains BleskOS code
 ; - load Global Descriptor Table for acces max 4 GB of RAM memory
 ; - enter to protected mode(32 bit processor mode)
@@ -16,6 +16,7 @@ start:
  xor ax, ax
  mov ds, ax
  mov ss, ax
+ mov es, ax
  mov sp, 0x7C00
 
  ;ENABLE A20
@@ -23,19 +24,51 @@ start:
  or al, 0x2
  out 0x92, al
  
- ;SET VESA MODE
- mov ax, 0x4F02
- mov bx, 0x4114
- int 0x10
- ;LOAD VESA INFO
+ ;FIND VESA MODE
  mov ax, 0x7000
  mov es, ax
  mov di, 0
- mov ax, 0x4F01
- mov cx, 0x4114
+ mov cx, 0x100
+ .find_mode:
+  mov word [es:0], 0
+  mov word [es:0x12], 0
+  mov word [es:0x14], 0
+  mov byte [es:0x19], 0
+
+  mov ax, 0x4F01 ;mode info
+  int 10h
+
+  mov bx, word [es:0x00]
+  and bx, 0x91
+  cmp bx, 0x91
+  jne .next_mode
+  cmp word [es:0x12], 800
+  jne .next_mode
+  cmp word [es:0x14], 600
+  jne .next_mode
+  cmp byte [es:0x19], 16
+  jne .next_mode
+
+  jmp .set_vesa_mode ;mode was found
+
+ .next_mode:
+ inc cx
+ cmp cx, 0x150
+ jne .find_mode
+
+ ;mode was not found
+ mov word [0x6000], 0xEE01 ;information for BleskOS
+ jmp .load_bleskos
+
+ ;SET VESA MODE
+ .set_vesa_mode:
+ mov ax, 0x4F02
+ mov bx, cx
+ or bx, 0x4000
  int 0x10
 
  ;READ BLESKOS 128 KB, drive in dl is defined by BIOS
+ .load_bleskos:
  mov ah, 0x42
  mov si, disk_packet1
  int 13h
