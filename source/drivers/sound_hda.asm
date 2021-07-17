@@ -116,9 +116,9 @@ hda_audio_output_numof dd 0
 hda_audio_input_numof dd 0
 
 hda_audio_output_list_pointer dd hda_audio_output_list
-hda_audio_output_list times 256 dd 0
+hda_audio_output_list times 128 dd 0
 hda_audio_input_list_pointer dd hda_audio_input_list
-hda_audio_input_list times 256 dd 0
+hda_audio_input_list times 128 dd 0
 
 hda_data_pointer dd 0
 hda_data_lenght dd 0
@@ -174,7 +174,7 @@ init_sound_card:
  mov eax, dword [hda_response]
  mov dword [hda_codec_id], eax
 
- mov ecx, 256 ;scan 256 nodes
+ mov ecx, 128 ;scan 128 nodes
  .scan_node:
  push ecx
   inc dword [verb_node]
