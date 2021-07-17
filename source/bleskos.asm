@@ -39,6 +39,7 @@ start:
  %include "source/gui/main.asm"
  %include "source/gui/developer_zone.asm"
  %include "source/gui/elements.asm"
+ %include "source/gui/text_mode.asm"
 
  %include "source/programs/dp_hardware_info.asm"
  %include "source/programs/dp_vesa.asm"
@@ -46,6 +47,7 @@ start:
  %include "source/programs/dp_ide.asm"
 
 start_bleskos:
+ call test_graphic_mode
  call init_graphic
  CLEAR_SCREEN 0x0600
  call redraw_screen
