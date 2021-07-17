@@ -112,12 +112,13 @@ hda_response dd 0
 hda_codec_id dd 0
 hda_max_volume dd 0
 hda_volume dd 0 ;range from 0(no volume) to 100(max volume)
-hda_audio_output_list_pointer dd hda_audio_output_list
 hda_audio_output_numof dd 0
-hda_audio_output_list times 32 dd 0
-hda_audio_input_list_pointer dd hda_audio_input_list
 hda_audio_input_numof dd 0
-hda_audio_input_list times 32 dd 0
+
+hda_audio_output_list_pointer dd hda_audio_output_list
+hda_audio_output_list times 256 dd 0
+hda_audio_input_list_pointer dd hda_audio_input_list
+hda_audio_input_list times 256 dd 0
 
 hda_data_pointer dd 0
 hda_data_lenght dd 0
@@ -173,7 +174,7 @@ init_sound_card:
  mov eax, dword [hda_response]
  mov dword [hda_codec_id], eax
 
- mov ecx, 32 ;scan 32 nodes
+ mov ecx, 256 ;scan 256 nodes
  .scan_node:
  push ecx
   inc dword [verb_node]
