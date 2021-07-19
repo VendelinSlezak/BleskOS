@@ -117,7 +117,7 @@ pata_read:
  mov dword [ata_status], ATA_OK
 
  call pata_select_sector
- BASE_OUTB pata_base, 7, 0xC4 ;read command
+ BASE_OUTB pata_base, 7, 0x24 ;read command
  PATA_WAIT 100000
 
  ;read sectors
@@ -142,7 +142,7 @@ pata_write:
  mov dword [ata_status], ATA_OK
 
  call pata_select_sector
- BASE_OUTB pata_base, 7, 0xC5 ;read command
+ BASE_OUTB pata_base, 7, 0x25 ;write command
  PATA_WAIT 100000
 
  ;write sectors
