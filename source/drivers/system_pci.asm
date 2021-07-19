@@ -114,6 +114,15 @@ pci_read_device:
 
  PCI_READ 0x08
  and eax, 0xFFFFFF00 ;class, subclass, progif
+ 
+ IF_E eax, 0x04010000, pci_ac97_if ;AC97
+  PCI_IO_ENABLE_BUSMASTERING
+  PCI_READ_IO_BAR BAR0
+  mov word [ac97_nam_base], ax
+  PCI_READ_IO_BAR BAR1
+  mov word [ac97_nabm_base], ax
+  ret
+ ENDIF pci_ac97_if
 
  IF_E eax, 0x04030000, pci_hda_if ;HD Audio
   PCI_MMIO_ENABLE_BUSMASTERING
