@@ -7,36 +7,57 @@ dp_ide_drive db 0
 dp_ide:
  CLEAR_SCREEN DP_IDE_COLOR
 
- PRINT 'Selected controller:', controller_str, LINE(1), COLUMN(1)
- mov eax, 0
- mov ax, word [pata_base]
- PRINT_HEX eax, LINE(1), COLUMN(22)
+ mov dword [color], BLACK
+ mov dword [cursor_line], LINE(1)
 
- PRINT 'Selected drive: Master', drive_str, LINE(3), COLUMN(1)
+ mov esi, ide_controllers
+ mov ecx, 10
+ .print_table:
+ push ecx
+  mov dword [cursor_column], COLUMN(1)
+  mov eax, dword [esi]
+  mov dword [hex_print_value], eax
+  push esi
+  call print_hex
+  pop esi
 
- .info:
- PRINT 'Type:       Size in MB:', type_str, LINE(5), COLUMN(1)
- mov ax, word [pata_info]
- and ax, 0x80
- cmp ax, 0
- jne .atapi
- PRINT 'ATA', ata_str, LINE(5), COLUMN(7)
- jmp .size
- .atapi:
- PRINT 'ATAPI', atapi_str, LINE(5), COLUMN(7)
- .size:
- mov eax, dword [pata_size]
- mov ebx, 2000
- mov edx, 0
- div ebx ;calculate MB
- PRINT_VAR eax, LINE(5), COLUMN(25)
+  mov dword [cursor_column], COLUMN(12)
+  mov eax, dword [esi+4]
+  mov dword [hex_print_value], eax
+  push esi
+  call print_hex
+  pop esi
 
- PRINT '[a] 0x1F0 [b] 0x170 [c] native first [d] native second', keys_str, LINE(7), COLUMN(1)
+  mov dword [cursor_column], COLUMN(23)
+  mov eax, dword [esi+8]
+  mov dword [hex_print_value], eax
+  push esi
+  call print_hex
+  pop esi
 
- cmp dword [ata_status], ATA_OK
- je .redraw
- PRINT 'Not responding', not_responding, LINE(9), COLUMN(1)
- .redraw:
+  mov dword [cursor_column], COLUMN(34)
+  mov eax, dword [esi+12]
+  mov dword [hex_print_value], eax
+  push esi
+  call print_hex
+  pop esi
+
+  mov dword [cursor_column], COLUMN(45)
+  mov eax, dword [esi+16]
+  mov dword [hex_print_value], eax
+  push esi
+  call print_hex
+  pop esi
+
+  add esi, 20
+  add dword [cursor_line], LINESZ
+ pop ecx
+ dec ecx
+ cmp ecx, 0
+ jne .print_table
+
+ PRINT '[a] Eject cdrom', commands_str, LINE(12), COLUMN(1)
+
  call redraw_screen
 
  .dp_ide_halt:
@@ -47,43 +68,26 @@ dp_ide:
 
   cmp byte [key_code], KEY_A
   je .key_a
-
-  cmp byte [key_code], KEY_B
-  je .key_b
-
-  cmp byte [key_code], KEY_C
-  je .key_c
-
-  cmp byte [key_code], KEY_D
-  je .key_d
  jmp .dp_ide_halt
 
  .key_a:
-  mov word [pata_base], 0x1F0
-  call pata_select_master
-  call pata_detect_drive
- jmp dp_ide
+  mov ax, word [cdrom_base]
+  mov word [atapi_base], ax
 
- .key_b:
-  mov word [pata_base], 0x170
-  call pata_select_master
-  call pata_detect_drive
- jmp dp_ide
+  cmp dword [cdrom_drive], IDE_MASTER
+  je .master
 
- .key_c:
-  mov ax, word [native_ide_controllers]
-  cmp ax, 0
-  je .dp_ide_halt
-  mov word [pata_base], ax
-  call pata_select_master
-  call pata_detect_drive
- jmp dp_ide
+  cmp dword [cdrom_drive], IDE_SLAVE
+  je .slave
 
- .key_d:
-  mov ax, word [native_ide_controllers+20]
-  cmp ax, 0
-  je .dp_ide_halt
-  mov word [pata_base], ax
-  call pata_select_master
-  call pata_detect_drive
- jmp dp_ide
+  jmp .dp_ide_halt
+
+  .master:
+  call atapi_select_master
+  call atapi_eject_drive
+  jmp .dp_ide_halt
+
+  .slave:
+  call atapi_select_slave
+  call atapi_eject_drive
+ jmp .dp_ide_halt
