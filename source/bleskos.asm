@@ -17,6 +17,7 @@ start:
  %include "source/drivers/system_wait.asm"
  %include "source/drivers/system_memory_managment.asm"
 
+ %include "source/drivers/sound_ac97.asm"
  %include "source/drivers/sound_hda.asm"
 
  %include "source/drivers/hardware_ps2_controller.asm"
@@ -62,6 +63,7 @@ start_bleskos:
  PSTR 'Initalizing IDE drives...', bootstr_ide
  call init_ide_devices
  PSTR 'Initalizing sound card...', bootstr_sound_card
+ call init_ac97
  call init_sound_card
  PSTR 'Initalizing PS/2 devices...', bootstr_ps2
  call init_ps2_controller
