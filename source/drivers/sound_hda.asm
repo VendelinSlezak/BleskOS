@@ -52,9 +52,20 @@
  mov dword [ebp], 0x00140000
 %endmacro
 
+%macro HDA_INPUT_STREAM_TURN_ON 0
+ mov ebp, dword [hda_input_stream_port]
+ mov dword [ebp], 0x00140002
+%endmacro
+
 %macro HDA_OUTPUT_STREAM_TURN_ON 0
  mov ebp, dword [hda_output_stream_port]
  mov dword [ebp], 0x00140002
+%endmacro
+
+%macro HDA_INPUT_STREAM_FORMAT 1
+ mov ebp, dword [hda_input_stream_port]
+ add ebp, 0x12
+ mov dword [ebp], %1
 %endmacro
 
 %macro HDA_OUTPUT_STREAM_FORMAT 1
@@ -63,10 +74,28 @@
  mov dword [ebp], %1
 %endmacro
 
+%macro HDA_INPUT_STREAM_LENGHT 1
+ mov ebp, dword [hda_input_stream_port]
+ add ebp, 0x08
+ mov dword [ebp], %1
+%endmacro
+
 %macro HDA_OUTPUT_STREAM_LENGHT 1
  mov ebp, dword [hda_output_stream_port]
  add ebp, 0x08
  mov dword [ebp], %1
+%endmacro
+
+%macro HDA_INPUT_STREAM_SET_BUFFER 0
+ mov ebp, dword [hda_input_stream_port]
+ add ebp, 0x18
+ mov dword [ebp], MEMORY_HDA_BUFFER+0x100
+ add ebp, 0x4
+ mov dword [ebp], 0
+
+ mov ebp, dword [hda_input_stream_port]
+ add ebp, 0x0C
+ mov word [ebp], 1 ;two entries in buffer
 %endmacro
 
 %macro HDA_OUTPUT_STREAM_SET_BUFFER 0
@@ -81,10 +110,28 @@
  mov word [ebp], 1 ;two entries in buffer
 %endmacro
 
+%macro HDA_INPUT_STREAM_POS 0
+ mov ebp, dword [hda_output_stream_port]
+ add ebp, 0x04
+ mov eax, dword [ebp]
+%endmacro
+
 %macro HDA_OUTPUT_STREAM_POS 0
  mov ebp, dword [hda_output_stream_port]
  add ebp, 0x04
  mov eax, dword [ebp]
+%endmacro
+
+%macro HDA_SET_INPUT_BUFFER 2
+ mov dword [MEMORY_HDA_BUFFER+0x100], %1
+ mov dword [MEMORY_HDA_BUFFER+0x104], 0
+ mov dword [MEMORY_HDA_BUFFER+0x108], %2
+ mov dword [MEMORY_HDA_BUFFER+0x10C], 0
+
+ mov dword [MEMORY_HDA_BUFFER+0x110], %1
+ mov dword [MEMORY_HDA_BUFFER+0x114], 0
+ mov dword [MEMORY_HDA_BUFFER+0x118], %2
+ mov dword [MEMORY_HDA_BUFFER+0x11C], 0
 %endmacro
 
 %macro HDA_SET_OUTPUT_BUFFER 2
@@ -118,13 +165,13 @@ hda_pin_output_numof dd 0
 hda_pin_input_numof dd 0
 
 hda_audio_output_list_pointer dd hda_audio_output_list
-hda_audio_output_list times 128 dd 0
 hda_audio_input_list_pointer dd hda_audio_input_list
-hda_audio_input_list times 128 dd 0
-
 hda_pin_output_list_pointer dd hda_pin_output_list
-hda_pin_output_list times 128 dd 0
 hda_pin_input_list_pointer dd hda_pin_input_list
+
+hda_audio_output_list times 128 dd 0
+hda_audio_input_list times 128 dd 0
+hda_pin_output_list times 128 dd 0
 hda_pin_input_list times 128 dd 0
 
 hda_data_pointer dd 0
@@ -133,13 +180,9 @@ hda_data_format dd 0
 
 init_sound_card:
  cmp dword [hda_base], 0
- je .end
+ je codec_find_widgets.end
 
  PSTR 'Sound card: HD Audio', exist_str
- mov eax, dword [hda_base]
- PHEX eax
- HDA_CAPABILITES_READ
- PHEX eax
  
  ;SET OPERATIONAL STATE
  HDA_GCTL_WRITE 0x1
@@ -147,7 +190,7 @@ init_sound_card:
  HDA_GCTL_READ
  and eax, 0x1
  cmp eax, 0x0 ;still in reset, something is wrong
- je .end
+ je codec_find_widgets.end
 
  PSTR 'Card is in operational state', oper_state_str
 
@@ -169,11 +212,24 @@ init_sound_card:
  HDA_TURN_OFF_CORB_RIRB_DMAPOS
  HDA_INPUT_STREAM_TURN_OFF
  HDA_OUTPUT_STREAM_TURN_OFF
+ HDA_INPUT_STREAM_SET_BUFFER
  HDA_OUTPUT_STREAM_SET_BUFFER
  HDA_SET_SSYNC
 
- ;FIND WIDGETS
+ ;FIND WIDGETS IN CODEC 0
  mov dword [verb_codec], 0
+codec_find_widgets:
+ mov dword [hda_audio_output_list_pointer], hda_audio_output_list
+ mov dword [hda_audio_input_list_pointer], hda_audio_input_list
+ mov dword [hda_pin_output_list_pointer], hda_pin_output_list
+ mov dword [hda_pin_input_list_pointer], hda_pin_input_list
+ mov esi, hda_audio_output_list
+ mov ecx, 512
+ .clear:
+  mov dword [esi], 0
+  add esi, 4
+ loop .clear
+
  mov dword [verb_node], 0
  mov dword [verb_verb], 0xF00
  mov dword [verb_command], 0x00
@@ -205,7 +261,6 @@ init_sound_card:
    mov esi, dword [hda_audio_output_list_pointer]
    mov dword [esi], eax
    add dword [hda_audio_output_list_pointer], 4
-   PHEX eax
    jmp .next_cycle
   ENDIF if_audio_output
 
@@ -216,7 +271,6 @@ init_sound_card:
    mov esi, dword [hda_audio_input_list_pointer]
    mov dword [esi], eax
    add dword [hda_audio_input_list_pointer], 4
-   PHEX eax
    jmp .next_cycle
   ENDIF if_audio_input
 
@@ -233,7 +287,6 @@ init_sound_card:
     mov esi, dword [hda_pin_output_list_pointer]
     mov dword [esi], eax
     add dword [hda_pin_output_list_pointer], 4
-    PHEX eax
    ENDIF if_pin_output
 
    mov eax, dword [hda_response]
@@ -245,7 +298,6 @@ init_sound_card:
     mov esi, dword [hda_pin_input_list_pointer]
     mov dword [esi], eax
     add dword [hda_pin_input_list_pointer], 4
-    PHEX eax
    ENDIF if_pin_input
 
    jmp .next_cycle
@@ -261,6 +313,11 @@ init_sound_card:
  mov eax, dword [hda_audio_output_list]
  mov dword [verb_node], eax
  call hda_set_output_node
+
+ ;SET INPUT NODE
+ mov eax, dword [hda_audio_input_list]
+ mov dword [verb_node], eax
+ call hda_set_input_node
 
  .end:
  ret
@@ -345,6 +402,27 @@ hda_set_output_node:
 
  ret
 
+hda_set_input_node:
+ mov dword [verb_verb], 0xF00
+ mov dword [verb_command], 0x12 ;get amplifier info
+ call hda_send_verb
+
+ mov eax, dword [hda_response]
+ and eax, 0xFF
+ push eax
+
+ mov dword [verb_verb], 0x706 ;set stream
+ mov dword [verb_command], 0x10 ;stream 1 channel 1
+ call hda_send_verb
+
+ mov dword [verb_verb], 0x300 ;set volume
+ pop eax
+ or eax, 0x7000
+ mov dword [verb_command], eax ;input volume left and right
+ call hda_send_verb
+
+ ret
+
 hda_set_volume:
  ;calculate from range 0 to 100 to node range
  mov eax, dword [hda_max_volume]
@@ -372,5 +450,21 @@ hda_play_sound:
 
 hda_stop_sound:
  HDA_OUTPUT_STREAM_TURN_OFF
+
+ ret
+
+hda_record_sound:
+ mov eax, dword [hda_data_pointer]
+ mov ebx, dword [hda_data_lenght]
+ mov ecx, dword [hda_data_format]
+ HDA_SET_INPUT_BUFFER eax, ebx
+ HDA_INPUT_STREAM_LENGHT ebx
+ HDA_INPUT_STREAM_FORMAT ecx
+ HDA_INPUT_STREAM_TURN_ON
+
+ ret
+
+hda_stop_recording:
+ HDA_INPUT_STREAM_TURN_OFF
 
  ret
