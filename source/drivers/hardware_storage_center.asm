@@ -1,5 +1,9 @@
 ;BleskOS
 
+%define IDE_MASTER 1
+%define IDE_SLAVE 2
+
+ide_pointer dd native_ide_controllers
 ide_controllers:
 dw 0x1F0, 0x3F4
 dq 0, 0
@@ -8,10 +12,13 @@ dq 0, 0
 native_ide_controllers:
 times 8 dd 0, 0, 0, 0, 0
 
-ide_pointer dd native_ide_controllers
-
 sata_devices_type:
 times 32 dd 0
+
+hard_disk_base dw 0
+hard_disk_drive dd 0
+cdrom_base dw 0
+cdrom_drive dd 0
 
 ata_sector dq 0
 ata_number_of_sectors dw 0
@@ -84,12 +91,54 @@ init_ide_devices:
  cmp ecx, 0
  jne .scan_controller
 
- ;set first controller master drive
- mov word [pata_base], 0x1F0
- OUTB 0x1F6, 0x40 ;master drive
- WAIT 2 ;wait for enable drive
- OUTB 0x3F6, 0x2 ;disable interrupt
- call pata_detect_drive
+ ;FIND HARD DISK AND CDROM BASE AND DRIVE
+ mov esi, ide_controllers
+ mov ecx, 10
+ .find_cdrom:
+  mov ax, word [esi]
+  mov word [cdrom_base], ax
+  mov dword [cdrom_drive], IDE_MASTER
+  cmp dword [esi+4], 0x0000EB14
+  je .cdrom_founded
+
+  mov dword [cdrom_drive], IDE_SLAVE
+  cmp dword [esi+12], 0x0000EB14
+  je .cdrom_founded
+ loop .find_cdrom
+ .cdrom_founded:
+
+ mov esi, ide_controllers
+ mov ecx, 10
+ .find_hard_disk:
+  mov ax, word [esi]
+  mov word [hard_disk_base], ax
+  mov dword [hard_disk_drive], IDE_MASTER
+  cmp dword [esi+4], 0x00000000
+  jne .hard_disk_next_loop
+  cmp dword [esi+8], 0
+  jne .hard_disk_founded
+
+  mov dword [hard_disk_drive], IDE_SLAVE
+  cmp dword [esi+12], 0x00000000
+  jne .hard_disk_next_loop
+  cmp dword [esi+16], 0
+  jne .hard_disk_founded
+
+ .hard_disk_next_loop:
+ loop .find_hard_disk
+ .hard_disk_founded:
+
+ mov eax, 0
+ mov ax, word [hard_disk_base]
+ PHEX eax
+ mov eax, dword [hard_disk_drive]
+ PHEX eax
+
+ mov eax, 0
+ mov ax, word [cdrom_base]
+ PHEX eax
+ mov eax, dword [cdrom_drive]
+ PHEX eax
 
  ret
 
