@@ -107,6 +107,8 @@ init_ide_devices:
   mov dword [cdrom_drive], IDE_SLAVE
   cmp dword [esi+12], 0x0000EB14
   je .cdrom_founded
+  
+  add esi, 20
  loop .find_cdrom
  .cdrom_founded:
 
@@ -127,7 +129,8 @@ init_ide_devices:
   cmp dword [esi+16], 0
   jne .hard_disk_founded
 
- .hard_disk_next_loop:
+  .hard_disk_next_loop:
+  add esi, 20
  loop .find_hard_disk
  .hard_disk_founded:
 
