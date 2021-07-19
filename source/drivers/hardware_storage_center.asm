@@ -1,5 +1,8 @@
 ;BleskOS
 
+%define IDE_OK 1
+%define IDE_ERROR 0
+
 %define IDE_MASTER 1
 %define IDE_SLAVE 2
 
