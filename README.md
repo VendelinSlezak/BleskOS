@@ -6,12 +6,14 @@ Graphic:
 * VESA
 
 Sound:
+* AC97
 * Intel HD Audio (in progress)
 
 Inbuilt hardware:
 * PS/2 keyboard
 * PS/2 mouse
 * Paralel hard disk
+* Paralel CDROM
 * Serial hard disk (in progress)
 
 Filesystems:
