@@ -32,8 +32,7 @@ start:
  %include "source/drivers/filesystem_jus.asm"
  ;;%include "source/drivers/filesystem_fat32.asm"
 
- ;;%include "source/drivers/usb_uhci.asm"
- ;;%include "source/drivers/usb_ehci.asm"
+ %include "source/drivers/usb_ehci.asm"
  %include "source/drivers/usb_center.asm"
 
  %include "source/drivers/network_center.asm"
@@ -69,6 +68,8 @@ start_bleskos:
  PSTR 'Initalizing PS/2 devices...', bootstr_ps2
  call init_ps2_controller
  call enable_touchpad
+ PSTR 'Initalizing USB ports...', bootstr_usb
+ call init_usb_ports
 
  call main_window
 
