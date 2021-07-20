@@ -34,6 +34,8 @@ start:
 
  %include "source/drivers/usb_ehci.asm"
  %include "source/drivers/usb_center.asm"
+ 
+ %include "source/drivers/usb_mass_storage.asm"
 
  %include "source/drivers/network_center.asm"
 
