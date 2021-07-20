@@ -38,6 +38,8 @@ ehci_transfer_length dd 0
 ehci_device_type db 0
 ehci_endpoint_type db 0
 ehci_endpoint_value db 0
+ehci_endpoint_bulk_in db 0
+ehci_endpoint_bulk_out db 0
 
 %macro EHCI_WRITE_CMD 1
  mov ebp, dword [ehci_oper_base]
@@ -120,13 +122,41 @@ ehci_endpoint_value db 0
  mov dword [ebp], eax
 %endmacro
 
-%macro EHCI_CLEAR_LIST 0
- mov eax, MEMORY_EHCI
- mov ecx, 2048
- .clear:
-  mov dword [eax], 0x1
-  add eax, 4
- loop .clear
+%macro EHCI_PARSE_ENDPOINT 1
+ cmp byte [MEMORY_EHCI+0x500+19+%1*7], 0x05
+ jne .not_endpoint_descriptor_%1
+
+ mov eax, 0
+ mov ax, word [MEMORY_EHCI+0x500+20+%1*7]
+ mov bx, ax
+
+ and ax, 0x000F
+ mov byte [ehci_endpoint_value], al
+
+ and bx, 0x0380
+ cmp bx, 0x0200
+ je .bulk_out_%1
+ cmp bx, 0x0280
+ je .bulk_in_%1
+
+ jmp .not_endpoint_descriptor_%1
+
+ .bulk_out_%1:
+ PSTR 'Bulk Out', bulk_out_str_%1
+ mov eax, 0
+ mov al, byte [ehci_endpoint_value]
+ mov byte [ehci_endpoint_bulk_out], al
+ PHEX eax
+ jmp .not_endpoint_descriptor_%1
+
+ .bulk_in_%1:
+ PSTR 'Bulk In', bulk_in_str_%1
+ mov eax, 0
+ mov al, byte [ehci_endpoint_value]
+ mov byte [ehci_endpoint_bulk_in], al
+ PHEX eax
+
+ .not_endpoint_descriptor_%1:
 %endmacro
 
 init_ehci:
@@ -210,14 +240,13 @@ ehci_detect_device:
  and eax, 0x4
  cmp eax, 0x4
  jne .low_speed_device ;device is not enabled
- PSTR 'High Speed Device', ehci_high_speed_device
+ ;high speed device
  call ehci_device_set_address
  call ehci_device_read_configuration
  jmp .done
 
  .low_speed_device:
  EHCI_WRITE_PORT 0x3000 ;pass to companion controller
- PSTR 'Low Speed Device', ehci_low_speed_device
 
  .done:
  ret
@@ -342,6 +371,23 @@ ehci_device_read_configuration:
 
  .mass_storage_device:
  PSTR 'USB Mass Storage', mass_storage_str
+
+ mov esi, usb_msd_bulk_in
+ mov eax, dword [ehci_address]
+ dec eax ;address 1 means port 0
+ add esi, eax
+
+ mov edi, usb_msd_bulk_out
+ mov eax, dword [ehci_address]
+ dec eax ;address 1 means port 0
+ add edi, eax
+
+ EHCI_PARSE_ENDPOINT 0
+ EHCI_PARSE_ENDPOINT 1
+ EHCI_PARSE_ENDPOINT 2
+ EHCI_PARSE_ENDPOINT 3
+
+ .done:
  ret
 
  .unknown_device:
