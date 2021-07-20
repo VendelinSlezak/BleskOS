@@ -22,11 +22,12 @@ Filesystems:
 
 USB controllers:
 * UHCI through legacy USB support
-* EHCI (not available on GitHub now)
+* EHCI
 
 USB devices:
 * USB keyboard
 * USB mouse
+* USB mass storage (in progress)
 
 ### Programs
 Currently nothing, but text editor and graphic editor are on the way.
