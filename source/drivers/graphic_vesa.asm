@@ -1,7 +1,5 @@
 ;BleskOS
 
-;IMPORTANT: we still working on make this code more readable
-
 ;BleskOS use double graphic memory model. It means that in ram memory is area use as video memory. In this memory are write all
 ;graphic. After drawing is done, part of this ram memory is copied into video memory. So user not see any redrawing because to
 ;video memory is show only done thing. Also, reading/writing to ram memory is much faster as reading/writing video memory
@@ -589,7 +587,7 @@ print_var:
  ret
 
 pstr:
- IF_E dword [debug_line], 500, if1
+ IF_E dword [debug_line], 600, if1
   mov dword [debug_line], 0
  ENDIF if1
 
@@ -607,7 +605,7 @@ pstr:
  ret
 
 phex:
- IF_E dword [debug_line], 500, if1
+ IF_E dword [debug_line], 600, if1
   mov dword [debug_line], 0
  ENDIF if1
 
@@ -625,7 +623,7 @@ phex:
  ret
 
 pvar:
- IF_E dword [debug_line], 500, if1
+ IF_E dword [debug_line], 600, if1
   mov dword [debug_line], 0
  ENDIF if1
 
