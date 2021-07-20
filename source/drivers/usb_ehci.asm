@@ -34,6 +34,7 @@ ehci_number_of_ports dd 0
 ehci_address dd 0
 ehci_endpoint dd 0
 ehci_transfer_length dd 0
+ehci_transfer_pointer dd 0
 
 ehci_device_type db 0
 ehci_endpoint_type db 0
@@ -291,7 +292,7 @@ ehci_device_set_address:
   and eax, 0x80
   cmp eax, 0
   je .transfer_is_complete
- cmp dword [ticks], 5
+ cmp dword [ticks], 3
  jl .wait_for_transfer
  PSTR 'EHCI: error with transfer 1', ehci_error_str
 
@@ -352,7 +353,7 @@ ehci_device_read_configuration:
   and eax, 0x80
   cmp eax, 0
   je .transfer_is_complete
- cmp dword [ticks], 5
+ cmp dword [ticks], 3
  jl .wait_for_transfer
  PSTR 'EHCI: error with transfer 2', ehci_error_str
 
@@ -392,4 +393,94 @@ ehci_device_read_configuration:
 
  .unknown_device:
  PSTR 'Unknown USB device', unknown_device_str
+ ret
+
+ehci_transfer_bulk_in:
+ ;queue head
+ mov dword [MEMORY_EHCI+0], MEMORY_EHCI | 0x2
+ mov eax, dword [ehci_endpoint]
+ shl eax, 8
+ or eax, dword [ehci_address]
+ or eax, BULK_TRANSFER
+ mov dword [MEMORY_EHCI+4], eax
+ mov dword [MEMORY_EHCI+8], NO_MULTIPLY
+ mov dword [MEMORY_EHCI+12], 0x0
+ mov dword [MEMORY_EHCI+16], MEMORY_EHCI+0x100 ;pointer to TD
+ mov dword [MEMORY_EHCI+20], 0x0
+ mov dword [MEMORY_EHCI+24], 0x0
+
+ ;IN transfer descriptor
+ mov dword [MEMORY_EHCI+0x100+0], NO_POINTER
+ mov dword [MEMORY_EHCI+0x100+4], NO_POINTER
+ mov eax, dword [ehci_transfer_length]
+ shl eax, 16
+ or eax, IN_PACKET
+ mov dword [MEMORY_EHCI+0x100+8], eax
+ mov eax, dword [ehci_transfer_pointer]
+ mov dword [MEMORY_EHCI+0x100+12], eax ;pointer to buffer
+ EHCI_TD_NO_POINTERS MEMORY_EHCI+0x100
+ and eax, 0xFFFFF000
+ add eax, 0x1000
+ mov dword [MEMORY_EHCI+0x100+16], eax ;pointer to next part of buffer
+
+ ;start transfer
+ EHCI_WRITE_CMD 0x00080021
+ mov dword [ticks], 0
+ .wait_for_transfer:
+  mov eax, dword [MEMORY_EHCI+0x200+8]
+  and eax, 0x80
+  cmp eax, 0
+  je .transfer_is_complete
+ cmp dword [ticks], 3
+ jl .wait_for_transfer
+ PSTR 'EHCI: error with bulk in', ehci_error_str
+
+ .transfer_is_complete:
+ EHCI_WRITE_CMD 0x00080001
+
+ ret
+
+ehci_transfer_bulk_out:
+ ;queue head
+ mov dword [MEMORY_EHCI+0], MEMORY_EHCI | 0x2
+ mov eax, dword [ehci_endpoint]
+ shl eax, 8
+ or eax, dword [ehci_address]
+ or eax, BULK_TRANSFER
+ mov dword [MEMORY_EHCI+4], eax
+ mov dword [MEMORY_EHCI+8], NO_MULTIPLY
+ mov dword [MEMORY_EHCI+12], 0x0
+ mov dword [MEMORY_EHCI+16], MEMORY_EHCI+0x100 ;pointer to TD
+ mov dword [MEMORY_EHCI+20], 0x0
+ mov dword [MEMORY_EHCI+24], 0x0
+
+ ;OUT transfer descriptor
+ mov dword [MEMORY_EHCI+0x100+0], NO_POINTER
+ mov dword [MEMORY_EHCI+0x100+4], NO_POINTER
+ mov eax, dword [ehci_transfer_length]
+ shl eax, 16
+ or eax, OUT_PACKET
+ mov dword [MEMORY_EHCI+0x100+8], eax
+ mov eax, dword [ehci_transfer_pointer]
+ mov dword [MEMORY_EHCI+0x100+12], eax ;pointer to buffer
+ EHCI_TD_NO_POINTERS MEMORY_EHCI+0x100
+ and eax, 0xFFFFF000
+ add eax, 0x1000
+ mov dword [MEMORY_EHCI+0x100+16], eax ;pointer to next part of buffer
+
+ ;start transfer
+ EHCI_WRITE_CMD 0x00080021
+ mov dword [ticks], 0
+ .wait_for_transfer:
+  mov eax, dword [MEMORY_EHCI+0x200+8]
+  and eax, 0x80
+  cmp eax, 0
+  je .transfer_is_complete
+ cmp dword [ticks], 3
+ jl .wait_for_transfer
+ PSTR 'EHCI: error with bulk out', ehci_error_str
+
+ .transfer_is_complete:
+ EHCI_WRITE_CMD 0x00080001
+
  ret
