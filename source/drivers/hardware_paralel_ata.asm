@@ -8,11 +8,11 @@ pata_info times 512 db 0
 pata_size dd 0
 
 pata_select_master:
- BASE_OUTB pata_base, 6, 0x40
+ BASE_OUTB pata_base, 6, 0xE0
  ret
 
 pata_select_slave:
- BASE_OUTB pata_base, 6, 0x50
+ BASE_OUTB pata_base, 6, 0xF0
  ret
 
 pata_detect_drive:
