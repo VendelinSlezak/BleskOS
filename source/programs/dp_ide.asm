@@ -72,7 +72,7 @@ dp_ide:
 
  .key_a:
   mov ax, word [cdrom_base]
-  mov word [atapi_base], ax
+  mov word [patapi_base], ax
 
   cmp dword [cdrom_drive], IDE_MASTER
   je .master
@@ -83,11 +83,11 @@ dp_ide:
   jmp .dp_ide_halt
 
   .master:
-  call atapi_select_master
-  call atapi_eject_drive
+  call patapi_select_master
+  call patapi_eject_drive
   jmp .dp_ide_halt
 
   .slave:
-  call atapi_select_slave
-  call atapi_eject_drive
+  call patapi_select_slave
+  call patapi_eject_drive
  jmp .dp_ide_halt
