@@ -20,8 +20,12 @@ times 32 dd 0
 
 hard_disk_base dw 0
 hard_disk_drive dd 0
+hard_disk_size dd 0
 cdrom_base dw 0
 cdrom_drive dd 0
+
+serial_hard_disk_port dd 0
+serial_cdrom_port dd 0
 
 ata_sector dq 0
 ata_number_of_sectors dw 0
@@ -54,7 +58,7 @@ init_ide_devices:
   je .next_cycle ;no controller
 
   mov dx, word [edi+2]
-  add dx, 2 ;right port
+  add dx, 2 ;command port
   OUTB dx, 0x2 ;disable interrupts
 
   mov ax, word [edi]
@@ -107,7 +111,7 @@ init_ide_devices:
   mov dword [cdrom_drive], IDE_SLAVE
   cmp dword [esi+12], 0x0000EB14
   je .cdrom_founded
-  
+
   add esi, 20
  loop .find_cdrom
  .cdrom_founded:
@@ -118,12 +122,16 @@ init_ide_devices:
   mov ax, word [esi]
   mov word [hard_disk_base], ax
   mov dword [hard_disk_drive], IDE_MASTER
+  mov eax, dword [esi+8]
+  mov dword [hard_disk_size], eax
   cmp dword [esi+4], 0x00000000
   jne .hard_disk_next_loop
   cmp dword [esi+8], 0
   jne .hard_disk_founded
 
   mov dword [hard_disk_drive], IDE_SLAVE
+  mov eax, dword [esi+16]
+  mov dword [hard_disk_size], eax
   cmp dword [esi+12], 0x00000000
   jne .hard_disk_next_loop
   cmp dword [esi+16], 0
@@ -134,18 +142,6 @@ init_ide_devices:
  loop .find_hard_disk
  .hard_disk_founded:
 
- mov eax, 0
- mov ax, word [hard_disk_base]
- PHEX eax
- mov eax, dword [hard_disk_drive]
- PHEX eax
-
- mov eax, 0
- mov ax, word [cdrom_base]
- PHEX eax
- mov eax, dword [cdrom_drive]
- PHEX eax
-
  ret
 
  .init_sata:
@@ -153,33 +149,50 @@ init_ide_devices:
 
  ;disable BIOS
  MMIO_OUTD sata_base, 0x28, 0x2
- WAIT 10
+ WAIT 100
 
  ;enable AHCI
  MMIO_OUTD sata_base, 0x04, 0x80000000
+ WAIT 10
 
  ;read capabilites
  mov esi, sata_devices_type
  mov eax, 0
  mov ecx, 32
  .read_port:
+ push ecx
   call sata_set_port
   MMIO_IND sata_port_base, 0x24
-  mov dword [esi], eax
-  cmp eax, 0
+  mov dword [esi], eax ;save value
+  cmp eax, 0xFFFFFFFF ;port is not present
+  je .next_loop
+  cmp eax, 0 ;no drive attached
   je .next_loop
 
-  MMIO_OUTD sata_port_base, 0x18, 0x0
+  MMIO_OUTD sata_port_base, 0x18, 0x0 ;stop transfers
+  WAIT 10
   MMIO_OUTD sata_port_base, 0x40, 0x0
-  MMIO_OUTD sata_port_base, 0x00, MEMORY_SATA
+  MMIO_OUTD sata_port_base, 0x00, MEMORY_SATA ;pointer to commands
   MMIO_OUTD sata_port_base, 0x04, 0x0
   MMIO_OUTD sata_port_base, 0x08, 0x0
   MMIO_OUTD sata_port_base, 0x0C, 0x0
+  MMIO_OUTD sata_port_base, 0x38, 0x1 ;we will use first command
  .next_loop:
- loop .read_port
+ pop ecx
+ dec ecx
+ cmp ecx, 0
+ jne .read_port
 
+ ;find serial hard disk
+ mov esi, sata_devices_type
  mov eax, 0
- call sata_set_port
+ mov ecx, 32
+ .find_serial_hard_disk:
+  mov dword [serial_hard_disk_port], eax
+  cmp dword [esi], 0x00000101
+  je .serial_hard_disk_found
+ loop .find_serial_hard_disk
+ .serial_hard_disk_found:
 
  ret
 

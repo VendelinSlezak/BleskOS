@@ -12,7 +12,7 @@
 %define NO_POINTER 0x1
 %define NO_MULTIPLY 0x40000000
 %define CONTROL_TRANSFER 0x8040E000
-%define BULK_TRANSFER 0x82006000
+%define BULK_TRANSFER 0x8040E000
 %macro EHCI_TD_NO_POINTERS 1
  mov dword [%1+16], 0
  mov dword [%1+20], 0
@@ -32,15 +32,18 @@ ehci_port_number dd 0
 ehci_number_of_ports dd 0
 
 ehci_address dd 0
-ehci_endpoint dd 0
+ehci_endpoint_bulk_in dd 0
+ehci_endpoint_bulk_out dd 0
 ehci_transfer_length dd 0
 ehci_transfer_pointer dd 0
 
-ehci_device_type db 0
-ehci_endpoint_type db 0
-ehci_endpoint_value db 0
-ehci_endpoint_bulk_in db 0
-ehci_endpoint_bulk_out db 0
+ehci_device_type dd 0
+ehci_endpoint_1_type dw 0
+ehci_endpoint_1_value dw 0
+ehci_endpoint_2_type dw 0
+ehci_endpoint_2_value dw 0
+ehci_endpoint_3_type dw 0
+ehci_endpoint_3_value dw 0
 
 %macro EHCI_WRITE_CMD 1
  mov ebp, dword [ehci_oper_base]
@@ -83,12 +86,6 @@ ehci_endpoint_bulk_out db 0
  mov dword [ebp], %1
 %endmacro
 
-%macro EHCI_CLEAR_FLAG 0
- mov ebp, dword [ehci_oper_base]
- add ebp, 0x40
- mov dword [ebp], 0
-%endmacro
-
 %macro EHCI_SET_FLAG 0
  mov ebp, dword [ehci_oper_base]
  add ebp, 0x40
@@ -115,49 +112,20 @@ ehci_endpoint_bulk_out db 0
  mov dword [ebp], %1
 %endmacro
 
-%macro EHCI_PORT_SET_POWER 1
- mov ebp, dword [ehci_oper_base]
- add ebp, 0x44+%1*4
- mov eax, dword [ebp]
- or eax, 0x1000
- mov dword [ebp], eax
-%endmacro
+%macro EHCI_TRANSFER_QUEUE_HEAD 2
+ EHCI_WRITE_CMD 0x00080021
+ mov dword [ticks], 0
+ .wait_for_transfer:
+  mov eax, dword [%1]
+  and eax, 0x80
+  cmp eax, 0
+  je .transfer_is_complete
+ cmp dword [ticks], %2
+ jl .wait_for_transfer
+ PSTR 'EHCI: error with transfer', ehci_error_str
 
-%macro EHCI_PARSE_ENDPOINT 1
- cmp byte [MEMORY_EHCI+0x500+19+%1*7], 0x05
- jne .not_endpoint_descriptor_%1
-
- mov eax, 0
- mov ax, word [MEMORY_EHCI+0x500+20+%1*7]
- mov bx, ax
-
- and ax, 0x000F
- mov byte [ehci_endpoint_value], al
-
- and bx, 0x0380
- cmp bx, 0x0200
- je .bulk_out_%1
- cmp bx, 0x0280
- je .bulk_in_%1
-
- jmp .not_endpoint_descriptor_%1
-
- .bulk_out_%1:
- PSTR 'Bulk Out', bulk_out_str_%1
- mov eax, 0
- mov al, byte [ehci_endpoint_value]
- mov byte [ehci_endpoint_bulk_out], al
- PHEX eax
- jmp .not_endpoint_descriptor_%1
-
- .bulk_in_%1:
- PSTR 'Bulk In', bulk_in_str_%1
- mov eax, 0
- mov al, byte [ehci_endpoint_value]
- mov byte [ehci_endpoint_bulk_in], al
- PHEX eax
-
- .not_endpoint_descriptor_%1:
+ .transfer_is_complete:
+ EHCI_WRITE_CMD 0x00080001
 %endmacro
 
 init_ehci:
@@ -181,7 +149,7 @@ init_ehci:
  ;initalize controller
  EHCI_WRITE_CMD 0x00080000
  EHCI_WRITE_CMD 0x2 ;reset
- WAIT 5
+ WAIT 50
  EHCI_SET_SEGMENT
  EHCI_DISABLE_INTERRUPTS
  EHCI_SET_FRAME 0
@@ -202,7 +170,7 @@ init_ehci:
 
   add ebp, 0x4 ;next port
  loop .set_power_port
- WAIT 5
+ WAIT 50
 
  ;detect devices
  mov dword [ehci_port_number], 0
@@ -285,19 +253,7 @@ ehci_device_set_address:
  mov byte [MEMORY_EHCI+0x300+2], al
 
  ;start transfer
- EHCI_WRITE_CMD 0x00080021
- mov dword [ticks], 0
- .wait_for_transfer:
-  mov eax, dword [MEMORY_EHCI+0x200+8]
-  and eax, 0x80
-  cmp eax, 0
-  je .transfer_is_complete
- cmp dword [ticks], 3
- jl .wait_for_transfer
- PSTR 'EHCI: error with transfer 1', ehci_error_str
-
- .transfer_is_complete:
- EHCI_WRITE_CMD 0x00080001
+ EHCI_TRANSFER_QUEUE_HEAD MEMORY_EHCI+0x200+8, 20
 
  ret
 
@@ -346,19 +302,7 @@ ehci_device_read_configuration:
  mov dword [MEMORY_EHCI+0x400+4], 0x00400000
 
  ;start transfer
- EHCI_WRITE_CMD 0x00080021
- mov dword [ticks], 0
- .wait_for_transfer:
-  mov eax, dword [MEMORY_EHCI+0x300+8]
-  and eax, 0x80
-  cmp eax, 0
-  je .transfer_is_complete
- cmp dword [ticks], 3
- jl .wait_for_transfer
- PSTR 'EHCI: error with transfer 2', ehci_error_str
-
- .transfer_is_complete:
- EHCI_WRITE_CMD 0x00080001
+ EHCI_TRANSFER_QUEUE_HEAD MEMORY_EHCI+0x300+8, 40
 
  ;parse class, subclass and progif
  mov eax, dword [MEMORY_EHCI+0x500+14]
@@ -373,32 +317,91 @@ ehci_device_read_configuration:
  .mass_storage_device:
  PSTR 'USB Mass Storage', mass_storage_str
 
- mov esi, usb_msd_bulk_in
  mov eax, dword [ehci_address]
- dec eax ;address 1 means port 0
- add esi, eax
+ dec eax ;address 1 is port 0
+ mov ebx, 8 ;msd item have 8 bytes
+ mul ebx
+ add eax, mass_storage_devices
+ mov esi, eax
 
- mov edi, usb_msd_bulk_out
- mov eax, dword [ehci_address]
- dec eax ;address 1 means port 0
- add edi, eax
+ ;parse endpoints
+ mov ax, word [MEMORY_EHCI+0x500+20]
+ mov word [ehci_endpoint_1_type], ax
+ and word [ehci_endpoint_1_type], 0x0380
+ mov word [ehci_endpoint_1_value], ax
+ and word [ehci_endpoint_1_value], 0x000F
 
- EHCI_PARSE_ENDPOINT 0
- EHCI_PARSE_ENDPOINT 1
- EHCI_PARSE_ENDPOINT 2
- EHCI_PARSE_ENDPOINT 3
+ cmp word [ehci_endpoint_1_type], 0x0200
+ jne .if_msd_endpoint_1_bulk_out
+  mov al, byte [ehci_endpoint_1_value]
+  mov byte [esi+2], al
+ .if_msd_endpoint_1_bulk_out:
+
+ cmp word [ehci_endpoint_1_type], 0x0280
+ jne .if_msd_endpoint_1_bulk_in
+  mov al, byte [ehci_endpoint_1_value]
+  mov byte [esi+3], al
+ .if_msd_endpoint_1_bulk_in:
+
+ mov ax, word [MEMORY_EHCI+0x500+27]
+ mov word [ehci_endpoint_2_type], ax
+ and word [ehci_endpoint_2_type], 0x0380
+ mov word [ehci_endpoint_2_value], ax
+ and word [ehci_endpoint_2_value], 0x000F
+
+ cmp word [ehci_endpoint_2_type], 0x0200
+ jne .if_msd_endpoint_2_bulk_out
+  mov al, byte [ehci_endpoint_2_value]
+  mov byte [esi+2], al
+ .if_msd_endpoint_2_bulk_out:
+
+ cmp word [ehci_endpoint_2_type], 0x0280
+ jne .if_msd_endpoint_2_bulk_in
+  mov al, byte [ehci_endpoint_2_value]
+  mov byte [esi+3], al
+ .if_msd_endpoint_2_bulk_in:
+
+ cmp byte [MEMORY_EHCI+0x500+33], 0x05 ;is endpoint present
+ jne .init_msd
+ mov ax, word [MEMORY_EHCI+0x500+34]
+ mov word [ehci_endpoint_3_type], ax
+ and word [ehci_endpoint_3_type], 0x0380
+ mov word [ehci_endpoint_3_value], ax
+ and word [ehci_endpoint_3_value], 0x000F
+
+ cmp word [ehci_endpoint_3_type], 0x0200
+ jne .if_msd_endpoint_3_bulk_out
+  mov al, byte [ehci_endpoint_3_value]
+  mov byte [esi+2], al
+ .if_msd_endpoint_3_bulk_out:
+
+ cmp word [ehci_endpoint_3_type], 0x0280
+ jne .if_msd_endpoint_3_bulk_in
+  mov al, byte [ehci_endpoint_3_value]
+  mov byte [esi+3], al
+ .if_msd_endpoint_3_bulk_in:
+
+ .init_msd:
+ mov word [esi], 0x1 ;uninitalized state
+
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;mov eax, dword [ehci_address]
+ ;dec eax ;address 1 is port 0
+ ;call usb_select_msd
+ ;call usb_msd_init
 
  .done:
  ret
 
  .unknown_device:
+ PHEX eax
  PSTR 'Unknown USB device', unknown_device_str
  ret
 
 ehci_transfer_bulk_in:
  ;queue head
  mov dword [MEMORY_EHCI+0], MEMORY_EHCI | 0x2
- mov eax, dword [ehci_endpoint]
+ mov eax, dword [ehci_endpoint_bulk_in]
  shl eax, 8
  or eax, dword [ehci_address]
  or eax, BULK_TRANSFER
@@ -424,26 +427,17 @@ ehci_transfer_bulk_in:
  mov dword [MEMORY_EHCI+0x100+16], eax ;pointer to next part of buffer
 
  ;start transfer
- EHCI_WRITE_CMD 0x00080021
- mov dword [ticks], 0
- .wait_for_transfer:
-  mov eax, dword [MEMORY_EHCI+0x200+8]
-  and eax, 0x80
-  cmp eax, 0
-  je .transfer_is_complete
- cmp dword [ticks], 3
- jl .wait_for_transfer
- PSTR 'EHCI: error with bulk in', ehci_error_str
+ EHCI_TRANSFER_QUEUE_HEAD MEMORY_EHCI+0x100+8, 40
 
- .transfer_is_complete:
- EHCI_WRITE_CMD 0x00080001
+ mov eax, dword [MEMORY_EHCI+0x100+8]
+ PHEX eax
 
  ret
 
 ehci_transfer_bulk_out:
  ;queue head
  mov dword [MEMORY_EHCI+0], MEMORY_EHCI | 0x2
- mov eax, dword [ehci_endpoint]
+ mov eax, dword [ehci_endpoint_bulk_out]
  shl eax, 8
  or eax, dword [ehci_address]
  or eax, BULK_TRANSFER
@@ -469,18 +463,9 @@ ehci_transfer_bulk_out:
  mov dword [MEMORY_EHCI+0x100+16], eax ;pointer to next part of buffer
 
  ;start transfer
- EHCI_WRITE_CMD 0x00080021
- mov dword [ticks], 0
- .wait_for_transfer:
-  mov eax, dword [MEMORY_EHCI+0x200+8]
-  and eax, 0x80
-  cmp eax, 0
-  je .transfer_is_complete
- cmp dword [ticks], 3
- jl .wait_for_transfer
- PSTR 'EHCI: error with bulk out', ehci_error_str
+ EHCI_TRANSFER_QUEUE_HEAD MEMORY_EHCI+0x100+8, 40
 
- .transfer_is_complete:
- EHCI_WRITE_CMD 0x00080001
+ mov eax, dword [MEMORY_EHCI+0x100+8]
+ PHEX eax
 
  ret

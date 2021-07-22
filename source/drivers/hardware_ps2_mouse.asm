@@ -8,7 +8,8 @@ mouse_data db 0, 0, 0, 0
 mouse_wait dd 0
 
 %macro WRITE_PS2_MOUSE 1
- OUTB PS2_COMMAND_PORT, 0xD4
+ mov byte [ps2_command], 0xD4
+ call write_command_ps2_controller
  mov byte [ps2_command], %1
  call write_ps2_controller
 %endmacro
@@ -40,6 +41,10 @@ mouse_irq:
  mov eax, 0
  INB 0x60
 
+ ;ACK
+ cmp al, 0xFA
+ jmp .done
+
  ;save data
  mov ebx, mouse_data
  add ebx, dword [mouse_data_pointer]
@@ -53,6 +58,7 @@ mouse_irq:
   mov dword [mouse_wait], 0
  ENDIF if_new_cycle
 
+ .done:
  EOI_SLAVE_PIC
  popa
  iret
