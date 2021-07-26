@@ -139,6 +139,13 @@ pci_read_device:
 
  IF_E eax, 0x0C030000, pci_uhci_if ;UHCI
   inc dword [uhci_num_of_ports]
+
+  PCI_WRITE 0xC0, 0x8F00 ;disable legacy support
+  PCI_READ_IO_BAR BAR4
+  mov esi, dword [uhci_pointer]
+  mov word [esi], ax
+  add dword [uhci_pointer], 2
+
   ret
  ENDIF pci_uhci_if
 
