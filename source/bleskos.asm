@@ -36,6 +36,7 @@ start:
  %include "source/drivers/usb_uhci.asm"
  %include "source/drivers/usb_ehci.asm"
  
+ %include "source/drivers/usb_mouse.asm"
  %include "source/drivers/usb_mass_storage.asm"
 
  %include "source/drivers/network_center.asm"
