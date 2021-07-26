@@ -21,11 +21,10 @@ Filesystems:
 * FAT32 (not available on GitHub now)
 
 USB controllers:
-* UHCI through legacy USB support
+* UHCI
 * EHCI
 
 USB devices:
-* USB keyboard
 * USB mouse
 * USB mass storage (in progress)
 
