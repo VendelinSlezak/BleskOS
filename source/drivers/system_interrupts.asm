@@ -23,7 +23,7 @@ idt:
  IDT_ENTRY timer_irq
  IDT_ENTRY keyboard_irq
  times 10 EMPTY_IDT_ENTRY
- IDT_ENTRY mouse_irq
+ IDT_ENTRY ps2_mouse_irq
  times 256-24 EMPTY_IDT_ENTRY
 
 idt_wrap:
