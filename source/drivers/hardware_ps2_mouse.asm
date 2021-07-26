@@ -2,10 +2,10 @@
 
 ;Touchpad is emulating PS/2 mouse
 
-mouse_packet_bytes dd 0
-mouse_data_pointer dd 0
-mouse_data db 0, 0, 0, 0
-mouse_wait dd 0
+ps2_mouse_packet_bytes dd 0
+ps2_mouse_data_pointer dd 0
+ps2_mouse_data dd 0
+ps2_mouse_wait dd 0
 
 %macro WRITE_PS2_MOUSE 1
  mov byte [ps2_command], 0xD4
@@ -19,12 +19,12 @@ mouse_wait dd 0
 %endmacro
 
 enable_touchpad:
- mov dword [mouse_packet_bytes], 3
+ mov dword [ps2_mouse_packet_bytes], 3
 
  ;enable sending packets
  WRITE_PS2_MOUSE 0xF4
  READ_PS2_MOUSE
- mov dword [mouse_data_pointer], 0
+ mov dword [ps2_mouse_data_pointer], 0
 
  ret
 
@@ -35,7 +35,7 @@ disable_touchpad:
 
  ret
 
-mouse_irq:
+ps2_mouse_irq:
  pusha
 
  mov eax, 0
@@ -46,16 +46,16 @@ mouse_irq:
  jmp .done
 
  ;save data
- mov ebx, mouse_data
- add ebx, dword [mouse_data_pointer]
+ mov ebx, ps2_mouse_data
+ add ebx, dword [ps2_mouse_data_pointer]
  mov byte [ebx], al
- inc dword [mouse_data_pointer]
+ inc dword [ps2_mouse_data_pointer]
 
  ;packet is received
- mov eax, dword [mouse_packet_bytes]
- IF_E dword [mouse_data_pointer], eax, if_new_cycle
-  mov dword [mouse_data_pointer], 0
-  mov dword [mouse_wait], 0
+ mov eax, dword [ps2_mouse_packet_bytes]
+ IF_E dword [ps2_mouse_data_pointer], eax, if_new_cycle
+  mov dword [ps2_mouse_data_pointer], 0
+  mov dword [ps2_mouse_wait], 0
  ENDIF if_new_cycle
 
  .done:
@@ -63,12 +63,12 @@ mouse_irq:
  popa
  iret
 
-wait_for_mouse_or_keyboard:
- mov dword [mouse_wait], 1
+wait_for_ps2_mouse_or_keyboard:
+ mov dword [ps2_mouse_wait], 1
  mov dword [keyboard_wait], 1
 
  .wait:
-  cmp dword [mouse_wait], 0
+  cmp dword [ps2_mouse_wait], 0
   je .done
   cmp dword [keyboard_wait], 0
   je .done
