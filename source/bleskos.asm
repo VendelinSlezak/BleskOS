@@ -32,8 +32,9 @@ start:
  %include "source/drivers/filesystem_jus.asm"
  ;;%include "source/drivers/filesystem_fat32.asm"
 
- %include "source/drivers/usb_ehci.asm"
  %include "source/drivers/usb_center.asm"
+ %include "source/drivers/usb_uhci.asm"
+ %include "source/drivers/usb_ehci.asm"
  
  %include "source/drivers/usb_mass_storage.asm"
 
