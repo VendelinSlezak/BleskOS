@@ -16,6 +16,7 @@ start:
  %include "source/drivers/system_interrupts.asm"
  %include "source/drivers/system_wait.asm"
  %include "source/drivers/system_memory_managment.asm"
+ %include "source/drivers/system_acpi.asm"
 
  %include "source/drivers/sound_ac97.asm"
  %include "source/drivers/sound_hda.asm"
@@ -44,6 +45,7 @@ start:
  %include "source/gui/program_library.asm"
  %include "source/gui/main.asm"
  %include "source/gui/developer_zone.asm"
+ %include "source/gui/hardware.asm"
  %include "source/gui/elements.asm"
  %include "source/gui/text_mode.asm"
 
@@ -64,6 +66,8 @@ start_bleskos:
  PSTR 'Scanning PCI...', bootstr_pci
  call scan_pci
  call init_keyboard
+ PSTR 'Reading ACPI table...', bootstr_acpi
+ call read_acpi
  PSTR 'Initalizing IDE drives...', bootstr_ide
  call init_ide_devices
  PSTR 'Initalizing sound card...', bootstr_sound_card
