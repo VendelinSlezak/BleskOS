@@ -43,7 +43,7 @@ ps2_mouse_irq:
 
  ;ACK
  cmp al, 0xFA
- jmp .done
+ je .done
 
  ;save data
  mov ebx, ps2_mouse_data
@@ -52,11 +52,11 @@ ps2_mouse_irq:
  inc dword [ps2_mouse_data_pointer]
 
  ;packet is received
- mov eax, dword [ps2_mouse_packet_bytes]
- IF_E dword [ps2_mouse_data_pointer], eax, if_new_cycle
-  mov dword [ps2_mouse_data_pointer], 0
-  mov dword [ps2_mouse_wait], 0
- ENDIF if_new_cycle
+ cmp dword [ps2_mouse_data_pointer], 3
+ jl .done
+
+ mov dword [ps2_mouse_data_pointer], 0
+ mov dword [ps2_mouse_wait], 0
 
  .done:
  EOI_SLAVE_PIC
