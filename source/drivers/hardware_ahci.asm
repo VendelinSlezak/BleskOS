@@ -33,18 +33,27 @@ init_ahci:
  mov ecx, 5
  .detect_ahci:
  push ecx
-  cmp dword [edi], 0
-  je .done
-
   mov eax, dword [edi]
   mov dword [sata_base], eax
+  push edi
   call ahci_detect_drive
+  pop edi
 
-  add edi, 4
  pop ecx
+ add edi, 4
+ cmp dword [edi], 0
+ je .done
  loop .detect_ahci
 
  .done:
+ mov eax, dword [sata_devices]
+ PHEX eax
+ mov eax, dword [sata_devices+4]
+ PHEX eax
+ mov eax, dword [sata_devices+8]
+ PHEX eax
+ mov eax, dword [sata_devices+12]
+ PHEX eax
  ret
 
 ahci_detect_drive:
@@ -61,8 +70,8 @@ ahci_detect_drive:
  mov eax, 0
  mov ecx, 32
  .read_port:
- push eax
  push ecx
+ push eax
   call ahci_set_port
   MMIO_IND sata_port_base, 0x24 ;signature
   cmp eax, 0xFFFFFFFF ;port is not present
@@ -71,7 +80,7 @@ ahci_detect_drive:
   je .next_loop
 
   ;save drive
-  mov ebx, dword [sata_base]
+  mov ebx, dword [sata_port_base]
   mov dword [esi], ebx
   mov dword [esi+4], eax
 
