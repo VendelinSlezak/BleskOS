@@ -1,5 +1,7 @@
 ;BleskOS
 
+;IMPORTANT: we still working on make this code more readable
+
 ;BleskOS use double graphic memory model. It means that in ram memory is area use as video memory. In this memory are write all
 ;graphic. After drawing is done, part of this ram memory is copied into video memory. So user not see any redrawing because to
 ;video memory is show only done thing. Also, reading/writing to ram memory is much faster as reading/writing video memory
@@ -32,6 +34,7 @@ screen_pointer dd 0
 
 cursor_line dd 0
 cursor_column dd 0
+old_cursor_line dd 0
 first_redraw_line dd 0
 how_much_lines_redraw dd 0
 line_lenght dd 0
@@ -355,130 +358,110 @@ draw_empty_square:
  add dword [cursor_line], eax
  mov eax, dword [square_lenght]
  mov dword [line_lenght], eax
+ inc dword [line_lenght]
  call draw_line
+
+ mov eax, dword [square_height]
+ sub dword [cursor_line], eax
 
  ret
 
 draw_cursor:
- CALCULATE_CURSOR_POSITION
+ ;erase cursor from screen
+ mov eax, dword [old_cursor_line]
+ mov dword [first_redraw_line], eax
+ mov dword [how_much_lines_redraw], 11
+ call redraw_lines_screen
+
+ ;calculate cursor position
+ mov eax, dword [cursor_line]
+ mov ebx, dword [screen_x]
+ mul ebx
+ add eax, dword [cursor_column]
+
+ mov ebx, dword [screen_bpp]
+ mul ebx
+ add eax, dword [screen_lfb] ;write direct to screen
+
+ mov ebx, dword [screen_pixels_per_line]
 
  ;line 1
- mov ebx, dword [screen_pointer]
- mov word [ebx], BLACK
+ mov word [eax], BLACK
 
  ;line 2
- MOVE_CURSOR_NEXT_LINE
- mov ebx, dword [screen_pointer]
- mov word [ebx], BLACK
- add ebx, 2
- mov word [ebx], BLACK
+ add eax, ebx ;next line
+ mov word [eax], BLACK
+ mov word [eax+2], BLACK
 
  ;line 3
- MOVE_CURSOR_NEXT_LINE
- mov ebx, dword [screen_pointer]
- mov word [ebx], BLACK
- add ebx, 2
- mov word [ebx], WHITE
- add ebx, 2
- mov word [ebx], BLACK
+ add eax, ebx ;next line
+ mov word [eax], BLACK
+ mov word [eax+2], WHITE
+ mov word [eax+4], BLACK
 
  ;line 4
- MOVE_CURSOR_NEXT_LINE
- mov ebx, dword [screen_pointer]
- mov word [ebx], BLACK
- add ebx, 2
- mov word [ebx], WHITE
- add ebx, 2
- mov word [ebx], WHITE
- add ebx, 2
- mov word [ebx], BLACK
+ add eax, ebx ;next line
+ mov word [eax], BLACK
+ mov word [eax+2], WHITE
+ mov word [eax+4], WHITE
+ mov word [eax+6], BLACK
 
  ;line 5
- MOVE_CURSOR_NEXT_LINE
- mov ebx, dword [screen_pointer]
- mov word [ebx], BLACK
- add ebx, 2
- mov word [ebx], WHITE
- add ebx, 2
- mov word [ebx], WHITE
- add ebx, 2
- mov word [ebx], WHITE
- add ebx, 2
- mov word [ebx], BLACK
+ add eax, ebx ;next line
+ mov word [eax], BLACK
+ mov word [eax+2], WHITE
+ mov word [eax+4], WHITE
+ mov word [eax+6], WHITE
+ mov word [eax+8], BLACK
 
  ;line 6
- MOVE_CURSOR_NEXT_LINE
- mov ebx, dword [screen_pointer]
- mov word [ebx], BLACK
- add ebx, 2
- mov word [ebx], WHITE
- add ebx, 2
- mov word [ebx], WHITE
- add ebx, 2
- mov word [ebx], WHITE
- add ebx, 2
- mov word [ebx], WHITE
- add ebx, 2
- mov word [ebx], BLACK
+ add eax, ebx ;next line
+ mov word [eax], BLACK
+ mov word [eax+2], WHITE
+ mov word [eax+4], WHITE
+ mov word [eax+6], WHITE
+ mov word [eax+8], WHITE
+ mov word [eax+10], BLACK
 
  ;line 7
- MOVE_CURSOR_NEXT_LINE
- mov ebx, dword [screen_pointer]
- mov word [ebx], BLACK
- add ebx, 2
- mov word [ebx], WHITE
- add ebx, 2
- mov word [ebx], WHITE
- add ebx, 2
- mov word [ebx], WHITE
- add ebx, 2
- mov word [ebx], WHITE
- add ebx, 2
- mov word [ebx], WHITE
- add ebx, 2
- mov word [ebx], BLACK
+ add eax, ebx ;next line
+ mov word [eax], BLACK
+ mov word [eax+2], WHITE
+ mov word [eax+4], WHITE
+ mov word [eax+6], WHITE
+ mov word [eax+8], WHITE
+ mov word [eax+10], WHITE
+ mov word [eax+12], BLACK
 
  ;line 8
- MOVE_CURSOR_NEXT_LINE
- mov ebx, dword [screen_pointer]
- mov word [ebx], BLACK
- add ebx, 2
- mov word [ebx], WHITE
- add ebx, 2
- mov word [ebx], WHITE
- add ebx, 2
- mov word [ebx], WHITE
- add ebx, 2
- mov word [ebx], WHITE
- add ebx, 2
- mov word [ebx], BLACK
+ add eax, ebx ;next line
+ mov word [eax], BLACK
+ mov word [eax+2], WHITE
+ mov word [eax+4], WHITE
+ mov word [eax+6], WHITE
+ mov word [eax+8], WHITE
+ mov word [eax+10], BLACK
 
  ;line 9
- MOVE_CURSOR_NEXT_LINE
- mov ebx, dword [screen_pointer]
- mov word [ebx], BLACK
- add ebx, 2
- mov word [ebx], WHITE
- add ebx, 2
- mov word [ebx], WHITE
- add ebx, 2
- mov word [ebx], BLACK
- add ebx, 2
- mov word [ebx], BLACK
+ add eax, ebx ;next line
+ mov word [eax], BLACK
+ mov word [eax+2], WHITE
+ mov word [eax+4], WHITE
+ mov word [eax+6], BLACK
+ mov word [eax+8], BLACK
 
  ;line 10
- MOVE_CURSOR_NEXT_LINE
- mov ebx, dword [screen_pointer]
- mov word [ebx], BLACK
- add ebx, 2
- mov word [ebx], BLACK
- add ebx, 2
- mov word [ebx], BLACK
+ add eax, ebx ;next line
+ mov word [eax], BLACK
+ mov word [eax+2], BLACK
+ mov word [eax+4], BLACK
 
  ;line 11
- MOVE_CURSOR_NEXT_LINE
- mov ebx, dword [screen_pointer]
- mov word [ebx], BLACK
+ add eax, ebx ;next line
+ mov word [eax], BLACK
+
+ mov eax, dword [cursor_line]
+ mov dword [old_cursor_line], eax
 
  ret
 
