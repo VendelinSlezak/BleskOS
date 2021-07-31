@@ -213,8 +213,9 @@ pci_read_device:
  and ebx, 0xFFFF0000 ;remove progif
  IF_E ebx, 0x01060000, pci_sata_if ;Serial ATA controller
   PCI_READ_MMIO_BAR BAR5
-  mov dword [sata_base], eax
-
+  mov esi, dword [sata_base_pointer]
+  mov dword [esi], eax
+  add dword [sata_base_pointer], 4
   ret
  ENDIF pci_sata_if
 
