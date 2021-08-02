@@ -44,7 +44,7 @@
 
 %macro HDA_INPUT_STREAM_TURN_OFF 0
  mov ebp, dword [hda_input_stream_port]
- mov dword [ebp], 0x00200000
+ mov dword [ebp], 0x00100000
 %endmacro
 
 %macro HDA_OUTPUT_STREAM_TURN_OFF 0
@@ -159,20 +159,11 @@ hda_response dd 0
 hda_codec_id dd 0
 hda_max_volume dd 0
 hda_volume dd 0 ;range from 0(no volume) to 100(max volume)
-hda_audio_output_numof dd 0
-hda_audio_input_numof dd 0
-hda_pin_output_numof dd 0
-hda_pin_input_numof dd 0
-
-hda_audio_output_list_pointer dd hda_audio_output_list
-hda_audio_input_list_pointer dd hda_audio_input_list
-hda_pin_output_list_pointer dd hda_pin_output_list
-hda_pin_input_list_pointer dd hda_pin_input_list
-
-hda_audio_output_list times 128 dd 0
-hda_audio_input_list times 128 dd 0
-hda_pin_output_list times 128 dd 0
-hda_pin_input_list times 128 dd 0
+hda_nodes_list times 128 dw 0
+hda_line_out_node dd 0
+hda_line_in_node dd 0
+hda_speaker_node dd 0
+hda_mic_node dd 0
 
 hda_data_pointer dd 0
 hda_data_lenght dd 0
@@ -180,17 +171,17 @@ hda_data_format dd 0
 
 init_sound_card:
  cmp dword [hda_base], 0
- je codec_find_widgets.end
+ je .done
 
  PSTR 'Sound card: HD Audio', exist_str
  
  ;SET OPERATIONAL STATE
  HDA_GCTL_WRITE 0x1
- WAIT 2
+ WAIT 20
  HDA_GCTL_READ
  and eax, 0x1
  cmp eax, 0x0 ;still in reset, something is wrong
- je codec_find_widgets.end
+ je .done
 
  PSTR 'Card is in operational state', oper_state_str
 
@@ -216,33 +207,48 @@ init_sound_card:
  HDA_OUTPUT_STREAM_SET_BUFFER
  HDA_SET_SSYNC
 
- ;FIND WIDGETS IN CODEC 0
+ ;FIND CODEC
  mov dword [verb_codec], 0
-codec_find_widgets:
- mov dword [hda_audio_output_list_pointer], hda_audio_output_list
- mov dword [hda_audio_input_list_pointer], hda_audio_input_list
- mov dword [hda_pin_output_list_pointer], hda_pin_output_list
- mov dword [hda_pin_input_list_pointer], hda_pin_input_list
- mov esi, hda_audio_output_list
- mov ecx, 512
- .clear:
-  mov dword [esi], 0
-  add esi, 4
- loop .clear
-
  mov dword [verb_node], 0
  mov dword [verb_verb], 0xF00
  mov dword [verb_command], 0x00
- call hda_send_verb
- mov eax, dword [hda_response]
- mov dword [hda_codec_id], eax
+ mov ecx, 16
+ .find_codec:
+  call hda_send_verb
+  cmp dword [hda_response], 0x00000000
+  je .next_codec
+  cmp dword [hda_response], 0xFFFFFFFF
+  je .next_codec
 
+  mov eax, dword [hda_response]
+  mov dword [hda_codec_id], eax
+  jmp codec_find_widgets
+ .next_codec:
+ inc dword [verb_codec]
+ loop .find_codec
+
+ .done:
+ ret ;no codec founded
+
+codec_find_widgets:
+ mov dword [hda_line_out_node], 0
+ mov dword [hda_line_in_node], 0
+ mov dword [hda_speaker_node], 0
+ mov dword [hda_mic_node], 0
+ mov esi, hda_nodes_list
+ mov ecx, 128
+ .clear:
+  mov word [esi], 0
+  add esi, 2
+ loop .clear
+
+ mov esi, hda_nodes_list
  mov ecx, 128 ;scan 128 nodes
  .scan_node:
  push ecx
   inc dword [verb_node]
   mov dword [verb_verb], 0xF00
-  mov dword [verb_command], 0x9 ;widget type
+  mov dword [verb_command], 0x9 ;get widget type
   call hda_send_verb
 
   ;no widget
@@ -254,72 +260,91 @@ codec_find_widgets:
   ;get type of node
   shr dword [hda_response], 20
 
-  IF_E dword [hda_response], 0x0, if_audio_output
-   PSTR 'Audio Output', audio_output_str
-   inc dword [hda_audio_output_numof]
-   mov eax, dword [verb_node]
-   mov esi, dword [hda_audio_output_list_pointer]
-   mov dword [esi], eax
-   add dword [hda_audio_output_list_pointer], 4
-   jmp .next_cycle
-  ENDIF if_audio_output
-
-  IF_E dword [hda_response], 0x1, if_audio_input
-   PSTR 'Audio Input', audio_input_str
-   inc dword [hda_audio_input_numof]
-   mov eax, dword [verb_node]
-   mov esi, dword [hda_audio_input_list_pointer]
-   mov dword [esi], eax
-   add dword [hda_audio_input_list_pointer], 4
-   jmp .next_cycle
-  ENDIF if_audio_input
-
-  IF_E dword [hda_response], 0x4, if_pin_complex
-   mov dword [verb_command], 0xC ;pin type
-   call hda_send_verb
-
-   mov eax, dword [hda_response]
-   and eax, 0x10
-   IF_E eax, 0x10, if_pin_output
-    PSTR 'Pin Output', pin_output_str
-    inc dword [hda_pin_output_numof]
-    mov eax, dword [verb_node]
-    mov esi, dword [hda_pin_output_list_pointer]
-    mov dword [esi], eax
-    add dword [hda_pin_output_list_pointer], 4
-   ENDIF if_pin_output
-
-   mov eax, dword [hda_response]
-   and eax, 0x20
-   IF_E eax, 0x20, if_pin_input
-    PSTR 'Pin Input', pin_input_str
-    inc dword [hda_pin_input_numof]
-    mov eax, dword [verb_node]
-    mov esi, dword [hda_pin_input_list_pointer]
-    mov dword [esi], eax
-    add dword [hda_pin_input_list_pointer], 4
-   ENDIF if_pin_input
-
-   jmp .next_cycle
-  ENDIF if_pin_complex
+  ;write it to list
+  mov al, byte [verb_node]
+  mov byte [esi], al
+  mov al, byte [hda_response]
+  mov byte [esi+1], al
+  add esi, 2
 
  .next_cycle:
  pop ecx
+ loop .scan_node
+
+ ;FIND SPEAKER, MIC, LINE OUT AND LINE IN PINS
+ mov dword [verb_verb], 0xF1C
+ mov dword [verb_command], 0x00
+ mov esi, hda_nodes_list
+ mov ecx, 128
+ .find_pins:
+ push ecx
+  cmp word [esi], 0
+  je .next_loop
+  cmp byte [esi+1], 0x4 ;pin
+  jne .next_loop
+ 
+  mov al, byte [esi]
+  mov byte [verb_node], al
+  call hda_send_verb
+
+  ;get type of pin
+  mov eax, dword [hda_response]
+  shr eax, 20
+  and eax, 0xF
+ 
+  cmp eax, 0x0 ;line out
+  je .line_out
+  cmp eax, 0x8 ;line in
+  je .line_in
+  cmp eax, 0x1 ;speaker
+  je .speaker
+  cmp eax, 0xA ;mic
+  je .mic
+  jmp .next_loop
+
+  .line_out:
+  cmp dword [hda_line_out_node], 0
+  jne .next_loop
+  mov al, byte [esi]
+  mov byte [hda_line_out_node], al
+  jmp .next_loop
+
+  .line_in:
+  cmp dword [hda_line_in_node], 0
+  jne .next_loop
+  mov al, byte [esi]
+  mov byte [hda_line_in_node], al
+  jmp .next_loop
+
+  .speaker:
+  cmp dword [hda_speaker_node], 0
+  jne .next_loop
+  mov al, byte [esi]
+  mov byte [hda_speaker_node], al
+  jmp .next_loop
+
+  .mic:
+  cmp dword [hda_mic_node], 0
+  jne .next_loop
+  mov al, byte [esi]
+  mov byte [hda_mic_node], al
+
+ .next_loop:
+ add esi, 2
+ pop ecx
  dec ecx
  cmp ecx, 0
- jne .scan_node
+ jne .find_pins
 
- ;SET OUTPUT NODE
- mov eax, dword [hda_audio_output_list]
+ mov eax, dword [hda_line_out_node]
  mov dword [verb_node], eax
- call hda_set_output_node
+ call hda_set_output_pin
 
- ;SET INPUT NODE
- mov eax, dword [hda_audio_input_list]
+ mov eax, dword [hda_speaker_node]
  mov dword [verb_node], eax
- call hda_set_input_node
+ call hda_set_output_pin
 
- .end:
+ .done:
  ret
 
 hda_send_verb:
@@ -381,56 +406,92 @@ hda_send_verb:
 
  ret
 
-hda_set_output_node:
+hda_set_output_pin:
+ cmp dword [verb_node], 0
+ je .done
+
+ mov dword [verb_verb], 0x705 ;power
+ mov dword [verb_command], 0x00 ;D0 state
+ call hda_send_verb
+ WAIT 3
+
+ mov dword [verb_verb], 0x707 ;turn pin on
+ mov dword [verb_command], 0x40 ;output pin
+ call hda_send_verb
+
  mov dword [verb_verb], 0xF00
- mov dword [verb_command], 0x12 ;get amplifier info
+ mov dword [verb_command], 0x12 ;get volume info
  call hda_send_verb
-
  mov eax, dword [hda_response]
- and eax, 0xFF
- mov dword [hda_max_volume], eax
-
- mov dword [verb_verb], 0x706 ;set stream
- mov dword [verb_command], 0x10 ;stream 1 channel 1
- call hda_send_verb
-
+ and eax, 0xFF ;max volume
+ or eax, 0xB000 ;output volume left and right
  mov dword [verb_verb], 0x300 ;set volume
- mov eax, dword [hda_max_volume]
- or eax, 0xB000
- mov dword [verb_command], eax ;output volume left and right
- call hda_send_verb
+ mov dword [verb_command], eax
+ call hda_send_verb 
 
- ret
-
-hda_set_input_node:
  mov dword [verb_verb], 0xF00
- mov dword [verb_command], 0x12 ;get amplifier info
+ mov dword [verb_command], 0xE ;connection list length
  call hda_send_verb
+ mov ecx, dword [hda_response]
+ and ecx, 0x7F
 
- mov eax, dword [hda_response]
- and eax, 0xFF
- push eax
+ cmp ecx, 0
+ je .done
+ mov dword [verb_command], 0
+ .find_audio_output:
+ push ecx
+  mov dword [verb_verb], 0xF02
+  call hda_send_verb
 
- mov dword [verb_verb], 0x706 ;set stream
- mov dword [verb_command], 0x10 ;stream 1 channel 1
- call hda_send_verb
+  push dword [verb_node]
+  push dword [verb_command]
 
- mov dword [verb_verb], 0x300 ;set volume
+  mov eax, dword [hda_response]
+  and eax, 0xFF
+  mov dword [verb_node], eax ;get node number
+
+  mov dword [verb_verb], 0xF00
+  mov dword [verb_command], 0x9
+  call hda_send_verb
+  shr dword [hda_response], 20
+  cmp dword [hda_response], 0x0 ;audio output
+  je .init_audio_output
+
+  pop dword [verb_command]
+  inc dword [verb_command] ;next entry
+  pop dword [verb_node]
+ pop ecx
+ loop .find_audio_output
+ jmp .done
+
+ .init_audio_output:
  pop eax
- or eax, 0x7000
- mov dword [verb_command], eax ;input volume left and right
+ pop eax
+ pop eax
+
+ mov dword [verb_verb], 0x706 ;set stream
+ mov dword [verb_command], 0x10 ;stream 1 channel 1
  call hda_send_verb
 
+ mov dword [hda_volume], 50
+ call hda_set_volume
+
+ .done:
  ret
 
 hda_set_volume:
+ mov dword [verb_verb], 0xF00
+ mov dword [verb_command], 0x12 ;get amplifier info
+ call hda_send_verb
+
  ;calculate from range 0 to 100 to node range
- mov eax, dword [hda_max_volume]
+ mov eax, dword [hda_response]
+ and eax, 0xFF ;max volume
  mov ebx, dword [hda_volume]
  mul ebx
  mov ebx, 100
  div ebx
- or eax, 0xB000
+ or eax, 0xB000 ;output right and left
  mov dword [verb_verb], 0x300
  mov dword [verb_command], eax
  call hda_send_verb
