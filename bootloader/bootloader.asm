@@ -42,19 +42,23 @@ start:
   and bx, 0x91
   cmp bx, 0x91
   jne .next_mode
-  cmp word [es:0x12], 800
-  jne .next_mode
-  cmp word [es:0x14], 600
-  jne .next_mode
   cmp byte [es:0x19], 16
   jne .next_mode
+  mov bx, word [vesa_last_mode_x]
+  cmp bx, word [es:12]
+  jg .next_mode
 
-  jmp .set_vesa_mode ;mode was found
+  mov word [vesa_mode_number], cx
+  mov bx, word [es:12]
+  mov word [vesa_last_mode_x], bx
 
  .next_mode:
  inc cx
  cmp cx, 0x150
  jne .find_mode
+
+ cmp word [vesa_mode_number], 0
+ jne .set_vesa_mode
 
  ;mode was not found
  mov word [0x6000], 0xEE01 ;information for BleskOS
@@ -62,8 +66,13 @@ start:
 
  ;SET VESA MODE
  .set_vesa_mode:
+ mov ax, 0x4F01
+ mov cx, word [vesa_mode_number]
+ mov di, 0
+ int 10h
+
  mov ax, 0x4F02
- mov bx, cx
+ mov bx, word [vesa_mode_number]
  or bx, 0x4000
  int 0x10
 
@@ -132,6 +141,9 @@ start:
  disk_packet4:
   dw 0x0010, 64, 0x8000, 0x2000
   dq 193
+
+ vesa_mode_number dw 0
+ vesa_last_mode_x dw 0
 
 times 510-($-$$) db 0
 dw 0xAA55
