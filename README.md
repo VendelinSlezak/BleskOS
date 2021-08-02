@@ -14,7 +14,6 @@ Inbuilt hardware:
 * PS/2 mouse
 * Paralel hard disk
 * Paralel CDROM
-* Serial hard disk (in progress)
 
 Filesystems:
 * JUS
