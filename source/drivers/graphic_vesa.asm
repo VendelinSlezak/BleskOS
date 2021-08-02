@@ -1,7 +1,5 @@
 ;BleskOS
 
-;IMPORTANT: we still working on make this code more readable
-
 ;BleskOS use double graphic memory model. It means that in ram memory is area use as video memory. In this memory are write all
 ;graphic. After drawing is done, part of this ram memory is copied into video memory. So user not see any redrawing because to
 ;video memory is show only done thing. Also, reading/writing to ram memory is much faster as reading/writing video memory
@@ -30,11 +28,14 @@ screen_bites_per_pixel dd 0
 screen_bpp dd 0
 screen_all_pixels dd 0
 screen_pixels_per_line dd 0
+screen_times_to_redraw dd 0
 screen_pointer dd 0
 
 cursor_line dd 0
 cursor_column dd 0
 old_cursor_line dd 0
+old_cursor_column dd 0
+old_cursor_data times 100 dw 0
 first_redraw_line dd 0
 how_much_lines_redraw dd 0
 line_lenght dd 0
@@ -139,7 +140,7 @@ debug_line dd 0
 
 %macro SEPARATE_DIGIT_PRINT_VAR 1
  mov ebx, 10
- mov edx, 0 ;need for divine
+ mov edx, 0 ;need for divide
  div ebx
  add dl, '0' ;convert to char
  mov byte [var_string+%1], dl
@@ -242,13 +243,20 @@ init_graphic:
  mul ebx
  mov dword [screen_all_pixels], eax
 
+ ;calculate times to redraw
+ mov eax, dword [screen_all_pixels]
+ mov ebx, 2
+ mov edx, 0
+ div ebx
+ inc eax
+ mov dword [screen_times_to_redraw], eax
+
  ret
 
 redraw_screen:
  mov eax, MEMORY_RAM_SCREEN
  mov ebx, dword [screen_lfb]
- ;;mov ecx, dword [screen_all_pixels] ;for any mode
- mov ecx, 480000 ;for 800x600x16 mode
+ mov ecx, dword [screen_times_to_redraw]
 
  .redraw_screen_loop:
   mov edx, dword [eax]
@@ -367,23 +375,49 @@ draw_empty_square:
  ret
 
 draw_cursor:
+ CALCULATE_CURSOR_POSITION
+ push dword [cursor_column]
+ push dword [cursor_line]
+ push eax ;screen pointer
+ push eax ;screen pointer
+
  ;erase cursor from screen
  mov eax, dword [old_cursor_line]
- mov dword [first_redraw_line], eax
- mov dword [how_much_lines_redraw], 11
- call redraw_lines_screen
-
- ;calculate cursor position
- mov eax, dword [cursor_line]
- mov ebx, dword [screen_x]
- mul ebx
- add eax, dword [cursor_column]
-
- mov ebx, dword [screen_bpp]
- mul ebx
- add eax, dword [screen_lfb] ;write direct to screen
-
+ mov dword [cursor_line], eax
+ mov eax, dword [old_cursor_column]
+ mov dword [cursor_column], eax
+ CALCULATE_CURSOR_POSITION
  mov ebx, dword [screen_pixels_per_line]
+ mov esi, old_cursor_data
+
+ FOR 11, erase_cursor
+  FOR 10, erase_cursor_line
+   mov dx, word [esi]
+   mov word [eax], dx
+   add esi, 2
+   add eax, 2
+  ENDFOR erase_cursor_line
+  sub eax, 20 ;cursor length
+  add eax, ebx ;next line
+ ENDFOR erase_cursor
+
+ ;read cursor
+ pop eax ;screen pointer
+ mov esi, old_cursor_data
+
+ FOR 11, read_cursor_bg
+  FOR 10, read_cursor_bg_line
+   mov dx, word [eax]
+   mov word [esi], dx
+   add esi, 2
+   add eax, 2
+  ENDFOR read_cursor_bg_line
+  sub eax, 20 ;cursor length
+  add eax, ebx ;next line
+ ENDFOR read_cursor_bg
+
+ ;write cursor to screen
+ pop eax ;screen pointer
 
  ;line 1
  mov word [eax], BLACK
@@ -460,8 +494,29 @@ draw_cursor:
  add eax, ebx ;next line
  mov word [eax], BLACK
 
- mov eax, dword [cursor_line]
+ ;update values
+ pop eax
  mov dword [old_cursor_line], eax
+ pop eax
+ mov dword [old_cursor_column], eax
+
+ ret
+
+read_cursor_bg:
+ CALCULATE_CURSOR_POSITION
+ mov ebx, dword [screen_pixels_per_line]
+ mov esi, old_cursor_data
+
+ FOR 11, read_cursor_bg
+  FOR 10, read_cursor_bg_line
+   mov dx, word [eax]
+   mov word [esi], dx
+   add esi, 2
+   add eax, 2
+  ENDFOR read_cursor_bg_line
+  sub eax, 20 ;cursor length
+  add eax, ebx ;next line
+ ENDFOR read_cursor_bg
 
  ret
 
