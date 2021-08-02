@@ -30,7 +30,7 @@ main_window:
   call wait_for_keyboard
 
   cmp byte [key_code], KEY_F1
-  je hardware_zone
+  je hardware_centrum
 
   cmp byte [key_code], KEY_F2
   je developer_zone
