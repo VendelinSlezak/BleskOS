@@ -69,7 +69,7 @@ start_bleskos:
  PSTR 'Reading ACPI table...', bootstr_acpi
  call read_acpi
  PSTR 'Initalizing IDE drives...', bootstr_ide
- call init_ide_devices
+ call init_ide
  PSTR 'Initalizing sound card...', bootstr_sound_card
  call init_ac97
  call init_sound_card
