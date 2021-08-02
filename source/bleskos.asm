@@ -45,7 +45,7 @@ start:
  %include "source/gui/program_library.asm"
  %include "source/gui/main.asm"
  %include "source/gui/developer_zone.asm"
- %include "source/gui/hardware.asm"
+ %include "source/gui/hardware_centrum.asm"
  %include "source/gui/elements.asm"
  %include "source/gui/text_mode.asm"
 
