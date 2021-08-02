@@ -26,6 +26,7 @@ start:
  %include "source/drivers/hardware_ps2_mouse.asm"
 
  %include "source/drivers/hardware_storage_center.asm"
+ %include "source/drivers/hardware_ide.asm"
  %include "source/drivers/hardware_paralel_ata.asm"
  %include "source/drivers/hardware_paralel_atapi.asm"
 
