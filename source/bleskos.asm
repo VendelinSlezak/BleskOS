@@ -53,6 +53,8 @@ start:
  %include "source/programs/dp_vesa.asm"
  %include "source/programs/dp_intel_hd_audio.asm"
  %include "source/programs/dp_ide.asm"
+ %include "source/programs/dp_mouse.asm"
+ %include "source/programs/dp_acpi.asm"
 
 start_bleskos:
  call init_graphic
