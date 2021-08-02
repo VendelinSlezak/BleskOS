@@ -13,16 +13,43 @@ org 0x7C00
 bits 16
 
 start:
+ jmp .code
+ times 0x3E db 0 ;BPB
+ .code:
  xor ax, ax
  mov ds, ax
  mov ss, ax
  mov es, ax
  mov sp, 0x7C00
 
+ ;IF NOT EMULATED AS HARD DISK
+ cmp dl, 0
+ je .error_1
+ cmp dl, 1
+ je .error_1
+
  ;ENABLE A20
  in al, 0x92
  or al, 0x2
  out 0x92, al
+
+ ;READ BLESKOS 128 KB, drive in dl is defined by BIOS
+ mov ah, 0x42
+ mov si, disk_packet1
+ int 13h
+ jc .error_2
+ mov ah, 0x42
+ mov si, disk_packet2
+ int 13h
+ jc .error_2
+ mov ah, 0x42
+ mov si, disk_packet3
+ int 13h
+ jc .error_2
+ mov ah, 0x42
+ mov si, disk_packet4
+ int 13h
+ jc .error_2
  
  ;FIND VESA MODE
  mov ax, 0x7000
@@ -60,9 +87,8 @@ start:
  cmp word [vesa_mode_number], 0
  jne .set_vesa_mode
 
- ;mode was not found
- mov word [0x6000], 0xEE01 ;information for BleskOS
- jmp .load_bleskos
+ ;mode was not founded
+ jmp .error_3
 
  ;SET VESA MODE
  .set_vesa_mode:
@@ -75,23 +101,39 @@ start:
  mov bx, word [vesa_mode_number]
  or bx, 0x4000
  int 0x10
+ jmp .enter_protected_mode
 
- ;READ BLESKOS 128 KB, drive in dl is defined by BIOS
- .load_bleskos:
- mov ah, 0x42
- mov si, disk_packet1
- int 13h
- mov ah, 0x42
- mov si, disk_packet2
- int 13h
- mov ah, 0x42
- mov si, disk_packet3
- int 13h
- mov ah, 0x42
- mov si, disk_packet4
- int 13h
+ ;ERRORS
+ .error_1:
+  mov ah, 0x0E
+  mov al, 'E'
+  int 10h
+  mov al, '1'
+  int 10h
+  jmp .halt
+
+ .error_2:
+  mov ah, 0x0E
+  mov al, 'E'
+  int 10h
+  mov al, '2'
+  int 10h
+  jmp .halt
+
+ .error_3:
+  mov ah, 0x0E
+  mov al, 'E'
+  int 10h
+  mov al, '3'
+  int 10h
+
+ ;HALT
+ .halt:
+  hlt
+ jmp .halt
 
  ;ENTER PROTECTED MODE
+ .enter_protected_mode:
  cli
  lgdt [gdt_wrap]
  mov eax, cr0
