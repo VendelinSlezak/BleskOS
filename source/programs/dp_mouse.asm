@@ -2,6 +2,10 @@
 
 %define DP_MOUSE_COLOR 0xF580
 
+dp_cursor_line dd 0
+dp_cursor_column dd 0
+dp_now_mouse_data dd 0
+
 dp_mouse:
  ;orange background
  CLEAR_SCREEN DP_MOUSE_COLOR
@@ -9,36 +13,27 @@ dp_mouse:
 
  ;text
  .draw:
- DRAW_SQUARE LINE(1), COLUMN(1), COLUMNSZ*27, LINESZ*5, DP_MOUSE_COLOR
+ mov dword [cursor_line], LINE(1)
+ mov dword [cursor_column], COLUMN(1)
+ mov dword [square_lenght], 100
+ mov dword [square_height], 10
+ mov dword [color], DP_MOUSE_COLOR
+ call draw_square
 
- PRINT 'Mouse x:', dz_mouse_str1, LINE(1), COLUMN(1)
- mov eax, 0
- mov al, byte [mouse_data+1]
- PRINT_HEX eax, LINE(1), COLUMN(10)
+ mov eax, dword [usb_mouse_data]
+ mov dword [hex_print_value], eax
+ mov dword [color], BLACK
+ call print_hex
 
- PRINT 'Mouse y:', dz_mouse_str2, LINE(3), COLUMN(1)
- mov eax, 0
- mov al, byte [mouse_data+2]
- PRINT_HEX eax, LINE(3), COLUMN(10)
-
- PRINT 'Mouse button:', dz_mouse_str3, LINE(5), COLUMN(1)
- mov al, byte [mouse_data]
- and al, 0x7
- IF_E al, 0x1, if_left_button
-  PRINT 'LEFT BUTTON', dz_mouse_left, LINE(5), COLUMN(15)
- ENDIF if_left_button
- IF_E al, 0x2, if_right_button
-  PRINT 'RIGHT BUTTON', dz_mouse_right, LINE(5), COLUMN(15)
- ENDIF if_right_button
- IF_E al, 0x4, if_middle_button
-  PRINT 'MIDDLE BUTTON', dz_mouse_middle, LINE(5), COLUMN(15)
- ENDIF if_middle_button
-
- REDRAW_LINES_SCREEN LINE(1), LINESZ*5
+ REDRAW_LINES_SCREEN LINE(1), LINESZ
 
  .mouse_halt:
-  call wait_for_mouse_or_keyboard
+  call wait_for_usb_mouse
 
   cmp byte [key_code], KEY_ESC
   je developer_zone
+
+  cmp dword [usb_mouse_data], 0
+  je .mouse_halt
  jmp .draw
+
