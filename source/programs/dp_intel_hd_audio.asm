@@ -8,15 +8,23 @@ dp_hda:
  CLEAR_SCREEN DEVELOPER_ZONE_COLOR
 
  ;text
- PRINT 'Intel HD Audio', dz_hda_up_str, LINE(1), COLUMN(1)
- PRINT 'Audio Output widgets', dz_hda_aowidgets_str, LINE(3), COLUMN(1)
- PRINT 'Number of widgets:', dz_hda_ao_numof_str, LINE(5), COLUMN(1)
- mov eax, dword [hda_audio_output_numof]
- PRINT_VAR eax, LINE(5), COLUMN(21)
- PRINT 'Selected widget:', dz_hda_ao_selected_str, LINE(7), COLUMN(1)
- mov eax, dword [dp_hda_selected_output]
- PRINT_VAR eax, LINE(7), COLUMN(19)
- PRINT '[arrow up/down] +1/-1', dz_hda_ao_keys_str, LINE(9), COLUMN(1)
+ PRINT 'Line Out:', line_out_str, LINE(1), COLUMN(1)
+ mov eax, dword [hda_line_out_node]
+ PRINT_VAR eax, LINE(1), COLUMN(11)
+
+ PRINT 'Line In:', line_in_str, LINE(3), COLUMN(1)
+ mov eax, dword [hda_line_in_node]
+ PRINT_VAR eax, LINE(3), COLUMN(10)
+
+ PRINT 'Speaker:', speaker_str, LINE(5), COLUMN(1)
+ mov eax, dword [hda_speaker_node]
+ PRINT_VAR eax, LINE(5), COLUMN(10)
+
+ PRINT 'Microphone:', mic_str, LINE(7), COLUMN(1)
+ mov eax, dword [hda_mic_node]
+ PRINT_VAR eax, LINE(7), COLUMN(13)
+
+ PRINT '[a] codec 0 [b] codec 1', commands_str, LINE(9), COLUMN(1)
 
  call redraw_screen
 
@@ -26,54 +34,19 @@ dp_hda:
   cmp byte [key_code], KEY_ESC
   je developer_zone
 
-  cmp byte [key_code], KEY_UP
-  je .key_up
+  cmp byte [key_code], KEY_A
+  je .key_a
 
-  cmp byte [key_code], KEY_DOWN
-  je .key_down
+  cmp byte [key_code], KEY_B
+  je .key_b
  jmp .hda_halt
 
- .key_up:
-  mov eax, dword [hda_audio_output_numof]
-  cmp eax, dword [dp_hda_selected_output]
-  je .hda_halt
+ .key_a:
+  mov dword [verb_codec], 0
+  call codec_find_widgets
+ jmp dp_hda
 
-  inc dword [dp_hda_selected_output]
-  mov eax, dword [dp_hda_selected_output]
-  dec eax
-  mov ebx, 4
-  mul ebx
-
-  mov ecx, hda_audio_output_list
-  add ecx, eax
-  mov ebx, dword [ecx]
-  mov dword [verb_node], ebx
-  call hda_set_output_node
-
-  DRAW_SQUARE LINE(7), COLUMN(19), COLUMNSZ*2, LINESZ, DEVELOPER_ZONE_COLOR
-  mov eax, dword [dp_hda_selected_output]
-  PRINT_VAR eax, LINE(7), COLUMN(19)
-  REDRAW_LINES_SCREEN LINE(7), LINESZ
- jmp .hda_halt
-
- .key_down:
-  cmp dword [dp_hda_selected_output], 1
-  je .hda_halt
-
-  dec dword [dp_hda_selected_output]
-  mov eax, dword [dp_hda_selected_output]
-  dec eax
-  mov ebx, 4
-  mul ebx
-
-  mov ecx, hda_audio_output_list
-  add ecx, eax
-  mov ebx, dword [ecx]
-  mov dword [verb_node], ebx
-  call hda_set_output_node
-
-  DRAW_SQUARE LINE(7), COLUMN(19), COLUMNSZ*2, LINESZ, DEVELOPER_ZONE_COLOR
-  mov eax, dword [dp_hda_selected_output]
-  PRINT_VAR eax, LINE(7), COLUMN(19)
-  REDRAW_LINES_SCREEN LINE(7), LINESZ
- jmp .hda_halt
+ .key_b:
+  mov dword [verb_codec], 1
+  call codec_find_widgets
+ jmp dp_hda
