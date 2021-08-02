@@ -17,6 +17,7 @@ start:
  %include "source/drivers/system_wait.asm"
  %include "source/drivers/system_memory_managment.asm"
  %include "source/drivers/system_acpi.asm"
+ %include "source/drivers/system_time.asm"
 
  %include "source/drivers/sound_ac97.asm"
  %include "source/drivers/sound_hda.asm"
