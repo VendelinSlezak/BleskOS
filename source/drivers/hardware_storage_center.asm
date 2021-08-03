@@ -14,6 +14,8 @@
  call write_hdd
 %endmacro
 
+serial_ata_ahci_enabled dd 0
+
 read_hdd:
  call pata_read
  ret
