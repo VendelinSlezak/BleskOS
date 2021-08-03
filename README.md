@@ -32,3 +32,11 @@ Currently nothing, but text editor and graphic editor are on the way.
 
 ## How to build
 BleskOS is completly written in NASM. You should use last version 2.1
+
+## Booting
+If BleskOS do not start, bootloader report what happens.
+| Error | Description | Solution |
+----------------------------------
+|  E1   | Error while reading from CDROM | Try to boot from USB drive |
+|  E2   | Error while reading from hard disk | Write BleskOS to USB drive one more time |
+|  E3   | Usable graphic mode was not founded | Use another computer |
