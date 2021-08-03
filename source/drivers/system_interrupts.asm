@@ -10,12 +10,15 @@
 %endmacro
 
 %macro EOI_MASTER_PIC 0
- OUTB 0x20, 0x20
+ mov al, 0x20
+ out 0x20, al
 %endmacro
 
 %macro EOI_SLAVE_PIC 0
- OUTB 0xA0, 0x20
- OUTB 0x20, 0x20
+ mov al, 0x20
+ out 0xA0, al
+ mov al, 0x20
+ out 0x20, al
 %endmacro
 
 idt:
