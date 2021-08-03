@@ -3,7 +3,7 @@
 ;What this code do:
 ; - enable A20 for acess to all RAM memory
 ; - set VESA graphic mode 800x600x16
-; - read 128 KB from boot device(must be emulated as hard disk) after bootloader sector - this contains BleskOS code
+; - read 128 KB from boot device after bootloader sector - this contains BleskOS code
 ; - load Global Descriptor Table for acces max 4 GB of RAM memory
 ; - enter to protected mode(32 bit processor mode)
 ; - start executing of BleskOS code, whose is loaded in memory 0x10000
@@ -14,7 +14,7 @@ bits 16
 
 start:
  jmp .code
- times 0x3E db 0 ;BPB
+ times 0x3E db 0
  .code:
  xor ax, ax
  mov ds, ax
@@ -22,36 +22,56 @@ start:
  mov es, ax
  mov sp, 0x7C00
 
- ;IF NOT EMULATED AS HARD DISK
- cmp dl, 0
- je .error_1
- cmp dl, 1
- je .error_1
-
  ;ENABLE A20
  in al, 0x92
  or al, 0x2
  out 0x92, al
 
- ;READ BLESKOS 128 KB, drive in dl is defined by BIOS
+ ;DETECT TYPE OF DRIVE
+ cmp dl, 0
+ je .read_floppy
+
+ ;READ BLESKOS 128 KB FROM HARD DISK
  mov ah, 0x42
  mov si, disk_packet1
  int 13h
- jc .error_2
+ jc .error_1
  mov ah, 0x42
  mov si, disk_packet2
  int 13h
- jc .error_2
+ jc .error_1
  mov ah, 0x42
  mov si, disk_packet3
  int 13h
- jc .error_2
+ jc .error_1
  mov ah, 0x42
  mov si, disk_packet4
  int 13h
+ jc .error_1
+ jmp .find_vesa_mode
+
+ ;READ BLESKOS 64 KB FROM FLOPPY
+ .read_floppy:
+ mov ax, 0x1000
+ mov es, ax
+ mov ah, 0x2
+ mov al, 72 ;num of sectors
+ mov bx, 0
+ mov ch, 0 ;cylinder
+ mov dh, 0 ;head
+ mov cl, 2 ;sector
+ int 13h
  jc .error_2
- 
+
+ mov al, 56 ;to end of segment
+ mov bx, 72*512
+ mov ch, 2 ;cylinder
+ mov cl, 2 ;sector
+ int 13h
+ jc .error_2
+
  ;FIND VESA MODE
+ .find_vesa_mode:
  mov ax, 0x7000
  mov es, ax
  mov di, 0
