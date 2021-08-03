@@ -208,6 +208,17 @@ pci_read_device:
 
   ret
  ENDIF pci_ide_if
+ 
+ mov ebx, eax
+ and ebx, 0xFFFF0000 ;remove progif
+ IF_E ebx, 0x01060000, pci_serial_ata_if ;Serial ATA
+  PCI_READ_MMIO_BAR BAR5
+  mov ebx, dword [eax]
+  shr ebx, 18 ;AHCI only bit
+  and ebx, 0x1
+  mov dword [serial_ata_ahci_enabled], ebx
+  mov dword [eax+4], 0x0 ;try to disable ahci
+ ENDIF pci_serial_ata_if
 
  PCI_SET_IRQ 3 ;for all other devices
 
