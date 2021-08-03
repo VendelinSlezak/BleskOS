@@ -37,7 +37,8 @@ disable_touchpad:
  ret
 
 ps2_mouse_irq:
- pusha
+ push eax
+ push ebx
 
  in al, 0x60
 
@@ -59,5 +60,6 @@ ps2_mouse_irq:
 
  .done:
  EOI_SLAVE_PIC
- popa
+ pop ebx
+ pop eax
  iret
