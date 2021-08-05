@@ -3,17 +3,16 @@
 ;This macros make other code more readable
 
 %define MEMORY_RAM_SCREEN 0x00100000
-%define MEMORY_JUS_BNF 0x00200000
-%define MEMORY_FILE_BLOCK_NUMBERS 0x00300000
-%define MEMORY_ROOT_DIR 0x00400000
-%define MEMORY_HDA_BUFFER 0x00500000
-%define MEMORY_HDA_CORB 0x00510000
-%define MEMORY_HDA_RIRB 0x00520000
-%define MEMORY_HDA_DMAPOS 0x00530000
-%define MEMORY_AC97_BUFFER 0x00540000
-%define MEMORY_UHCI 0x00600000
-%define MEMORY_EHCI 0x00700000
-%define MEMORY_SATA 0x00800000
+%define MEMORY_JUS_BN 0x00400000
+%define MEMORY_FILE_DESCRIPTOR 0x00500000
+%define MEMORY_FOLDER 0x00600000
+%define MEMORY_HDA_BUFFER 0x00700000
+%define MEMORY_HDA_CORB 0x00710000
+%define MEMORY_HDA_RIRB 0x00720000
+%define MEMORY_HDA_DMAPOS 0x00730000
+%define MEMORY_AC97_BUFFER 0x00740000
+%define MEMORY_UHCI 0x00800000
+%define MEMORY_EHCI 0x00900000
 
 %macro INB 1
  %if %1!=dx
@@ -164,7 +163,7 @@
  dec ecx
  cmp ecx, 0
  je .for_end_%1
- jmp .%1 ;long jump for any lenght of for code
+ jmp .%1 ;long jump for any lenght of code
  .for_end_%1:
 %endmacro
 
