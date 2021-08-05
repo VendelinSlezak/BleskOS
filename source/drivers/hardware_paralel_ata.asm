@@ -95,32 +95,23 @@ pata_select_sector:
 
  ret
 
-%macro PATA_WAIT 1
- mov ecx, %1
- .ata_wait_%1:
-  BASE_OUTB pata_base, 7, al
-  and al, 0x88
-  cmp al, 0x08 ;transfer is ready
-  je .transfer_%1
- dec ecx
- cmp ecx, 0
- jne .ata_wait_%1
-
- ;something fail
- mov dword [ata_status], ATA_ERROR
- ret
-
- .transfer_%1:
-%endmacro
-
 pata_read:
  mov dword [ata_status], ATA_OK
 
  call pata_select_sector
  BASE_OUTB pata_base, 7, 0x24 ;read command
- PATA_WAIT 100000
+ mov ecx, 10000
+ .wait_for_drive:
+  BASE_INB pata_base, 7
+  and al, 0x88
+  cmp al, 0x08
+  je .data_are_ready
+ loop .wait_for_drive
+ mov dword [ata_status], ATA_ERROR
+ ret
 
  ;read sectors
+ .data_are_ready:
  FOR dword [ata_number_of_sectors], ata_nos_cycle
   FOR 256, ata_sector_cycle
    BASE_INW pata_base, 0
@@ -143,9 +134,18 @@ pata_write:
 
  call pata_select_sector
  BASE_OUTB pata_base, 7, 0x25 ;write command
- PATA_WAIT 100000
+ mov ecx, 10000
+ .wait_for_drive:
+  BASE_INB pata_base, 7
+  and al, 0x88
+  cmp al, 0x08
+  je .data_are_ready
+ loop .wait_for_drive
+ mov dword [ata_status], ATA_ERROR
+ ret
 
  ;write sectors
+ .data_are_ready:
  FOR dword [ata_number_of_sectors], ata_nos_cycle
   FOR 256, ata_sector_cycle
    mov ebx, dword [ata_memory]
@@ -168,9 +168,18 @@ pata_delete:
 
  call pata_select_sector
  BASE_OUTB pata_base, 7, 0xC5 ;read command
- PATA_WAIT 100000
+ mov ecx, 10000
+ .wait_for_drive:
+  BASE_INB pata_base, 7
+  and al, 0x88
+  cmp al, 0x08
+  je .data_are_ready
+ loop .wait_for_drive
+ mov dword [ata_status], ATA_ERROR
+ ret
 
  ;write sectors
+ .data_are_ready:
  FOR dword [ata_number_of_sectors], ata_nos_cycle
   FOR 256, ata_sector_cycle
    BASE_OUTW pata_base, 0, 0 ;write into hard disk
