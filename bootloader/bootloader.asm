@@ -28,8 +28,8 @@ start:
  out 0x92, al
 
  ;DETECT TYPE OF DRIVE
- cmp dl, 0
- je .read_floppy
+ cmp dl, 0x80
+ jl .read_floppy
 
  ;READ BLESKOS 128 KB FROM HARD DISK
  mov ah, 0x42
@@ -72,6 +72,7 @@ start:
 
  ;FIND VESA MODE
  .find_vesa_mode:
+ mov word [vesa_last_mode_x], 0
  mov ax, 0x7000
  mov es, ax
  mov di, 0
@@ -92,11 +93,12 @@ start:
   cmp byte [es:0x19], 16
   jne .next_mode
   mov bx, word [vesa_last_mode_x]
-  cmp bx, word [es:12]
+  mov dx, word [es:0x12]
+  cmp bx, dx
   jg .next_mode
 
   mov word [vesa_mode_number], cx
-  mov bx, word [es:12]
+  mov bx, word [es:0x12]
   mov word [vesa_last_mode_x], bx
 
  .next_mode:
