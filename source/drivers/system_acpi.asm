@@ -15,18 +15,29 @@ shutdown_value_2 dw 0
 
 read_acpi:
  ;search for RSDP
- mov esi, 0xF0000 ;BIOS area
- mov ecx, 0x10000
+ mov esi, 0xE0000 ;BIOS area
+ mov ecx, 0x20000
  .search_rsdp:
   cmp dword [esi], 0x20445352
-  jne .next_loop
-  cmp dword [esi+4], 0x20525450
-  je .rsdp_found
+  je .test_rsdp_checksum
   .next_loop:
   inc esi
  loop .search_rsdp
 
  ret
+
+ .test_rsdp_checksum:
+ mov eax, 0
+ mov bl, 0
+ .checksum_loop:
+  mov dl, byte [esi+eax]
+  add bl, dl
+ inc eax
+ cmp eax, 20
+ jne .checksum_loop
+
+ cmp bl, 0
+ jne .next_loop
 
  .rsdp_found:
  mov dword [rsdp_base], esi
