@@ -76,6 +76,8 @@ init_ps2_controller:
  mov byte [ps2_command], 0xA8
  call write_command_ps2_controller
 
+ mov dword [ps2_mouse_present], 1
+
  ret
 
  .enable_only_keyboard:
@@ -87,6 +89,6 @@ init_ps2_controller:
  mov byte [ps2_command], 0xAE
  call write_command_ps2_controller
 
- PSTR 'Only keyboard', only_keyboard_str
+ mov dword [ps2_mouse_present], 0
 
  ret
