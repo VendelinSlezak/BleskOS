@@ -2,6 +2,7 @@
 
 ;Touchpad is emulating PS/2 mouse
 
+ps2_mouse_present dd 0
 ps2_mouse_data_pointer dd ps2_mouse_data
 ps2_mouse_data dd 0
 ps2_mouse_wait dd 0
@@ -19,6 +20,9 @@ ps2_mouse_ack dd 0
 %endmacro
 
 enable_touchpad:
+ cmp dword [ps2_mouse_present], 0
+ je .done
+
  ;enable sending packets
  mov dword [ps2_mouse_ack], 1
  WRITE_PS2_MOUSE 0xF4
@@ -26,14 +30,19 @@ enable_touchpad:
  mov dword [ps2_mouse_data_pointer], ps2_mouse_data
  mov dword [ps2_mouse_ack], 0
 
+ .done:
  ret
 
 disable_touchpad:
+ cmp dword [ps2_mouse_present], 0
+ je .done
+
  ;disable sending packets
  mov dword [ps2_mouse_ack], 1
  WRITE_PS2_MOUSE 0xF5
  READ_PS2_MOUSE
 
+ .done:
  ret
 
 ps2_mouse_irq:
