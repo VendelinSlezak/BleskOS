@@ -4,6 +4,7 @@ usb_mouse_controller dd 0
 usb_mouse_base dd 0
 usb_mouse_controller_number dd 0
 usb_mouse_speed dd 0
+usb_mouse_endpoint dd 0
 
 usb_mouse_data dd 0
 usb_mouse_wait dd 0
@@ -11,10 +12,8 @@ usb_mouse_wait dd 0
 read_usb_mouse:
  cmp dword [usb_mouse_base], 0
  je .done
-
  cmp dword [usb_mouse_controller], UHCI
  je .uhci
-
  jmp .done
 
  .uhci:
@@ -24,6 +23,8 @@ read_usb_mouse:
  mov dword [uhci_controller_number], eax
  mov eax, dword [usb_mouse_speed]
  mov dword [uhci_device_speed], eax
+ mov eax, dword [usb_mouse_endpoint]
+ mov dword [uhci_endpoint], eax
 
  mov dword [MEMORY_UHCI+0x10300], 0
  call uhci_read_hid
