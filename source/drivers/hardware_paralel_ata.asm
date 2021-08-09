@@ -67,13 +67,10 @@ pata_select_sector:
  BASE_OUTB pata_base, 3, al
 
  ;sector >> 32
- mov eax, dword [ata_sector+4]
- BASE_OUTB pata_base, 4, al
+ BASE_OUTB pata_base, 4, 0
 
  ;sector >> 40
- mov eax, dword [ata_sector+4]
- shr eax, 8
- BASE_OUTB pata_base, 5, al
+ BASE_OUTB pata_base, 5, 0
 
  ;number of sectors >> 0
  mov ax, word [ata_number_of_sectors]
