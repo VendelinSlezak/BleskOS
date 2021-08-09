@@ -94,7 +94,6 @@ read_acpi:
  mov dx, word [acpi_command]
  mov al, byte [acpi_turn_on]
  OUTB dx, al
- WAIT 1000
 
  .read_shutdown_value:
  mov word [shutdown_value], 0x2000
