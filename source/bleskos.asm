@@ -22,6 +22,7 @@ start:
  %include "source/drivers/sound_ac97.asm"
  %include "source/drivers/sound_hda.asm"
 
+ %include "source/drivers/hardware_keyboard_layouts.asm"
  %include "source/drivers/hardware_ps2_controller.asm"
  %include "source/drivers/hardware_ps2_keyboard.asm"
  %include "source/drivers/hardware_ps2_mouse.asm"
