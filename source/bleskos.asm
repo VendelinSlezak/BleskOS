@@ -77,6 +77,8 @@ start_bleskos:
  PSTR 'Initalizing PS/2 devices...', bootstr_ps2
  call init_ps2_controller
  call enable_touchpad
+ PSTR 'Read JUS informations...', bootstr_jus
+ call jus_load_bn_part
  PSTR 'Initalizing USB ports...', bootstr_usb
  call init_usb_ports
 
