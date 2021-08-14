@@ -1,12 +1,7 @@
 ;BleskOS
 
-;BleskOS use double graphic memory model. It means that in ram memory is area use as video memory. In this memory are write all
-;graphic. After drawing is done, part of this ram memory is copied into video memory. So user not see any redrawing because to
-;video memory is show only done thing. Also, reading/writing to ram memory is much faster as reading/writing video memory
-
-%define WHITE 0xFFFF
-%define BLACK 0x0000
-%define COLOR(red, green, blue) ( ((red & 0xF8) << 8) | ((green & 0xFC) << 3) | ((blue & 0xF8) >> 3) )
+%define WHITE 0x00FFFFFF
+%define BLACK 0x00000000
 
 %define LINESZ 10
 %define COLUMNSZ 8
@@ -28,7 +23,6 @@ screen_bites_per_pixel dd 0
 screen_bpp dd 0
 screen_all_pixels dd 0
 screen_pixels_per_line dd 0
-screen_times_to_redraw dd 0
 screen_pointer dd 0
 
 cursor_line dd 0
@@ -38,10 +32,10 @@ old_cursor_column dd 0
 old_cursor_data times 100 dw 0
 first_redraw_line dd 0
 how_much_lines_redraw dd 0
-line_lenght dd 0
-column_height dd 0
-square_lenght dd 0
-square_height dd 0
+line_length dd 0
+column_heigth dd 0
+square_length dd 0
+square_heigth dd 0
 color dd 0
 
 char_for_print dd 0
@@ -58,8 +52,7 @@ debug_line dd 0
  mov ebx, dword [screen_x]
  mul ebx
  add eax, dword [cursor_column]
-
- mov ebx, dword [screen_bpp]
+ mov ebx, 4
  mul ebx
  add eax, MEMORY_RAM_SCREEN
 
@@ -87,7 +80,7 @@ debug_line dd 0
 %macro DRAW_LINE 4
  mov dword [cursor_line], %1
  mov dword [cursor_column], %2
- mov dword [line_lenght], %3
+ mov dword [line_length], %3
  mov dword [color], %4
  call draw_line
 %endmacro
@@ -95,7 +88,7 @@ debug_line dd 0
 %macro DRAW_COLUMN 4
  mov dword [cursor_line], %1
  mov dword [cursor_column], %2
- mov dword [column_height], %3
+ mov dword [column_heigth], %3
  mov dword [color], %4
  call draw_column
 %endmacro
@@ -103,8 +96,8 @@ debug_line dd 0
 %macro DRAW_SQUARE 5
  mov dword [cursor_line], %1
  mov dword [cursor_column], %2
- mov dword [square_lenght], %3
- mov dword [square_height], %4
+ mov dword [square_length], %3
+ mov dword [square_heigth], %4
  mov dword [color], %5
  call draw_square
 %endmacro
@@ -112,8 +105,8 @@ debug_line dd 0
 %macro DRAW_EMPTY_SQUARE 5
  mov dword [cursor_line], %1
  mov dword [cursor_column], %2
- mov dword [square_lenght], %3
- mov dword [square_height], %4
+ mov dword [square_length], %3
+ mov dword [square_heigth], %4
  mov dword [color], %5
  call draw_empty_square
 %endmacro
@@ -123,9 +116,9 @@ debug_line dd 0
  and al, %1
  cmp al, %1
  jne .%1_over
-  mov word [edx], BLACK ;draw pixel on screen
+  mov dword [edx], BLACK ;draw pixel on screen
  .%1_over:
- add edx, 2
+ add edx, 4
 %endmacro
 
 %macro CONVERT_HEX_TO_CHAR 2
@@ -222,16 +215,15 @@ init_graphic:
  mov al, byte [0x70019]
  mov dword [screen_bites_per_pixel], 0
  mov byte [screen_bites_per_pixel], al
- mov dword [screen_bpp], 0
-
- IF_E al, 16, if_bpp16
-  mov dword [screen_bpp], 2
- ENDIF if_bpp16
+ mov eax, dword [screen_bites_per_pixel]
+ mov ebx, 8
+ mov edx, 0
+ div ebx
+ mov dword [screen_bpp], eax
 
  ;calculate pixels per line
- mov dword [screen_pixels_per_line], 0
  mov eax, dword [screen_x]
- mov ebx, dword [screen_bpp]
+ mov ebx, 4
  mul ebx
  mov dword [screen_pixels_per_line], eax
 
@@ -243,28 +235,43 @@ init_graphic:
  mul ebx
  mov dword [screen_all_pixels], eax
 
- ;calculate times to redraw
- mov eax, dword [screen_all_pixels]
- mov ebx, 2
- mov edx, 0
- div ebx
- inc eax
- mov dword [screen_times_to_redraw], eax
-
  ret
 
 redraw_screen:
- mov eax, MEMORY_RAM_SCREEN
- mov ebx, dword [screen_lfb]
- mov ecx, dword [screen_times_to_redraw]
+ cmp dword [screen_bites_per_pixel], 24
+ je .24_bpp
+ cmp dword [screen_bites_per_pixel], 32
+ je .32_bpp
+ ret
 
- .redraw_screen_loop:
-  mov edx, dword [eax]
-  mov dword [ebx], edx
-  add eax, 4
-  add ebx, 4
- loop .redraw_screen_loop
+ .24_bpp:
+ mov esi, MEMORY_RAM_SCREEN
+ mov edi, dword [screen_lfb]
+ mov ecx, dword [screen_all_pixels]
+ .redraw_24_bpp:
+  mov al, byte [esi]
+  mov byte [edi], al
+  inc esi
+  inc edi
 
+  mov al, byte [esi]
+  mov byte [edi], al
+  inc esi
+  inc edi
+
+  mov al, byte [esi]
+  mov byte [edi], al
+  inc esi
+  inc esi
+  inc edi
+ loop .redraw_24_bpp
+ ret
+
+ .32_bpp:
+ mov esi, MEMORY_RAM_SCREEN
+ mov edi, dword [screen_lfb]
+ mov ecx, dword [screen_all_pixels]
+ rep movsd
  ret
 
 redraw_lines_screen:
@@ -272,35 +279,63 @@ redraw_lines_screen:
  mov eax, dword [first_redraw_line]
  mov ebx, dword [screen_pixels_per_line]
  mul ebx
+ mov esi, eax
+ add esi, MEMORY_RAM_SCREEN
 
  ;set pointer registers
- mov esi, eax
+ mov eax, dword [screen_x]
+ mov ebx, dword [screen_bpp]
+ mul ebx
+ mov ebx, eax
+ mov eax, dword [first_redraw_line]
+ mul ebx
  mov edi, eax
- add esi, MEMORY_RAM_SCREEN
  add edi, dword [screen_lfb]
 
- ;calculate lenght of pixels
+ ;calculate length of pixels
  mov eax, dword [how_much_lines_redraw]
  mov ebx, dword [screen_pixels_per_line]
  mul ebx
+ mov ecx, eax
 
- FOR eax, cycle_redraw_lines_screen
-  mov dx, word [esi]
-  mov word [edi], dx
-  add esi, 2
-  add edi, 2
- ENDFOR cycle_redraw_lines_screen
-
+ cmp dword [screen_bites_per_pixel], 24
+ je .24_bpp
+ cmp dword [screen_bites_per_pixel], 32
+ je .32_bpp
  ret
+
+ .24_bpp:
+  mov al, byte [esi]
+  mov byte [edi], al
+  inc esi
+  inc edi
+
+  mov al, byte [esi]
+  mov byte [edi], al
+  inc esi
+  inc edi
+
+  mov al, byte [esi]
+  mov byte [edi], al
+  inc esi
+  inc esi
+  inc edi
+ loop .24_bpp
+ ret
+
+ .32_bpp:
+ rep movsd
+ ret
+ 
 
 clear_screen:
  mov eax, MEMORY_RAM_SCREEN
- mov bx, word [color]
+ mov ebx, dword [color]
  mov ecx, dword [screen_all_pixels]
 
  .clear_screen_loop:
-  mov word [eax], bx
-  add eax, 2
+  mov dword [eax], ebx
+  add eax, 4
  loop .clear_screen_loop
 
  ret
@@ -310,9 +345,9 @@ draw_line:
  mov eax, dword [screen_pointer]
  mov ebx, dword [color]
 
- FOR dword [line_lenght], draw_line_cycle
-  mov word [eax], bx
-  add eax, 2
+ FOR dword [line_length], draw_line_cycle
+  mov dword [eax], ebx
+  add eax, 4
  ENDFOR draw_line_cycle
 
  ret
@@ -322,8 +357,8 @@ draw_column:
  mov eax, dword [screen_pointer]
  mov ebx, dword [color]
 
- FOR dword [column_height], draw_column_cycle
-  mov word [eax], bx
+ FOR dword [column_heigth], draw_column_cycle
+  mov dword [eax], ebx
   add eax, dword [screen_pixels_per_line]
  ENDFOR draw_column_cycle
 
@@ -333,11 +368,11 @@ draw_square:
  CALCULATE_CURSOR_POSITION
  mov ebx, dword [color]
 
- FOR dword [square_height], cycle1
+ FOR dword [square_heigth], cycle1
   mov eax, dword [screen_pointer]
-  FOR dword [square_lenght], cycle2
-   mov word [eax], bx
-   add eax, 2
+  FOR dword [square_length], cycle2
+   mov dword [eax], ebx
+   add eax, 4
   ENDFOR cycle2
 
   MOVE_CURSOR_NEXT_LINE
@@ -346,30 +381,30 @@ draw_square:
  ret
 
 draw_empty_square:
- mov eax, dword [square_lenght]
- mov dword [line_lenght], eax
+ mov eax, dword [square_length]
+ mov dword [line_length], eax
  call draw_line
 
- mov eax, dword [square_height]
- mov dword [column_height], eax
+ mov eax, dword [square_heigth]
+ mov dword [column_heigth], eax
  call draw_column
 
- mov eax, dword [square_lenght]
+ mov eax, dword [square_length]
  add dword [cursor_column], eax
- mov eax, dword [square_height]
- mov dword [column_height], eax
+ mov eax, dword [square_heigth]
+ mov dword [column_heigth], eax
  call draw_column
 
- mov eax, dword [square_lenght]
+ mov eax, dword [square_length]
  sub dword [cursor_column], eax
- mov eax, dword [square_height]
+ mov eax, dword [square_heigth]
  add dword [cursor_line], eax
- mov eax, dword [square_lenght]
- mov dword [line_lenght], eax
- inc dword [line_lenght]
+ mov eax, dword [square_length]
+ mov dword [line_length], eax
+ inc dword [line_length]
  call draw_line
 
- mov eax, dword [square_height]
+ mov eax, dword [square_heigth]
  sub dword [cursor_line], eax
 
  ret
@@ -392,12 +427,12 @@ draw_cursor:
 
  FOR 11, erase_cursor
   FOR 10, erase_cursor_line
-   mov dx, word [esi]
-   mov word [eax], dx
-   add esi, 2
-   add eax, 2
+   mov edx, dword [esi]
+   mov dword [eax], edx
+   add esi, 4
+   add eax, 4
   ENDFOR erase_cursor_line
-  sub eax, 20 ;cursor length
+  sub eax, 40 ;cursor length
   add eax, ebx ;next line
  ENDFOR erase_cursor
 
@@ -407,12 +442,12 @@ draw_cursor:
 
  FOR 11, read_cursor_bg
   FOR 10, read_cursor_bg_line
-   mov dx, word [eax]
-   mov word [esi], dx
-   add esi, 2
-   add eax, 2
+   mov edx, dword [eax]
+   mov dword [esi], edx
+   add esi, 4
+   add eax, 4
   ENDFOR read_cursor_bg_line
-  sub eax, 20 ;cursor length
+  sub eax, 40 ;cursor length
   add eax, ebx ;next line
  ENDFOR read_cursor_bg
 
@@ -420,79 +455,79 @@ draw_cursor:
  pop eax ;screen pointer
 
  ;line 1
- mov word [eax], BLACK
+ mov dword [eax], BLACK
 
  ;line 2
  add eax, ebx ;next line
- mov word [eax], BLACK
- mov word [eax+2], BLACK
+ mov dword [eax], BLACK
+ mov dword [eax+4], BLACK
 
  ;line 3
  add eax, ebx ;next line
- mov word [eax], BLACK
- mov word [eax+2], WHITE
- mov word [eax+4], BLACK
+ mov dword [eax], BLACK
+ mov dword [eax+4], WHITE
+ mov dword [eax+8], BLACK
 
  ;line 4
  add eax, ebx ;next line
- mov word [eax], BLACK
- mov word [eax+2], WHITE
- mov word [eax+4], WHITE
- mov word [eax+6], BLACK
+ mov dword [eax], BLACK
+ mov dword [eax+4], WHITE
+ mov dword [eax+8], WHITE
+ mov dword [eax+12], BLACK
 
  ;line 5
  add eax, ebx ;next line
- mov word [eax], BLACK
- mov word [eax+2], WHITE
- mov word [eax+4], WHITE
- mov word [eax+6], WHITE
- mov word [eax+8], BLACK
+ mov dword [eax], BLACK
+ mov dword [eax+4], WHITE
+ mov dword [eax+8], WHITE
+ mov dword [eax+12], WHITE
+ mov dword [eax+16], BLACK
 
  ;line 6
  add eax, ebx ;next line
- mov word [eax], BLACK
- mov word [eax+2], WHITE
- mov word [eax+4], WHITE
- mov word [eax+6], WHITE
- mov word [eax+8], WHITE
- mov word [eax+10], BLACK
+ mov dword [eax], BLACK
+ mov dword [eax+4], WHITE
+ mov dword [eax+8], WHITE
+ mov dword [eax+12], WHITE
+ mov dword [eax+16], WHITE
+ mov dword [eax+20], BLACK
 
  ;line 7
  add eax, ebx ;next line
- mov word [eax], BLACK
- mov word [eax+2], WHITE
- mov word [eax+4], WHITE
- mov word [eax+6], WHITE
- mov word [eax+8], WHITE
- mov word [eax+10], WHITE
- mov word [eax+12], BLACK
+ mov dword [eax], BLACK
+ mov dword [eax+4], WHITE
+ mov dword [eax+8], WHITE
+ mov dword [eax+12], WHITE
+ mov dword [eax+16], WHITE
+ mov dword [eax+20], WHITE
+ mov dword [eax+24], BLACK
 
  ;line 8
  add eax, ebx ;next line
- mov word [eax], BLACK
- mov word [eax+2], WHITE
- mov word [eax+4], WHITE
- mov word [eax+6], WHITE
- mov word [eax+8], WHITE
- mov word [eax+10], BLACK
+ mov dword [eax], BLACK
+ mov dword [eax+4], WHITE
+ mov dword [eax+8], WHITE
+ mov dword [eax+12], WHITE
+ mov dword [eax+16], WHITE
+ mov dword [eax+20], BLACK
 
  ;line 9
  add eax, ebx ;next line
- mov word [eax], BLACK
- mov word [eax+2], WHITE
- mov word [eax+4], WHITE
- mov word [eax+6], BLACK
- mov word [eax+8], BLACK
+ mov dword [eax], BLACK
+ mov dword [eax+4], WHITE
+ mov dword [eax+8], WHITE
+ mov dword [eax+12], BLACK
+ mov dword [eax+16], BLACK
 
  ;line 10
  add eax, ebx ;next line
- mov word [eax], BLACK
- mov word [eax+2], BLACK
- mov word [eax+4], BLACK
+ mov dword [eax], BLACK
+ mov dword [eax+4], BLACK
+ mov dword [eax+8], BLACK
 
  ;line 11
  add eax, ebx ;next line
- mov word [eax], BLACK
+ mov dword [eax], BLACK
 
  ;update values
  pop eax
@@ -509,12 +544,12 @@ read_cursor_bg:
 
  FOR 11, read_cursor_bg
   FOR 10, read_cursor_bg_line
-   mov dx, word [eax]
-   mov word [esi], dx
-   add esi, 2
-   add eax, 2
+   mov edx, dword [eax]
+   mov dword [esi], edx
+   add esi, 4
+   add eax, 4
   ENDFOR read_cursor_bg_line
-  sub eax, 20 ;cursor length
+  sub eax, 40 ;cursor length
   add eax, ebx ;next line
  ENDFOR read_cursor_bg
 
@@ -546,9 +581,8 @@ print_char:
 
   ;go to next line
   add edx, dword [screen_pixels_per_line] ;move one line down
-  sub edx, 16 ;every line of char have 8 pixels and 16 bpp
-  ;next byte of char
-  inc edi
+  sub edx, 32
+  inc edi ;next byte of char
  ENDFOR print_char_cycle
 
  ret
