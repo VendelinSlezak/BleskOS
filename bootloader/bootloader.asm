@@ -2,7 +2,7 @@
 
 ;What this code do:
 ; - enable A20 for acess to all RAM memory
-; - set VESA graphic mode 800x600x16
+; - set highest VESA mode
 ; - read 128 KB from boot device after bootloader sector - this contains BleskOS code
 ; - load Global Descriptor Table for acces max 4 GB of RAM memory
 ; - enter to protected mode(32 bit processor mode)
@@ -27,10 +27,6 @@ start:
  or al, 0x2
  out 0x92, al
 
- ;DETECT TYPE OF DRIVE
- cmp dl, 0x80
- jl .read_floppy
-
  ;READ BLESKOS 128 KB FROM HARD DISK
  mov ah, 0x42
  mov si, disk_packet1
@@ -40,39 +36,10 @@ start:
  mov si, disk_packet2
  int 13h
  jc .error_1
- mov ah, 0x42
- mov si, disk_packet3
- int 13h
- jc .error_1
- mov ah, 0x42
- mov si, disk_packet4
- int 13h
- jc .error_1
- jmp .find_vesa_mode
-
- ;READ BLESKOS 64 KB FROM FLOPPY
- .read_floppy:
- mov ax, 0x1000
- mov es, ax
- mov ah, 0x2
- mov al, 72 ;num of sectors
- mov bx, 0
- mov ch, 0 ;cylinder
- mov dh, 0 ;head
- mov cl, 2 ;sector
- int 13h
- jc .error_2
-
- mov al, 56 ;to end of segment
- mov bx, 72*512
- mov ch, 2 ;cylinder
- mov cl, 2 ;sector
- int 13h
- jc .error_2
 
  ;FIND VESA MODE
- .find_vesa_mode:
- mov word [vesa_last_mode_x], 0
+ mov word [vesa_last_24_mode_x], 0
+ mov word [vesa_last_32_mode_x], 0
  mov ax, 0x7000
  mov es, ax
  mov di, 0
@@ -82,7 +49,6 @@ start:
   mov word [es:0x12], 0
   mov word [es:0x14], 0
   mov byte [es:0x19], 0
-
   mov ax, 0x4F01 ;mode info
   int 10h
 
@@ -90,27 +56,47 @@ start:
   and bx, 0x91
   cmp bx, 0x91
   jne .next_mode
-  cmp byte [es:0x19], 16
-  jne .next_mode
-  mov bx, word [vesa_last_mode_x]
+  cmp byte [es:0x19], 24
+  je .mode_24_bpp
+  cmp byte [es:0x19], 32
+  je .mode_32_bpp
+  jmp .next_mode
+
+  .mode_24_bpp:
+  mov bx, word [vesa_last_24_mode_x]
   mov dx, word [es:0x12]
   cmp bx, dx
   jg .next_mode
-
-  mov word [vesa_mode_number], cx
+  mov word [vesa_24_mode_number], cx
   mov bx, word [es:0x12]
-  mov word [vesa_last_mode_x], bx
+  mov word [vesa_last_24_mode_x], bx
+  jmp .next_mode
+
+  .mode_32_bpp:
+  mov bx, word [vesa_last_32_mode_x]
+  mov dx, word [es:0x12]
+  cmp bx, dx
+  jg .next_mode
+  mov word [vesa_32_mode_number], cx
+  mov bx, word [es:0x12]
+  mov word [vesa_last_32_mode_x], bx
 
  .next_mode:
  inc cx
  cmp cx, 0x150
  jne .find_mode
 
- cmp word [vesa_mode_number], 0
+ mov ax, word [vesa_32_mode_number]
+ mov word [vesa_mode_number], ax
+ cmp word [vesa_32_mode_number], 0
  jne .set_vesa_mode
 
- ;mode was not founded
- jmp .error_3
+ mov ax, word [vesa_24_mode_number]
+ mov word [vesa_mode_number], ax
+ cmp word [vesa_24_mode_number], 0
+ jne .set_vesa_mode
+
+ jmp .error_2
 
  ;SET VESA MODE
  .set_vesa_mode:
@@ -141,13 +127,6 @@ start:
   mov al, '2'
   int 10h
   jmp .halt
-
- .error_3:
-  mov ah, 0x0E
-  mov al, 'E'
-  int 10h
-  mov al, '3'
-  int 10h
 
  ;HALT
  .halt:
@@ -199,15 +178,12 @@ start:
  disk_packet2:
   dw 0x0010, 64, 0x8000, 0x1000
   dq 65
- disk_packet3:
-  dw 0x0010, 64, 0x0000, 0x2000
-  dq 129
- disk_packet4:
-  dw 0x0010, 64, 0x8000, 0x2000
-  dq 193
 
  vesa_mode_number dw 0
- vesa_last_mode_x dw 0
+ vesa_24_mode_number dw 0
+ vesa_32_mode_number dw 0
+ vesa_last_24_mode_x dw 0
+ vesa_last_32_mode_x dw 0
 
 times 510-($-$$) db 0
 dw 0xAA55
