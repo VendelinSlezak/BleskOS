@@ -159,13 +159,18 @@ uhci_init_device:
  UHCI_CREATE_TD MEMORY_UHCI+0x10900, MEMORY_UHCI+0x10A00 | 0x4, 0x00E00169, MEMORY_UHCI+0x10C00+56 ;in
  UHCI_CREATE_TD MEMORY_UHCI+0x10A00, 0x1, 0xFFE801E1, MEMORY_UHCI+0x10700+24 ;out
  mov dword [MEMORY_UHCI+0x10B00], 0x02000680
- mov dword [MEMORY_UHCI+0x10B00+4], 0x00180000
+ mov dword [MEMORY_UHCI+0x10B00+4], 0x00400000
  mov dword [MEMORY_UHCI+0x10C00+0], 0 ;clear
  mov dword [MEMORY_UHCI+0x10C00+14], 0 ;clear
  mov dword [uhci_td_pointer], MEMORY_UHCI+0x10A00+4
  call uhci_transfer_queue_head
 
  ;PARSE RECEIVED DATA
+ mov esi, MEMORY_UHCI+0x10C00
+ call parse_usb_descriptor
+
+ ret
+
  cmp byte [MEMORY_UHCI+0x10C00+4], 0x1
  jne .more_interfaces
 
@@ -259,8 +264,8 @@ uhci_transfer_queue_head:
   and ebx, 0x00800000
   cmp ebx, 0
   je .transfer_is_done
- cmp dword [ticks], 10
- jl .wait_for_transfer
+ cmp dword [ticks], 100
+ jnge .wait_for_transfer
 
  .transfer_is_done:
 
