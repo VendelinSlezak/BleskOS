@@ -59,7 +59,7 @@ start:
 
 start_bleskos:
  call init_graphic
- CLEAR_SCREEN 0x0600
+ CLEAR_SCREEN 0x00C000
  call redraw_screen
 
  PSTR 'Enabling interrupts...', bootstr_interrupts
