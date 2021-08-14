@@ -16,7 +16,7 @@ last_second dd 0
 %endmacro
 
 hardware_centrum:
- CLEAR_SCREEN 0x0600
+ CLEAR_SCREEN 0x00C000
 
  ;border
  mov eax, dword [screen_x]
@@ -39,7 +39,7 @@ hardware_centrum:
  .update_time:
  call read_time
 
- DRAW_SQUARE LINE(4), COLUMN(2), 8*32, LINESZ, 0x0600
+ DRAW_SQUARE LINE(4), COLUMN(2), 8*32, LINESZ, 0x00C000
  PRINT '    /  /     :  :', time_str, LINE(4), COLUMN(2)
 
  mov eax, dword [year]
@@ -54,7 +54,7 @@ hardware_centrum:
  mov eax, dword [second]
  mov dword [last_second], eax
 
- REDRAW_LINES_SCREEN LINE(4), LINESZ
+ REDRAW_LINES_SCREEN LINESZ*4, LINESZ
 
  mov dword [keyboard_wait], 1
  .hardware_halt:
@@ -79,7 +79,7 @@ hardware_centrum:
  jmp .hardware_halt
 
  .shutdown:
-  CLEAR_SCREEN 0x0600
+  CLEAR_SCREEN 0x00C000
   PRINT 'Do you really want to shutdown computer? [enter] Yes [other] No', shutdown_ask_str, LINE(1), COLUMN(1)
   call redraw_screen
   WAIT 200
@@ -87,8 +87,8 @@ hardware_centrum:
   cmp byte [key_code], KEY_ENTER
   jne hardware_centrum
   call shutdown
-  WAIT 2000
-  CLEAR_SCREEN 0x0600
+  WAIT 4000
+  CLEAR_SCREEN 0x00C000
   PRINT 'We are sorry, some problem occured, you can shutdown with pressing power button', shutdown_problem_str, LINE(1), COLUMN(1)
   call redraw_screen
  .halt:

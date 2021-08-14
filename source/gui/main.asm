@@ -1,6 +1,6 @@
 ;BleskOS
 
-%define BLESKOS_GREEN 0x0600
+%define BLESKOS_GREEN 0x00C000
 
 main_window:
  ;green background

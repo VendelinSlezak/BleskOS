@@ -19,8 +19,8 @@ draw_window:
 
  mov dword [cursor_line], 0
  mov dword [cursor_column], 0
- mov dword [square_lenght], 800
- mov dword [square_height], 20
+ mov dword [square_length], 800
+ mov dword [square_heigth], 20
  mov eax, dword [window_border_color]
  mov dword [color], eax
  call draw_square
@@ -42,16 +42,16 @@ draw_window:
 
 ;;;;; List ;;;;;
 
-list_chars_lenght dd 0
-list_items_lenght dd 0
+list_chars_length dd 0
+list_items_length dd 0
 list_selected_item dd 0
 list_background dd 0
 
 %macro DRAW_LIST 6
  mov dword [cursor_line], %1
  mov dword [cursor_column], %2
- mov dword [list_chars_lenght], %3
- mov dword [list_items_lenght], %4
+ mov dword [list_chars_length], %3
+ mov dword [list_items_length], %4
  mov eax, dword [%5]
  mov dword [list_selected_item], eax
  mov dword [list_background], %6
@@ -62,17 +62,17 @@ draw_list:
  mov eax, dword [list_background]
  mov dword [color], eax
 
- mov eax, dword [list_chars_lenght]
+ mov eax, dword [list_chars_length]
  mov ebx, 8
  mul ebx
  add eax, 4
- mov dword [square_lenght], eax
+ mov dword [square_length], eax
 
- mov eax, dword [list_items_lenght]
+ mov eax, dword [list_items_length]
  mov ebx, 10
  mul ebx
  add eax, 4
- mov dword [square_height], eax
+ mov dword [square_heigth], eax
 
  call draw_square
 
@@ -80,8 +80,8 @@ draw_list:
  call draw_empty_square
  inc dword [cursor_line]
  inc dword [cursor_column]
- sub dword [square_lenght], 2
- sub dword [square_height], 2
+ sub dword [square_length], 2
+ sub dword [square_heigth], 2
  call draw_empty_square
 
  inc dword [cursor_line]
@@ -91,8 +91,8 @@ draw_list:
  mov ebx, 10
  mul ebx
  add dword [cursor_line], eax
- dec dword [square_lenght]
- mov dword [square_height], 10
+ dec dword [square_length]
+ mov dword [square_heigth], 10
  call draw_square
 
  ret
