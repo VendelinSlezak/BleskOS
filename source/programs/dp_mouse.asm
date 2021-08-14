@@ -15,8 +15,8 @@ dp_mouse:
  .draw:
  mov dword [cursor_line], LINE(1)
  mov dword [cursor_column], COLUMN(1)
- mov dword [square_lenght], 100
- mov dword [square_height], 10
+ mov dword [square_length], 100
+ mov dword [square_heigth], 10
  mov dword [color], DP_MOUSE_COLOR
  call draw_square
 
@@ -36,4 +36,3 @@ dp_mouse:
   cmp dword [usb_mouse_data], 0
   je .mouse_halt
  jmp .draw
-
