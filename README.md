@@ -1,5 +1,5 @@
 # BleskOS
-Operation system working in protected mode with legacy boot. Main goal is develop operation system whose will be usable for normal user.
+Operation system working in protected mode with legacy boot. Main goal is develop operation system whose will be usable for normal user. Every version of BleskOS is tested on real computers. You do everything with BleskOS on your own risk!
 
 ### Drivers
 Graphic:
