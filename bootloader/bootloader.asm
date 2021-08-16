@@ -150,7 +150,7 @@ start:
  mov gs, ax
  mov ss, ax
 
- mov esp, 0x80000  ;set stack pointer
+ mov esp, 0x00E00000  ;set stack pointer
 
  ;JUMP TO EXECUTE BLESKOS
  jmp 0x10000
