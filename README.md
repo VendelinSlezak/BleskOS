@@ -25,7 +25,7 @@ USB controllers:
 
 USB devices:
 * USB mouse
-* USB mass storage (in progress)
+* USB mass storage (now works in QEMU but not on real hardware)
 
 ### Programs
 Currently nothing, but text editor and graphic editor are on the way.
