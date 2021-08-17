@@ -215,7 +215,7 @@ ehci_detect_device:
 
  ;initalize high speed device
  call ehci_device_set_address
- call ehci_device_read_configuration
+ call ehci_device_read_descriptor
  jmp .done
 
  .low_speed_device:
@@ -256,7 +256,7 @@ ehci_device_set_address:
 
  ret
 
-ehci_device_read_configuration:
+ehci_device_read_descriptor:
  ;clear buffer
  mov esi, MEMORY_EHCI+0x800
  mov ecx, 0xFF
@@ -325,7 +325,7 @@ ehci_device_read_configuration:
 
  .init_msd:
  mov word [esi+7], 0x1 ;uninitalized state
- call ehci_msd_descriptor
+ call ehci_msd_qualifier
  call select_msd
  call msd_init
 
@@ -386,7 +386,7 @@ ehci_transfer_bulk_out:
 
  ret
 
-ehci_msd_descriptor:
+ehci_msd_qualifier:
  mov eax, CONTROL_TRANSFER
  or eax, dword [ehci_address]
  EHCI_CREATE_QUEUE_HEAD eax
