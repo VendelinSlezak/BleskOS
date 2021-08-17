@@ -14,6 +14,8 @@ shutdown_value dw 0
 shutdown_value_2 dw 0
 
 read_acpi:
+ mov byte [ps2_exist], 1
+
  ;search for RSDP
  mov esi, 0xE0000 ;BIOS area
  mov ecx, 0x20000
@@ -80,6 +82,10 @@ read_acpi:
  mov word [acpi_pm1_control], ax
  mov ax, word [edi+68]
  mov word [acpi_pm2_control], ax
+
+ mov ax, word [edi+109]
+ and ax, 0x2
+ mov byte [ps2_exist], al
 
  ;turn on ACPI
  cmp word [acpi_command], 0
