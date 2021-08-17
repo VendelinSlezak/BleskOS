@@ -111,14 +111,13 @@ debug_line dd 0
  call draw_empty_square
 %endmacro
 
-%macro DRAW_PIXEL_OF_CHAR 1
- mov al, byte [edi]
+%macro DRAW_PIXEL_OF_CHAR 2
+ mov al, bl
  and al, %1
  cmp al, %1
  jne .%1_over
-  mov dword [edx], BLACK ;draw pixel on screen
+  mov dword [edx+(%2*4)], BLACK ;draw pixel on screen
  .%1_over:
- add edx, 4
 %endmacro
 
 %macro CONVERT_HEX_TO_CHAR 2
@@ -562,7 +561,7 @@ print_char:
  mov eax, dword [char_for_print]
  mov ebx, 8
  mul ebx
- add eax, vesa_font
+ add eax, bleskos_font
  mov edi, eax
 
  ;pointer to char memory
@@ -570,19 +569,19 @@ print_char:
 
  ;char have eight lines
  FOR 8, print_char_cycle
-  DRAW_PIXEL_OF_CHAR 0x80
-  DRAW_PIXEL_OF_CHAR 0x40
-  DRAW_PIXEL_OF_CHAR 0x20
-  DRAW_PIXEL_OF_CHAR 0x10
-  DRAW_PIXEL_OF_CHAR 0x08
-  DRAW_PIXEL_OF_CHAR 0x04
-  DRAW_PIXEL_OF_CHAR 0x02
-  DRAW_PIXEL_OF_CHAR 0x01
+  mov bl, byte [edi] ;load line of char
+  DRAW_PIXEL_OF_CHAR 0x80, 0
+  DRAW_PIXEL_OF_CHAR 0x40, 1
+  DRAW_PIXEL_OF_CHAR 0x20, 2
+  DRAW_PIXEL_OF_CHAR 0x10, 3
+  DRAW_PIXEL_OF_CHAR 0x08, 4
+  DRAW_PIXEL_OF_CHAR 0x04, 5
+  DRAW_PIXEL_OF_CHAR 0x02, 6
+  DRAW_PIXEL_OF_CHAR 0x01, 7
 
   ;go to next line
   add edx, dword [screen_pixels_per_line] ;move one line down
-  sub edx, 32
-  inc edi ;next byte of char
+  inc edi ;next line of char
  ENDFOR print_char_cycle
 
  ret
@@ -593,15 +592,39 @@ print:
   cmp al, 0 ;end of string
   je .end
 
-  ;print char
+  ;type of UTF-8 char
+  mov bl, al
+  and bl, 0x80
+  cmp bl, 0x0
+  je .ascii_char
+  mov bl, al
+  and bl, 0xE0
+  cmp bl, 0xC0
+  je .utf_8_two_bytes
+  jmp .print_char ;skip this char
+
+  ;print ascii char
+  .ascii_char:
   mov dword [char_for_print], 0
   mov byte [char_for_print], al
   call print_char
-
-  ;move to next char position
-  add dword [cursor_column], 8
+  add dword [cursor_column], 8 ;position of next char
   inc esi
- jmp .print_char
+  jmp .print_char
+
+  ;print utf-8 two bytes long char
+  .utf_8_two_bytes:
+  mov dword [char_for_print], 0
+  and ax, 0x1F
+  shl ax, 6
+  mov bl, byte [esi+1]
+  and bl, 0x3F
+  or al, bl
+  mov word [char_for_print], ax
+  call print_char
+  add dword [cursor_column], 8 ;position of next char
+  add esi, 2
+  jmp .print_char
 
  .end:
  ret
