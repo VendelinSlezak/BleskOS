@@ -1,5 +1,6 @@
 ;BleskOS
 
+ps2_exist db 0
 ps2_command db 0
 
 read_ps2_controller:
@@ -50,6 +51,10 @@ write_command_ps2_controller:
  ret
 
 init_ps2_controller:
+ mov dword [ps2_mouse_present], 0
+ cmp byte [ps2_exist], 0
+ je .done
+
  ;disable PS/2 controllers
  mov byte [ps2_command], 0xAD
  call write_command_ps2_controller
@@ -78,6 +83,7 @@ init_ps2_controller:
 
  mov dword [ps2_mouse_present], 1
 
+ .done:
  ret
 
  .enable_only_keyboard:
