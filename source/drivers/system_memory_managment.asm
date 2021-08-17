@@ -1,98 +1,64 @@
 ;BleskOS
 
-%define MEMORY_1_MB 1
-%define MEMORY_4_MB 4
-%define MEMORY_16_MB 16
+memory times 256 db 0
 
-memory times 4098 db 0
-memory_block_pointer dd 0
+allocated_size dd 0 ;in MB
+allocated_memory_pointer dd 0
 
-allocate_free_memory:
+allocate_memory:
+ mov dword [allocated_memory_pointer], 0
+
  mov esi, memory
- mov edx, 0
-
- cmp eax, MEMORY_1_MB
- je .mem_1_mb
-
- cmp eax, MEMORY_4_MB
- je .mem_4_mb
-
- mov eax, 0 ;non succesful
- ret
-
- .mem_1_mb:
- mov ecx, 512
- .find_free_1_mb_block:
+ mov ecx, 256
+ mov edi, 0x01000000 ;first MB
+ .search_for_free_memory:
   cmp byte [esi], 0
-  je .1_mb_block_found
+  jne .next_mb
 
-  inc edx
+  mov eax, dword [allocated_size]
+  mov ebx, esi
+  .check_if_enough:
+   cmp byte [ebx], 0
+   jne .next_mb
+   inc ebx
+  dec eax
+  cmp eax, 0
+  jne .check_if_enough
+
+  ;we find enough free memory block
+  jmp .free_memory_found
+ .next_mb:
+ inc esi
+ add edi, 0x100000 ;next MB
+ loop .search_for_free_memory
+
+ ret ;memory is not free
+
+ .free_memory_found:
+ mov dword [allocated_memory_pointer], edi
+ mov ecx, dword [allocated_size]
+ .mark_blocks:
+  mov byte [esi], 0x1
   inc esi
- loop .find_free_1_mb_block
-
- mov eax, 0 ;non succesful
- ret
-
- .1_mb_block_found:
-  mov byte [esi], MEMORY_1_MB ;set memory block
-
-  mov eax, edx
-  mov ebx, 0x100000
-  mul ebx
-  add eax, 0x1000000 ;skip BleskOS memory
-  mov dword [memory_block_pointer], eax
- ret
-
- .mem_4_mb:
- mov ecx, 512
- .find_free_4_mb_block:
-  cmp dword [esi], 0
-  je .4_mb_block_found
-
-  inc edx
-  inc esi
- loop .find_free_4_mb_block
-
- mov eax, 0 ;non succesful
- ret
-
- .4_mb_block_found:
-  mov dword [esi], 0x04040404 ;set memory block
-
-  mov eax, edx
-  mov ebx, 0x100000
-  mul ebx
-  add eax, 0x1000000 ;skip BleskOS memory
-  mov dword [memory_block_pointer], eax
- ret
-
-deallocate_memory:
- cmp eax, MEMORY_1_MB
- je .deallocate_1_mb
-
- cmp eax, MEMORY_4_MB
- je .deallocate_4_mb
+ loop .mark_blocks
 
  ret
 
- .deallocate_1_mb:
-  sub dword [memory_block_pointer], 0x1000000 ;skip BleskOS memory
-  mov eax, dword [memory_block_pointer]
-  mov ebx, 0x100000
-  mov edx, 0
-  div ebx
+release_memory:
+ mov eax, dword [allocated_memory_pointer]
+ cmp eax, 0x10000000
+ jg .done ;invalid pointer
+ sub eax, 0x01000000
+ mov ebx, 0x100000
+ mov edx, 0
+ div ebx
 
-  add eax, memory
+ add eax, memory
+ mov ecx, dword [allocated_size]
+ .mark_blocks:
   mov byte [eax], 0
- ret
+  inc eax
+ loop .mark_blocks
 
- .deallocate_4_mb:
-  sub dword [memory_block_pointer], 0x1000000 ;skip BleskOS memory
-  mov eax, dword [memory_block_pointer]
-  mov ebx, 0x100000
-  mov edx, 0
-  div ebx
-
-  add eax, memory
-  mov dword [eax], 0
+ .done:
  ret
