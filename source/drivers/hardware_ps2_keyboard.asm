@@ -5,6 +5,12 @@ keyboard_shift dd 0
 key_ascii db 0
 keyboard_wait db 0
 selected_keyboard_set dd 0
+keyboard_special_code dd 0
+
+init_keyboard:
+ mov dword [keyboard_shift], 0
+ mov dword [keyboard_special_code], 0
+ ret
 
 keyboard_irq:
  pusha
@@ -12,6 +18,11 @@ keyboard_irq:
  mov eax, 0
  INB 0x60
  mov dword [key_code], eax
+
+ cmp dword [keyboard_special_code], 1
+ je .special_code
+ cmp al, 0xE0
+ je .set_special_code
 
  ;if some shift key is presses
  cmp al, KEY_CAPSLOCK
@@ -51,6 +62,28 @@ keyboard_irq:
  EOI_MASTER_PIC
  popa
  iret
+
+ .set_special_code:
+ mov dword [keyboard_special_code], 1
+ jmp .clear_wait
+
+ .special_code:
+  mov byte [key_ascii], 0
+  mov byte [key_code], 0
+
+  cmp al, 0x49
+  je .page_up
+  cmp al, 0x51
+  je .page_down
+  jmp .clear_wait
+
+  .page_up:
+  mov byte [key_code], KEY_PAGE_UP
+  jmp .clear_wait
+
+  .page_down:
+  mov byte [key_code], KEY_PAGE_DOWN
+  jmp .clear_wait
 
 wait_for_keyboard:
  mov dword [keyboard_wait], 1
