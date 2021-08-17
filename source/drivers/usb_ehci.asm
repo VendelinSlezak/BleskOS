@@ -12,7 +12,7 @@
 %define NO_POINTER 0x1
 %define NO_MULTIPLY 0x40000000
 %define CONTROL_TRANSFER 0x8040E000
-%define BULK_TRANSFER 0x0040E000
+%define BULK_TRANSFER 0x8200E000
 %define EHCI_TRANSFER_LENGTH(x) (x << 16)
 
 %macro EHCI_CREATE_QUEUE_HEAD 1
@@ -223,12 +223,12 @@ ehci_detect_device:
  jmp .done
 
  .no_device:
- mov eax, dword [ehci_base]
- mov dword [msd_usb_controller_base], eax
- mov eax, dword [ehci_port_number]
- inc eax
- mov byte [msd_usb_controller_address], al
- call msd_remove_device ;if was some msd connected here
+ ;mov eax, dword [ehci_base]
+ ;mov dword [msd_usb_controller_base], eax
+ ;mov eax, dword [ehci_port_number]
+ ;inc eax
+ ;mov byte [msd_usb_controller_address], al
+ ;call msd_remove_device ;if was some msd connected here
 
  .done:
  ret
@@ -280,13 +280,11 @@ ehci_device_read_configuration:
  ;request
  mov dword [MEMORY_EHCI+0x700+0], 0x02000680
  mov dword [MEMORY_EHCI+0x700+4], 0x00FF0000
-
  ;IN transfers descriptor
  EHCI_CREATE_TD MEMORY_EHCI+0x200, MEMORY_EHCI+0x300, MEMORY_EHCI+0x600, (IN_PACKET | EHCI_TRANSFER_LENGTH(64) | DATA_TOGGLE_1), MEMORY_EHCI+0x800
  EHCI_CREATE_TD MEMORY_EHCI+0x300, MEMORY_EHCI+0x400, MEMORY_EHCI+0x600, (IN_PACKET | EHCI_TRANSFER_LENGTH(64) | DATA_TOGGLE_0), MEMORY_EHCI+0x840
  EHCI_CREATE_TD MEMORY_EHCI+0x400, MEMORY_EHCI+0x500, MEMORY_EHCI+0x600, (IN_PACKET | EHCI_TRANSFER_LENGTH(64) | DATA_TOGGLE_1), MEMORY_EHCI+0x880
  EHCI_CREATE_TD MEMORY_EHCI+0x500, MEMORY_EHCI+0x600, MEMORY_EHCI+0x600, (IN_PACKET | EHCI_TRANSFER_LENGTH(64) | DATA_TOGGLE_0), MEMORY_EHCI+0x8C0
-
  ;OUT transfer descriptor
  EHCI_CREATE_TD MEMORY_EHCI+0x600, NO_POINTER, NO_POINTER, (OUT_PACKET | EHCI_TRANSFER_LENGTH(0) | DATA_TOGGLE_1), 0x0
 
@@ -298,12 +296,8 @@ ehci_device_read_configuration:
  mov esi, MEMORY_EHCI+0x800
  call parse_usb_descriptor
  mov eax, dword [usb_descriptor+12]
-
  cmp eax, 0x00500608
  je .mass_storage_device
-
- PHEX eax
-
  jmp .unknown_device
 
  .mass_storage_device:
@@ -314,7 +308,7 @@ ehci_device_read_configuration:
  .find_free_msd_item:
   cmp dword [esi+7], 0
   je .free_msd_item
-  add esi, 8
+  add esi, 16
   inc dword [msd_number]
  loop .find_free_msd_item
  jmp .done ;five msd are connected now
@@ -331,6 +325,7 @@ ehci_device_read_configuration:
 
  .init_msd:
  mov word [esi+7], 0x1 ;uninitalized state
+ call ehci_msd_descriptor
  call select_msd
  call msd_init
 
@@ -338,6 +333,7 @@ ehci_device_read_configuration:
  ret
 
  .unknown_device:
+ PHEX eax
  ret
 
 ehci_transfer_bulk_in:
@@ -362,34 +358,6 @@ ehci_transfer_bulk_in:
  ;start transfer
  mov dword [ehci_td_pointer], MEMORY_EHCI+0x100+8
  call ehci_transfer_queue_head
-
- PSTR 'QH in', qh_str
- mov eax, dword [MEMORY_EHCI+0]
- PHEX eax
- mov eax, dword [MEMORY_EHCI+4]
- PHEX eax
- mov eax, dword [MEMORY_EHCI+8]
- PHEX eax
- mov eax, dword [MEMORY_EHCI+12]
- PHEX eax
- mov eax, dword [MEMORY_EHCI+16]
- PHEX eax
- PSTR 'TD', td_str
- mov eax, dword [MEMORY_EHCI+0x100]
- PHEX eax
- mov eax, dword [MEMORY_EHCI+0x100+4]
- PHEX eax
- mov eax, dword [MEMORY_EHCI+0x100+8]
- PHEX eax
- mov eax, dword [MEMORY_EHCI+0x100+12]
- PHEX eax
- mov eax, dword [MEMORY_EHCI+0x100+16]
- PHEX eax
- mov eax, dword [MEMORY_EHCI+0x100+20]
- PHEX eax
- mov eax, dword [MEMORY_EHCI+0x100+24]
- PHEX eax
- PSTR 'end', endstr
 
  ret
 
@@ -416,33 +384,21 @@ ehci_transfer_bulk_out:
  mov dword [ehci_td_pointer], MEMORY_EHCI+0x100+8
  call ehci_transfer_queue_head
 
- PSTR 'QH out', qh_str
- mov eax, dword [MEMORY_EHCI+0]
- PHEX eax
- mov eax, dword [MEMORY_EHCI+4]
- PHEX eax
- mov eax, dword [MEMORY_EHCI+8]
- PHEX eax
- mov eax, dword [MEMORY_EHCI+12]
- PHEX eax
- mov eax, dword [MEMORY_EHCI+16]
- PHEX eax
- PSTR 'TD', td_str
- mov eax, dword [MEMORY_EHCI+0x100]
- PHEX eax
- mov eax, dword [MEMORY_EHCI+0x100+4]
- PHEX eax
- mov eax, dword [MEMORY_EHCI+0x100+8]
- PHEX eax
- mov eax, dword [MEMORY_EHCI+0x100+12]
- PHEX eax
- mov eax, dword [MEMORY_EHCI+0x100+16]
- PHEX eax
- mov eax, dword [MEMORY_EHCI+0x100+20]
- PHEX eax
- mov eax, dword [MEMORY_EHCI+0x100+24]
- PHEX eax
- PSTR 'end', endstr
+ ret
+
+ehci_msd_descriptor:
+ mov eax, CONTROL_TRANSFER
+ or eax, dword [ehci_address]
+ EHCI_CREATE_QUEUE_HEAD eax
+ EHCI_CREATE_TD MEMORY_EHCI+0x100, MEMORY_EHCI+0x200, NO_POINTER, (SETUP_PACKET | EHCI_TRANSFER_LENGTH(8) | DATA_TOGGLE_0), MEMORY_EHCI+0x400
+ mov dword [MEMORY_EHCI+0x400+0], 0x06000680
+ mov dword [MEMORY_EHCI+0x400+4], 0x000A0000
+ EHCI_CREATE_TD MEMORY_EHCI+0x200, MEMORY_EHCI+0x300, MEMORY_EHCI+0x300, (IN_PACKET | EHCI_TRANSFER_LENGTH(10) | DATA_TOGGLE_1), MEMORY_EHCI+0x500
+ EHCI_CREATE_TD MEMORY_EHCI+0x300, NO_POINTER, NO_POINTER, (OUT_PACKET | EHCI_TRANSFER_LENGTH(0) | DATA_TOGGLE_1), 0x0
+
+ ;start transfer
+ mov dword [ehci_td_pointer], MEMORY_EHCI+0x300+8
+ call ehci_transfer_queue_head
 
  ret
 
@@ -462,4 +418,10 @@ ehci_transfer_queue_head:
  .transfer_is_complete:
  EHCI_WRITE_CMD 0x00080001
 
+ mov eax, dword [edi]
+ and eax, 0xFF
+ cmp eax, 0
+ je .done
+ PHEX eax
+ .done:
  ret
