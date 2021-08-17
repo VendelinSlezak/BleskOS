@@ -9,6 +9,8 @@
 %define KEY_DELETE 0x53
 %define KEY_LEFT_SHIFT 0x2A
 %define KEY_RIGHT_SHIFT 0x36
+%define KEY_PAGE_UP 0xA0
+%define KEY_PAGE_DOWN 0xA1
 
 %define KEY_UP 0x48 
 %define KEY_DOWN 0x50
@@ -82,7 +84,3 @@ english_shift_keyboard_layout:
  db 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '<', '>', '?', ' ' ;fourth line, right shift
  times 15 db ' ' ;other control keys
  db '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3', '0', '.' ;numpad
-
-init_keyboard:
- mov dword [keyboard_shift], 0
- ret
