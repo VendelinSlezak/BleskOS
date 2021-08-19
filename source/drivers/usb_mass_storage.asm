@@ -2,11 +2,13 @@
 
 %define NO_MSD 0x0
 %define MSD_NON_INITALIZED 0x1
-%define MSD_FLASH 0x2
-%define MSD_CDROM 0x3
+%define MSD_FAT32 0x2
 
 %define MSD_READ 0x80
 %define MSD_WRITE 0x00
+
+%define MSD_OK 1
+%define MSD_ERROR 0
 
 %macro MSD_CREATE_CBW 3
  mov dword [MEMORY_EHCI+0x500], 0x43425355
@@ -31,6 +33,7 @@ msd_usb_controller_address db 0
 
 msd_sector dd 0
 msd_transfer_memory dd 0
+msd_status dd 0
 
 select_msd:
  mov eax, dword [msd_number]
@@ -132,11 +135,7 @@ msd_set_data_toggle_in:
 msd_init:
  MSD_CREATE_CBW MSD_READ, 36, 6
  mov byte [MEMORY_EHCI+0x500+15], 0x12 ;inquiry
- mov byte [MEMORY_EHCI+0x500+16], 0x0
- mov byte [MEMORY_EHCI+0x500+17], 0x0
- mov byte [MEMORY_EHCI+0x500+18], 0x0
  mov byte [MEMORY_EHCI+0x500+19], 36 ;transfer length
- mov byte [MEMORY_EHCI+0x500+20], 0 ;control
 
  ;SEND CBW
  mov dword [ehci_transfer_pointer], MEMORY_EHCI+0x500
@@ -158,11 +157,7 @@ msd_init:
 
  MSD_CREATE_CBW MSD_READ, 0x12, 6
  mov byte [MEMORY_EHCI+0x500+15], 0x03 ;request sense
- mov byte [MEMORY_EHCI+0x500+16], 0x0
- mov byte [MEMORY_EHCI+0x500+17], 0x0
- mov byte [MEMORY_EHCI+0x500+18], 0x0
  mov byte [MEMORY_EHCI+0x500+19], 0x12 ;transfer length
- mov byte [MEMORY_EHCI+0x500+20], 0 ;control
 
  ;SEND CBW
  mov dword [ehci_transfer_pointer], MEMORY_EHCI+0x500
@@ -212,11 +207,14 @@ msd_init:
  shl ebx, 16
  or eax, ebx
  mov esi, dword [msd_pointer]
+ dec eax
  mov dword [esi+8], eax ;save size
 
  ret
 
 msd_read:
+ mov dword [msd_status], MSD_ERROR
+
  MSD_CREATE_CBW MSD_READ, 0x200, 10
  mov byte [MEMORY_EHCI+0x500+15], 0x28 ;read
  mov al, byte [msd_sector+3]
@@ -228,7 +226,6 @@ msd_read:
  mov al, byte [msd_sector+0]
  mov byte [MEMORY_EHCI+0x500+20], al
  mov byte [MEMORY_EHCI+0x500+23], 0x01 ;1 sector
- mov byte [MEMORY_EHCI+0x500+24], 0x00 ;control
 
  ;SEND CBW
  mov dword [ehci_transfer_pointer], MEMORY_EHCI+0x500
@@ -249,9 +246,17 @@ msd_read:
  call msd_set_data_toggle_in
  call ehci_transfer_bulk_in
 
+ cmp dword [MEMORY_EHCI+0x600], 0x53425355 ;CSW singature
+ jne .done
+ cmp dword [MEMORY_EHCI+0x600+8], 0
+ jne .done
+ mov dword [msd_status], MSD_OK
+ .done:
  ret
 
 msd_write:
+ mov dword [msd_status], MSD_ERROR
+
  MSD_CREATE_CBW MSD_WRITE, 0x200, 10
  mov byte [MEMORY_EHCI+0x500+15], 0x2A ;write
  mov al, byte [msd_sector+3]
@@ -263,7 +268,6 @@ msd_write:
  mov al, byte [msd_sector+0]
  mov byte [MEMORY_EHCI+0x500+20], al
  mov byte [MEMORY_EHCI+0x500+23], 0x01 ;1 sector
- mov byte [MEMORY_EHCI+0x500+24], 0x00 ;control
 
  ;SEND CBW
  mov dword [ehci_transfer_pointer], MEMORY_EHCI+0x500
@@ -284,4 +288,10 @@ msd_write:
  call msd_set_data_toggle_in
  call ehci_transfer_bulk_in
 
+ cmp dword [MEMORY_EHCI+0x600], 0x53425355 ;CSW singature
+ jne .done
+ cmp dword [MEMORY_EHCI+0x600+8], 0
+ jne .done
+ mov dword [msd_status], MSD_OK
+ .done:
  ret
