@@ -295,13 +295,22 @@ ehci_device_read_descriptor:
  ;parse descriptor
  mov esi, MEMORY_EHCI+0x800
  call parse_usb_descriptor
- mov eax, dword [usb_descriptor+12]
+
+ mov eax, dword [usb_descriptor+13]
  cmp eax, 0x00500608
  je .mass_storage_device
  jmp .unknown_device
 
  .mass_storage_device:
  PSTR 'USB Mass Storage', mass_storage_str
+ mov al, byte [usb_descriptor+10]
+ call ehci_set_configuration
+ mov al, byte [usb_descriptor+11]
+ mov bl, byte [usb_descriptor+12]
+ call ehci_set_interface
+ mov al, byte [usb_descriptor+11]
+ call ehci_soft_reset
+
  mov esi, mass_storage_devices
  mov dword [msd_number], 0
  mov ecx, 5
@@ -318,14 +327,13 @@ ehci_device_read_descriptor:
  mov dword [esi], eax ;save base address
  mov eax, dword [ehci_address]
  mov byte [esi+4], al ;save device address
- mov al, byte [usb_descriptor+16] ;out endpoint
+ mov al, byte [usb_descriptor+17] ;out endpoint
  mov byte [esi+5], al
- mov al, byte [usb_descriptor+17] ;in endpoint
+ mov al, byte [usb_descriptor+18] ;in endpoint
  mov byte [esi+6], al
 
  .init_msd:
  mov word [esi+7], 0x1 ;uninitalized state
- call ehci_msd_qualifier
  call select_msd
  call msd_init
 
@@ -334,6 +342,58 @@ ehci_device_read_descriptor:
 
  .unknown_device:
  PHEX eax
+ ret
+
+ehci_soft_reset:
+ ;request
+ mov dword [MEMORY_EHCI+0x300+0], 0x00000221
+ mov dword [MEMORY_EHCI+0x300+4], 0x00000000
+ mov byte [MEMORY_EHCI+0x300+4], al ;interface number
+
+ ;transfer
+ mov eax, CONTROL_TRANSFER
+ or eax, dword [ehci_address]
+ EHCI_CREATE_QUEUE_HEAD eax
+ EHCI_CREATE_TD MEMORY_EHCI+0x100, MEMORY_EHCI+0x200, NO_POINTER, (SETUP_PACKET | EHCI_TRANSFER_LENGTH(8) | DATA_TOGGLE_0), MEMORY_EHCI+0x300
+ EHCI_CREATE_TD MEMORY_EHCI+0x200, NO_POINTER, NO_POINTER, (IN_PACKET | EHCI_TRANSFER_LENGTH(0) | DATA_TOGGLE_1), 0x0
+ mov dword [ehci_td_pointer], MEMORY_EHCI+0x200+8
+ call ehci_transfer_queue_head
+
+ ret
+
+ehci_set_configuration:
+ ;request
+ mov dword [MEMORY_EHCI+0x300+0], 0x00000900
+ mov dword [MEMORY_EHCI+0x300+4], 0x00000000
+ mov byte [MEMORY_EHCI+0x300+2], al ;configuration number
+
+ ;transfer
+ mov eax, CONTROL_TRANSFER
+ or eax, dword [ehci_address]
+ EHCI_CREATE_QUEUE_HEAD eax
+ EHCI_CREATE_TD MEMORY_EHCI+0x100, MEMORY_EHCI+0x200, NO_POINTER, (SETUP_PACKET | EHCI_TRANSFER_LENGTH(8) | DATA_TOGGLE_0), MEMORY_EHCI+0x300
+ EHCI_CREATE_TD MEMORY_EHCI+0x200, NO_POINTER, NO_POINTER, (IN_PACKET | EHCI_TRANSFER_LENGTH(0) | DATA_TOGGLE_1), 0x0
+ mov dword [ehci_td_pointer], MEMORY_EHCI+0x200+8
+ call ehci_transfer_queue_head
+
+ ret
+
+ehci_set_interface:
+ ;request
+ mov dword [MEMORY_EHCI+0x300+0], 0x00000B01
+ mov dword [MEMORY_EHCI+0x300+4], 0x00000000
+ mov byte [MEMORY_EHCI+0x300+4], al ;interface number
+ mov byte [MEMORY_EHCI+0x300+2], bl ;alternative interface number
+
+ ;transfer
+ mov eax, CONTROL_TRANSFER
+ or eax, dword [ehci_address]
+ EHCI_CREATE_QUEUE_HEAD eax
+ EHCI_CREATE_TD MEMORY_EHCI+0x100, MEMORY_EHCI+0x200, NO_POINTER, (SETUP_PACKET | EHCI_TRANSFER_LENGTH(8) | DATA_TOGGLE_0), MEMORY_EHCI+0x300
+ EHCI_CREATE_TD MEMORY_EHCI+0x200, NO_POINTER, NO_POINTER, (IN_PACKET | EHCI_TRANSFER_LENGTH(0) | DATA_TOGGLE_1), 0x0
+ mov dword [ehci_td_pointer], MEMORY_EHCI+0x200+8
+ call ehci_transfer_queue_head
+
  ret
 
 ehci_transfer_bulk_in:
@@ -386,22 +446,6 @@ ehci_transfer_bulk_out:
 
  ret
 
-ehci_msd_qualifier:
- mov eax, CONTROL_TRANSFER
- or eax, dword [ehci_address]
- EHCI_CREATE_QUEUE_HEAD eax
- EHCI_CREATE_TD MEMORY_EHCI+0x100, MEMORY_EHCI+0x200, NO_POINTER, (SETUP_PACKET | EHCI_TRANSFER_LENGTH(8) | DATA_TOGGLE_0), MEMORY_EHCI+0x400
- mov dword [MEMORY_EHCI+0x400+0], 0x06000680
- mov dword [MEMORY_EHCI+0x400+4], 0x000A0000
- EHCI_CREATE_TD MEMORY_EHCI+0x200, MEMORY_EHCI+0x300, MEMORY_EHCI+0x300, (IN_PACKET | EHCI_TRANSFER_LENGTH(10) | DATA_TOGGLE_1), MEMORY_EHCI+0x500
- EHCI_CREATE_TD MEMORY_EHCI+0x300, NO_POINTER, NO_POINTER, (OUT_PACKET | EHCI_TRANSFER_LENGTH(0) | DATA_TOGGLE_1), 0x0
-
- ;start transfer
- mov dword [ehci_td_pointer], MEMORY_EHCI+0x300+8
- call ehci_transfer_queue_head
-
- ret
-
 ehci_transfer_queue_head:
  EHCI_WRITE_CMD 0x00080021
 
@@ -412,16 +456,12 @@ ehci_transfer_queue_head:
   and eax, 0x80
   cmp eax, 0
   je .transfer_is_complete
- cmp dword [ticks], 100
+ cmp dword [ticks], 500 ;max one second
  jnge .wait_for_transfer
 
  .transfer_is_complete:
  EHCI_WRITE_CMD 0x00080001
 
- mov eax, dword [edi]
- and eax, 0xFF
- cmp eax, 0
- je .done
- PHEX eax
- .done:
+ mov eax, dword [edi] ;save state of transfer
+
  ret
