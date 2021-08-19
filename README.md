@@ -17,7 +17,7 @@ Inbuilt hardware:
 
 Filesystems:
 * JUS
-* FAT32 (not available on GitHub now)
+* FAT32 (read only now, but in few days it will be read-write)
 
 USB controllers:
 * UHCI
