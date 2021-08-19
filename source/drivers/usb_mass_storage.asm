@@ -210,6 +210,20 @@ msd_init:
  dec eax
  mov dword [esi+8], eax ;save size
 
+ call msd_read_mbr
+ cmp dword [first_partition_lba], 0
+ je .without_partition
+
+ mov eax, dword [first_partition_lba]
+ mov dword [fat_base_sector], eax
+ call init_fat
+
+ mov eax, dword [fat_root_dir_cluster]
+ mov dword [fat_entry], eax
+ mov dword [fat_memory], MEMORY_FOLDER
+ call fat_read_file
+
+ .without_partition:
  ret
 
 msd_read:
