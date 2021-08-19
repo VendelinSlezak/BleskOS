@@ -41,6 +41,8 @@ fat_entry_value dd 0
 fat_cluster dd 0
 fat_memory dd 0
 
+fat_present dd 0
+
 msd_read_mbr:
  mov esi, mbr
  mov ecx, 512
@@ -56,6 +58,8 @@ msd_read_mbr:
  ret
 
 init_fat:
+ mov dword [fat_present], 0
+
  mov dword [msd_transfer_memory], fat_bpb
  mov eax, dword [fat_base_sector]
  mov dword [msd_sector], eax
@@ -65,6 +69,8 @@ init_fat:
 
  cmp byte [fat_bpb], 0xEB
  jne .done
+
+ mov dword [fat_present], 1
 
  mov eax, 0
  mov ax, word [fat_reserved_sectors]
