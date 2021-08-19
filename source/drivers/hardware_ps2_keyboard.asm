@@ -68,6 +68,7 @@ keyboard_irq:
  jmp .clear_wait
 
  .special_code:
+  mov dword [keyboard_special_code], 0
   mov byte [key_ascii], 0
   mov byte [key_code], 0
 
