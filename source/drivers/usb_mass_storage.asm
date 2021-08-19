@@ -2,7 +2,8 @@
 
 %define NO_MSD 0x0
 %define MSD_NON_INITALIZED 0x1
-%define MSD_FAT32 0x2
+%define MSD_INITALIZED 0x2
+%define MSD_FAT32 0x3
 
 %define MSD_READ 0x80
 %define MSD_WRITE 0x00
@@ -155,27 +156,7 @@ msd_init:
  call msd_set_data_toggle_in
  call ehci_transfer_bulk_in
 
- MSD_CREATE_CBW MSD_READ, 0x12, 6
- mov byte [MEMORY_EHCI+0x500+15], 0x03 ;request sense
- mov byte [MEMORY_EHCI+0x500+19], 0x12 ;transfer length
-
- ;SEND CBW
- mov dword [ehci_transfer_pointer], MEMORY_EHCI+0x500
- mov dword [ehci_transfer_length], 31
- call msd_set_data_toggle_out
- call ehci_transfer_bulk_out
-
- ;READ MSD RESPONSE
- mov dword [ehci_transfer_pointer], MEMORY_EHCI+0x600
- mov dword [ehci_transfer_length], 0x12
- call msd_set_data_toggle_in
- call ehci_transfer_bulk_in
-
- ;READ CSW
- mov dword [ehci_transfer_pointer], MEMORY_EHCI+0x700
- mov dword [ehci_transfer_length], 13
- call msd_set_data_toggle_in
- call ehci_transfer_bulk_in
+ call msd_request_sense
 
  MSD_CREATE_CBW MSD_READ, 8, 10
  mov byte [MEMORY_EHCI+0x500+15], 0x25 ;capacity
@@ -210,6 +191,9 @@ msd_init:
  dec eax
  mov dword [esi+8], eax ;save size
 
+ mov eax, dword [msd_pointer]
+ mov byte [eax+7], MSD_INITALIZED
+
  call msd_read_mbr
  cmp dword [first_partition_lba], 0
  je .without_partition
@@ -218,16 +202,43 @@ msd_init:
  mov dword [fat_base_sector], eax
  call init_fat
 
- mov eax, dword [fat_root_dir_cluster]
- mov dword [fat_entry], eax
- mov dword [fat_memory], MEMORY_FOLDER
- call fat_read_file
+ cmp dword [fat_present], 0
+ je .without_partition
+
+ mov eax, dword [msd_pointer]
+ mov byte [eax+7], MSD_FAT32
 
  .without_partition:
  ret
 
+msd_request_sense:
+ MSD_CREATE_CBW MSD_READ, 0x12, 6
+ mov byte [MEMORY_EHCI+0x500+15], 0x03 ;request sense
+ mov byte [MEMORY_EHCI+0x500+19], 0x12 ;transfer length
+
+ ;SEND CBW
+ mov dword [ehci_transfer_pointer], MEMORY_EHCI+0x500
+ mov dword [ehci_transfer_length], 31
+ call msd_set_data_toggle_out
+ call ehci_transfer_bulk_out
+
+ ;READ MSD RESPONSE
+ mov dword [ehci_transfer_pointer], MEMORY_EHCI+0x600
+ mov dword [ehci_transfer_length], 0x12
+ call msd_set_data_toggle_in
+ call ehci_transfer_bulk_in
+
+ ;READ CSW
+ mov dword [ehci_transfer_pointer], MEMORY_EHCI+0x700
+ mov dword [ehci_transfer_length], 13
+ call msd_set_data_toggle_in
+ call ehci_transfer_bulk_in
+
+ ret
+
 msd_read:
  mov dword [msd_status], MSD_ERROR
+ mov dword [MEMORY_EHCI+0x600], 0
 
  MSD_CREATE_CBW MSD_READ, 0x200, 10
  mov byte [MEMORY_EHCI+0x500+15], 0x28 ;read
@@ -261,15 +272,20 @@ msd_read:
  call ehci_transfer_bulk_in
 
  cmp dword [MEMORY_EHCI+0x600], 0x53425355 ;CSW singature
- jne .done
+ jne .error
  cmp dword [MEMORY_EHCI+0x600+8], 0
  jne .done
  mov dword [msd_status], MSD_OK
  .done:
  ret
 
+ .error:
+ call msd_request_sense
+ ret
+
 msd_write:
  mov dword [msd_status], MSD_ERROR
+ mov dword [MEMORY_EHCI+0x600], 0
 
  MSD_CREATE_CBW MSD_WRITE, 0x200, 10
  mov byte [MEMORY_EHCI+0x500+15], 0x2A ;write
@@ -303,9 +319,13 @@ msd_write:
  call ehci_transfer_bulk_in
 
  cmp dword [MEMORY_EHCI+0x600], 0x53425355 ;CSW singature
- jne .done
+ jne .error
  cmp dword [MEMORY_EHCI+0x600+8], 0
  jne .done
  mov dword [msd_status], MSD_OK
  .done:
+ ret
+
+ .error:
+ call msd_request_sense
  ret
