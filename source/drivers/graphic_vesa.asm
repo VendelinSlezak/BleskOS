@@ -629,6 +629,38 @@ print:
  .end:
  ret
 
+print_ascii:
+ .print_char:
+  mov al, byte [esi]
+  cmp al, 0 ;end of string
+  je .end
+
+  mov dword [char_for_print], 0
+  mov byte [char_for_print], al
+  call print_char
+  add dword [cursor_column], 8 ;position of next char
+  inc esi
+ jmp .print_char
+
+ .end:
+ ret
+
+print_unicode:
+ .print_char:
+  mov ax, word [esi]
+  cmp ax, 0 ;end of string
+  je .end
+
+  mov dword [char_for_print], 0
+  mov word [char_for_print], ax
+  call print_char
+  add dword [cursor_column], 8 ;position of next char
+  add esi, 2
+ jmp .print_char
+
+ .end:
+ ret
+
 print_hex:
  mov byte [hex_string], '0'
  mov byte [hex_string+1], 'x'
