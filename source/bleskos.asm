@@ -32,15 +32,15 @@ start:
  %include "source/drivers/hardware_paralel_ata.asm"
  %include "source/drivers/hardware_paralel_atapi.asm"
 
- %include "source/drivers/filesystem_jus.asm"
- ;;%include "source/drivers/filesystem_fat32.asm"
-
  %include "source/drivers/usb_center.asm"
  %include "source/drivers/usb_uhci.asm"
  %include "source/drivers/usb_ehci.asm"
- 
+
  %include "source/drivers/usb_mouse.asm"
  %include "source/drivers/usb_mass_storage.asm"
+
+ %include "source/drivers/filesystem_jus.asm"
+ %include "source/drivers/filesystem_fat32.asm"
 
  %include "source/drivers/network_center.asm"
 
