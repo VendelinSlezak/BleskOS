@@ -32,25 +32,41 @@ hardware_centrum:
 
  ;text
  PRINT 'Hardware centrum', hc_str, LINE(2), COLUMN(2)
- PRINT '[F12] Shutdown', shutdown_str, LINE(6), COLUMN(2)
+ PRINT '[enter] Detect USB devices', detect_usb_devices_str, LINE(6), COLUMN(2)
+ PRINT '[F12] Shutdown', shutdown_str, LINE(8), COLUMN(2)
+ ;connected USB devices
+ IF_NE dword [usb_mouse_controller], 0, if_usb_mouse
+  PRINT 'USB mouse is connected', usb_mouse_is_str, LINE(10), COLUMN(2)
+ ENDIF if_usb_mouse
+ IF_E dword [usb_mouse_controller], 0, if_usb_mouse_is_not
+  PRINT 'USB mouse is not connected', usb_mouse_is_not_str, LINE(10), COLUMN(2)
+ ENDIF if_usb_mouse_is_not
+ mov eax, 0
+ mov esi, mass_storage_devices
+ mov ecx, 5
+ .find_number_of_msd:
+  cmp byte [esi+7], 0
+  je .next_item
+  inc eax
+ .next_item:
+ add esi, 16
+ loop .find_number_of_msd
+ PRINT_VAR eax, LINE(12), COLUMN(2)
+ PRINT 'USB mass storage devices connected', usb_msd_num_of_str, LINE(12), COLUMN(4)
  call redraw_screen
 
  ;time
  .update_time:
  call read_time
-
- DRAW_SQUARE LINE(4), COLUMN(2), 8*32, LINESZ, 0x00C000
+ DRAW_SQUARE LINE(4), COLUMN(2), COLUMNSZ*32, LINESZ, 0x00C000 ;erase time from screen
  PRINT '    /  /     :  :', time_str, LINE(4), COLUMN(2)
-
  mov eax, dword [year]
  PRINT_VAR eax, LINE(4), COLUMN(2)
-
  WRITE_TIME month, 7
  WRITE_TIME day, 10
  WRITE_TIME hour, 13
  WRITE_TIME minute, 16
  WRITE_TIME second, 19
-
  mov eax, dword [second]
  mov dword [last_second], eax
 
@@ -72,11 +88,22 @@ hardware_centrum:
   cmp byte [key_code], KEY_ESC
   je main_window
 
+  cmp byte [key_code], KEY_ENTER
+  je .detect_usb_devices
+
   cmp byte [key_code], KEY_F12
   je .shutdown
 
   mov dword [keyboard_wait], 1
  jmp .hardware_halt
+
+ .detect_usb_devices:
+  DRAW_SQUARE LINE(10), COLUMN(2), COLUMNSZ*36, LINESZ*10, 0x00C000 ;erase messages from screen
+  PRINT 'Detecting USB devices...', detecting_usb_str, LINE(10), COLUMN(2)
+  call redraw_screen
+  WAIT 100
+  call detect_usb_devices
+ jmp hardware_centrum
 
  .shutdown:
   CLEAR_SCREEN 0x00C000
