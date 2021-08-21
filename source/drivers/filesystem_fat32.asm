@@ -387,5 +387,5 @@ fat_write_file:
   add esi, 4
  loop .update_fat_table
 
- .done
+ .done:
  ret
