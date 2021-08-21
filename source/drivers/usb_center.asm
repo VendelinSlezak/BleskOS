@@ -48,6 +48,7 @@ init_usb_ports:
   mov word [uhci_base], ax
   push esi
   call init_uhci_controller
+  call uhci_detect_devices
   pop esi
   inc dword [uhci_controller_number]
   add esi, 2
@@ -73,6 +74,24 @@ detect_usb_devices:
  pop ecx
  loop .detect_ehci
  .skip_ehci:
+
+ mov dword [uhci_controller_number], 0
+ mov esi, uhci_controllers_base
+ mov ecx, dword [uhci_num_of_ports]
+ cmp ecx, 0
+ je .skip_uhci
+ .init_uhci:
+ push ecx
+  mov ax, word [esi]
+  mov word [uhci_base], ax
+  push esi
+  call uhci_detect_devices
+  pop esi
+  inc dword [uhci_controller_number]
+  add esi, 2
+ pop ecx
+ loop .init_uhci
+ .skip_uhci:
 
  ret
 
