@@ -201,6 +201,14 @@ ehci_detect_device:
  cmp eax, 0x0
  je .done
 
+ ;if was some device connected here
+ mov eax, dword [ehci_base]
+ mov dword [msd_usb_controller_base], eax
+ mov eax, dword [ehci_port_number]
+ inc eax
+ mov byte [msd_usb_controller_address], al
+ call msd_remove_device
+
  ;initalize device
  EHCI_WRITE_PORT 0x1100 ;reset device
  WAIT 6
@@ -223,12 +231,12 @@ ehci_detect_device:
  jmp .done
 
  .no_device:
- ;mov eax, dword [ehci_base]
- ;mov dword [msd_usb_controller_base], eax
- ;mov eax, dword [ehci_port_number]
- ;inc eax
- ;mov byte [msd_usb_controller_address], al
- ;call msd_remove_device ;if was some msd connected here
+ mov eax, dword [ehci_base]
+ mov dword [msd_usb_controller_base], eax
+ mov eax, dword [ehci_port_number]
+ inc eax
+ mov byte [msd_usb_controller_address], al
+ call msd_remove_device
 
  .done:
  ret
@@ -302,7 +310,6 @@ ehci_device_read_descriptor:
  jmp .unknown_device
 
  .mass_storage_device:
- PSTR 'USB Mass Storage', mass_storage_str
  mov al, byte [usb_descriptor+10]
  call ehci_set_configuration
  mov al, byte [usb_descriptor+11]
