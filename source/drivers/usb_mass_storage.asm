@@ -189,22 +189,25 @@ msd_init:
  or eax, ebx
  mov esi, dword [msd_pointer]
  dec eax
- mov dword [esi+8], eax ;save size
+ mov dword [esi+8], eax ;save size of msd drive
 
+ ;if we are here, it mean that MSD drive is initalized
  mov eax, dword [msd_pointer]
  mov byte [eax+7], MSD_INITALIZED
 
+ ;read partitions numbers
  call msd_read_mbr
  cmp dword [first_partition_lba], 0
  je .without_partition
 
+ ;is on first partition FAT32?
  mov eax, dword [first_partition_lba]
  mov dword [fat_base_sector], eax
  call init_fat
-
  cmp dword [fat_present], 0
  je .without_partition
 
+ ;we found MSD drive with FAT32 partition
  mov eax, dword [msd_pointer]
  mov byte [eax+7], MSD_FAT32
 
