@@ -21,7 +21,7 @@
 ; db ; minute
 ; db ; second
 ; dw ; type of file 0=free entry 1=folder 2=pure text 0xFFFE=defined in name
-; db ; name - max 50 chars
+; dw ; name in unicode - max 50 chars
 
 ;In BN part we can found if is some block free or not. Every block has one byte. 
 ;0 mean free block, 1 mean used block and 0xFF mean that this sector of BN part
@@ -102,10 +102,12 @@ jus_read_block:
  call read_hdd
  cmp dword [ata_status], ATA_OK
  je .done
+ mov dword [ata_number_of_sectors], 256
  call read_hdd ;try again
  cmp dword [ata_status], ATA_OK
  je .done
- WAIT 20
+ WAIT 200
+ mov dword [ata_number_of_sectors], 256
  call read_hdd ;try again
 
  .done:
@@ -123,10 +125,12 @@ jus_write_block:
  call write_hdd
  cmp dword [ata_status], ATA_OK
  je .done
+ mov dword [ata_number_of_sectors], 256
  call write_hdd ;try again
  cmp dword [ata_status], ATA_OK
  je .done
- WAIT 20
+ WAIT 200
+ mov dword [ata_number_of_sectors], 256
  call write_hdd ;try again
 
  .done:
