@@ -26,7 +26,7 @@ fat_bpb db 0, 0, 0
  fat_sectors_per_table dd 0
  times 4 db 0
  fat_root_dir_cluster dd 0
- times 24 db 0
+ times 23 db 0
  fat_label times 11 db 0
  times 430 db 0
 
