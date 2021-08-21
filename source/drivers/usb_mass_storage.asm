@@ -39,7 +39,7 @@ msd_status dd 0
 
 select_msd:
  mov eax, dword [msd_number]
- mov ebx, 8
+ mov ebx, 16
  mul ebx
  add eax, mass_storage_devices
  mov esi, eax ;pointer to device info
