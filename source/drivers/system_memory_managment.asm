@@ -10,7 +10,7 @@ allocate_memory:
 
  mov esi, memory
  mov ecx, 256
- mov edi, 0x01000000 ;first MB
+ mov edi, 0x02000000 ;first MB
  .search_for_free_memory:
   cmp byte [esi], 0
   jne .next_mb
@@ -48,7 +48,7 @@ release_memory:
  mov eax, dword [allocated_memory_pointer]
  cmp eax, 0x10000000
  jg .done ;invalid pointer
- sub eax, 0x01000000
+ sub eax, 0x02000000
  mov ebx, 0x100000
  mov edx, 0
  div ebx
