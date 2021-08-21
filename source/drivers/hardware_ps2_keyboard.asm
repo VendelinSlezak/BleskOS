@@ -2,7 +2,7 @@
 
 key_code dd 0
 keyboard_shift dd 0
-key_ascii db 0
+key_ascii dw 0
 keyboard_wait db 0
 selected_keyboard_set dd 0
 keyboard_special_code dd 0
@@ -72,8 +72,16 @@ keyboard_irq:
   mov byte [key_ascii], 0
   mov byte [key_code], 0
 
+  cmp al, 0x4B
+  je .key_left
+  cmp al, 0x4D
+  je .key_right
+  cmp al, 0x48
+  je .key_up
   cmp al, 0x49
   je .page_up
+  cmp al, 0x50
+  je .key_down
   cmp al, 0x51
   je .page_down
   jmp .clear_wait
@@ -84,6 +92,22 @@ keyboard_irq:
 
   .page_down:
   mov byte [key_code], KEY_PAGE_DOWN
+  jmp .clear_wait
+
+  .key_up:
+  mov byte [key_code], KEY_UP
+  jmp .clear_wait
+
+  .key_down:
+  mov byte [key_code], KEY_DOWN
+  jmp .clear_wait
+
+  .key_right:
+  mov byte [key_code], KEY_RIGHT
+  jmp .clear_wait
+
+  .key_left:
+  mov byte [key_code], KEY_LEFT
   jmp .clear_wait
 
 wait_for_keyboard:
