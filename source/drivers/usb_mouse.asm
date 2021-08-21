@@ -9,6 +9,20 @@ usb_mouse_endpoint dd 0
 usb_mouse_data dd 0
 usb_mouse_wait dd 0
 
+usb_mouse_uhci_remove:
+ mov ax, word [usb_mouse_base]
+ cmp word [uhci_base], ax
+ jne .done
+
+ mov dword [usb_mouse_controller], 0
+ mov dword [usb_mouse_base], 0
+ mov dword [usb_mouse_controller_number], 0
+ mov dword [usb_mouse_speed], 0
+ mov dword [usb_mouse_endpoint], 0
+
+ .done:
+ ret
+
 read_usb_mouse:
  cmp dword [usb_mouse_base], 0
  je .done
@@ -27,8 +41,8 @@ read_usb_mouse:
  mov dword [uhci_endpoint], eax
 
  mov dword [MEMORY_UHCI+0x10300], 0
+ mov dword [MEMORY_UHCI+0x10300+4], 0
  call uhci_read_hid
-
  mov eax, dword [MEMORY_UHCI+0x10300]
  mov dword [usb_mouse_data], eax
 
@@ -51,15 +65,12 @@ wait_for_usb_mouse:
   je .ps2_mouse
 
   inc dword [usb_mouse_wait]
-  cmp dword [usb_mouse_wait], 8
+  cmp dword [usb_mouse_wait], 4
   jl .wait
-
   mov dword [usb_mouse_data], 0
   call read_usb_mouse
-
   cmp dword [usb_mouse_data], 0x0
   jne .done
-
   mov dword [usb_mouse_wait], 0
  jmp .wait
 
