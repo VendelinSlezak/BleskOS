@@ -176,6 +176,7 @@ fat_read_cluster:
   je .error
   inc dword [msd_sector]
   add dword [msd_transfer_memory], 0x200 ;skip 
+  add dword [fat_memory], 0x200 ;skip 
  pop ecx
  loop .read_cluster
 
@@ -386,6 +387,105 @@ fat_write_file:
   je .done
   add esi, 4
  loop .update_fat_table
+
+ .done:
+ ret
+
+convert_fat_folder_to_jus_folder:
+ mov edi, MEMORY_FOLDER
+ mov ecx, 10000
+ .clear:
+  mov dword [edi], 0
+  add edi, 4
+ loop .clear
+
+ mov esi, MEMORY_FAT32_FOLDER
+ mov edi, MEMORY_FOLDER
+ mov ebp, 0
+ mov ecx, 2048 ;convert max 2048 items
+ .convert_item:
+  cmp byte [esi+11], 0
+  je .done
+  mov al, byte [esi+11]
+  and al, 0x2
+  cmp al, 0x2
+  je .next_item
+  mov al, byte [esi+11]
+  and al, 0x4
+  cmp al, 0x4
+  je .next_item
+  mov al, byte [esi+11]
+  and al, 0x8
+  cmp al, 0x8
+  je .next_item
+  cmp byte [esi+11], 0xF
+  je .next_item
+
+  ;name
+  mov eax, dword [esi]
+  mov dword [edi+16], eax
+  mov eax, dword [esi+4]
+  mov dword [edi+20], eax
+  mov byte [edi+25], 0
+
+  ;type
+  mov eax, dword [esi+8]
+  and eax, 0x00FFFFFF
+  mov dword [edi+56], eax
+  mov word [edi+14], 2
+
+  ;year
+  mov ax, word [esi+16]
+  and ax, 0x7F
+  or ax, 2000
+  mov word [edi+8], ax
+
+  ;month
+  mov ax, word [esi+16]
+  shr ax, 7
+  and ax, 0xF
+  mov byte [edi+10], al
+
+  ;day
+  mov ax, word [esi+16]
+  shr ax, 11
+  mov byte [edi+11], al
+
+  ;hour
+  mov ax, word [esi+14]
+  and ax, 0x1F
+  mov byte [edi+12], al
+
+  ;minute
+  mov ax, word [esi+14]
+  shr ax, 5
+  and ax, 0x3F
+  mov byte [edi+13], al
+
+  ;size
+  mov eax, dword [esi+28]
+  mov ebx, 1024
+  mov edx, 0
+  div ebx ;convert to KB
+  mov dword [edi+4], eax
+
+  ;cluster
+  mov ax, word [esi+20]
+  shl ax, 16
+  mov ax, word [esi+26]
+  mov dword [edi+60], eax
+
+  ;item offset
+  mov eax, ebp
+  mov dword [edi+50], eax
+
+  add edi, 64
+ .next_item:
+ inc ebp
+ add esi, 32
+ dec ecx
+ cmp ecx, 0
+ jne .convert_item
 
  .done:
  ret
