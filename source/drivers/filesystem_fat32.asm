@@ -31,7 +31,9 @@ fat_bpb db 0, 0, 0
  times 430 db 0
 
 fat_table times 512 db 0
+fat_table_loaded_sector dd 0
 
+fat_present dd 0
 fat_base_sector dd 0
 fat_table_sector dd 0
 fat_data_sector dd 0
@@ -40,8 +42,8 @@ fat_entry dd 0
 fat_entry_value dd 0
 fat_cluster dd 0
 fat_memory dd 0
-
-fat_present dd 0
+fat_file_length dd 0
+fat_file_clusters dd 0
 
 msd_read_mbr:
  mov esi, mbr
@@ -88,25 +90,32 @@ init_fat:
  add eax, dword [fat_base_sector]
  mov dword [fat_data_sector], eax
 
+ mov dword [fat_table_loaded_sector], 0
+
  .done:
  ret
 
 fat_get_entry:
  mov eax, dword [fat_entry]
+ sub eax, 2
  mov ebx, 128
  mov edx, 0
  div ebx
  push edx ;offset
  add eax, dword [fat_table_sector] ;sector of FAT table
 
+ cmp dword [fat_table_loaded_sector], eax ;this sector is already loaded
+ je .get_entry_value
+
  mov dword [msd_sector], eax
  mov dword [msd_transfer_memory], fat_table
  call msd_read
  cmp dword [msd_status], MSD_ERROR
  je .done
+ mov dword [fat_table_loaded_sector], eax ;save loaded sector number
 
+ .get_entry_value:
  pop edx
- sub edx, 2
  mov eax, dword [fat_table+(edx*4)]
  mov dword [fat_entry_value], eax
 
@@ -115,6 +124,7 @@ fat_get_entry:
 
 fat_set_entry:
  mov eax, dword [fat_entry]
+ sub eax, 2
  mov ebx, 128
  mov edx, 0
  div ebx
@@ -122,14 +132,18 @@ fat_set_entry:
  push eax ;sector of FAT table
  push edx ;offset
 
+ cmp dword [fat_table_loaded_sector], eax ;this sector is already loaded
+ je .set_entry_value
+
  mov dword [msd_sector], eax
  mov dword [msd_transfer_memory], fat_table
  call msd_read ;load sector
  cmp dword [msd_status], MSD_ERROR
  je .done
+ mov dword [fat_table_loaded_sector], eax ;save loaded sector number
 
+ .set_entry_value:
  pop edx
- dec edx
  mov eax, dword [fat_entry_value]
  mov dword [fat_table+(edx*4)], eax
 
@@ -143,8 +157,7 @@ fat_set_entry:
 
 fat_read_cluster:
  mov eax, dword [fat_cluster]
- dec eax
- dec eax
+ sub eax, 2
  mov ebx, 0
  mov bl, byte [fat_sectors_per_cluster]
  mul ebx
@@ -174,8 +187,7 @@ fat_read_cluster:
 
 fat_write_cluster:
  mov eax, dword [fat_cluster]
- dec eax
- dec eax
+ sub eax, 2
  mov ebx, 0
  mov bl, byte [fat_sectors_per_cluster]
  mul ebx
@@ -205,9 +217,6 @@ fat_write_cluster:
  ret
 
 fat_read_file:
- mov eax, dword [fat_entry]
- call fat_get_entry
-
  mov esi, MEMORY_FILE_DESCRIPTOR
  mov ecx, 10000
  .clear:
@@ -219,6 +228,9 @@ fat_read_file:
  mov eax, dword [fat_entry]
  mov dword [esi], eax ;save first cluster
 
+ mov eax, dword [fat_entry]
+ call fat_get_entry ;get value of first cluster
+
  mov ecx, 10000 ;max 10000 clusters
  .load_cluster_values:
  push ecx
@@ -229,7 +241,7 @@ fat_read_file:
   je .error ;free cluster
 
   mov eax, dword [fat_entry_value]
-  mov dword [fat_entry], eax
+  mov dword [fat_entry], eax ;point to next cluster
   add esi, 4
   mov esi, dword [fat_entry] ;save cluster value
   push esi
@@ -258,4 +270,122 @@ fat_read_file:
  jmp .read_cluster
 
  .done:
+ ret
+
+fat_delete_file:
+ mov ecx, 10000 ;max 10000 clusters
+ .load_cluster_values:
+  mov eax, dword [fat_entry]
+  push ecx
+  call fat_get_entry
+  pop ecx
+  push dword [fat_entry_value] ;save pointer to next cluster
+
+  mov dword [fat_entry_value], 0x00000000
+  push ecx
+  call fat_set_entry ;delete cluster
+  pop ecx
+  cmp dword [msd_status], MSD_ERROR
+  je .done
+
+  pop dword [fat_entry_value]
+  cmp dword [fat_entry_value], 0x0FFFFFF6
+  jg .done
+  cmp dword [fat_entry_value], 0x00000000
+  je .done
+
+  mov eax, dword [fat_entry_value]
+  mov dword [fat_entry], eax ;point to next cluster
+ loop .load_cluster_values
+
+ .done:
+ ret
+
+fat_write_file:
+ mov esi, MEMORY_FILE_DESCRIPTOR
+ mov ecx, 10000
+ .clear:
+  mov dword [esi], 0
+  add esi, 4
+ loop .clear
+
+ ;calculate length of FAT table
+ mov eax, dword [fat_sectors_per_table]
+ mov ebx, 128
+ mul ebx
+ mov ecx, eax
+
+ ;calculate how many clusters
+ mov eax, dword [fat_file_length]
+ mov ebx, 2
+ mul ebx ;number of sectors of file
+ mov ebx, 0
+ mov bl, byte [fat_sectors_per_cluster]
+ mov edx, 0
+ div ebx
+ inc eax ;number of clusters
+ mov dword [fat_file_clusters], eax
+
+ mov dword [fat_entry], 2
+ mov esi, MEMORY_FILE_DESCRIPTOR
+ ;ecx was calculated above
+ .find_free_clusters:
+  push eax
+  push ecx
+  push esi
+  call fat_get_entry
+  pop esi
+  pop ecx
+  pop eax
+  cmp dword [msd_status], MSD_ERROR
+  je .done
+  cmp dword [fat_entry_value], 0x00000000
+  jne .next_entry
+
+  mov ebx, dword [fat_entry]
+  mov dword [esi], ebx
+  add esi, 4
+  dec eax
+  cmp eax, 0
+  je .write_clusters
+ .next_entry:
+ inc dword [fat_entry]
+ loop .find_free_clusters
+
+ .write_clusters:
+ mov dword [esi], 0x0FFFFFFF ;last pointer
+ mov esi, MEMORY_FILE_DESCRIPTOR
+ mov ecx, dword [fat_file_clusters]
+ .write_cluster:
+  mov eax, dword [esi]
+  mov dword [fat_cluster], eax
+  push esi
+  push ecx
+  call fat_write_cluster
+  pop ecx
+  pop esi
+  cmp dword [msd_status], MSD_ERROR
+  je .done
+  add esi, 4
+ loop .write_cluster
+
+ ;update fat table
+ mov esi, MEMORY_FILE_DESCRIPTOR
+ mov ecx, dword [fat_file_clusters]
+ .update_fat_table:
+  mov eax, dword [esi]
+  mov dword [fat_entry], eax
+  mov eax, dword [esi+4]
+  mov dword [fat_entry_value], eax
+  push ecx
+  push esi
+  call fat_set_entry
+  pop esi
+  pop ecx
+  cmp dword [msd_status], MSD_ERROR
+  je .done
+  add esi, 4
+ loop .update_fat_table
+
+ .done
  ret
