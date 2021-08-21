@@ -28,7 +28,8 @@ USB devices:
 * USB mass storage
 
 ### Programs
-Currently nothing, but text editor and graphic editor are on the way.
+* File manager (in fast progress, usable version will be released next week (to 26/8/2021))
+* Text editor (will be released next week to 28/8/2021)
 
 ## How to build
 BleskOS is completly written in NASM. You should use last version 2.1
