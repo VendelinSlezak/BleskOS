@@ -540,7 +540,6 @@ file_manager_redraw_file_zone:
   SCREEN_X_SUB eax, COLUMNSZ*25
   mov dword [cursor_column], eax
   mov bx, word [esi+8] ;year
-  and bx, 0x7F
   mov dword [var_print_value], 0
   mov word [var_print_value], bx
   push esi
