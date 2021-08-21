@@ -75,6 +75,8 @@ msd_remove_device:
 
   mov dword [esi], 0
   mov dword [esi+4], 0
+  mov dword [esi+8], 0
+  mov dword [esi+12], 0
   jmp .done
  .next_loop:
  add esi, 8
