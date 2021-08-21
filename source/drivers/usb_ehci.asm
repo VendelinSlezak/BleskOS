@@ -228,6 +228,12 @@ ehci_detect_device:
 
  .low_speed_device:
  EHCI_WRITE_PORT 0x3000 ;pass to companion controller
+ mov eax, dword [ehci_base]
+ mov dword [msd_usb_controller_base], eax
+ mov eax, dword [ehci_port_number]
+ inc eax
+ mov byte [msd_usb_controller_address], al
+ call msd_remove_device
  jmp .done
 
  .no_device:
