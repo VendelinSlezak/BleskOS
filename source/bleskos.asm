@@ -56,6 +56,8 @@ start:
  %include "source/programs/dp_ide.asm"
  %include "source/programs/dp_mouse.asm"
  %include "source/programs/dp_acpi.asm"
+ 
+ %include "source/programs/file_manager.asm"
 
 start_bleskos:
  call init_graphic
