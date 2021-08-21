@@ -1,7 +1,7 @@
 ;BleskOS
 
 %define NO_MSD 0x0
-%define MSD_NON_INITALIZED 0x1
+%define MSD_UNINITALIZED 0x1
 %define MSD_INITALIZED 0x2
 %define MSD_FAT32 0x3
 
