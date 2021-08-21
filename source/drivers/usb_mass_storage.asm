@@ -14,7 +14,7 @@
 %macro MSD_CREATE_CBW 3
  mov dword [MEMORY_EHCI+0x500], 0x43425355
  mov dword [MEMORY_EHCI+0x500+4], 0x12345678
- mov dword [MEMORY_EHCI+0x500+8], %2
+ mov dword [MEMORY_EHCI+0x500+8], %2 ;command
  mov byte [MEMORY_EHCI+0x500+12], %1 ;direction
  mov byte [MEMORY_EHCI+0x500+13], 0x00 ;LUN 0
  mov byte [MEMORY_EHCI+0x500+14], %3 ;command lenght
@@ -27,6 +27,7 @@
 %endmacro
 
 mass_storage_devices times 5 dd 0, 0, 0, 0
+mass_storage_device_label times 60 db 0
 msd_number dd 0
 msd_pointer dd 0
 msd_usb_controller_base dd 0
@@ -66,6 +67,7 @@ msd_remove_device:
  mov eax, dword [msd_usb_controller_base]
  mov bl, byte [msd_usb_controller_address]
  mov esi, mass_storage_devices
+ mov edi, mass_storage_device_label
  mov ecx, 5
  .remove_device:
   cmp dword [esi], eax
@@ -77,9 +79,13 @@ msd_remove_device:
   mov dword [esi+4], 0
   mov dword [esi+8], 0
   mov dword [esi+12], 0
+  mov dword [edi], 0
+  mov dword [edi+4], 0
+  mov dword [edi+8], 0
   jmp .done
  .next_loop:
- add esi, 8
+ add esi, 16
+ add edi, 12
  loop .remove_device
 
  .done:
@@ -212,6 +218,18 @@ msd_init:
  ;we found MSD drive with FAT32 partition
  mov eax, dword [msd_pointer]
  mov byte [eax+7], MSD_FAT32
+ ;copy label of device
+ mov eax, dword [msd_number]
+ mov ebx, 12
+ mul ebx
+ add eax, mass_storage_device_label
+ mov ebx, dword [fat_label]
+ mov dword [eax], ebx
+ mov ebx, dword [fat_label+4]
+ mov dword [eax+4], ebx
+ mov ebx, dword [fat_label+8]
+ mov dword [eax+8], ebx
+ mov byte [eax+11], 0
 
  .without_partition:
  ret
