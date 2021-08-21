@@ -436,24 +436,24 @@ convert_fat_folder_to_jus_folder:
 
   ;year
   mov ax, word [esi+16]
-  and ax, 0x7F
-  or ax, 2000
+  shr ax, 9
+  add ax, 1980
   mov word [edi+8], ax
 
   ;month
   mov ax, word [esi+16]
-  shr ax, 7
+  shr ax, 5
   and ax, 0xF
   mov byte [edi+10], al
 
   ;day
   mov ax, word [esi+16]
-  shr ax, 11
+  and ax, 0x1F
   mov byte [edi+11], al
 
   ;hour
   mov ax, word [esi+14]
-  and ax, 0x1F
+  shr ax, 11
   mov byte [edi+12], al
 
   ;minute
@@ -483,6 +483,42 @@ convert_fat_folder_to_jus_folder:
  .next_item:
  inc ebp
  add esi, 32
+ dec ecx
+ cmp ecx, 0
+ jne .convert_item
+
+ .done:
+ ret
+
+convert_jus_folder_to_fat_folder:
+ mov edi, MEMORY_FOLDER
+ mov ecx, 2048 ;convert max 2048 items
+ .convert_item:
+  cmp dword [edi], 0
+  je .done
+
+  mov eax, dword [edi+50]
+  mov ebx, 32
+  mul ebx
+  add eax, MEMORY_FAT32_FOLDER ;pointer to right item
+  mov esi, eax
+
+  ;name
+  mov eax, dword [edi+16]
+  mov dword [esi], eax
+  mov eax, dword [edi+20]
+  mov dword [esi+4], eax
+
+  ;type
+  mov al, byte [edi+56]
+  mov byte [esi+8], al
+  mov al, byte [edi+57]
+  mov byte [esi+9], al
+  mov al, byte [edi+58]
+  mov byte [esi+10], al
+
+  add edi, 64
+ .next_item:
  dec ecx
  cmp ecx, 0
  jne .convert_item
