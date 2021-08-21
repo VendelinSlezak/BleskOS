@@ -9,13 +9,13 @@
 %define KEY_DELETE 0x53
 %define KEY_LEFT_SHIFT 0x2A
 %define KEY_RIGHT_SHIFT 0x36
+
 %define KEY_PAGE_UP 0xA0
 %define KEY_PAGE_DOWN 0xA1
-
-%define KEY_UP 0x48 
-%define KEY_DOWN 0x50
-%define KEY_LEFT 0x4B
-%define KEY_RIGHT 0x4D
+%define KEY_UP 0xA2
+%define KEY_DOWN 0xA3
+%define KEY_LEFT 0xA4
+%define KEY_RIGHT 0xA5
 
 %define KEY_F1 0x3B
 %define KEY_F2 0x3C
