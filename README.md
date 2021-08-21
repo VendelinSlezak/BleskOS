@@ -17,7 +17,7 @@ Inbuilt hardware:
 
 Filesystems:
 * JUS
-* FAT32 (read only now, but in few days it will be read-write)
+* FAT32
 
 USB controllers:
 * UHCI
