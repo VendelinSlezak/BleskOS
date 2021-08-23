@@ -23,3 +23,7 @@ read_hdd:
 write_hdd:
  call pata_write
  ret
+
+delete_hdd:
+ call pata_delete
+ ret
