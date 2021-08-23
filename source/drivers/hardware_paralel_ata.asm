@@ -139,10 +139,10 @@ pata_read:
   ENDFOR ata_sector_cycle
 
   ;wait for prepare transfer
-  BASE_INB pata_base, 0
-  BASE_INB pata_base, 0
-  BASE_INB pata_base, 0
-  BASE_INB pata_base, 0
+  BASE_INB pata_base, 7
+  BASE_INB pata_base, 7
+  BASE_INB pata_base, 7
+  BASE_INB pata_base, 7
  ENDFOR ata_nos_cycle
 
  ret
@@ -159,20 +159,16 @@ pata_write:
 
  ;write sectors
  .data_are_ready:
- FOR dword [ata_number_of_sectors], ata_nos_cycle
-  FOR 256, ata_sector_cycle
-   mov ebx, dword [ata_memory]
-   mov ax, word [ebx]
-   BASE_OUTW pata_base, 0, ax ;write into hard disk
+ mov eax, dword [ata_number_of_sectors]
+ mov ebx, 256
+ mul ebx
+ mov ecx, eax
+ .send_data:
+   mov eax, dword [ata_memory]
+   mov bx, word [eax]
+   BASE_OUTW pata_base, 0, bx ;write into hard disk
    add dword [ata_memory], 2
-  ENDFOR ata_sector_cycle
-
-  ;wait for prepare transfer
-  BASE_INB pata_base, 0
-  BASE_INB pata_base, 0
-  BASE_INB pata_base, 0
-  BASE_INB pata_base, 0
- ENDFOR ata_nos_cycle
+ loop .send_data
 
  ret
 
@@ -194,10 +190,10 @@ pata_delete:
   ENDFOR ata_sector_cycle
 
   ;wait for prepare transfer
-  BASE_INB pata_base, 0
-  BASE_INB pata_base, 0
-  BASE_INB pata_base, 0
-  BASE_INB pata_base, 0
+  BASE_INB pata_base, 7
+  BASE_INB pata_base, 7
+  BASE_INB pata_base, 7
+  BASE_INB pata_base, 7
  ENDFOR ata_nos_cycle
 
  ret
