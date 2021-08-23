@@ -100,17 +100,7 @@ jus_read_block:
  mov dword [ata_number_of_sectors], 256
  ;ata memory is already set
  call read_hdd
- cmp dword [ata_status], ATA_OK
- je .done
- mov dword [ata_number_of_sectors], 256
- call read_hdd ;try again
- cmp dword [ata_status], ATA_OK
- je .done
- WAIT 200
- mov dword [ata_number_of_sectors], 256
- call read_hdd ;try again
 
- .done:
  ret
 
 jus_write_block:
@@ -123,17 +113,7 @@ jus_write_block:
  mov dword [ata_number_of_sectors], 256
  ;ata memory is already set
  call write_hdd
- cmp dword [ata_status], ATA_OK
- je .done
- mov dword [ata_number_of_sectors], 256
- call write_hdd ;try again
- cmp dword [ata_status], ATA_OK
- je .done
- WAIT 200
- mov dword [ata_number_of_sectors], 256
- call write_hdd ;try again
 
- .done:
  ret
 
 jus_read_file:
