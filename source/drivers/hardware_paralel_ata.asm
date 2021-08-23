@@ -92,19 +92,40 @@ pata_select_sector:
 
  ret
 
-pata_read:
+pata_wait:
  mov dword [ata_status], ATA_OK
 
- call pata_select_sector
- BASE_OUTB pata_base, 7, 0x24 ;read command
  mov ecx, 10000
  .wait_for_drive:
   BASE_INB pata_base, 7
   and al, 0x88
   cmp al, 0x08
-  je .data_are_ready
+  je .done
  loop .wait_for_drive
+
+ mov dword [ticks], 0
+ .wait_for_drive_longer:
+  BASE_INB pata_base, 7
+  and al, 0x88
+  cmp al, 0x08
+  je .done
+ cmp dword [ticks], 500
+ jl .wait_for_drive_longer
+
  mov dword [ata_status], ATA_ERROR
+ add dword [ata_memory], 0x200
+
+ .done:
+ ret
+
+pata_read:
+ call pata_select_sector
+ BASE_OUTB pata_base, 7, 0x24 ;read command
+
+ call pata_wait
+ cmp dword [ata_status], ATA_OK
+ je .data_are_ready
+
  ret
 
  ;read sectors
@@ -127,18 +148,13 @@ pata_read:
  ret
 
 pata_write:
- mov dword [ata_status], ATA_OK
-
  call pata_select_sector
  BASE_OUTB pata_base, 7, 0x25 ;write command
- mov ecx, 10000
- .wait_for_drive:
-  BASE_INB pata_base, 7
-  and al, 0x88
-  cmp al, 0x08
-  je .data_are_ready
- loop .wait_for_drive
- mov dword [ata_status], ATA_ERROR
+
+ call pata_wait
+ cmp dword [ata_status], ATA_OK
+ je .data_are_ready
+
  ret
 
  ;write sectors
@@ -161,18 +177,13 @@ pata_write:
  ret
 
 pata_delete:
- mov dword [ata_status], ATA_OK
-
  call pata_select_sector
  BASE_OUTB pata_base, 7, 0xC5 ;read command
- mov ecx, 10000
- .wait_for_drive:
-  BASE_INB pata_base, 7
-  and al, 0x88
-  cmp al, 0x08
-  je .data_are_ready
- loop .wait_for_drive
- mov dword [ata_status], ATA_ERROR
+
+ call pata_wait
+ cmp dword [ata_status], ATA_OK
+ je .data_are_ready
+
  ret
 
  ;write sectors
