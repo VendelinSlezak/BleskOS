@@ -27,7 +27,7 @@ patapi_send_packet_command:
  BASE_OUTB patapi_base, 5, al
  BASE_OUTB patapi_base, 7, 0xA0
 
- mov ecx, 100
+ mov ecx, 10000
  .wait_for_patapi:
   BASE_INB patapi_base, 7
   and al, 0x88
@@ -103,13 +103,23 @@ patapi_read:
  BASE_OUTW patapi_base, 0, 0x0100 ;one sector
  BASE_OUTW patapi_base, 0, 0x0
 
- mov ecx, 100000
+ mov ecx, 10000
  .wait_for_patapi:
   BASE_INB patapi_base, 7
   and al, 0x88
   cmp al, 0x08
   je .patapi_is_ready
  loop .wait_for_patapi
+
+ mov dword [ticks], 0
+ .wait_for_patapi_longer:
+  BASE_INB patapi_base, 7
+  and al, 0x88
+  cmp al, 0x08
+  je .patapi_is_ready
+ cmp dword [ticks], 1000
+ jl .wait_for_patapi_longer
+
  mov dword [patapi_status], IDE_ERROR
  ret
 
