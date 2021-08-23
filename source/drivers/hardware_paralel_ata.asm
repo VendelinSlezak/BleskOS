@@ -120,7 +120,7 @@ pata_wait:
 
 pata_read:
  call pata_select_sector
- BASE_OUTB pata_base, 7, 0x24 ;read command
+ BASE_OUTB pata_base, 7, 0xC4 ;read command
 
  call pata_wait
  cmp dword [ata_status], ATA_OK
@@ -149,7 +149,7 @@ pata_read:
 
 pata_write:
  call pata_select_sector
- BASE_OUTB pata_base, 7, 0x25 ;write command
+ BASE_OUTB pata_base, 7, 0xC5 ;write command
 
  call pata_wait
  cmp dword [ata_status], ATA_OK
@@ -174,7 +174,7 @@ pata_write:
 
 pata_delete:
  call pata_select_sector
- BASE_OUTB pata_base, 7, 0xC5 ;read command
+ BASE_OUTB pata_base, 7, 0xC5 ;write command
 
  call pata_wait
  cmp dword [ata_status], ATA_OK
