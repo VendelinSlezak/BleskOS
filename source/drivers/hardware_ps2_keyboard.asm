@@ -2,7 +2,7 @@
 
 key_code dd 0
 keyboard_shift dd 0
-key_ascii dw 0
+key_unicode dw 0
 keyboard_wait db 0
 selected_keyboard_set dd 0
 keyboard_special_code dd 0
@@ -18,6 +18,7 @@ keyboard_irq:
  mov eax, 0
  INB 0x60
  mov dword [key_code], eax
+ mov word [key_unicode], 0
 
  cmp dword [keyboard_special_code], 1
  je .special_code
@@ -43,7 +44,7 @@ keyboard_irq:
 
  ;select layout
  .select_layout:
- mov byte [key_ascii], 0
+ mov word [key_unicode], 0
  cmp dword [key_code], 0x79
  jg .clear_wait ;released key
 
@@ -51,10 +52,10 @@ keyboard_irq:
  IF_E dword [keyboard_shift], 1, if_shift_yes
   mov eax, english_shift_keyboard_layout
  ENDIF if_shift_yes
- add eax, dword [key_code]
+ mov ecx, dword [key_code]
 
- mov bl, byte [eax] ;read ascii value of key
- mov byte [key_ascii], bl
+ mov bx, word [eax+(ecx*2)] ;read unicode value of key
+ mov word [key_unicode], bx
 
  .clear_wait:
  mov dword [keyboard_wait], 0
@@ -69,45 +70,23 @@ keyboard_irq:
 
  .special_code:
   mov dword [keyboard_special_code], 0
-  mov byte [key_ascii], 0
-  mov byte [key_code], 0
+  mov byte [key_code], al
 
   cmp al, 0x4B
-  je .key_left
+  je .clear_wait
   cmp al, 0x4D
-  je .key_right
+  je .clear_wait
   cmp al, 0x48
-  je .key_up
+  je .clear_wait
   cmp al, 0x49
-  je .page_up
+  je .clear_wait
   cmp al, 0x50
-  je .key_down
+  je .clear_wait
   cmp al, 0x51
-  je .page_down
-  jmp .clear_wait
-
-  .page_up:
-  mov byte [key_code], KEY_PAGE_UP
-  jmp .clear_wait
-
-  .page_down:
-  mov byte [key_code], KEY_PAGE_DOWN
-  jmp .clear_wait
-
-  .key_up:
-  mov byte [key_code], KEY_UP
-  jmp .clear_wait
-
-  .key_down:
-  mov byte [key_code], KEY_DOWN
-  jmp .clear_wait
-
-  .key_right:
-  mov byte [key_code], KEY_RIGHT
-  jmp .clear_wait
-
-  .key_left:
-  mov byte [key_code], KEY_LEFT
+  je .clear_wait
+  cmp al, 0x53
+  je .clear_wait
+  mov byte [key_code], 0
   jmp .clear_wait
 
 wait_for_keyboard:
