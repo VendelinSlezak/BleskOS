@@ -10,12 +10,12 @@
 %define KEY_LEFT_SHIFT 0x2A
 %define KEY_RIGHT_SHIFT 0x36
 
-%define KEY_PAGE_UP 0xA0
-%define KEY_PAGE_DOWN 0xA1
-%define KEY_UP 0xA2
-%define KEY_DOWN 0xA3
-%define KEY_LEFT 0xA4
-%define KEY_RIGHT 0xA5
+%define KEY_PAGE_UP 0x49
+%define KEY_PAGE_DOWN 0x51
+%define KEY_UP 0x48
+%define KEY_DOWN 0x50
+%define KEY_LEFT 0x4B
+%define KEY_RIGHT 0x4D
 
 %define KEY_F1 0x3B
 %define KEY_F2 0x3C
@@ -69,18 +69,20 @@
 %define KEY_0 0x0B
 
 english_keyboard_layout:
- db ' ', ' ' ;zero, escape
- db '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', ' ', ' ' ;first line, backspace, tab
- db 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', ' ', ' ' ;second line, enter, left ctrl
- db 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', '`', ' ', '\' ;third line, left shift
- db 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', ' ' ;fourth line, right shift
- times 15 db ' ' ;other control keys
- db '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3', '0', '.' ;numpad
+ dw 0, 0 ;zero, escape
+ dw '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 0, 0 ;first line, backspace, tab
+ dw 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', 0, 0 ;second line, enter, left ctrl
+ dw 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\', '`', 0, '\' ;third line, left shift
+ dw 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 0, '*', 0, ' ' ;fourth line, right shift
+ times 10 dw 0 ;other control keys
+ dw '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3', '0', '.' ;numpad
+ times 230 dw 0
 english_shift_keyboard_layout:
- db ' ', ' ' ;zero, escape
- db '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', ' ', ' ' ;first line, backspace, tab
- db 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', ' ', ' ' ;second line, enter, left ctrl
- db 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', '¨', '~', ' ', '|' ;third line, left shift
- db 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '<', '>', '?', ' ' ;fourth line, right shift
- times 15 db ' ' ;other control keys
- db '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3', '0', '.' ;numpad
+ dw 0, 0 ;zero, escape
+ dw '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', 0, 0 ;first line, backspace, tab
+ dw 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', 0, 0 ;second line, enter, left ctrl
+ dw 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', '¨', '~', 0, '|' ;third line, left shift
+ dw 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '<', '>', '?', 0, '*', 0, ' ' ;fourth line, right shift
+ times 10 dw 0 ;other control keys
+ dw '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3', '0', '.' ;numpad
+ times 230 dw 0
