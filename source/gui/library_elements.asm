@@ -50,7 +50,6 @@ draw_window:
 
 text_input_pointer dd 0
 text_input_length dd 0
-text_input_last_pointer dd 0
 text_input_cursor dd 0
 
 draw_text_input:
