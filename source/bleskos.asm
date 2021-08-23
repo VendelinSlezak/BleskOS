@@ -43,12 +43,11 @@ start:
  %include "source/drivers/filesystem_fat32.asm"
 
  %include "source/drivers/network_center.asm"
-
- %include "source/gui/program_library.asm"
+ 
  %include "source/gui/main.asm"
  %include "source/gui/developer_zone.asm"
  %include "source/gui/hardware_centrum.asm"
- %include "source/gui/elements.asm"
+ %include "source/gui/library_elements.asm"
 
  %include "source/programs/dp_hardware_info.asm"
  %include "source/programs/dp_vesa.asm"
