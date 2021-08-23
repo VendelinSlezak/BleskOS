@@ -44,6 +44,7 @@ fat_cluster dd 0
 fat_memory dd 0
 fat_file_length dd 0
 fat_file_clusters dd 0
+fat_first_file_cluster dd 0
 
 msd_read_mbr:
  mov esi, mbr
@@ -327,8 +328,26 @@ fat_write_file:
  inc eax ;number of clusters
  mov dword [fat_file_clusters], eax
 
- mov dword [fat_entry], 2
+ ;save first file cluster
  mov esi, MEMORY_FILE_DESCRIPTOR
+ cmp dword [fat_first_file_cluster], 0
+ je .skip_first_cluster
+  mov eax, dword [fat_first_file_cluster]
+  mov dword [esi], eax
+  add esi, 4
+
+  mov dword [fat_entry], eax
+  mov dword [fat_entry_value], 0x0FFFFFFF
+  push esi
+  push ecx
+  call fat_set_entry
+  pop ecx
+  pop esi
+  cmp dword [msd_status], MSD_ERROR
+  je .done
+ .skip_first_cluster:
+
+ mov dword [fat_entry], 2
  ;ecx was calculated above
  .find_free_clusters:
   push eax
@@ -420,6 +439,8 @@ convert_fat_folder_to_jus_folder:
   je .next_item
   cmp byte [esi+11], 0xF
   je .next_item
+  cmp byte [esi], 0xE5
+  je .next_item
 
   ;name
   mov eax, dword [esi]
@@ -433,6 +454,13 @@ convert_fat_folder_to_jus_folder:
   and eax, 0x00FFFFFF
   mov dword [edi+56], eax
   mov word [edi+14], 2
+
+  mov al, byte [esi+11]
+  and al, 0x10
+  cmp al, 0x10
+  jne .if_directory
+   mov word [edi+14], 1
+  .if_directory:
 
   ;year
   mov ax, word [esi+16]
