@@ -97,18 +97,18 @@ msd_set_data_toggle_out:
  mov bl, byte [eax+5]
  and bl, 0x80
  cmp bl, 0x0
- je .data_toggle_0
- jmp .data_toggle_1
+ je .EHCI_DATA_TOGGLE_0
+ jmp .EHCI_DATA_TOGGLE_1
 
- .data_toggle_0:
- mov dword [ehci_data_toggle], DATA_TOGGLE_0
+ .EHCI_DATA_TOGGLE_0:
+ mov dword [ehci_data_toggle], EHCI_DATA_TOGGLE_0
  mov bl, byte [eax+5]
  or bl, 0x80
  mov byte [eax+5], bl
  jmp .done
 
- .data_toggle_1:
- mov dword [ehci_data_toggle], DATA_TOGGLE_1
+ .EHCI_DATA_TOGGLE_1:
+ mov dword [ehci_data_toggle], EHCI_DATA_TOGGLE_1
  mov bl, byte [eax+5]
  and bl, 0xF
  mov byte [eax+5], bl
@@ -122,18 +122,18 @@ msd_set_data_toggle_in:
  mov bl, byte [eax+6]
  and bl, 0x80
  cmp bl, 0x0
- je .data_toggle_0
- jmp .data_toggle_1
+ je .EHCI_DATA_TOGGLE_0
+ jmp .EHCI_DATA_TOGGLE_1
 
- .data_toggle_0:
- mov dword [ehci_data_toggle], DATA_TOGGLE_0
+ .EHCI_DATA_TOGGLE_0:
+ mov dword [ehci_data_toggle], EHCI_DATA_TOGGLE_0
  mov bl, byte [eax+6]
  or bl, 0x80
  mov byte [eax+6], bl
  jmp .done
 
- .data_toggle_1:
- mov dword [ehci_data_toggle], DATA_TOGGLE_1
+ .EHCI_DATA_TOGGLE_1:
+ mov dword [ehci_data_toggle], EHCI_DATA_TOGGLE_1
  mov bl, byte [eax+6]
  and bl, 0xF
  mov byte [eax+6], bl
