@@ -18,8 +18,10 @@ Inbuilt hardware:
 Filesystems:
 * JUS
 * FAT32
+* ISO9660 (in progress)
 
 USB controllers:
+* OHCI (in progress)
 * UHCI
 * EHCI
 
@@ -28,8 +30,8 @@ USB devices:
 * USB mass storage
 
 ### Programs
-* File manager (in fast progress, usable version will be released next week (to 26/8/2021))
-* Text editor (will be released next week to 28/8/2021)
+* File manager (in progress, usable version will be released 28/8/2021)
+* Text editor (in progress, first version will be released 28/8/2021)
 
 ## How to build
 BleskOS is completly written in NASM. You should use last version 2.1
