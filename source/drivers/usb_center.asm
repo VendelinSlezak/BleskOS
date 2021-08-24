@@ -30,6 +30,7 @@ init_usb_ports:
   mov dword [ehci_base], eax
   push esi
   call init_ehci
+  WAIT 100
   call ehci_detect_devices
   pop esi
   add esi, 4
@@ -48,6 +49,7 @@ init_usb_ports:
   mov word [uhci_base], ax
   push esi
   call init_uhci_controller
+  WAIT 100
   call uhci_detect_devices
   pop esi
   inc dword [uhci_controller_number]
