@@ -18,7 +18,9 @@
 
 screen_lfb dd 0
 screen_x dd 0
+screen_x_center dd 0
 screen_y dd 0
+screen_y_center dd 0
 screen_bites_per_pixel dd 0
 screen_bpp dd 0
 screen_all_pixels dd 0
@@ -209,6 +211,18 @@ init_graphic:
  mov ax, word [0x70014]
  mov dword [screen_y], 0
  mov word [screen_y], ax
+
+ ;calculate center
+ mov eax, dword [screen_x]
+ mov ebx, 2
+ mov edx, 0
+ div ebx
+ mov dword [screen_x_center], eax
+ mov eax, dword [screen_y]
+ mov ebx, 2
+ mov edx, 0
+ div ebx
+ mov dword [screen_y_center], eax
 
  ;calculate bytes per pixel
  mov al, byte [0x70019]
