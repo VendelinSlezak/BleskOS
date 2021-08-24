@@ -238,9 +238,6 @@ init_sound_card:
  MMIO_OUTW hda_base, 0x5A, 0x0 ;interrupt control
  mov byte [rirb_pointer], 1
 
- MMIO_OUTB hda_base, 0x5C, 0x2 ;start RIRB
- MMIO_OUTB hda_base, 0x4C, 0x2 ;start CORB
-
  ;FIND CODEC
  mov dword [verb_interface], HDA_PIO_INTERFACE
  mov dword [verb_codec], 0
@@ -263,6 +260,9 @@ init_sound_card:
  pop ecx
  inc dword [verb_codec]
  loop .find_codec
+
+ MMIO_OUTB hda_base, 0x5C, 0x2 ;start RIRB
+ MMIO_OUTB hda_base, 0x4C, 0x2 ;start CORB
 
  mov dword [verb_interface], HDA_CORB_RIRB_INTERFACE
  mov dword [verb_codec], 0
