@@ -54,6 +54,7 @@ patapi_eject_drive:
  ret
 
 patapi_read_capabilites:
+ mov dword [disk_size], 0
  mov word [patapi_transfer_lenght], 8
  call patapi_send_packet_command
 
@@ -81,9 +82,6 @@ patapi_read_capabilites:
  mov word [disk_size+2], ax
  BASE_INW patapi_base, 0
  BASE_INW patapi_base, 0
-
- mov eax, dword [disk_size]
- PHEX eax
 
  mov dword [patapi_status], IDE_OK
  ret
@@ -131,6 +129,7 @@ patapi_read:
   mov word [esi], ax
   add esi, 2
  loop .read_sector
+ add dword [patapi_memory], 2048
 
  mov dword [patapi_status], IDE_OK
  ret
