@@ -63,8 +63,8 @@ ohci_endpoint dd 0
 init_ohci:
  ;disable legacy support
  MMIO_IND ohci_base, 0x00
- and eax, 0x10
- cmp eax, 0x10
+ and eax, 0x100
+ cmp eax, 0x100
  jne .if_legacy_support
   MMIO_OUTD ohci_base, 0x100, 0x0
  .if_legacy_support:
