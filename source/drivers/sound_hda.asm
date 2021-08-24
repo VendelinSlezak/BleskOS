@@ -1,89 +1,60 @@
 ;BleskOS
 
 %macro HDA_GCTL_WRITE 1
- mov ebp, dword [hda_base]
- add ebp, 0x08
- mov dword [ebp], %1
+ MMIO_OUTD hda_base, 0x08, %1
 %endmacro
 
 %macro HDA_GCTL_READ 0
- mov ebp, dword [hda_base]
- add ebp, 0x08
- mov eax, dword [ebp]
+ MMIO_IND hda_base, 0x08
 %endmacro
 
 %macro HDA_CAPABILITES_READ 0
- mov eax, 0
- mov ebp, dword [hda_base]
- mov ax, word [ebp]
+ MMIO_INW hda_base, 0x00
 %endmacro
 
 %macro HDA_DISABLE_INTERRUPTS 0
- mov ebp, dword [hda_base]
- add ebp, 0x20
- mov dword [ebp], 0x0
+ MMIO_OUTD hda_base, 0x20, 0x0
 %endmacro
 
 %macro HDA_SET_SSYNC 0
- mov ebp, dword [hda_base]
- add ebp, 0x34
- mov dword [ebp], 0
- add ebp, 0x4
- mov dword [ebp], 0
+ MMIO_OUTD hda_base, 0x34, 0
+ MMIO_OUTD hda_base, 0x38, 0
 %endmacro
 
-%macro HDA_TURN_OFF_CORB_RIRB_DMAPOS 0
- mov ebp, dword [hda_base]
- add ebp, 0x4C ;CORB control
- mov byte [ebp], 0x0
- add ebp, 0x10 ;0x5C RIRB control
- mov byte [ebp], 0x0
- add ebp, 0x14 ;0x70 DMAPOS control
- mov dword [ebp], 0x0
+%macro HDA_TURN_OFF_DMAPOS 0
+ MMIO_OUTD hda_base, 0x70, 0
 %endmacro
 
 %macro HDA_INPUT_STREAM_TURN_OFF 0
- mov ebp, dword [hda_input_stream_port]
- mov dword [ebp], 0x00200000
+ MMIO_OUTD hda_input_stream_port, 0, 0x00240000
 %endmacro
 
 %macro HDA_OUTPUT_STREAM_TURN_OFF 0
- mov ebp, dword [hda_output_stream_port]
- mov dword [ebp], 0x00140000
+ MMIO_OUTD hda_output_stream_port, 0, 0x00140000
 %endmacro
 
 %macro HDA_INPUT_STREAM_TURN_ON 0
- mov ebp, dword [hda_input_stream_port]
- mov dword [ebp], 0x00240002
+ MMIO_OUTD hda_input_stream_port, 0, 0x00240002
 %endmacro
 
 %macro HDA_OUTPUT_STREAM_TURN_ON 0
- mov ebp, dword [hda_output_stream_port]
- mov dword [ebp], 0x00140002
+ MMIO_OUTD hda_output_stream_port, 0, 0x00140002
 %endmacro
 
 %macro HDA_INPUT_STREAM_FORMAT 1
- mov ebp, dword [hda_input_stream_port]
- add ebp, 0x12
- mov dword [ebp], %1
+ MMIO_OUTW hda_input_stream_port, 0x12, %1
 %endmacro
 
 %macro HDA_OUTPUT_STREAM_FORMAT 1
- mov ebp, dword [hda_output_stream_port]
- add ebp, 0x12
- mov dword [ebp], %1
+ MMIO_OUTW hda_output_stream_port, 0x12, %1
 %endmacro
 
 %macro HDA_INPUT_STREAM_LENGHT 1
- mov ebp, dword [hda_input_stream_port]
- add ebp, 0x08
- mov dword [ebp], %1
+ MMIO_OUTD hda_input_stream_port, 0x08, %1
 %endmacro
 
 %macro HDA_OUTPUT_STREAM_LENGHT 1
- mov ebp, dword [hda_output_stream_port]
- add ebp, 0x08
- mov dword [ebp], %1
+ MMIO_OUTD hda_output_stream_port, 0x08, %1
 %endmacro
 
 %macro HDA_INPUT_STREAM_SET_BUFFER 0
@@ -207,7 +178,7 @@ init_sound_card:
 
  ;OTHER SETTINGS
  HDA_DISABLE_INTERRUPTS
- HDA_TURN_OFF_CORB_RIRB_DMAPOS
+ HDA_TURN_OFF_DMAPOS
  HDA_INPUT_STREAM_TURN_OFF
  HDA_OUTPUT_STREAM_TURN_OFF
  HDA_INPUT_STREAM_SET_BUFFER
@@ -567,10 +538,10 @@ hda_enable_output_pin:
 hda_play_sound:
  mov eax, dword [hda_data_pointer]
  mov ebx, dword [hda_data_length]
- mov ecx, dword [hda_data_format]
+ mov cx, word [hda_data_format]
  HDA_SET_OUTPUT_BUFFER eax, ebx
  HDA_OUTPUT_STREAM_LENGHT ebx
- HDA_OUTPUT_STREAM_FORMAT ecx
+ HDA_OUTPUT_STREAM_FORMAT cx
  HDA_OUTPUT_STREAM_TURN_ON
 
  ret
@@ -583,10 +554,10 @@ hda_stop_sound:
 hda_record_sound:
  mov eax, dword [hda_data_pointer]
  mov ebx, dword [hda_data_length]
- mov ecx, dword [hda_data_format]
+ mov cx, word [hda_data_format]
  HDA_SET_INPUT_BUFFER eax, ebx
  HDA_INPUT_STREAM_LENGHT ebx
- HDA_INPUT_STREAM_FORMAT ecx
+ HDA_INPUT_STREAM_FORMAT cx
  HDA_INPUT_STREAM_TURN_ON
 
  ret
