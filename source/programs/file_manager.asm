@@ -3,6 +3,17 @@
 %define FM_COLOR_BORDER 0x9F6006
 %define FM_COLOR_BACKGROUND 0xE28600
 
+%define FM_HDD 0
+%define FM_CDROM 1
+%define FM_USB1 2
+%define FM_USB2 3
+%define FM_USB3 4
+%define FM_USB4 5
+
+%define FM_NORMAL 1
+%define FM_OPEN_DIALOG 2
+%define FM_SAVE_DIALOG 3
+
 %macro FM_CLEAR_MESSAGE 0
  mov dword [cursor_line], 20
  mov dword [cursor_column], 120
@@ -33,46 +44,68 @@
  call redraw_screen
 %endmacro
 
-%define FM_HDD 0
-%define FM_CDROM 1
-%define FM_USB1 2
-%define FM_USB2 3
-%define FM_USB3 4
-%define FM_USB4 5
-
 file_manager_up_str db 'File manager', 0
-file_manager_down_str db '[d] Select device [F12] Remove USB [page up/down] Ten items up/down', 0
+file_manager_down_str db '[d] Select device [F12] Remove USB [b] Previous folder', 0
 file_manager_selecting_str db 'You are selecting drive', 0
+
 file_manager_reading_folder_str db 'Reading folder...', 0
-file_manager_folder_error_str db 'Error during reading folder', 0
+file_manager_writing_folder_str db 'Writing folder...', 0
+file_manager_folder_reading_error_str db 'Error during reading folder', 0
+file_manager_folder_writing_error_str db 'Error during writing folder', 0
+file_manager_reading_file_str db 'Reading file...', 0
+file_manager_writing_file_str db 'Writing file...', 0
+file_manager_file_reading_error_str db 'Error during reading file', 0
+file_manager_file_writing_error_str db 'Error during writing file', 0
+file_manager_memory_error_str db 'Not enough free memory for file', 0
+file_manager_10_folders_error_str db 'Can not open deeper than 10 folders', 0
+
 file_manager_no_usb_str db 'No USB device is connected here', 0
 file_manager_uninitalized_device_str db 'Error occured during initalization of this device', 0
 file_manager_not_fat32_str db 'This USB is not formatted as FAT32', 0
-file_manager_no_disk_str db 'No disk is inserted [a] Eject drive', 0
-file_manager_no_driver_str db 'Driver for filesystem ISO9690 is not currently written', 0
-
+file_manager_no_disk_str db 'No disk is inserted [a] Eject drive [b] Detect disk', 0
+file_manager_no_disk_driver_str db 'This disk is not formatted as ISO9660', 0
 fm_free_item_str db 'Free item', 0
 fm_folder_str db 'Folder', 0
-fm_simple_text_str db 'Simple text', 0
 item_date_str db '    /  /', 0
 fm_item_str db 'Selected item:', 0
+file_manager_create_name_str db 'Name:', 0
 
 file_manager_device dd 0
 file_manager_old_device dd 0
 fm_folder_number dd 0
-fm_path times 60 dd 0
+fm_path times 6*10 dd 0
 fm_path_pointer times 6 dd 0
 
-fm_folder_memory_pointer dd 0
 fm_selected_item dd 0
 fm_highlighted_item dd 0
 fm_first_show_item dd 0
+fm_last_item dd 0
+fm_number_of_items_on_screen dd 0
+
+fm_file_size dd 0
+fm_file_block dd 0
+fm_file_memory dd 0
+
+file_manager_interface_type dd 0
 
 file_manager:
+ ;calculate how many items is visible on actual resoultion of screen
+ mov eax, dword [screen_y]
+ sub eax, 60
+ mov ebx, LINESZ
+ mov edx, 0
+ div ebx
+ mov dword [fm_number_of_items_on_screen], eax
+
+ cmp dword [file_manager_interface_type], FM_NORMAL ;file manager from main board
+ je .file_manager_normal_interface
+ ret
+
+ .file_manager_normal_interface:
  DRAW_WINDOW file_manager_up_str, file_manager_down_str, FM_COLOR_BORDER, FM_COLOR_BACKGROUND
- mov dword [file_manager_device], FM_HDD
  call file_manager_redraw_devices
  call file_manager_show_folder
+ call fm_show_selected_item_number
  call redraw_screen
 
  .file_manager_halt:
@@ -90,6 +123,15 @@ file_manager:
   cmp byte [key_code], KEY_PAGE_DOWN
   je .fm_key_down ;TODO
 
+  cmp byte [key_code], KEY_ENTER
+  je .fm_key_enter
+
+  cmp byte [key_code], KEY_B
+  je .fm_key_b
+
+ cmp byte [key_code], KEY_C
+  je .fm_key_c
+
   cmp byte [key_code], KEY_D
   je .fm_key_d
 
@@ -102,50 +144,237 @@ file_manager:
 
  ;;;;; move up ;;;;;
  .fm_key_up:
-  cmp dword [fm_highlighted_item], 0
+  cmp dword [fm_highlighted_item], 0 ;we are on top of screen
   jne .move_highlighted_up
 
-  cmp dword [fm_selected_item], 0
+  cmp dword [fm_selected_item], 0 ;we are on top of folder
   je .file_manager_halt
 
+  ;move whole screen
   dec dword [fm_selected_item]
   dec dword [fm_first_show_item]
-  call fm_show_item_message
+  call fm_show_selected_item_number
   call file_manager_redraw_file_zone
   call redraw_screen
   jmp .file_manager_halt
 
+  ;move highlighted line
   .move_highlighted_up:
   dec dword [fm_highlighted_item]
+  dec dword [fm_selected_item]
+
+  call fm_show_selected_item_number
   call file_manager_redraw_file_zone
   call redraw_screen
- jmp .file_manager_halt
+  jmp .file_manager_halt
 
  ;;;;; move down ;;;;;
  .fm_key_down:
-  mov eax, dword [screen_y]
-  sub eax, 60
-  mov ebx, LINESZ
-  mov edx, 0
-  div ebx
-  cmp dword [fm_highlighted_item], eax
+  mov eax, dword [fm_number_of_items_on_screen]
+  cmp dword [fm_highlighted_item], eax ;we are on bottom of screen
   jne .move_highlighted_down
 
-  cmp dword [fm_selected_item], 2047
+  cmp dword [fm_selected_item], 2047 ;we are on bottom of folder
   je .file_manager_halt
 
+  ;move whole screen
   inc dword [fm_selected_item]
   inc dword [fm_first_show_item]
-  call fm_show_item_message
+  call fm_show_selected_item_number
   call file_manager_redraw_file_zone
   call redraw_screen
   jmp .file_manager_halt
 
+  ;move highlighted line
   .move_highlighted_down:
   inc dword [fm_highlighted_item]
+  inc dword [fm_selected_item]
+  call fm_show_selected_item_number
   call file_manager_redraw_file_zone
   call redraw_screen
+  jmp .file_manager_halt
+
+ ;;;;; open ;;;;;
+ .fm_key_enter:
+  mov eax, dword [fm_selected_item]
+  mov ebx, 128
+  mul ebx
+  add eax, MEMORY_FOLDER
+  mov esi, eax ;get position of item memory
+
+  cmp word [esi+14], 0 ;free item
+  je .file_manager_halt
+
+  cmp word [esi+14], 1
+  je .open_folder
+
+  ;TODO open other files
  jmp .file_manager_halt
+
+ .open_folder:
+  mov ebx, dword [file_manager_device]
+  add dword [fm_path_pointer+(ebx*4)], 4 ;set pointer to next item
+  mov edx, dword [fm_path_pointer+(ebx*4)]
+  cmp edx, 40
+  jg .10_folders ;can not open deeper that 10 folders
+
+  mov ecx, dword [fm_path_pointer+(ebx*4)]
+  mov eax, dword [file_manager_device]
+  mov ebx, 40
+  mul ebx
+  add eax, fm_path
+  add ecx, eax
+
+  mov eax, dword [esi]
+  mov dword [ecx], eax ;save folder number
+  mov dword [fm_folder_number], eax
+  call file_manager_show_folder ;this read folder from device and show it
+ jmp .file_manager_halt
+
+ .10_folders:
+ FM_SHOW_MESSAGE file_manager_10_folders_error_str
+ jmp .file_manager_halt
+
+ ;;;;; go to previous folder ;;;;;
+ .fm_key_b:
+  mov ebx, dword [file_manager_device]
+  mov edx, dword [fm_path_pointer+(ebx*4)]
+  cmp edx, 0
+  je .file_manager_halt ;we are in root folder
+  sub dword [fm_path_pointer+(ebx*4)], 4 ;set pointer to previous item
+
+  mov ecx, dword [fm_path_pointer+(ebx*4)]
+  mov eax, dword [file_manager_device]
+  mov ebx, 40
+  mul ebx
+  add eax, fm_path
+  add ecx, eax
+
+  mov eax, dword [ecx]
+  mov dword [fm_folder_number], eax
+  call file_manager_show_folder ;this read folder from device and show it
+ jmp .file_manager_halt
+
+ ;;;;; TODO create folder ;;;;;
+ .fm_key_c:
+  mov edi, MEMORY_FOLDER
+  mov ecx, 2048
+  .find_free_entry_for_folder:
+   cmp dword [edi+16], 0
+   je .create_folder_item
+   add edi, 128
+  loop .find_free_entry_for_folder
+  jmp .file_manager_halt
+
+  .create_folder_item:
+  push edi
+  mov eax, dword [screen_y_center]
+  sub eax, 15
+  mov dword [cursor_line], eax
+  mov eax, dword [screen_x_center]
+  sub eax, COLUMNSZ*10
+  mov dword [cursor_column], eax
+  mov dword [square_length], COLUMNSZ*20
+  mov dword [square_heigth], LINESZ*3
+  mov dword [color], 0xCC7000
+  call draw_square ;erase
+
+  mov dword [color], BLACK
+  call draw_empty_square ;draw border
+
+  mov eax, dword [screen_y_center]
+  sub eax, 4
+  mov dword [cursor_line], eax
+  mov eax, dword [screen_x_center]
+  sub eax, (COLUMNSZ*10)-COLUMNSZ
+  mov dword [cursor_column], eax
+  mov esi, file_manager_create_name_str
+  call print ;print "Name:"
+
+  mov eax, dword [screen_y_center]
+  sub eax, 6
+  mov dword [cursor_line], eax
+  mov eax, dword [screen_x_center]
+  sub eax, COLUMNSZ*3
+  mov dword [cursor_column], eax
+  mov dword [text_input_pointer], edi
+  mov dword [text_input_length], 8
+  mov dword [text_input_cursor], 0
+  pop edi
+  add edi, 16
+  push edi
+  call text_input ;text input for name
+  pop edi
+  sub edi, 16
+
+  mov dword [edi+4], 127 ;size
+  call read_time
+  mov ax, word [year]
+  mov word [edi+8], ax
+  mov al, byte [month]
+  mov byte [edi+10], al
+  mov al, byte [day]
+  mov byte [edi+11], al
+  mov al, byte [minute]
+  mov byte [edi+12], al
+  mov word [edi+14], 1 ;folder
+
+  cmp dword [file_manager_device], FM_HDD
+  je .save_folder_hard_disk
+
+  ;save folder to usb
+  mov esi, MEMORY_NEW_FOLDER
+  mov ecx, 512*256
+  .clear_new_folder:
+   mov byte [esi], 0
+   inc esi
+  loop .clear_new_folder
+  mov dword [fat_file_length], 256 ;in KB
+  mov dword [fat_first_file_cluster], 0
+  push edi
+  call fat_write_file
+  pop edi
+  mov eax, dword [fat_first_file_cluster]
+  mov dword [edi], eax
+
+  call create_new_fat_entry
+  call convert_jus_folder_to_fat_folder
+
+  mov eax, dword [file_manager_device]
+  sub eax, 2
+  mov ebx, dword [fm_path_pointer+(eax*4)]
+  push ebx
+  mov ebx, 40
+  mul ebx
+  pop ebx
+  add eax, ebx
+  mov ecx, dword [fm_path+eax]
+  mov dword [fm_folder_number], ecx
+  call file_manager_write_folder
+  call file_manager_show_folder
+  jmp .file_manager_halt
+
+  .save_folder_hard_disk:
+   push edi
+   call jus_create_folder
+   pop edi
+
+   mov eax, dword [jus_file_descriptor_block]
+   mov dword [edi], eax ;save block number
+
+   mov eax, dword [fm_path_pointer]
+   mov ebx, dword [fm_path+eax]
+   mov dword [jus_block_number], ebx
+   mov dword [ata_memory], MEMORY_FOLDER
+   call jus_write_block
+   cmp dword [ata_status], ATA_ERROR
+   je .writing_error
+   call file_manager_show_folder
+  jmp .file_manager_halt
+
+  .writing_error:
+   FM_SHOW_MESSAGE file_manager_folder_writing_error_str
+   jmp .file_manager_halt
 
  ;;;;; select device ;;;;;
  .fm_key_d:
@@ -187,15 +416,39 @@ file_manager:
   jmp .selecting_drive_halt
 
   .selecting_esc:
-  mov eax, dword [file_manager_old_device]
-  mov dword [file_manager_device], eax
-  call file_manager_redraw_devices
-  FM_CLEAR_MESSAGE
-  ret
+   mov eax, dword [file_manager_old_device]
+   mov dword [file_manager_device], eax
+   call file_manager_redraw_devices
+   call file_manager_redraw_file_zone
+   call redraw_screen
+  jmp .file_manager_halt
 
   .drive_is_selected:
   FM_CLEAR_MESSAGE
-  cmp dword [file_manager_device], 2
+
+  cmp dword [file_manager_device], FM_HDD
+  jne .if_hdd
+   call init_jus
+  .if_hdd:
+
+  cmp dword [file_manager_device], FM_CDROM
+  jne .if_cdrom
+   call init_iso9660
+
+   cmp dword [disk_state], NO_DISK
+   jne .if_no_disk
+    FM_SHOW_MESSAGE file_manager_no_disk_str
+    jmp .file_manager_halt
+   .if_no_disk:
+
+   cmp dword [disk_state], UNKNOWN_DISK_FORMAT
+   jne .if_unknown_disk_format
+    FM_SHOW_MESSAGE file_manager_no_disk_driver_str
+    jmp .file_manager_halt
+   .if_unknown_disk_format:
+  .if_cdrom:
+
+  cmp dword [file_manager_device], FM_USB1
   jl .if_usb
    mov eax, dword [file_manager_device]
    sub eax, 2
@@ -241,22 +494,18 @@ file_manager:
   mov dword [eax+8], 0
 
   call file_manager_redraw_devices
+  call file_manager_show_folder
   call redraw_screen
  jmp .file_manager_halt
 
+;;;;;          METHODS FOR READ/WRITE          ;;;;;
 file_manager_show_folder:
- cmp dword [file_manager_device], 0
+ cmp dword [file_manager_device], FM_HDD
  je .hard_disk
- cmp dword [file_manager_device], 1
+ cmp dword [file_manager_device], FM_CDROM
  je .cdrom
- cmp dword [file_manager_device], 2
- je .usb_1
- cmp dword [file_manager_device], 3
- je .usb_2
- cmp dword [file_manager_device], 4
- je .usb_3
- cmp dword [file_manager_device], 5
- je .usb_4
+ cmp dword [file_manager_device], FM_USB4+1
+ jl .usb
  ret
 
  .hard_disk:
@@ -276,52 +525,48 @@ file_manager_show_folder:
  ret
 
  .cdrom:
- FM_SHOW_MESSAGE file_manager_no_driver_str
+ mov eax, dword [fm_folder_number]
+ mov dword [iso9660_file_lba], eax
+ mov dword [iso9660_file_length], 100 ;max 100 entries
+ mov dword [iso9660_file_memory], MEMORY_ISO9660_FOLDER
+ call iso9660_read_file
+ mov dword [MEMORY_ISO9660_FOLDER+(2048*100)+33], 0
+ call convert_iso9660_folder_to_jus_folder
+
+ mov dword [fm_highlighted_item], 0
+ mov dword [fm_selected_item], 0
+ mov dword [fm_first_show_item], 0
+ call file_manager_redraw_file_zone
+ call redraw_screen
  ret
 
- .usb_1:
- cmp byte [mass_storage_devices+7], NO_MSD
+ .usb:
+ mov eax, dword [file_manager_device]
+ sub eax, 2
+ mov ebx, 16
+ mul ebx
+ add eax, (mass_storage_devices+7)
+ cmp byte [eax], NO_MSD
  je .no_usb
- cmp byte [mass_storage_devices+7], MSD_UNINITALIZED
+ cmp byte [eax], MSD_UNINITALIZED
  je .usb_uninitalized
- cmp byte [mass_storage_devices+7], MSD_INITALIZED
+ cmp byte [eax], MSD_INITALIZED
  je .usb_not_fat32
  cmp dword [fm_folder_number], 0
  je .usb_root_folder
- jmp .usb
 
- .usb_2:
- cmp byte [mass_storage_devices+16+7], NO_MSD
- je .no_usb
- cmp byte [mass_storage_devices+16+7], MSD_UNINITALIZED
- je .usb_uninitalized
- cmp byte [mass_storage_devices+16+7], MSD_INITALIZED
- je .usb_not_fat32
- cmp dword [fm_folder_number], 0
- je .usb_root_folder
- jmp .usb
+ FM_SHOW_MESSAGE file_manager_reading_folder_str
+ mov eax, dword [fm_folder_number]
+ mov dword [fat_entry], eax
+ mov dword [fat_memory], MEMORY_FAT32_FOLDER
+ call fat_read_file
+ cmp dword [msd_status], MSD_ERROR
+ je .reading_error
 
- .usb_3:
- cmp byte [mass_storage_devices+32+7], NO_MSD
- je .no_usb
- cmp byte [mass_storage_devices+32+7], MSD_UNINITALIZED
- je .usb_uninitalized
- cmp byte [mass_storage_devices+32+7], MSD_INITALIZED
- je .usb_not_fat32
- cmp dword [fm_folder_number], 0
- je .usb_root_folder
- jmp .usb
-
- .usb_4:
- cmp byte [mass_storage_devices+48+7], NO_MSD
- je .no_usb
- cmp byte [mass_storage_devices+48+7], MSD_UNINITALIZED
- je .usb_uninitalized
- cmp byte [mass_storage_devices+48+7], MSD_INITALIZED
- je .usb_not_fat32
- cmp dword [fm_folder_number], 0
- je .usb_root_folder
- jmp .usb
+ call convert_fat_folder_to_jus_folder
+ call file_manager_redraw_file_zone
+ call redraw_screen
+ ret
 
  .usb_root_folder:
  FM_SHOW_MESSAGE file_manager_reading_folder_str
@@ -337,18 +582,8 @@ file_manager_show_folder:
  call redraw_screen
  ret
 
- .usb:
- FM_SHOW_MESSAGE file_manager_reading_folder_str
- mov eax, dword [fm_folder_number]
- mov dword [fat_entry], eax
- mov dword [fat_memory], MEMORY_FAT32_FOLDER
- call fat_read_file
- cmp dword [msd_status], MSD_ERROR
- je .reading_error
- ret
-
  .reading_error:
- FM_SHOW_MESSAGE file_manager_folder_error_str
+ FM_SHOW_MESSAGE file_manager_folder_reading_error_str
  ret
 
  .no_usb:
@@ -363,7 +598,164 @@ file_manager_show_folder:
  FM_SHOW_MESSAGE file_manager_not_fat32_str
  ret
 
-;;;;;      REDRAW METHODS      ;;;;;
+file_manager_write_folder:
+ cmp dword [file_manager_device], FM_HDD
+ je .hard_disk
+ cmp dword [file_manager_device], FM_CDROM
+ je .cdrom
+ cmp dword [file_manager_device], 6
+ jl .usb
+ ret
+
+ .hard_disk:
+ FM_SHOW_MESSAGE file_manager_writing_folder_str
+ mov eax, dword [fm_folder_number]
+ mov dword [jus_block_number], eax
+ mov dword [ata_memory], MEMORY_FOLDER
+ call jus_write_block ;write file to hard disk
+ cmp dword [ata_status], ATA_ERROR
+ je .writing_error
+
+ call file_manager_redraw_file_zone
+ call redraw_screen
+ ret
+
+ .cdrom:
+ ret
+
+ .usb:
+ FM_SHOW_MESSAGE file_manager_writing_folder_str
+ mov eax, dword [fm_folder_number]
+ cmp eax, 0
+ je .usb_root_directory
+ mov dword [fat_entry], eax
+ call fat_delete_file
+ cmp dword [msd_status], MSD_ERROR
+ je .writing_error
+
+ mov eax, dword [fm_folder_number]
+ mov dword [fat_first_file_cluster], eax
+ mov dword [fat_memory], MEMORY_FAT32_FOLDER
+ call fat_write_file
+ cmp dword [msd_status], MSD_ERROR
+ je .writing_error
+
+ call file_manager_redraw_file_zone
+ call redraw_screen
+ ret
+
+ .usb_root_directory:
+ mov eax, dword [fat_root_dir_cluster]
+ mov dword [fat_entry], eax
+ call fat_delete_file
+ mov eax, dword [fat_root_dir_cluster]
+ mov dword [fat_first_file_cluster], eax
+ mov dword [fat_memory], MEMORY_FAT32_FOLDER
+ mov dword [fat_file_length], 10
+ call fat_write_file
+
+ ret
+
+ .writing_error:
+ FM_SHOW_MESSAGE file_manager_folder_writing_error_str
+ ret
+
+file_manager_read_file:
+ cmp dword [file_manager_device], FM_HDD
+ je .hard_disk
+ cmp dword [file_manager_device], FM_CDROM
+ je .cdrom
+ cmp dword [file_manager_device], 6
+ jl .usb
+ ret
+
+ .hard_disk:
+ FM_SHOW_MESSAGE file_manager_reading_file_str
+ mov eax, dword [fm_file_block]
+ mov dword [jus_block_number], eax
+ mov dword [ata_memory], MEMORY_FILE_DESCRIPTOR
+ call jus_read_block ;read descriptor block from hard disk
+ cmp dword [ata_status], ATA_ERROR
+ je .reading_error
+
+ mov eax, dword [fm_file_size]
+ mov dword [allocated_size], eax
+ call allocate_memory
+ cmp dword [allocated_memory_pointer], 0
+ je .not_enough_memory
+ mov eax, dword [allocated_memory_pointer]
+ mov dword [ata_memory], eax
+ call jus_read_file
+ cmp dword [ata_status], ATA_ERROR
+ je .reading_error
+ ret
+
+ .cdrom:
+ ret
+
+ .usb:
+ FM_SHOW_MESSAGE file_manager_reading_file_str
+ mov eax, dword [fm_file_size]
+ mov dword [allocated_size], eax
+ call allocate_memory
+ cmp dword [allocated_memory_pointer], 0
+ je .not_enough_memory
+ mov eax, dword [allocated_memory_pointer]
+ mov dword [fat_memory], eax
+ mov eax, dword [fm_file_block]
+ mov dword [fat_entry], eax
+ call fat_read_file
+ cmp dword [msd_status], MSD_ERROR
+ je .reading_error
+ ret
+
+ .reading_error:
+ FM_SHOW_MESSAGE file_manager_file_reading_error_str
+ ret
+
+ .not_enough_memory:
+ FM_SHOW_MESSAGE file_manager_memory_error_str
+ ret
+
+file_manager_write_file:
+ cmp dword [file_manager_device], FM_HDD
+ je .hard_disk
+ cmp dword [file_manager_device], FM_CDROM
+ je .cdrom
+ cmp dword [file_manager_device], 6
+ jl .usb
+ ret
+
+ .hard_disk:
+ FM_SHOW_MESSAGE file_manager_writing_file_str
+ mov eax, dword [fm_file_memory]
+ mov dword [ata_memory], eax
+ mov eax, dword [fm_file_size]
+ mov dword [jus_file_length], eax
+ call jus_write_file
+ cmp dword [ata_status], ATA_ERROR
+ je .writing_error
+ ret
+
+ .cdrom:
+ ret
+
+ .usb:
+ FM_SHOW_MESSAGE file_manager_writing_file_str
+ mov eax, dword [fm_file_size]
+ mov dword [fat_file_length], eax
+ mov eax, dword [fm_file_memory]
+ mov dword [fat_memory], eax
+ call fat_write_file
+ cmp dword [msd_status], MSD_ERROR
+ je .writing_error
+ ret
+
+ .writing_error:
+ FM_SHOW_MESSAGE file_manager_file_reading_error_str
+ ret
+
+;;;;;           REDRAW METHODS           ;;;;;
 file_manager_redraw_devices:
  ;clear space
  mov dword [cursor_line], 20
@@ -439,7 +831,7 @@ file_manager_redraw_file_zone:
  mov dword [square_length], eax
  SCREEN_Y_SUB eax, 40
  mov dword [square_heigth], eax
- mov dword [color], 0xE28600
+ mov dword [color], FM_COLOR_BACKGROUND
  call draw_square
 
  PRINT 'Name', name_str, 25, 130
@@ -464,7 +856,7 @@ file_manager_redraw_file_zone:
 
  mov esi, MEMORY_FOLDER
  mov eax, dword [fm_first_show_item]
- mov ebx, 64
+ mov ebx, 128
  mul ebx
  add esi, eax ;pointer to first item
 
@@ -513,7 +905,7 @@ file_manager_redraw_file_zone:
   mov byte [esi+59], 0
   push esi
   mov eax, esi
-  add eax, 56
+  add eax, 120
   mov esi, eax
   call print_ascii
   pop esi
@@ -591,16 +983,16 @@ file_manager_redraw_file_zone:
   .name:
   mov dword [cursor_column], 130
   mov dword [color], BLACK
-  mov byte [esi+63], 0
+  mov word [esi+114], 0
   push esi
   mov eax, esi
   add eax, 16
   mov esi, eax
-  call print_ascii
+  call print_unicode
   pop esi
 
  .next_item:
- add esi, 64
+ add esi, 128
  add dword [cursor_line], LINESZ
  pop ecx
  dec ecx
@@ -609,21 +1001,47 @@ file_manager_redraw_file_zone:
 
  ret
 
-fm_show_item_message:
- FM_CLEAR_MESSAGE
+fm_show_selected_item_number:
+ ;erase
  mov dword [cursor_line], 5
+ SCREEN_X_SUB eax, COLUMNSZ*20
+ mov dword [cursor_column], eax
+ mov dword [square_length], COLUMNSZ*20
+ mov dword [square_heigth], LINESZ
+ mov dword [color], FM_COLOR_BORDER
+ call draw_square
+
+ SCREEN_X_SUB eax, COLUMNSZ*17
+ SCREEN_X_SUB ebx, COLUMNSZ*2
+ cmp dword [fm_selected_item], 10
+ jl .print
  SCREEN_X_SUB eax, COLUMNSZ*18
+ SCREEN_X_SUB ebx, COLUMNSZ*3
+ cmp dword [fm_selected_item], 100
+ jl .print
+ SCREEN_X_SUB eax, COLUMNSZ*19
+ SCREEN_X_SUB ebx, COLUMNSZ*4
+ cmp dword [fm_selected_item], 1000
+ jl .print
+ SCREEN_X_SUB eax, COLUMNSZ*20
+ SCREEN_X_SUB ebx, COLUMNSZ*5
+
+ .print:
+ mov dword [cursor_line], 5
  mov dword [cursor_column], eax
  mov dword [color], BLACK
  push esi
+ push ebx
  mov esi, fm_item_str
  call print
+ pop ebx
  pop esi
- SCREEN_X_SUB eax, COLUMNSZ*5
- mov dword [cursor_column], eax
+
+ mov dword [cursor_column], ebx
  mov eax, dword [fm_selected_item]
  mov dword [var_print_value], eax
  push esi
  call print_var
  pop esi
+
  ret
