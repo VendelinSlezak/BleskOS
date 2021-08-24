@@ -6,14 +6,19 @@
 %define MEMORY_JUS_BN 0x00100000
 %define MEMORY_FILE_DESCRIPTOR 0x00200000
 %define MEMORY_FOLDER 0x00300000
-%define MEMORY_HDA_BUFFER 0x00400000
-%define MEMORY_CORB 0x00410000
-%define MEMORY_RIRB 0x00420000
-%define MEMORY_HDA_DMAPOS 0x00430000
-%define MEMORY_AC97_BUFFER 0x00440000
-%define MEMORY_UHCI 0x00500000
-%define MEMORY_EHCI 0x00600000
-%define MEMORY_FAT32_FOLDER 0x00700000
+%define MEMORY_NEW_FOLDER 0x00400000
+%define MEMORY_HDA_BUFFER 0x00500000
+%define MEMORY_CORB 0x00510000
+%define MEMORY_RIRB 0x00520000
+%define MEMORY_HDA_DMAPOS 0x00530000
+%define MEMORY_AC97_BUFFER 0x00540000
+%define MEMORY_OHCI 0x00600000
+%define MEMORY_UHCI 0x00700000
+%define MEMORY_EHCI 0x00800000
+%define MEMORY_xHCI 0x00900000
+%define MEMORY_FAT32_FOLDER 0x00A00000
+%define MEMORY_ISO9660_FOLDER 0x00B00000
+%define FREE_MEMORY 0x02000000
 
 %macro INB 1
  %if %1!=dx
@@ -215,12 +220,6 @@
  jg .%3
 %endmacro
 
-%macro JMP_ENDIF 1
- jmp .%1
-%endmacro
-
-%define ELSE
-
 %macro ENDIF 1
  .%1:
 %endmacro
@@ -229,21 +228,4 @@
  mov %1, %2
  shr %1, %3
  and %1, 0xF
-%endmacro
-
-%macro MOV_BYTE_SHIFT 3
- mov %1, %2
- shr %1, %3
- and %1, 0xFF
-%endmacro
-
-%macro MOV_WORD_SHIFT 3
- mov %1, %2
- shr %1, %3
- and %1, 0xFFFF
-%endmacro
-
-%macro MOV_DWORD_SHIFT 3
- mov %1, %2
- shr %1, %3
 %endmacro
