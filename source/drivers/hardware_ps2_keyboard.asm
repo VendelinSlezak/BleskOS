@@ -1,10 +1,6 @@
 ;BleskOS
 
-key_code dd 0
-keyboard_shift dd 0
-key_unicode dw 0
-keyboard_wait db 0
-selected_keyboard_set dd 0
+keyboard_wait dd 0
 keyboard_special_code dd 0
 
 init_keyboard:
@@ -71,22 +67,6 @@ keyboard_irq:
  .special_code:
   mov dword [keyboard_special_code], 0
   mov byte [key_code], al
-
-  cmp al, 0x4B
-  je .clear_wait
-  cmp al, 0x4D
-  je .clear_wait
-  cmp al, 0x48
-  je .clear_wait
-  cmp al, 0x49
-  je .clear_wait
-  cmp al, 0x50
-  je .clear_wait
-  cmp al, 0x51
-  je .clear_wait
-  cmp al, 0x53
-  je .clear_wait
-  mov byte [key_code], 0
   jmp .clear_wait
 
 wait_for_keyboard:
