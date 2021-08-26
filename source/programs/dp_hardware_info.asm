@@ -56,7 +56,7 @@ hardware_info:
  call redraw_screen
 
  .hardware_info_halt:
-  call wait_for_keyboard
+  call wait_for_usb_keyboard
 
   cmp byte [key_code], KEY_ESC
   je developer_zone
