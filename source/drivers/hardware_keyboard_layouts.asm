@@ -69,6 +69,18 @@
 %define KEY_9 0x0A
 %define KEY_0 0x0B
 
+%define KEY_DASH 0x0C
+%define KEY_EQUAL 0x0D
+%define KEY_LEFT_BRACKET 0x1A
+%define KEY_RIGHT_BRACKET 0x1B
+%define KEY_BACKSLASH 0x2B
+%define KEY_SEMICOLON 0x27
+%define KEY_SINGLE_QUOTE 0x28
+%define KEY_COMMA 0x33
+%define KEY_DOT 0x34
+%define KEY_FORWARD_SLASH 0x35
+%define KEY_BACK_TICK 0x29
+
 english_keyboard_layout:
  dw 0, 0 ;zero, escape
  dw '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 0, 0 ;first line, backspace, tab
@@ -93,12 +105,49 @@ usb_keyboard_layout:
  db KEY_A,  KEY_B,  KEY_C,  KEY_D,  KEY_E,  KEY_F,  KEY_G,  KEY_H,  KEY_I,  KEY_J,  KEY_K,  KEY_L,  KEY_M,  KEY_N,  KEY_O,  KEY_P,  KEY_Q,  KEY_R,  KEY_S,  KEY_T,  KEY_U,  KEY_V,  KEY_W,  KEY_X,  KEY_Y,  KEY_Z
  db KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_0
  db KEY_ENTER, KEY_ESC, KEY_BACKSPACE, KEY_TAB, KEY_SPACE
- times 12 db 0
+ db KEY_DASH, KEY_EQUAL, KEY_LEFT_BRACKET, KEY_RIGHT_BRACKET, KEY_BACKSLASH, 0, KEY_SEMICOLON, KEY_SINGLE_QUOTE, KEY_BACK_TICK, KEY_COMMA, KEY_DOT, KEY_FORWARD_SLASH
  db KEY_CAPSLOCK, KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_F9, KEY_F10, KEY_F11, KEY_F12
  db 0, 0, 0, 0, 0, KEY_PAGE_UP, KEY_DELETE, 0, KEY_PAGE_DOWN, KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP
- times 230 db 0
+ times 142 db 0
+ db KEY_LEFT_SHIFT, 0, 0, 0, KEY_RIGHT_SHIFT, 0, 0
 
 key_code dd 0
 keyboard_shift dd 0
 key_unicode dw 0
 selected_keyboard_set dd 0
+
+keyboard_convert_to_unicode:
+ ;if some shift key is presses
+ cmp al, KEY_CAPSLOCK
+ je .reverse_shift_state
+ cmp al, KEY_LEFT_SHIFT
+ je .reverse_shift_state
+ cmp al, KEY_LEFT_SHIFT+0x80
+ je .reverse_shift_state
+ cmp al, KEY_RIGHT_SHIFT
+ je .reverse_shift_state
+ cmp al, KEY_RIGHT_SHIFT+0x80
+ je .reverse_shift_state
+ jmp .select_layout ;no shift key is pressed
+
+ .reverse_shift_state:
+ or dword [keyboard_shift], 0xFFFFFFFE ;other bytes will be zero
+ not dword [keyboard_shift] ;reverse
+
+ ;select layout
+ .select_layout:
+ mov word [key_unicode], 0
+ cmp dword [key_code], 0x79
+ jg .done ;released key
+
+ mov eax, english_keyboard_layout
+ IF_E dword [keyboard_shift], 1, if_shift_yes
+  mov eax, english_shift_keyboard_layout
+ ENDIF if_shift_yes
+
+ mov ecx, dword [key_code]
+ mov bx, word [eax+(ecx*2)] ;read unicode value of key
+ mov word [key_unicode], bx
+
+ .done:
+ ret
