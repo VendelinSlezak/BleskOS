@@ -121,7 +121,7 @@ hardware_centrum:
 
  .detect_usb_devices:
   DRAW_SQUARE LINE(6), COLUMN(2), COLUMNSZ*36, LINESZ*10, 0x00C000 ;erase messages from screen
-  PRINT 'Detecting USB devices...', detecting_usb_str, LINE(10), COLUMN(2)
+  PRINT 'Detecting USB devices...', detecting_usb_str, LINE(6), COLUMN(2)
   call redraw_screen
   WAIT 100
   call detect_usb_devices
