@@ -3,6 +3,7 @@
 usb_mouse_controller dd 0
 usb_mouse_base dd 0
 usb_mouse_controller_number dd 0
+usb_mouse_address db 0
 usb_mouse_speed dd 0
 usb_mouse_endpoint dd 0
 
@@ -12,6 +13,9 @@ usb_mouse_wait dd 0
 usb_mouse_uhci_remove:
  mov ax, word [usb_mouse_base]
  cmp word [uhci_base], ax
+ jne .done
+ mov al, byte [usb_mouse_address]
+ cmp byte [uhci_address], al
  jne .done
 
  mov dword [usb_mouse_controller], 0
@@ -24,11 +28,9 @@ usb_mouse_uhci_remove:
  ret
 
 read_usb_mouse:
- cmp dword [usb_mouse_base], 0
- je .done
  cmp dword [usb_mouse_controller], UHCI
  je .uhci
- jmp .done
+ ret
 
  .uhci:
  mov ax, word [usb_mouse_base]
@@ -39,14 +41,37 @@ read_usb_mouse:
  mov dword [uhci_device_speed], eax
  mov eax, dword [usb_mouse_endpoint]
  mov dword [uhci_endpoint], eax
+ mov al, byte [usb_mouse_address]
+ mov byte [uhci_address], al
 
- mov dword [MEMORY_UHCI+0x10300], 0
- mov dword [MEMORY_UHCI+0x10300+4], 0
  call uhci_read_hid
- mov eax, dword [MEMORY_UHCI+0x10300]
- mov dword [usb_mouse_data], eax
+ cmp al, 3
+ je .usb_mouse_3_bytes
+ cmp al, 4
+ je .usb_mouse_4_bytes
+ cmp al, 7
+ je .usb_mouse_7_bytes
 
- .done:
+ ret
+
+ .usb_mouse_3_bytes:
+ mov eax, dword [MEMORY_UHCI+0x10200]
+ and eax, 0x00FFFFFF
+ mov dword [usb_mouse_data], eax
+ ret
+
+ .usb_mouse_4_bytes:
+ mov eax, dword [MEMORY_UHCI+0x10200]
+ mov dword [usb_mouse_data], eax
+ ret
+
+ .usb_mouse_7_bytes:
+ mov eax, dword [MEMORY_UHCI+0x10201]
+ and eax, 0x00FFFFFF
+ mov bl, byte [MEMORY_UHCI+0x10205]
+ shl ebx, 24
+ or eax, ebx
+ mov dword [usb_mouse_data], eax
  ret
 
 wait_for_usb_mouse:
@@ -65,7 +90,7 @@ wait_for_usb_mouse:
   je .ps2_mouse
 
   inc dword [usb_mouse_wait]
-  cmp dword [usb_mouse_wait], 4
+  cmp dword [usb_mouse_wait], 8
   jl .wait
   mov dword [usb_mouse_data], 0
   call read_usb_mouse
