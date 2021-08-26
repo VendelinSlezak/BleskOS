@@ -21,37 +21,7 @@ keyboard_irq:
  cmp al, 0xE0
  je .set_special_code
 
- ;if some shift key is presses
- cmp al, KEY_CAPSLOCK
- je .reverse_shift_state
- cmp al, KEY_LEFT_SHIFT
- je .reverse_shift_state
- cmp al, KEY_LEFT_SHIFT+0x80
- je .reverse_shift_state
- cmp al, KEY_RIGHT_SHIFT
- je .reverse_shift_state
- cmp al, KEY_RIGHT_SHIFT+0x80
- je .reverse_shift_state
- jmp .select_layout ;no shift key is pressed
-
- .reverse_shift_state:
- or dword [keyboard_shift], 0xFFFFFFFE ;other bytes will be zero
- not dword [keyboard_shift] ;reverse
-
- ;select layout
- .select_layout:
- mov word [key_unicode], 0
- cmp dword [key_code], 0x79
- jg .clear_wait ;released key
-
- mov eax, english_keyboard_layout
- IF_E dword [keyboard_shift], 1, if_shift_yes
-  mov eax, english_shift_keyboard_layout
- ENDIF if_shift_yes
- mov ecx, dword [key_code]
-
- mov bx, word [eax+(ecx*2)] ;read unicode value of key
- mov word [key_unicode], bx
+ call keyboard_convert_to_unicode
 
  .clear_wait:
  mov dword [keyboard_wait], 0
