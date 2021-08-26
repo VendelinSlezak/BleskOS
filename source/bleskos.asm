@@ -33,9 +33,11 @@ start:
  %include "source/drivers/hardware_paralel_atapi.asm"
 
  %include "source/drivers/usb_center.asm"
+ %include "source/drivers/usb_ohci.asm"
  %include "source/drivers/usb_uhci.asm"
  %include "source/drivers/usb_ehci.asm"
 
+ %include "source/drivers/usb_keyboard.asm"
  %include "source/drivers/usb_mouse.asm"
  %include "source/drivers/usb_mass_storage.asm"
 
