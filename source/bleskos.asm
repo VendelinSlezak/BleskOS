@@ -46,9 +46,9 @@ start:
 
  %include "source/drivers/network_center.asm"
  
- %include "source/gui/main.asm"
- %include "source/gui/developer_zone.asm"
- %include "source/gui/hardware_centrum.asm"
+ %include "source/gui/board_main.asm"
+ %include "source/gui/board_developer_zone.asm"
+ %include "source/gui/board_hardware_centrum.asm"
  %include "source/gui/library_elements.asm"
 
  %include "source/programs/dp_hardware_info.asm"
