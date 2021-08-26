@@ -32,7 +32,7 @@ dp_acpi:
  call redraw_screen
 
  .acpi_halt:
-  call wait_for_keyboard
+  call wait_for_usb_keyboard
 
   cmp byte [key_code], KEY_ESC
   je developer_zone
