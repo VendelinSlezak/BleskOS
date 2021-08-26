@@ -10,6 +10,9 @@ uhci_num_of_ports dd 0
 ehci_num_of_ports dd 0
 xhci_num_of_ports dd 0
 
+ohci_controllers_base times 10 dd 0
+ohci_pointer dd ohci_controllers_base
+
 uhci_controllers_base times 10 dw 0
 uhci_pointer dd uhci_controllers_base
 
@@ -31,12 +34,31 @@ init_usb_ports:
   push esi
   call init_ehci
   WAIT 100
+  mov dword [ehci_reset_every_device], 1
   call ehci_detect_devices
   pop esi
   add esi, 4
  pop ecx
  loop .init_ehci
  .skip_ehci:
+
+ mov esi, ohci_controllers_base
+ mov ecx, dword [ohci_num_of_ports]
+ cmp ecx, 0
+ je .skip_ohci
+ .init_ohci:
+ push ecx
+  mov eax, dword [esi]
+  mov dword [ohci_base], eax
+  push esi
+  call init_ohci
+  WAIT 100
+  call ohci_detect_devices
+  pop esi
+  add esi, 4
+ pop ecx
+ loop .init_ohci
+ .skip_ohci:
 
  mov dword [uhci_controller_number], 0
  mov esi, uhci_controllers_base
@@ -48,8 +70,9 @@ init_usb_ports:
   mov ax, word [esi]
   mov word [uhci_base], ax
   push esi
-  call init_uhci_controller
+  call init_uhci
   WAIT 100
+  mov dword [uhci_reset_every_device], 1
   call uhci_detect_devices
   pop esi
   inc dword [uhci_controller_number]
@@ -70,12 +93,29 @@ detect_usb_devices:
   mov eax, dword [esi]
   mov dword [ehci_base], eax
   push esi
+  mov dword [ehci_reset_every_device], 0
   call ehci_detect_devices
   pop esi
   add esi, 4
  pop ecx
  loop .detect_ehci
  .skip_ehci:
+
+ mov esi, ohci_controllers_base
+ mov ecx, dword [ohci_num_of_ports]
+ cmp ecx, 0
+ je .skip_ohci
+ .init_ohci:
+ push ecx
+  mov eax, dword [esi]
+  mov dword [ohci_base], eax
+  push esi
+  call ohci_detect_devices
+  pop esi
+  add esi, 4
+ pop ecx
+ loop .init_ohci
+ .skip_ohci:
 
  mov dword [uhci_controller_number], 0
  mov esi, uhci_controllers_base
@@ -87,6 +127,7 @@ detect_usb_devices:
   mov ax, word [esi]
   mov word [uhci_base], ax
   push esi
+  mov dword [uhci_reset_every_device], 0
   call uhci_detect_devices
   pop esi
   inc dword [uhci_controller_number]
