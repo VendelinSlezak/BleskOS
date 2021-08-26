@@ -125,6 +125,7 @@ uhci_detect_device:
  jz .initalized_device
 
  .initalize_device:
+ call usb_keyboard_uhci_remove
  call usb_mouse_uhci_remove
  BASE_OUTW uhci_port_base, 0, 0x200 ;reset device
  WAIT 50
@@ -149,6 +150,7 @@ uhci_detect_device:
  ret
 
  .no_device:
+ call usb_keyboard_uhci_remove
  call usb_mouse_uhci_remove
  .initalized_device:
  ret
@@ -219,6 +221,25 @@ uhci_read_descriptor:
  ret
 
  .usb_keyboard:
+ call uhci_set_configuration
+ call uhci_set_interface
+ call uhci_set_idle
+
+ ;save keyboard
+ mov dword [usb_keyboard_controller], UHCI
+ mov ax, word [uhci_base]
+ mov word [usb_keyboard_base], ax
+ mov eax, dword [uhci_controller_number]
+ mov dword [usb_keyboard_controller_number], eax
+ mov eax, dword [uhci_device_speed]
+ mov dword [usb_keyboard_speed], eax
+ mov eax, 0
+ mov al, byte [usb_descriptor+19]
+ mov dword [usb_keyboard_endpoint], eax
+ PVAR eax
+ mov al, byte [uhci_address]
+ mov byte [usb_keyboard_address], al
+
  ret
 
  .usb_mouse:
