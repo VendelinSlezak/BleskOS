@@ -186,6 +186,13 @@ uhci_read_descriptor:
  mov dword [uhci_wait], 100
  call uhci_transfer_queue_head
 
+ ;status stage
+ UHCI_CREATE_QH
+ UHCI_CREATE_TD MEMORY_UHCI+0x10100, 0x1, (UHCI_TRANSFER_0_BYTES | UHCI_DATA_TOGGLE_1 | UHCI_OUT), 0x0
+ mov dword [uhci_td], MEMORY_UHCI+0x10100+4
+ mov dword [uhci_wait], 100
+ call uhci_transfer_queue_head
+
  ;parse descriptor
  mov esi, MEMORY_UHCI+0x10300
  call parse_usb_descriptor
