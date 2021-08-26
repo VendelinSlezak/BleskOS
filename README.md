@@ -26,6 +26,7 @@ USB controllers:
 * EHCI
 
 USB devices:
+* USB keyboard
 * USB mouse
 * USB mass storage
 
@@ -35,3 +36,14 @@ USB devices:
 
 ## How to build
 BleskOS is completly written in NASM. You should use last version 2.1
+
+compile.sh is written for linux. After download, you have to check in properties "Allow run this file as program" and you can compile BleskOS by running this file.
+
+If you do not use linux, you can build BleskOS by this steps:
+1. compile bootloader/bootloader.asm to bootloader.bin
+2. compile source/bleskos.asm to bleskos.bin
+3. create file bleskos.img
+4. write bootloader.bin to first sector of bleskos.img
+5. write bleskos.bin from second sector of bleskos.img
+6. connect file bleskos.img as hard disk to emulator
+7. and start emulator
