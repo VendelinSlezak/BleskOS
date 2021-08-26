@@ -56,6 +56,7 @@
 %define KEY_X 0x2D
 %define KEY_Y 0x15
 %define KEY_Z 0x2C
+%define KEY_SPACE 0x39
 
 %define KEY_1 0x02
 %define KEY_2 0x03
@@ -86,3 +87,18 @@ english_shift_keyboard_layout:
  times 10 dw 0 ;other control keys
  dw '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3', '0', '.' ;numpad
  times 230 dw 0
+
+usb_keyboard_layout:
+ db 0, 0, 0, 0
+ db KEY_A,  KEY_B,  KEY_C,  KEY_D,  KEY_E,  KEY_F,  KEY_G,  KEY_H,  KEY_I,  KEY_J,  KEY_K,  KEY_L,  KEY_M,  KEY_N,  KEY_O,  KEY_P,  KEY_Q,  KEY_R,  KEY_S,  KEY_T,  KEY_U,  KEY_V,  KEY_W,  KEY_X,  KEY_Y,  KEY_Z
+ db KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_0
+ db KEY_ENTER, KEY_ESC, KEY_BACKSPACE, KEY_TAB, KEY_SPACE
+ times 12 db 0
+ db KEY_CAPSLOCK, KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_F9, KEY_F10, KEY_F11, KEY_F12
+ db 0, 0, 0, 0, 0, KEY_PAGE_UP, KEY_DELETE, 0, KEY_PAGE_DOWN, KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP
+ times 230 db 0
+
+key_code dd 0
+keyboard_shift dd 0
+key_unicode dw 0
+selected_keyboard_set dd 0
