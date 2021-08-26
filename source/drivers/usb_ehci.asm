@@ -58,12 +58,7 @@ ehci_data_toggle dd 0
 ehci_td_pointer dd 0
 
 ehci_device_type dd 0
-ehci_endpoint_1_type dw 0
-ehci_endpoint_1_value dw 0
-ehci_endpoint_2_type dw 0
-ehci_endpoint_2_value dw 0
-ehci_endpoint_3_type dw 0
-ehci_endpoint_3_value dw 0
+ehci_reset_every_device dd 0
 
 %macro EHCI_WRITE_CMD 1
  MMIO_OUTD ehci_oper_base, 0x0, %1
@@ -195,6 +190,10 @@ ehci_detect_device:
  cmp eax, NO_DEVICE
  je .no_device
 
+ ;in booting initalize every device, no matter if it was already initalized
+ cmp dword [ehci_reset_every_device], 1
+ je .initalize_device
+
  ;is device initalized?
  EHCI_READ_PORT
  and eax, 0x2
@@ -210,10 +209,11 @@ ehci_detect_device:
  call msd_remove_device
 
  ;initalize device
+ .initalize_device:
  EHCI_WRITE_PORT 0x1100 ;reset device
- WAIT 6
+ WAIT 50
  EHCI_WRITE_PORT 0x1002 ;remove reset and clear status change
- WAIT 3
+ WAIT 30
 
  ;if device is not enabled it means that it is low speed device
  EHCI_READ_PORT
@@ -222,8 +222,8 @@ ehci_detect_device:
  jne .low_speed_device
 
  ;initalize high speed device
- call ehci_device_set_address
- call ehci_device_read_descriptor
+ call ehci_set_address
+ call ehci_read_descriptor
  jmp .done
 
  .low_speed_device:
@@ -247,7 +247,7 @@ ehci_detect_device:
  .done:
  ret
 
-ehci_device_set_address:
+ehci_set_address:
  ;queue head
  EHCI_CREATE_QUEUE_HEAD EHCI_CONTROL_TRANSFER
 
@@ -270,7 +270,7 @@ ehci_device_set_address:
 
  ret
 
-ehci_device_read_descriptor:
+ehci_read_descriptor:
  ;clear buffer
  mov esi, MEMORY_EHCI+0x800
  mov ecx, 0xFF
