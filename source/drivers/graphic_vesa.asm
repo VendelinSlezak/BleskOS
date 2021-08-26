@@ -115,9 +115,8 @@ debug_line dd 0
 
 %macro DRAW_PIXEL_OF_CHAR 2
  mov al, bl
- and al, %1
- cmp al, %1
- jne .%1_over
+ test al, %1
+ jz .%1_over
   mov dword [edx+(%2*4)], BLACK ;draw pixel on screen
  .%1_over:
 %endmacro
@@ -342,26 +341,19 @@ redraw_lines_screen:
  
 
 clear_screen:
- mov eax, MEMORY_RAM_SCREEN
- mov ebx, dword [color]
+ mov edi, MEMORY_RAM_SCREEN
+ mov eax, dword [color]
  mov ecx, dword [screen_all_pixels]
-
- .clear_screen_loop:
-  mov dword [eax], ebx
-  add eax, 4
- loop .clear_screen_loop
+ rep stosd
 
  ret
 
 draw_line:
  CALCULATE_CURSOR_POSITION
- mov eax, dword [screen_pointer]
- mov ebx, dword [color]
-
- FOR dword [line_length], draw_line_cycle
-  mov dword [eax], ebx
-  add eax, 4
- ENDFOR draw_line_cycle
+ mov edi, dword [screen_pointer]
+ mov eax, dword [color]
+ mov ecx, dword [line_length]
+ rep stosd
 
  ret
 
