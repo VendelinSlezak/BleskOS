@@ -7,21 +7,18 @@ Graphic:
 
 Sound:
 * AC97
-* Intel HD Audio (in progress)
 
 Inbuilt hardware:
 * PS/2 keyboard
 * PS/2 mouse
-* Paralel hard disk
-* Paralel CDROM
+* IDE hard disk
+* IDE cdrom
 
 Filesystems:
 * JUS
 * FAT32
-* ISO9660 (in progress)
 
 USB controllers:
-* OHCI (in progress)
 * UHCI
 * EHCI
 
@@ -29,6 +26,18 @@ USB devices:
 * USB keyboard
 * USB mouse
 * USB mass storage
+
+### Drivers in developing
+- [x] Intel HD Audio
+- [x] Filesystem ISO9660 for CDROM
+- [x] USB controller OHCI
+- [ ] AHCI hard disk
+- [ ] AHCI cdrom
+- [ ] Filesystems UDF and CDDA
+- [ ] USB controller xHCI
+- [ ] USB printer
+- [ ] Enternet card Intel e1000
+- [ ] TCP/IP stack
 
 ### Programs
 * File manager (in progress, usable version will be released 28/8/2021)
