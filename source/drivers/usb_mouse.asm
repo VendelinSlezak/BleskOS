@@ -6,8 +6,26 @@ usb_mouse_controller_number dd 0
 usb_mouse_address db 0
 usb_mouse_speed dd 0
 usb_mouse_endpoint dd 0
+usb_mouse_toggle dd 0
 
-usb_mouse_data dd 0
+usb_mouse_data dd 0, 0
+
+usb_mouse_ohci_remove:
+ mov ax, word [usb_mouse_base]
+ cmp word [ohci_base], ax
+ jne .done
+ mov al, byte [usb_mouse_address]
+ cmp byte [ohci_address], al
+ jne .done
+
+ mov dword [usb_mouse_controller], 0
+ mov dword [usb_mouse_base], 0
+ mov dword [usb_mouse_controller_number], 0
+ mov dword [usb_mouse_speed], 0
+ mov dword [usb_mouse_endpoint], 0
+
+ .done:
+ ret
 
 usb_mouse_uhci_remove:
  mov ax, word [usb_mouse_base]
@@ -45,7 +63,16 @@ read_usb_mouse:
  mov al, byte [usb_mouse_address]
  mov byte [uhci_address], al
 
+ mov eax, dword [usb_mouse_toggle]
+ mov dword [uhci_toggle], eax
  call uhci_read_hid
+ or dword [usb_mouse_toggle], 0xFFFFFFFE
+ not dword [usb_mouse_toggle] ;reverse first bit
+
+ mov eax, dword [MEMORY_UHCI+0x10200]
+ mov dword [usb_mouse_data], eax
+ mov eax, dword [MEMORY_UHCI+0x10204]
+ mov dword [usb_mouse_data+4], eax
  cmp al, 3
  je .usb_mouse_3_bytes
  cmp al, 4
@@ -62,30 +89,39 @@ read_usb_mouse:
  mov dword [ohci_device_speed], eax
  mov eax, dword [usb_mouse_endpoint]
  mov dword [ohci_endpoint], eax
+ mov al, byte [usb_mouse_address]
+ mov byte [ohci_address], al
 
- mov dword [MEMORY_OHCI+0x300], 0
- mov dword [MEMORY_OHCI+0x300+4], 0
+ mov eax, dword [usb_mouse_toggle]
+ mov dword [ohci_toggle], eax
  call ohci_read_hid
+ or dword [usb_mouse_toggle], 0xFFFFFFFE
+ not dword [usb_mouse_toggle] ;reverse first bit
+
  mov eax, dword [MEMORY_OHCI+0x300]
  mov dword [usb_mouse_data], eax
+ mov eax, dword [MEMORY_OHCI+0x304]
+ mov dword [usb_mouse_data+4], eax
+ cmp al, 3
+ je .usb_mouse_3_bytes
+ cmp al, 4
+ je .usb_mouse_4_bytes
+ cmp al, 7
+ je .usb_mouse_7_bytes
 
  ret
 
  .usb_mouse_3_bytes:
- mov eax, dword [MEMORY_UHCI+0x10200]
- and eax, 0x00FFFFFF
- mov dword [usb_mouse_data], eax
+ and dword [usb_mouse_data], 0x00FFFFFF
  ret
 
  .usb_mouse_4_bytes:
- mov eax, dword [MEMORY_UHCI+0x10200]
- mov dword [usb_mouse_data], eax
  ret
 
  .usb_mouse_7_bytes:
- mov eax, dword [MEMORY_UHCI+0x10201]
+ mov eax, dword [usb_mouse_data+1]
  and eax, 0x00FFFFFF
- mov bl, byte [MEMORY_UHCI+0x10205]
+ mov bl, byte [usb_mouse_data+5]
  shl ebx, 24
  or eax, ebx
  mov dword [usb_mouse_data], eax
@@ -95,6 +131,8 @@ wait_for_usb_mouse:
  mov dword [ps2_mouse_wait], 1 ;PS/2 mouse
  mov dword [ps2_mouse_data_pointer], ps2_mouse_data
  mov dword [keyboard_wait], 1 ;PS/2 keyboard
+ mov byte [key_code], 0
+ mov word [key_unicode], 0
  mov dword [usb_keyboard_wait], 0
  mov dword [ticks], 0
 
