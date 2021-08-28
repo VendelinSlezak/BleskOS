@@ -53,6 +53,7 @@ init_usb_ports:
   push esi
   call init_ohci
   WAIT 100
+  mov dword [ohci_reset_every_device], 1
   call ohci_detect_devices
   pop esi
   add esi, 4
@@ -110,6 +111,7 @@ detect_usb_devices:
   mov eax, dword [esi]
   mov dword [ohci_base], eax
   push esi
+  mov dword [ohci_reset_every_device], 0
   call ohci_detect_devices
   pop esi
   add esi, 4
