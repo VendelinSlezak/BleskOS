@@ -138,7 +138,7 @@ wait_for_usb_keyboard:
   cmp dword [keyboard_wait], 0
   je .done
 
-  cmp dword [ticks], 8
+  cmp dword [ticks], 4 
   jl .wait
   mov dword [usb_keyboard_data], 0
   call read_usb_keyboard
