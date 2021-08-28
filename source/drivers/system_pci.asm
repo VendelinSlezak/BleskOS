@@ -114,7 +114,7 @@ pci_read_device:
 
  PCI_READ 0x08
  and eax, 0xFFFFFF00 ;class, subclass, progif
- 
+
  IF_E eax, 0x04010000, pci_ac97_if ;AC97
   PCI_IO_ENABLE_BUSMASTERING
   PCI_READ_IO_BAR BAR0
@@ -134,6 +134,12 @@ pci_read_device:
 
  IF_E eax, 0x0C031000, pci_ohci_if ;OHCI
   inc dword [ohci_num_of_ports]
+
+  PCI_READ_MMIO_BAR BAR0
+  mov esi, dword [ohci_pointer]
+  mov dword [esi], eax ;save base
+  add dword [ohci_pointer], 4
+
   ret
  ENDIF pci_ohci_if
 
@@ -154,6 +160,10 @@ pci_read_device:
 
   PCI_READ_MMIO_BAR BAR0
   mov dword [ehci_base], eax
+
+  mov esi, dword [ehci_pointer]
+  mov dword [esi], eax ;save base
+  add dword [ehci_pointer], 4
 
   ;disable legacy support
   add eax, 0x08
@@ -208,7 +218,7 @@ pci_read_device:
 
   ret
  ENDIF pci_ide_if
- 
+
  mov ebx, eax
  and ebx, 0xFFFF0000 ;remove progif
  IF_E ebx, 0x01060000, pci_serial_ata_if ;Serial ATA
