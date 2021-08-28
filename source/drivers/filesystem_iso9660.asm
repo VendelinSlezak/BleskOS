@@ -1,10 +1,6 @@
 ;BleskOS
 
-%define NO_DISK 0
-%define UNKNOWN_DISK_FORMAT 1
-%define ISO9660_DISK 2
-
-disk_state dd 0
+iso9660_present dd 0
 iso9660_root_dir_lba dd 0
 iso9660_root_dir_length dd 0
 iso9660_file_lba dd 0
@@ -12,45 +8,26 @@ iso9660_file_length dd 0
 iso9660_file_memory dd 0
 
 init_iso9660:
- cmp word [cdrom_base], 0
- je .done
- cmp word [cdrom_base], 0xFFFF
- je .done
-
- mov ax, word [cdrom_base]
- mov word [patapi_base], ax
- IF_E dword [cdrom_drive], IDE_MASTER, if_master
-  call patapi_select_master
- ENDIF if_master
- IF_E dword [cdrom_drive], IDE_SLAVE, if_slave
-  call patapi_select_slave
- ENDIF if_slave
-
- mov dword [disk_state], NO_DISK
- call patapi_read_capabilites
- cmp dword [disk_size], 0
- je .done
-
+ mov dword [iso9660_present], 0
+ 
  mov dword [patapi_sector], 0x10
  mov dword [patapi_memory], MEMORY_ISO9660_FOLDER
  call patapi_read
  cmp dword [patapi_status], IDE_ERROR
  je .done
-
- mov dword [disk_state], UNKNOWN_DISK_FORMAT
  cmp dword [MEMORY_ISO9660_FOLDER+1], 0x30304443
  jne .done
 
  mov ecx, 0x10
  .find_primary_volume_record:
- push ecx
   cmp byte [MEMORY_ISO9660_FOLDER], 1
   je .read_primary_volume_record
 
   mov dword [patapi_memory], MEMORY_ISO9660_FOLDER
   inc dword [patapi_sector]
+  push ecx
   call patapi_read
- pop ecx
+  pop ecx
  cmp dword [patapi_status], IDE_ERROR
  je .done
  loop .find_primary_volume_record
@@ -59,8 +36,7 @@ init_iso9660:
  ret
 
  .read_primary_volume_record:
- pop ecx
- mov dword [disk_state], ISO9660_DISK
+ mov dword [iso9660_present], 1
 
  mov al, byte [MEMORY_ISO9660_FOLDER+162]
  mov byte [iso9660_root_dir_lba+3], al
@@ -100,16 +76,25 @@ iso9660_read_file:
   call patapi_read
   inc dword [patapi_sector]
  pop ecx
+ cmp dword [patapi_status], IDE_ERROR
+ je .done
  loop .load_file
 
+ .done:
  ret
 
 convert_iso9660_folder_to_jus_folder:
+ ;clear memory
+ mov edi, MEMORY_FOLDER
+ mov eax, 0
+ mov ecx, 10000
+ stosd
+ 
  mov esi, MEMORY_ISO9660_FOLDER
  mov edi, MEMORY_FOLDER
  mov ecx, 2048 ;max 2048 entries
  .convert_entry:
-  cmp dword [esi+33], 0
+  cmp byte [esi+0], 0
   je .done
 
   ;LBA
@@ -131,6 +116,12 @@ convert_iso9660_folder_to_jus_folder:
   mov byte [edi+5], al
   mov al, byte [esi+17]
   mov byte [edi+4], al
+  
+  mov eax, dword [edi+4]
+  mov ebx, 1024
+  mov edx, 0
+  div ebx
+  mov dword [edi+4], eax ;convert to KB
 
   ;year
   mov ax, 0
@@ -164,22 +155,24 @@ convert_iso9660_folder_to_jus_folder:
   .if_folder:
 
   ;name
-  push ecx
   mov eax, esi
-  add eax, 33
-  mov edx, edi
-  add edx, 16
-  mov ecx, 0
-  mov cl, byte [esi+32]
-  .convert_name_byte:
+  add eax, 33 ;start of name
+  mov ebx, edi
+  add ebx, 16 ;start of name
+  mov ecx, 50
+  .char:
+   mov dl, byte [eax]
+   cmp dl, ';'
+   je .end_of_string
+   cmp dl, 0
+   je .end_of_string
+   mov byte [ebx], dl
    inc eax
-   mov bx, 0
-   mov bl, byte [eax]
-   mov word [edx], bx
-   inc eax
-   add edx, 2
-  loop .convert_name_byte
-  pop ecx
+   add ebx, 2
+  dec ecx
+  cmp ecx, 0
+  jne .char
+  .end_of_string:
 
   ;next item
   mov eax, 0
