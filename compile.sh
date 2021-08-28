@@ -10,5 +10,3 @@ dd if=bootloader/bootloader.bin of=images/bleskos.hdd conv=notrunc seek=0
 dd if=images/bleskos.bin of=images/bleskos.hdd conv=notrunc seek=1
 
 qemu-system-i386 -m 64 -soundhw ac97 -hda images/bleskos.hdd
-
-sleep 60
