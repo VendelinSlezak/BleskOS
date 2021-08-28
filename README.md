@@ -19,6 +19,7 @@ Filesystems:
 * FAT32
 
 USB controllers:
+* OHCI
 * UHCI
 * EHCI
 
@@ -30,11 +31,10 @@ USB devices:
 ### Drivers in developing
 - [x] Intel HD Audio
 - [x] Filesystem ISO9660 for CDROM
-- [x] USB controller OHCI
+- [x] USB controller xHCI
 - [ ] AHCI hard disk
 - [ ] AHCI cdrom
 - [ ] Filesystems UDF and CDDA
-- [ ] USB controller xHCI
 - [ ] USB printer
 - [ ] Enternet card Intel e1000
 - [ ] TCP/IP stack
