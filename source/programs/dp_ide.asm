@@ -61,7 +61,7 @@ dp_ide:
  call redraw_screen
 
  .dp_ide_halt:
-  call wait_for_usb:keyboard
+  call wait_for_usb_keyboard
 
   cmp byte [key_code], KEY_ESC
   je developer_zone
