@@ -3,8 +3,8 @@
 %define OHCI_LOW_SPEED 0x00082000
 %define OHCI_FULL_SPEED 0x00080000
 %define OHCI_TD_ACTIVE 0xE0000000
-%define OHCI_DATA_TOGGLE_0 0x02040000
-%define OHCI_DATA_TOGGLE_1 0x03040000
+%define OHCI_DATA_TOGGLE_0 0x02000000
+%define OHCI_DATA_TOGGLE_1 0x03000000
 %define OHCI_SETUP (0 << 19)
 %define OHCI_OUT (1 << 19)
 %define OHCI_IN (2 << 19)
@@ -18,13 +18,16 @@
 
 %macro OHCI_CREATE_TD 4
  mov dword [%1+0], %3
+
  %if %4==0
  mov dword [%1+4], 0
  %endif
  %if %4!=0
  mov dword [%1+4], %4
  %endif
+
  mov dword [%1+8], %2
+
  %if %4==0
  mov dword [%1+12], 0
  %endif
@@ -42,16 +45,15 @@
 %endmacro
 
 %macro OHCI_RUN_PERIODIC_TRANSFER 0
- mov esi, MEMORY_OHCI
- mov dword [esi], MEMORY_OHCI+0x100
  MMIO_OUTD ohci_base, 0x1C, 0x0 ;current periodic ED
  MMIO_OUTD ohci_base, 0x04, 0x84 ;run periodic ED
- mov dword [ohci_td_wait], 1000
+ mov dword [ohci_td_wait], 100
 %endmacro
 
 ohci_base dd 0
 ohci_port_base dd 0
 ohci_device_speed dd 0
+ohci_address db 0
 ohci_td dd 0
 ohci_td_wait dd 0
 
@@ -59,6 +61,9 @@ ohci_conf_number db 0
 ohci_interface_number db 0
 ohci_alt_interface_number db 0
 ohci_endpoint dd 0
+ohci_toggle dd 0
+
+ohci_reset_every_device dd 0
 
 init_ohci:
  ;disable legacy support
@@ -83,12 +88,16 @@ init_ohci:
  MMIO_OUTD ohci_base, 0x48, 0x1200 ;power all ports
  MMIO_OUTD ohci_base, 0x4C, 0x0
 
- mov esi, MEMORY_OHCI
+ ;clear hcca
+ mov edi, MEMORY_OHCI
+ mov eax, 0
  mov ecx, 256
- .clear_hcca:
-  mov byte [esi], 0
-  inc esi
- loop .clear_hcca
+ rep stosb
+ ;fill hcca
+ mov edi, MEMORY_OHCI
+ mov eax, MEMORY_OHCI+0x100
+ mov ecx, 32
+ rep stosd
  MMIO_OUTD ohci_base, 0x18, MEMORY_OHCI ;HCCA memory pointer
 
  MMIO_OUTD ohci_base, 0x1C, 0x0 ;current period ED
@@ -106,6 +115,7 @@ init_ohci:
 ohci_detect_devices:
  MMIO_IND ohci_base, 0x48
  and eax, 0xF ;number of ports
+ mov byte [ohci_address], 1
 
  mov ebx, dword [ohci_base]
  mov dword [ohci_port_base], ebx
@@ -116,26 +126,33 @@ ohci_detect_devices:
   mov dword [ohci_td], 0
   call ohci_detect_device
   add dword [ohci_port_base], 4
+  inc byte [ohci_address]
  pop ecx
- cmp dword [ohci_td], 0
- jne .done ;some device was initalized
  loop .detect_device
 
  .done:
  ret
 
 ohci_detect_device:
+ ;is device connected?
  MMIO_IND ohci_port_base, 0
  and eax, 0x1
  cmp eax, 0x1
  jne .no_device
 
+ cmp dword [ohci_reset_every_device], 1
+ je .initalize_device
+
+ ;is device initalized?
  MMIO_IND ohci_port_base, 0
  and eax, 0x10000
  cmp eax, 0x10000
  jne .initalized_device
 
- ;reset device
+ ;initalize device
+ .initalize_device:
+ call usb_keyboard_ohci_remove
+ call usb_mouse_ohci_remove
  MMIO_OUTD ohci_port_base, 0, 0x10
  WAIT 50
  MMIO_OUTD ohci_port_base, 0, 0x2 ;stop reset, enable port
@@ -155,7 +172,8 @@ ohci_detect_device:
  ret
 
  .no_device:
- PSTR 'no device', ohci_no_str
+ call usb_keyboard_ohci_remove
+ call usb_mouse_ohci_remove
 
  .initalized_device:
  ret
@@ -165,22 +183,20 @@ ohci_set_address:
  OHCI_CREATE_ED eax, MEMORY_OHCI+0x200, 2
  OHCI_CREATE_TD MEMORY_OHCI+0x200, MEMORY_OHCI+0x210, (OHCI_TD_ACTIVE | OHCI_DATA_TOGGLE_0 | OHCI_SETUP), MEMORY_OHCI+0x300
  OHCI_CREATE_TD MEMORY_OHCI+0x210, MEMORY_OHCI+0x220, (OHCI_TD_ACTIVE | OHCI_DATA_TOGGLE_1 | OHCI_IN), 0x0
- mov dword [MEMORY_OHCI+0x300], 0x00010500
+ mov dword [MEMORY_OHCI+0x300], 0x00000500
  mov dword [MEMORY_OHCI+0x304], 0x00000000
+ mov al, byte [ohci_address]
+ mov byte [MEMORY_OHCI+0x302], al
+
  OHCI_RUN_CONTROL_TRANSFER
  mov dword [ohci_td], MEMORY_OHCI+0x210
  call ohci_wait_for_transfer
-
- mov eax, dword [MEMORY_OHCI+0x200]
- PHEX eax
- mov eax, dword [MEMORY_OHCI+0x210]
- PHEX eax
 
  ret
 
 ohci_read_descriptor:
  mov eax, dword [ohci_device_speed]
- or eax, 1 ;address
+ or al, byte [ohci_address]
  OHCI_CREATE_ED eax, MEMORY_OHCI+0x200, 9
  OHCI_CREATE_TD MEMORY_OHCI+0x200, MEMORY_OHCI+0x210, (OHCI_TD_ACTIVE | OHCI_DATA_TOGGLE_0 | OHCI_SETUP), MEMORY_OHCI+0x300
  OHCI_CREATE_TD MEMORY_OHCI+0x210, MEMORY_OHCI+0x220, (OHCI_TD_ACTIVE | OHCI_DATA_TOGGLE_1 | OHCI_IN), MEMORY_OHCI+0x400
@@ -197,13 +213,8 @@ ohci_read_descriptor:
  mov dword [ohci_td], MEMORY_OHCI+0x280
  call ohci_wait_for_transfer
 
- mov eax, dword [MEMORY_OHCI+0x200]
- PHEX eax
- mov eax, dword [MEMORY_OHCI+0x210]
- PHEX eax
-
  mov eax, dword [ohci_device_speed]
- or eax, 1 ;address
+ or al, byte [ohci_address]
  OHCI_CREATE_ED eax, MEMORY_OHCI+0x200, 1
  OHCI_CREATE_TD MEMORY_OHCI+0x200, MEMORY_OHCI+0x210, (OHCI_TD_ACTIVE | OHCI_DATA_TOGGLE_1 | OHCI_OUT), 0x0
  OHCI_RUN_CONTROL_TRANSFER
@@ -237,12 +248,29 @@ ohci_read_descriptor:
  ret
 
  .usb_keyboard:
- jmp .done
+ call uhci_set_configuration
+ call uhci_set_interface
+ call uhci_set_idle
+
+ ;save keyboard
+ mov dword [usb_keyboard_controller], OHCI
+ mov ax, word [ohci_base]
+ mov word [usb_keyboard_base], ax
+ mov eax, dword [ohci_device_speed]
+ mov dword [usb_keyboard_speed], eax
+ mov eax, 0
+ mov al, byte [usb_descriptor+19]
+ mov dword [usb_keyboard_endpoint], eax
+ mov al, byte [ohci_address]
+ mov byte [usb_keyboard_address], al
+ mov dword [usb_keyboard_toggle], 0
+
+ ret
 
  .usb_mouse:
  call ohci_set_configuration
  call ohci_set_interface
- ;call ohci_set_idle
+ call ohci_set_idle
 
  ;save mouse
  mov dword [usb_mouse_controller], OHCI
@@ -253,7 +281,9 @@ ohci_read_descriptor:
  mov eax, 0
  mov al, byte [usb_descriptor+19]
  mov dword [usb_mouse_endpoint], eax
- PVAR eax
+ mov al, byte [ohci_address]
+ mov byte [usb_mouse_address], al
+ mov dword [usb_mouse_toggle], 0
 
  .done:
  ret
@@ -264,7 +294,6 @@ ohci_read_descriptor:
  mov eax, 0
  mov al, byte [usb_descriptor+29]
  mov dword [usb_mouse_endpoint], eax
- PVAR eax
 
  ret
 
@@ -275,7 +304,7 @@ ohci_set_configuration:
  mov byte [MEMORY_OHCI+0x302], al ;configuration number
 
  mov eax, dword [ohci_device_speed]
- or eax, 1 ;address
+ or al, byte [ohci_address]
  OHCI_CREATE_ED eax, MEMORY_OHCI+0x200, 2
  OHCI_CREATE_TD MEMORY_OHCI+0x200, MEMORY_OHCI+0x210, (OHCI_TD_ACTIVE | OHCI_DATA_TOGGLE_0 | OHCI_SETUP), MEMORY_OHCI+0x300
  OHCI_CREATE_TD MEMORY_OHCI+0x210, MEMORY_OHCI+0x220, (OHCI_TD_ACTIVE | OHCI_DATA_TOGGLE_1 | OHCI_IN), 0x0
@@ -294,7 +323,7 @@ ohci_set_interface:
  mov byte [MEMORY_OHCI+0x304], al ;interface number
 
  mov eax, dword [ohci_device_speed]
- or eax, 1 ;address
+ or al, byte [ohci_address]
  OHCI_CREATE_ED eax, MEMORY_OHCI+0x200, 2
  OHCI_CREATE_TD MEMORY_OHCI+0x200, MEMORY_OHCI+0x210, (OHCI_TD_ACTIVE | OHCI_DATA_TOGGLE_0 | OHCI_SETUP), MEMORY_OHCI+0x300
  OHCI_CREATE_TD MEMORY_OHCI+0x210, MEMORY_OHCI+0x220, (OHCI_TD_ACTIVE | OHCI_DATA_TOGGLE_1 | OHCI_IN), 0x0
@@ -311,7 +340,7 @@ ohci_set_idle:
  mov byte [MEMORY_OHCI+0x304], al ;interface number
 
  mov eax, dword [ohci_device_speed]
- or eax, 1 ;address
+ or al, byte [ohci_address]
  OHCI_CREATE_ED eax, MEMORY_OHCI+0x200, 2
  OHCI_CREATE_TD MEMORY_OHCI+0x200, MEMORY_OHCI+0x210, (OHCI_TD_ACTIVE | OHCI_DATA_TOGGLE_0 | OHCI_SETUP), MEMORY_OHCI+0x300
  OHCI_CREATE_TD MEMORY_OHCI+0x210, MEMORY_OHCI+0x220, (OHCI_TD_ACTIVE | OHCI_DATA_TOGGLE_1 | OHCI_IN), 0x0
@@ -322,29 +351,37 @@ ohci_set_idle:
  ret
 
 ohci_read_hid:
- mov eax, dword [ohci_endpoint]
- shl eax, 8
+ mov eax, 0
+ mov al, byte [ohci_endpoint]
+ shl eax, 7
  or eax, dword [ohci_device_speed]
- or eax, 1 ;address
+ or al, byte [ohci_address]
  OHCI_CREATE_ED eax, MEMORY_OHCI+0x200, 1
- OHCI_CREATE_TD MEMORY_OHCI+0x200, MEMORY_OHCI+0x210, (OHCI_TD_ACTIVE | OHCI_DATA_TOGGLE_0 | OHCI_IN), MEMORY_OHCI+0x300
+ mov eax, dword [ohci_toggle]
+ shl eax, 24
+ or eax, (OHCI_TD_ACTIVE | OHCI_DATA_TOGGLE_0 | OHCI_IN)
+ OHCI_CREATE_TD MEMORY_OHCI+0x200, MEMORY_OHCI+0x210, eax, MEMORY_OHCI+0x300
  OHCI_RUN_PERIODIC_TRANSFER
  mov dword [ohci_td], MEMORY_OHCI+0x200
+ mov dword [ohci_td_wait], 2
  call ohci_wait_for_transfer
 
- mov eax, dword [MEMORY_OHCI+0x200]
- PHEX eax
-second_transfer:
- mov eax, dword [ohci_endpoint]
- shl eax, 8
- or eax, dword [ohci_device_speed]
- or eax, 1 ;address
- OHCI_CREATE_ED eax, MEMORY_OHCI+0x200, 1
- OHCI_CREATE_TD MEMORY_OHCI+0x200, MEMORY_OHCI+0x210, (OHCI_TD_ACTIVE | OHCI_DATA_TOGGLE_1 | OHCI_IN), MEMORY_OHCI+0x300+8
- OHCI_RUN_PERIODIC_TRANSFER
- mov dword [ohci_td], MEMORY_OHCI+0x200
- call ohci_wait_for_transfer
+ mov eax, dword [MEMORY_OHCI+0x200+8]
+ sub eax, MEMORY_OHCI+0x300
 
+ mov ebx, dword [MEMORY_OHCI+0x200]
+ and ebx, 0xF0000000
+ cmp ebx, 0x90000000
+ je .done
+ cmp ebx, 0
+ jne .error
+
+ .done:
+ ret
+
+ .error:
+ mov dword [MEMORY_OHCI+0x300], 0
+ mov dword [MEMORY_OHCI+0x304], 0
  ret
 
 ohci_wait_for_transfer:
@@ -361,5 +398,5 @@ ohci_wait_for_transfer:
 
  .done:
  MMIO_OUTD ohci_base, 0x04, 0x80 ;stop transfer
- MMIO_OUTD ohci_base, 0x08, 0x0 ;stop transfer
+ ;MMIO_OUTD ohci_base, 0x08, 0x0 ;stop transfer
  ret
