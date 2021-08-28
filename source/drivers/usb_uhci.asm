@@ -56,6 +56,7 @@ uhci_alt_interface_number dd 0
 
 uhci_device_speed dd 0
 uhci_endpoint dd 0
+uhci_toggle dd 0
 uhci_td dd 0
 uhci_wait dd 0
 
@@ -239,6 +240,7 @@ uhci_read_descriptor:
  PVAR eax
  mov al, byte [uhci_address]
  mov byte [usb_keyboard_address], al
+ mov dword [usb_keyboard_toggle], 0
 
  ret
 
@@ -261,6 +263,7 @@ uhci_read_descriptor:
  PVAR eax
  mov al, byte [uhci_address]
  mov byte [usb_mouse_address], al
+ mov dword [usb_mouse_toggle], 0
 
  ret
 
@@ -325,13 +328,12 @@ uhci_read_hid:
  mov ecx, dword [uhci_endpoint]
  shl ecx, 15
  or ecx, (UHCI_TRANSFER_8_BYTES | UHCI_DATA_TOGGLE_0 | UHCI_IN)
- UHCI_CREATE_TD MEMORY_UHCI+0x10100, MEMORY_UHCI+0x10110 | 0x4, ecx, MEMORY_UHCI+0x10200
- mov ecx, dword [uhci_endpoint]
- shl ecx, 15
- or ecx, (UHCI_TRANSFER_8_BYTES | UHCI_DATA_TOGGLE_1 | UHCI_IN)
- UHCI_CREATE_TD MEMORY_UHCI+0x10110, 0x1, ecx, MEMORY_UHCI+0x10208
+ mov edx, dword [uhci_toggle]
+ shl edx, 19
+ or ecx, edx
+ UHCI_CREATE_TD MEMORY_UHCI+0x10100, 0x1, ecx, MEMORY_UHCI+0x10200
 
- mov dword [uhci_td], MEMORY_UHCI+0x10110+4
+ mov dword [uhci_td], MEMORY_UHCI+0x10100+4
  mov dword [uhci_wait], 3
  call uhci_transfer_queue_head
 
