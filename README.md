@@ -17,6 +17,7 @@ Inbuilt hardware:
 Filesystems:
 * JUS
 * FAT32
+* ISO9660
 
 USB controllers:
 * OHCI
@@ -30,7 +31,6 @@ USB devices:
 
 ### Drivers in developing
 - [x] Intel HD Audio
-- [x] Filesystem ISO9660 for CDROM
 - [x] USB controller xHCI
 - [ ] AHCI hard disk
 - [ ] AHCI cdrom
