@@ -3,7 +3,7 @@
 ;What this code do:
 ; - enable A20 for acess to all RAM memory
 ; - set highest VESA mode
-; - read 128 KB from boot device after bootloader sector - this contains BleskOS code
+; - read 256 KB from boot device after bootloader sector - this contains BleskOS code
 ; - load Global Descriptor Table for acces max 4 GB of RAM memory
 ; - enter to protected mode(32 bit processor mode)
 ; - start executing of BleskOS code, whose is loaded in memory 0x10000
@@ -27,15 +27,30 @@ start:
  or al, 0x2
  out 0x92, al
 
- ;READ BLESKOS 128 KB FROM HARD DISK
- mov ah, 0x42
- mov si, disk_packet1
- int 13h
- jc .error_1
- mov ah, 0x42
- mov si, disk_packet2
- int 13h
- jc .error_1
+ ;READ BLESKOS 256 KB FROM HARD DISK
+ mov word [es:0xF008], 1
+ mov bx, 0x0100
+ mov cx, 4
+ .read_from_disk:
+  mov word [es:0xF000], 0x0010 ;singature
+  mov word [es:0xF002], 64 ;number of sectors
+  mov ax, 0
+  mov al, bl
+  shl ax, 8
+  mov word [es:0xF004], ax ;offset
+  mov ax, 0
+  mov al, bh
+  shl ax, 12
+  mov word [es:0xF006], ax ;segment
+  
+  mov ah, 0x42
+  mov si, 0xF000
+  int 13h
+  jc .error_1
+  
+  add bx, 0x80
+  add word [es:0xF008], 64 ;start sector
+ loop .read_from_disk
 
  ;FIND VESA MODE
  mov word [vesa_last_24_mode_x], 0
@@ -113,17 +128,11 @@ start:
 
  ;ERRORS
  .error_1:
-  mov ah, 0x0E
-  mov al, 'E'
-  int 10h
   mov al, '1'
   int 10h
   jmp .halt
 
  .error_2:
-  mov ah, 0x0E
-  mov al, 'E'
-  int 10h
   mov al, '2'
   int 10h
   jmp .halt
@@ -171,13 +180,6 @@ start:
  gdt_wrap:
   dw gdt_end - gdt - 1
   dd gdt
-
- disk_packet1:
-  dw 0x0010, 64, 0x0000, 0x1000
-  dq 1
- disk_packet2:
-  dw 0x0010, 64, 0x8000, 0x1000
-  dq 65
 
  vesa_mode_number dw 0
  vesa_24_mode_number dw 0
