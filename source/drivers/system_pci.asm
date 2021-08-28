@@ -171,6 +171,8 @@ pci_read_device:
   shr ebx, 8
   and ebx, 0xFF ;get PCI extend register position
   PCI_WRITE ebx, (1 << 24)
+  
+  PCI_SET_IRQ 3
 
   ret
  ENDIF pci_ehci_if
@@ -230,7 +232,7 @@ pci_read_device:
   mov dword [eax+4], 0x0 ;try to disable ahci
  ENDIF pci_serial_ata_if
 
- PCI_SET_IRQ 3 ;for all other devices
+ PCI_SET_IRQ 5 ;for all other devices
 
  .done:
  ret
