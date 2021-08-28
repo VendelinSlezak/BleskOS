@@ -6,9 +6,27 @@ usb_keyboard_controller_number dd 0
 usb_keyboard_address db 0
 usb_keyboard_speed dd 0
 usb_keyboard_endpoint dd 0
+usb_keyboard_toggle dd 0
 
 usb_keyboard_data dd 0
 usb_keyboard_wait dd 0
+
+usb_keyboard_ohci_remove:
+ mov ax, word [usb_keyboard_base]
+ cmp word [ohci_base], ax
+ jne .done
+ mov al, byte [usb_keyboard_address]
+ cmp byte [ohci_address], al
+ jne .done
+
+ mov dword [usb_keyboard_controller], 0
+ mov dword [usb_keyboard_base], 0
+ mov dword [usb_keyboard_controller_number], 0
+ mov dword [usb_keyboard_speed], 0
+ mov dword [usb_keyboard_endpoint], 0
+
+ .done:
+ ret
 
 usb_keyboard_uhci_remove:
  mov ax, word [usb_keyboard_base]
@@ -46,7 +64,12 @@ read_usb_keyboard:
  mov al, byte [usb_keyboard_address]
  mov byte [uhci_address], al
 
+ mov eax, dword [usb_mouse_toggle]
+ mov dword [uhci_toggle], eax
  call uhci_read_hid
+ or dword [usb_mouse_toggle], 0xFFFFFFFE
+ not dword [usb_mouse_toggle] ;reverse first bit
+ 
  mov eax, dword [MEMORY_UHCI+0x10200]
  mov dword [usb_keyboard_data], eax
  jmp .translate
@@ -58,14 +81,18 @@ read_usb_keyboard:
  mov dword [ohci_device_speed], eax
  mov eax, dword [usb_keyboard_endpoint]
  mov dword [ohci_endpoint], eax
+ mov eax, dword [usb_keyboard_address]
+ mov dword [ohci_address], eax
 
- mov dword [MEMORY_OHCI+0x300], 0
- mov dword [MEMORY_OHCI+0x300+4], 0
+ mov eax, dword [usb_mouse_toggle]
+ mov dword [uhci_toggle], eax
  call ohci_read_hid
+ or dword [usb_mouse_toggle], 0xFFFFFFFE
+ not dword [usb_mouse_toggle] ;reverse first bit
+ 
  mov eax, dword [MEMORY_OHCI+0x300]
  mov dword [usb_keyboard_data], eax
-
- ret
+ jmp .translate
 
  .translate:
  mov eax, 0
