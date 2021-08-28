@@ -68,8 +68,7 @@ ohci_reset_every_device dd 0
 init_ohci:
  ;disable legacy support
  MMIO_IND ohci_base, 0x00
- and eax, 0x100
- cmp eax, 0x100
+ cmp eax, 0x110
  jne .if_legacy_support
   MMIO_OUTD ohci_base, 0x100, 0x0
  .if_legacy_support:
@@ -220,6 +219,9 @@ ohci_read_descriptor:
  OHCI_RUN_CONTROL_TRANSFER
  mov dword [ohci_td], MEMORY_OHCI+0x200
  call ohci_wait_for_transfer ;send STATUS stage of setup transfer
+ 
+ mov eax, dword [MEMORY_OHCI+0x200]
+ PHEX eax
 
  ;PARSE RECEIVED DATA
  mov esi, MEMORY_OHCI+0x400
@@ -248,9 +250,9 @@ ohci_read_descriptor:
  ret
 
  .usb_keyboard:
- call uhci_set_configuration
- call uhci_set_interface
- call uhci_set_idle
+ call ohci_set_configuration
+ call ohci_set_interface
+ call ohci_set_idle
 
  ;save keyboard
  mov dword [usb_keyboard_controller], OHCI
@@ -363,7 +365,7 @@ ohci_read_hid:
  OHCI_CREATE_TD MEMORY_OHCI+0x200, MEMORY_OHCI+0x210, eax, MEMORY_OHCI+0x300
  OHCI_RUN_PERIODIC_TRANSFER
  mov dword [ohci_td], MEMORY_OHCI+0x200
- mov dword [ohci_td_wait], 2
+ mov dword [ohci_td_wait], 1
  call ohci_wait_for_transfer
 
  mov eax, dword [MEMORY_OHCI+0x200+8]
@@ -398,5 +400,6 @@ ohci_wait_for_transfer:
 
  .done:
  MMIO_OUTD ohci_base, 0x04, 0x80 ;stop transfer
- ;MMIO_OUTD ohci_base, 0x08, 0x0 ;stop transfer
+ MMIO_OUTD ohci_base, 0x08, 0x0 ;stop transfer
+ 
  ret
