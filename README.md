@@ -40,8 +40,8 @@ USB devices:
 - [ ] TCP/IP stack
 
 ### Programs
-* File manager (in progress, usable version will be released 28/8/2021)
-* Text editor (in progress, first version will be released 28/8/2021)
+* File manager (in progress, will be released 30/8/2021)
+* Text editor (in progress, will be released 30/8/2021)
 
 ## How to build
 BleskOS is completly written in NASM. You should use last version 2.1
