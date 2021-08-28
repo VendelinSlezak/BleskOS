@@ -190,6 +190,8 @@ ohci_set_address:
  OHCI_RUN_CONTROL_TRANSFER
  mov dword [ohci_td], MEMORY_OHCI+0x210
  call ohci_wait_for_transfer
+ 
+ WAIT 10
 
  ret
 
@@ -211,6 +213,8 @@ ohci_read_descriptor:
  OHCI_RUN_CONTROL_TRANSFER
  mov dword [ohci_td], MEMORY_OHCI+0x280
  call ohci_wait_for_transfer
+ 
+ WAIT 10
 
  mov eax, dword [ohci_device_speed]
  or al, byte [ohci_address]
@@ -219,6 +223,8 @@ ohci_read_descriptor:
  OHCI_RUN_CONTROL_TRANSFER
  mov dword [ohci_td], MEMORY_OHCI+0x200
  call ohci_wait_for_transfer ;send STATUS stage of setup transfer
+ 
+ WAIT 10
  
  mov eax, dword [MEMORY_OHCI+0x200]
  PHEX eax
