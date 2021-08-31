@@ -28,7 +28,8 @@ start:
  out 0x92, al
 
  ;READ BLESKOS 256 KB FROM HARD DISK
- mov word [es:0xF008], 1
+ mov dword [es:0xF008], 1
+ mov dword [es:0xF00C], 0
  mov bx, 0x0100
  mov cx, 4
  .read_from_disk:
