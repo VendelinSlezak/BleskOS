@@ -3,10 +3,10 @@
 mkdir images
 
 nasm -f bin bootloader/bootloader.asm -o bootloader/bootloader.bin
-nasm -f bin source/bleskos.asm -o images/bleskos.bin
+nasm -f bin source/bleskos.asm -o images/bleskos.bin -w-all
 
-dd if=/dev/zero of=images/bleskos.hdd bs=1024 count=1000
+dd if=/dev/zero of=images/bleskos.hdd bs=1024 count=1440
 dd if=bootloader/bootloader.bin of=images/bleskos.hdd conv=notrunc seek=0
-dd if=images/bleskos.bin of=images/bleskos.hdd conv=notrunc seek=1
+dd if=images/bleskos.bin of=images/bleskos.hdd conv=notrunc seek=5
 
-qemu-system-i386 -m 64 -soundhw ac97 -hda images/bleskos.hdd
+qemu-system-i386 -hda images/bleskos.hdd
