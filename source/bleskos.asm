@@ -64,6 +64,8 @@ start_bleskos:
  CLEAR_SCREEN 0x00C000
  call redraw_screen
 
+ PSTR 'Reading size of RAM memory...', bootstr_ramsize
+ call read_memory_size
  PSTR 'Enabling interrupts...', bootstr_interrupts
  call init_idt
  call set_pit
