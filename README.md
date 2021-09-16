@@ -52,7 +52,7 @@ If you do not use linux, you can build BleskOS by this steps:
 1. compile bootloader/bootloader.asm to bootloader.bin
 2. compile source/bleskos.asm to bleskos.bin
 3. create file bleskos.img
-4. write bootloader.bin to first sector of bleskos.img
-5. write bleskos.bin from second sector of bleskos.img
-6. connect file bleskos.img as hard disk to emulator
+4. write bootloader.bin from first sector(LBA 0) to bleskos.img
+5. write bleskos.bin from sixth sector(LBA 5) to bleskos.img
+6. connect file bleskos.img to emulator as hard disk
 7. and start emulator
