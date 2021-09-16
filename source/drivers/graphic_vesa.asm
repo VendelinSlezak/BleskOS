@@ -47,6 +47,16 @@ var_print_value dd 0
 var_string times 11 db 0
 debug_line dd 0
 
+x1 dd 0
+y1 dd 0
+x2 dd 0
+y2 dd 0
+line_direction dd 0
+line_x_length dd 0
+line_y_length dd 0
+line_x_pointer dd 0
+line_y_pointer dd 0
+
 ;;;;; END OF DEFINITIONS OF VARIABILES ;;;;;
 
 %macro CALCULATE_CURSOR_POSITION 0
@@ -177,21 +187,27 @@ debug_line dd 0
 %endmacro
 
 %macro PSTR 2
+ pusha
  mov esi, .%2
  call pstr
  jmp .%2_over
  .%2 db %1, 0
  .%2_over:
+ popa
 %endmacro
 
 %macro PHEX 1
+ pusha
  mov dword [hex_print_value], %1
  call phex
+ popa
 %endmacro
 
 %macro PVAR 1
+ pusha
  mov dword [var_print_value], %1
  call pvar
+ popa
 %endmacro
 
 ;;;;; END OF DEFINITIONS OF MACROS ;;;;;
@@ -413,6 +429,124 @@ draw_empty_square:
  sub dword [cursor_line], eax
 
  ret
+ 
+draw_line_all:
+ ;if straigth line
+ mov eax, dword [y1]
+ cmp eax, dword [y2]
+ je .draw_line
+ 
+ ;line will be drawed from down to up
+ cmp eax, dword [y2]
+ jg .if_reverse
+  mov ebx, dword [y2]
+  mov dword [y2], eax
+  mov dword [y1], ebx
+  
+  mov eax, dword [x1]
+  mov ebx, dword [x2]
+  mov dword [x1], ebx
+  mov dword [x2], eax
+ .if_reverse
+ 
+ ;if straigth column
+ mov eax, dword [x1]
+ cmp eax, dword [x2]
+ je .draw_column
+ 
+ ;direction of line
+ cmp eax, dword [x2]
+ jg .direction_left
+ 
+ mov dword [line_direction], 1 ;right
+ mov eax, dword [x2]
+ sub eax, dword [x1]
+ mov dword [line_x_length], eax
+ jmp .y_length
+ 
+ .direction_left:
+ mov dword [line_direction], 0 ;left
+ mov eax, dword [x1]
+ sub eax, dword [x2]
+ mov dword [line_x_length], eax
+ 
+ ;calculate y length
+ .y_length:
+ mov eax, dword [y1]
+ sub eax, dword [y2]
+ mov dword [line_y_length], eax
+ 
+ ;set values
+ mov eax, dword [x1]
+ mov dword [line_x_pointer], eax
+ mov dword [cursor_column], eax
+ mov eax, dword [y1]
+ mov dword [line_y_pointer], eax
+ mov dword [cursor_line], eax
+ CALCULATE_CURSOR_POSITION
+ mov esi, eax ;pointer
+ 
+ mov eax, dword [line_x_length]
+ mov ebx, dword [line_y_length]
+ mov ecx, dword [line_x_length]
+ mov edx, dword [line_y_length]
+ 
+ ;draw line
+ cmp dword [line_direction], 1
+ je .right_draw_pixel_of_line
+ 
+ .left_draw_pixel_of_line:
+  mov ebp, dword [line_x_pointer]
+  cmp ebp, dword [x2]
+  jg .continue_draw_left
+  jmp .done
+  
+  .continue_draw_left:
+  mov dword [esi], BLACK ;draw pixel
+  
+  cmp eax, ebx
+  jg .move_cursor_left
+  
+  ;move cursor right up
+  sub esi, dword [screen_pixels_per_line] ;up
+  dec dword [line_y_pointer]
+  add eax, ecx
+  
+  .move_cursor_left:
+  sub esi, 4 ;right
+  dec dword [line_x_pointer]
+  add ebx, edx
+ jmp .left_draw_pixel_of_line
+ 
+ .right_draw_pixel_of_line:
+  mov ebp, dword [line_x_pointer]
+  cmp ebp, dword [x2]
+  jl .continue_draw_right
+  jmp .done
+  
+  .continue_draw_right:
+  mov dword [esi], BLACK ;draw pixel
+  
+  cmp eax, ebx
+  jg .move_cursor_right
+  
+  ;move cursor right up
+  sub esi, dword [screen_pixels_per_line] ;up
+  dec dword [line_y_pointer]
+  add eax, ecx
+  
+  .move_cursor_right:
+  add esi, 4 ;right
+  inc dword [line_x_pointer]
+  add ebx, edx
+ jmp .right_draw_pixel_of_line
+ 
+ .done:
+ ret
+ 
+ .draw_line:
+ 
+ .draw_column:
 
 draw_cursor:
  CALCULATE_CURSOR_POSITION
