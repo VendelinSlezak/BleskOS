@@ -43,6 +43,7 @@ start:
 
  %include "source/drivers/filesystem_jus.asm"
  %include "source/drivers/filesystem_fat32.asm"
+ %include "source/drivers/filesystem_iso9660.asm"
 
  %include "source/drivers/network_center.asm"
  
