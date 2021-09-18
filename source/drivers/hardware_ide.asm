@@ -98,14 +98,16 @@ init_ide:
  .find_hard_disk:
   mov ax, word [esi]
   mov word [hard_disk_base], ax
+  
   mov dword [hard_disk_drive], IDE_MASTER
   mov eax, dword [esi+8]
   mov dword [hard_disk_size], eax
   cmp dword [esi+4], 0x00000000
-  jne .hard_disk_next_loop
+  jne .test_slave
   cmp dword [esi+8], 0
   jne .hard_disk_founded
 
+  .test_slave:
   mov dword [hard_disk_drive], IDE_SLAVE
   mov eax, dword [esi+16]
   mov dword [hard_disk_size], eax
