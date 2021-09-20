@@ -86,7 +86,7 @@ start_bleskos:
  PSTR 'Read JUS informations...', bootstr_jus
  call jus_load_bn_part
  PSTR 'Initalizing USB ports...', bootstr_usb
- call init_usb_ports
+ call init_usb_controllers
 
  call main_window
 
