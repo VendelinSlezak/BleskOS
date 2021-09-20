@@ -155,6 +155,36 @@ uhci_detect_device:
  call usb_mouse_uhci_remove
  .initalized_device:
  ret
+ 
+uhci_detect_port_change:
+ mov ax, word [uhci_base]
+ add ax, 0x10
+ mov word [uhci_port_base], ax
+ mov byte [uhci_address], 1
+
+ mov ecx, 10 ;max ten ports
+ .detect_device:
+  BASE_INW uhci_port_base, 0
+  cmp ax, 0xFFFF
+  je .done
+  test ax, 0x80
+  jz .done
+  BASE_INW uhci_port_base, 0
+
+  test ax, 0x2
+  jnz .change
+
+  add word [uhci_port_base], 0x2
+  inc byte [uhci_address]
+ loop .detect_device
+
+ .done:
+ ret
+ 
+ .change:
+ BASE_OUTW uhci_port_base, 0, 0x2 ;clear status change
+ mov dword [usb_port_change], 1
+ ret
 
 uhci_set_address:
  UHCI_CREATE_QH
@@ -324,6 +354,11 @@ uhci_set_idle:
  ret
 
 uhci_read_hid:
+ UHCI_FILL_FRAME_LIST 0x1
+ 
+ mov dword [MEMORY_UHCI+0x10200], 0
+ mov dword [MEMORY_UHCI+0x10204], 0
+ 
  UHCI_CREATE_QH
  mov ecx, dword [uhci_endpoint]
  shl ecx, 15
@@ -333,21 +368,18 @@ uhci_read_hid:
  or ecx, edx
  UHCI_CREATE_TD MEMORY_UHCI+0x10100, 0x1, ecx, MEMORY_UHCI+0x10200
 
- mov dword [uhci_td], MEMORY_UHCI+0x10100+4
- mov dword [uhci_wait], 3
+ mov dword [uhci_td], MEMORY_UHCI+0x10104
+ mov dword [uhci_wait], 2
  call uhci_transfer_queue_head
-
+ 
+ mov al, 0
  test dword [MEMORY_UHCI+0x10104], 0x007F0000
- jnz .error
-
+ jnz .done
+ 
  mov al, byte [MEMORY_UHCI+0x10104]
- inc al ;number of transferred bytes
-
- ret
-
- .error:
- mov dword [MEMORY_UHCI+0x10200], 0
- mov dword [MEMORY_UHCI+0x10200+4], 0
+ inc al ;length of transferred bytes
+ 
+ .done:
  ret
 
 uhci_transfer_queue_head:
