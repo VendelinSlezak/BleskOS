@@ -33,21 +33,21 @@ hardware_info:
   PRINT 'Serial ATA is in AHCI mode', dz_hw_sata_ahci_str, LINE(11), COLUMN(1)
  ENDIF if_sata_ahci
 
- PRINT 'Number of OHCI ports:', dz_hw_str_ohci, LINE(13), COLUMN(1)
- mov eax, dword [ohci_num_of_ports]
- PRINT_VAR eax, LINE(13), COLUMN(23)
+ PRINT 'Number of OHCI controllers:', dz_hw_str_ohci, LINE(13), COLUMN(1)
+ mov eax, dword [ohci_num_of_controllers]
+ PRINT_VAR eax, LINE(13), COLUMN(30)
 
- PRINT 'Number of UHCI ports:', dz_hw_str_uhci, LINE(15), COLUMN(1)
- mov eax, dword [uhci_num_of_ports]
- PRINT_VAR eax, LINE(15), COLUMN(23)
+ PRINT 'Number of UHCI controllers:', dz_hw_str_uhci, LINE(15), COLUMN(1)
+ mov eax, dword [uhci_num_of_controllers]
+ PRINT_VAR eax, LINE(15), COLUMN(30)
 
- PRINT 'Number of EHCI ports:', dz_hw_str_ehci, LINE(17), COLUMN(1)
- mov eax, dword [ehci_num_of_ports]
- PRINT_VAR eax, LINE(17), COLUMN(23)
+ PRINT 'Number of EHCI contollers:', dz_hw_str_ehci, LINE(17), COLUMN(1)
+ mov eax, dword [ehci_num_of_controllers]
+ PRINT_VAR eax, LINE(17), COLUMN(30)
 
- PRINT 'Number of xHCI ports:', dz_hw_str_xhci, LINE(19), COLUMN(1)
- mov eax, dword [xhci_num_of_ports]
- PRINT_VAR eax, LINE(19), COLUMN(23)
+ PRINT 'Number of xHCI controllers:', dz_hw_str_xhci, LINE(19), COLUMN(1)
+ mov eax, dword [xhci_num_of_controllers]
+ PRINT_VAR eax, LINE(19), COLUMN(30)
 
  PRINT 'Ethernet card type:', dz_hw_str7, LINE(21), COLUMN(1)
  mov eax, dword [ethernet_card_id]
