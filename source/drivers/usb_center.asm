@@ -29,25 +29,6 @@ usb_port_change dd 0
 init_usb_controllers:
  mov dword [usb_port_change], 0
  
- mov esi, xhci_controllers_base
- mov ecx, dword [xhci_num_of_controllers]
- cmp ecx, 0
- je .skip_xhci
- .init_xhci:
- push ecx
-  mov eax, dword [esi]
-  mov dword [xhci_base], eax
-  push esi
-  call init_xhci
-  ;;WAIT 100
-  ;;mov dword [xhci_reset_every_device], 1
-  ;;call xhci_detect_devices
-  pop esi
-  add esi, 4
- pop ecx
- loop .init_xhci
- .skip_xhci:
- 
  mov esi, ehci_controllers_base
  mov ecx, dword [ehci_num_of_controllers]
  cmp ecx, 0
