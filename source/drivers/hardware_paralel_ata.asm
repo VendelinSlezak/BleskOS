@@ -9,10 +9,12 @@ pata_size dd 0
 
 pata_select_master:
  BASE_OUTB pata_base, 6, 0xE0
+ WAIT 2
  ret
 
 pata_select_slave:
  BASE_OUTB pata_base, 6, 0xF0
+ WAIT 2
  ret
 
 pata_detect_drive:
@@ -54,12 +56,10 @@ pata_detect_drive:
 
  .done:
  ret
-
-pata_select_sector:
+ 
+pata_select_sector_lba48:
  ;number of sectors >> 8
- mov ax, word [ata_number_of_sectors]
- shr ax, 8
- BASE_OUTB pata_base, 2, al
+ BASE_OUTB pata_base, 2, 0
 
  ;sector >> 24
  mov eax, dword [ata_sector]
@@ -73,8 +73,7 @@ pata_select_sector:
  BASE_OUTB pata_base, 5, 0
 
  ;number of sectors >> 0
- mov ax, word [ata_number_of_sectors]
- BASE_OUTB pata_base, 2, al
+ BASE_OUTB pata_base, 2, 1 ;one sector
 
  ;sector >> 0
  mov al, byte [ata_sector]
@@ -95,14 +94,6 @@ pata_select_sector:
 pata_wait:
  mov dword [ata_status], ATA_OK
 
- mov ecx, 10000
- .wait_for_drive:
-  BASE_INB pata_base, 7
-  and al, 0x88
-  cmp al, 0x08
-  je .done
- loop .wait_for_drive
-
  mov dword [ticks], 0
  .wait_for_drive_longer:
   BASE_INB pata_base, 7
@@ -119,8 +110,8 @@ pata_wait:
  ret
 
 pata_read:
- call pata_select_sector
- BASE_OUTB pata_base, 7, 0xC4 ;read command
+ call pata_select_sector_lba48
+ BASE_OUTB pata_base, 7, 0x24 ;read ext
 
  call pata_wait
  cmp dword [ata_status], ATA_OK
@@ -130,26 +121,19 @@ pata_read:
 
  ;read sectors
  .data_are_ready:
- FOR dword [ata_number_of_sectors], ata_nos_cycle
-  FOR 256, ata_sector_cycle
-   BASE_INW pata_base, 0
-   mov ebx, dword [ata_memory]
-   mov word [ebx], ax ;write into memory
-   add dword [ata_memory], 2
-  ENDFOR ata_sector_cycle
-
-  ;wait for prepare transfer
-  BASE_INB pata_base, 7
-  BASE_INB pata_base, 7
-  BASE_INB pata_base, 7
-  BASE_INB pata_base, 7
- ENDFOR ata_nos_cycle
+ mov ecx, 256
+ .ata_sector_cycle:
+  BASE_INW pata_base, 0
+  mov ebx, dword [ata_memory]
+  mov word [ebx], ax ;write into memory
+  add dword [ata_memory], 2
+ loop .ata_sector_cycle
 
  ret
 
 pata_write:
- call pata_select_sector
- BASE_OUTB pata_base, 7, 0xC5 ;write command
+ call pata_select_sector_lba48
+ BASE_OUTB pata_base, 7, 0x34 ;write
 
  call pata_wait
  cmp dword [ata_status], ATA_OK
@@ -159,22 +143,32 @@ pata_write:
 
  ;write sectors
  .data_are_ready:
- mov eax, dword [ata_number_of_sectors]
- mov ebx, 256
- mul ebx
- mov ecx, eax
+ mov ecx, 256
  .send_data:
-   mov eax, dword [ata_memory]
-   mov bx, word [eax]
-   BASE_OUTW pata_base, 0, bx ;write into hard disk
+   mov ebx, dword [ata_memory]
+   mov dx, word [pata_base]
+   mov ax, word [ebx]
+   out dx, ax
    add dword [ata_memory], 2
  loop .send_data
+ 
+ ;flush cache
+ BASE_OUTB pata_base, 7, 0xE7
+ 
+ mov dword [ticks], 0
+ .wait_for_cache:
+  BASE_INB pata_base, 7
+  test al, 0x80
+  jz .done
+ cmp dword [ticks], 500
+ jl .wait_for_cache
 
+ .done:
  ret
 
 pata_delete:
- call pata_select_sector
- BASE_OUTB pata_base, 7, 0xC5 ;write command
+ call pata_select_sector_lba48
+ BASE_OUTB pata_base, 7, 0x34 ;write command
 
  call pata_wait
  cmp dword [ata_status], ATA_OK
@@ -184,12 +178,21 @@ pata_delete:
 
  ;write sectors
  .data_are_ready:
- mov eax, dword [ata_number_of_sectors]
- mov ebx, 256
- mul ebx
- mov ecx, eax
+ mov ecx, 256
  .send_data:
-  BASE_OUTW pata_base, 0, 0 ;write into hard disk
+   BASE_OUTW pata_base, 0, 0
  loop .send_data
+ 
+ ;flush cache
+ BASE_OUTB pata_base, 7, 0xE7
+ 
+ mov dword [ticks], 0
+ .wait_for_cache:
+  BASE_INB pata_base, 7
+  test al, 0x80
+  jz .done
+ cmp dword [ticks], 500
+ jl .wait_for_cache
 
+ .done:
  ret
