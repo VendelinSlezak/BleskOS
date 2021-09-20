@@ -17,8 +17,6 @@
 %endmacro
 
 %macro OHCI_CREATE_TD 4
- mov dword [%1+0], %3
-
  %if %4==0
  mov dword [%1+4], 0
  %endif
@@ -34,6 +32,8 @@
  %if %4!=0
  mov dword [%1+12], %4+7
  %endif
+ 
+ mov dword [%1+0], %3
 %endmacro
 
 %macro OHCI_RUN_CONTROL_TRANSFER 0
@@ -175,6 +175,28 @@ ohci_detect_device:
  call usb_mouse_ohci_remove
 
  .initalized_device:
+ ret
+ 
+ohci_detect_port_change:
+ MMIO_IND ohci_base, 0x48
+ and eax, 0xF ;number of ports
+
+ mov ebx, dword [ohci_base]
+ mov dword [ohci_port_base], ebx
+ add dword [ohci_port_base], 0x54 ;first port
+ mov ecx, eax
+ .detect_device:
+  MMIO_IND ohci_port_base, 0
+  test eax, 0x10000
+  jnz .change
+ loop .detect_device
+
+ .done:
+ ret
+ 
+ .change:
+ MMIO_OUTD ohci_port_base, 0, 0x10000 ;clear status change
+ mov dword [usb_port_change], 1
  ret
 
 ohci_set_address:
@@ -359,37 +381,70 @@ ohci_set_idle:
  ret
 
 ohci_read_hid:
+ ;stop transfer
+ mov dword [MEMORY_OHCI+0x200], 0x0
+ 
+ mov dword [MEMORY_OHCI+0x300], 0
+ mov dword [MEMORY_OHCI+0x304], 0
+ 
  mov eax, 0
  mov al, byte [ohci_endpoint]
  shl eax, 7
  or eax, dword [ohci_device_speed]
  or al, byte [ohci_address]
  OHCI_CREATE_ED eax, MEMORY_OHCI+0x200, 1
+ 
  mov eax, dword [ohci_toggle]
  shl eax, 24
  or eax, (OHCI_TD_ACTIVE | OHCI_DATA_TOGGLE_0 | OHCI_IN)
  OHCI_CREATE_TD MEMORY_OHCI+0x200, MEMORY_OHCI+0x210, eax, MEMORY_OHCI+0x300
+ 
  OHCI_RUN_PERIODIC_TRANSFER
+ 
  mov dword [ohci_td], MEMORY_OHCI+0x200
- mov dword [ohci_td_wait], 1
+ mov dword [ohci_td_wait], 2
  call ohci_wait_for_transfer
-
- mov eax, dword [MEMORY_OHCI+0x200+8]
- sub eax, MEMORY_OHCI+0x300
-
+ 
+ mov eax, 0
  mov ebx, dword [MEMORY_OHCI+0x200]
- and ebx, 0xF0000000
- cmp ebx, 0x90000000
+ and ebx, 0xE0000000
+ cmp ebx, 0xE0000000
  je .done
- cmp ebx, 0
- jne .error
-
+ 
+ mov eax, 3
+ cmp byte [MEMORY_OHCI+300+3], 0
+ je .done
+ mov eax, 4
+ cmp byte [MEMORY_OHCI+300+4], 0
+ je .done
+ mov eax, 7
+ 
  .done:
  ret
+ 
+ohci_check_hid:
+ mov al, 0
+ 
+ mov eax, dword [MEMORY_OHCI+0x200]
+ and eax, 0xE0000000
+ cmp eax, 0xE0000000
+ je .done
+ cmp eax, 0x00000000
+ je .transfer
+ cmp eax, 0x90000000
+ je .transfer
+ PHEX eax
+ ;jmp .done ;some error
 
- .error:
- mov dword [MEMORY_OHCI+0x300], 0
- mov dword [MEMORY_OHCI+0x304], 0
+ .transfer:
+ MMIO_OUTD ohci_base, 0x04, 0x80 ;stop transfer
+ mov eax, dword [MEMORY_OHCI+0x200+8]
+ sub eax, MEMORY_OHCI+0x300 ;length of transferred data
+ 
+ MMIO_OUTD ohci_base, 0x04, 0x80 ;stop transfer
+ MMIO_OUTD ohci_base, 0x08, 0x0 ;stop transfer
+
+ .done:
  ret
 
 ohci_wait_for_transfer:
