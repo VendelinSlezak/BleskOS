@@ -68,16 +68,12 @@ ehci_reset_every_device dd 0
  MMIO_OUTD ehci_oper_base, 0x4, %1
 %endmacro
 
-%macro EHCI_DISABLE_INTERRUPTS 0
- MMIO_OUTD ehci_oper_base, 0x8, 0
-%endmacro
-
 %macro EHCI_SET_FRAME 1
  MMIO_OUTD ehci_oper_base, 0xC, %1
 %endmacro
 
-%macro EHCI_SET_SEGMENT 0
- MMIO_OUTD ehci_oper_base, 0x10, 0x00000000
+%macro EHCI_SET_INTERRUPTS 0
+ MMIO_OUTD ehci_oper_base, 0x8, 0x0
 %endmacro
 
 %macro EHCI_SET_PERIODIC_LIST 1
@@ -141,8 +137,8 @@ init_ehci:
  EHCI_WRITE_CMD 0x00080002 ;reset
  WAIT 50
  EHCI_WRITE_CMD 0x00080000 ;stop reset
- EHCI_SET_SEGMENT
- EHCI_DISABLE_INTERRUPTS
+ MMIO_OUTD ehci_oper_base, 0x10, 0x00000000 ;set segment
+ EHCI_SET_INTERRUPTS
  EHCI_SET_FRAME 0
  EHCI_SET_PERIODIC_LIST MEMORY_EHCI+0x10000
  EHCI_SET_ASYNC_LIST MEMORY_EHCI
@@ -243,6 +239,27 @@ ehci_detect_device:
  inc eax
  mov byte [msd_usb_controller_address], al
  call msd_remove_device
+
+ .done:
+ ret
+ 
+ehci_detect_port_change:
+ call ehci_set_controller_values
+
+ mov dword [ehci_port_number], 0
+ mov ecx, dword [ehci_number_of_ports]
+ .detect_devices:
+  EHCI_SELECT_PORT
+  EHCI_READ_PORT
+  and eax, 0x3
+  cmp eax, 0x3
+  jne .next_loop
+  
+  mov dword [usb_port_change], 1
+  jmp .done
+ .next_loop:
+ inc dword [ehci_port_number]
+ loop .detect_devices
 
  .done:
  ret
