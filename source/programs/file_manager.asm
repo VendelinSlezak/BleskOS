@@ -129,7 +129,7 @@ file_manager:
   cmp byte [key_code], KEY_B
   je .fm_key_b
 
- cmp byte [key_code], KEY_C
+  cmp byte [key_code], KEY_C
   je .fm_key_c
 
   cmp byte [key_code], KEY_D
@@ -209,6 +209,7 @@ file_manager:
   je .open_folder
 
   ;TODO open other files
+  jmp .open_text_file
  jmp .file_manager_halt
 
  .open_folder:
@@ -234,6 +235,15 @@ file_manager:
  .10_folders:
  FM_SHOW_MESSAGE file_manager_10_folders_error_str
  jmp .file_manager_halt
+ 
+ .open_text_file:
+  mov eax, dword [esi]
+  mov dword [fm_file_block], eax
+  mov eax, dword [esi+4]
+  mov dword [fm_file_size], eax
+  call file_manager_read_file
+  call text_editor_convert_to_unicode
+ jmp text_editor
 
  ;;;;; go to previous folder ;;;;;
  .fm_key_b:
@@ -258,15 +268,16 @@ file_manager:
  ;;;;; TODO create folder ;;;;;
  .fm_key_c:
   mov edi, MEMORY_FOLDER
-  mov ecx, 2048
+  mov ecx, 2046
   .find_free_entry_for_folder:
-   cmp dword [edi+16], 0
+   cmp dword [edi], 0
    je .create_folder_item
    add edi, 128
   loop .find_free_entry_for_folder
   jmp .file_manager_halt
 
   .create_folder_item:
+  ;draw dialog window
   push edi
   mov eax, dword [screen_y_center]
   sub eax, 15
@@ -297,12 +308,11 @@ file_manager:
   mov eax, dword [screen_x_center]
   sub eax, COLUMNSZ*3
   mov dword [cursor_column], eax
-  mov dword [text_input_pointer], edi
-  mov dword [text_input_length], 8
-  mov dword [text_input_cursor], 0
   pop edi
   add edi, 16
   push edi
+  mov dword [text_input_pointer], edi
+  mov dword [text_input_length], 8
   call text_input ;text input for name
   pop edi
   sub edi, 16
@@ -354,7 +364,7 @@ file_manager:
   call file_manager_show_folder
   jmp .file_manager_halt
 
-  .save_folder_hard_disk:
+  .save_folder_hard_disk:  
    push edi
    call jus_create_folder
    pop edi
@@ -367,14 +377,16 @@ file_manager:
    mov dword [jus_block_number], ebx
    mov dword [ata_memory], MEMORY_FOLDER
    call jus_write_block
+   
    cmp dword [ata_status], ATA_ERROR
    je .writing_error
+   
    call file_manager_show_folder
   jmp .file_manager_halt
 
   .writing_error:
    FM_SHOW_MESSAGE file_manager_folder_writing_error_str
-   jmp .file_manager_halt
+  jmp .file_manager_halt
 
  ;;;;; select device ;;;;;
  .fm_key_d:
@@ -433,7 +445,7 @@ file_manager:
 
   cmp dword [file_manager_device], FM_CDROM
   jne .if_cdrom
-   call init_iso9660
+   call detect_optical_disk
 
    cmp dword [disk_state], NO_DISK
    jne .if_no_disk
@@ -446,26 +458,60 @@ file_manager:
     FM_SHOW_MESSAGE file_manager_no_disk_driver_str
     jmp .file_manager_halt
    .if_unknown_disk_format:
+   
+   cmp dword [disk_state], ISO9660_DISK
+   jne .if_iso9660
+    mov eax, dword [iso9660_root_dir_lba]
+    mov dword [fm_path+40], eax ;save root folder number
+    mov dword [fm_path_pointer+4], 0 ;reset pointer to root folder
+   .if_iso9660:
   .if_cdrom:
 
   cmp dword [file_manager_device], FM_USB1
   jl .if_usb
    mov eax, dword [file_manager_device]
+   mov ecx, dword [fm_path_pointer+(eax*4)]
+   mov dword [ecx], 0 ;reset path pointer
+   mov ebx, 40
+   mul ebx
+   add eax, fm_path
+   mov dword [eax], 0 ;reset folder number
+    
+   mov eax, dword [file_manager_device]
    sub eax, 2
    mov dword [msd_number], eax
    call select_msd
+   
    cmp byte [esi+7], MSD_FAT32
-   jne .skip_fat_init
+   jne .skip_fat_init 
     call msd_read_mbr
+    
     mov eax, dword [first_partition_lba]
     mov dword [fat_base_sector], eax
     call init_fat
+    
+    cmp dword [msd_status], MSD_ERROR
+    je .file_manager_halt
+    
+    mov eax, dword [file_manager_device]
+    mov ecx, dword [fm_path_pointer+(eax*4)]
+    mov ebx, 40
+    mul ebx
+    add eax, fm_path
+    add eax, ecx
+    mov edx, dword [fat_root_dir_cluster]
+    mov dword [eax], edx ;save root folder number
    .skip_fat_init:
   .if_usb:
 
   mov eax, dword [file_manager_device]
-  mov ebx, dword [fm_path_pointer+(eax*4)]
-  mov dword [fm_folder_number], ebx
+  mov ecx, dword [fm_path_pointer+(eax*4)]
+  mov ebx, 40
+  mul ebx
+  add eax, fm_path
+  add eax, ecx
+  mov edx, dword [eax]
+  mov dword [fm_folder_number], edx
   call file_manager_show_folder
  jmp .file_manager_halt
 
@@ -525,12 +571,16 @@ file_manager_show_folder:
  ret
 
  .cdrom:
+ mov edi, MEMORY_ISO9660_FOLDER
+ mov eax, 0
+ mov ecx, 10000
+ rep stosd ;clear memory
+ 
  mov eax, dword [fm_folder_number]
  mov dword [iso9660_file_lba], eax
  mov dword [iso9660_file_length], 100 ;max 100 entries
  mov dword [iso9660_file_memory], MEMORY_ISO9660_FOLDER
  call iso9660_read_file
- mov dword [MEMORY_ISO9660_FOLDER+(2048*100)+33], 0
  call convert_iso9660_folder_to_jus_folder
 
  mov dword [fm_highlighted_item], 0
@@ -552,8 +602,8 @@ file_manager_show_folder:
  je .usb_uninitalized
  cmp byte [eax], MSD_INITALIZED
  je .usb_not_fat32
- cmp dword [fm_folder_number], 0
- je .usb_root_folder
+ cmp dword [fm_folder_number], 2
+ jl .done
 
  FM_SHOW_MESSAGE file_manager_reading_folder_str
  mov eax, dword [fm_folder_number]
@@ -566,20 +616,7 @@ file_manager_show_folder:
  call convert_fat_folder_to_jus_folder
  call file_manager_redraw_file_zone
  call redraw_screen
- ret
-
- .usb_root_folder:
- FM_SHOW_MESSAGE file_manager_reading_folder_str
- mov eax, dword [fat_root_dir_cluster]
- mov dword [fat_entry], eax
- mov dword [fat_memory], MEMORY_FAT32_FOLDER
- call fat_read_file
- cmp dword [msd_status], MSD_ERROR
- je .reading_error
-
- call convert_fat_folder_to_jus_folder
- call file_manager_redraw_file_zone
- call redraw_screen
+ .done:
  ret
 
  .reading_error:
@@ -626,8 +663,6 @@ file_manager_write_folder:
  .usb:
  FM_SHOW_MESSAGE file_manager_writing_folder_str
  mov eax, dword [fm_folder_number]
- cmp eax, 0
- je .usb_root_directory
  mov dword [fat_entry], eax
  call fat_delete_file
  cmp dword [msd_status], MSD_ERROR
@@ -642,18 +677,6 @@ file_manager_write_folder:
 
  call file_manager_redraw_file_zone
  call redraw_screen
- ret
-
- .usb_root_directory:
- mov eax, dword [fat_root_dir_cluster]
- mov dword [fat_entry], eax
- call fat_delete_file
- mov eax, dword [fat_root_dir_cluster]
- mov dword [fat_first_file_cluster], eax
- mov dword [fat_memory], MEMORY_FAT32_FOLDER
- mov dword [fat_file_length], 10
- call fat_write_file
-
  ret
 
  .writing_error:
@@ -679,10 +702,15 @@ file_manager_read_file:
  je .reading_error
 
  mov eax, dword [fm_file_size]
+ mov ebx, 1024
+ mov edx, 0
+ div ebx ;convert from KB to MB
+ inc eax
  mov dword [allocated_size], eax
  call allocate_memory
  cmp dword [allocated_memory_pointer], 0
  je .not_enough_memory
+ 
  mov eax, dword [allocated_memory_pointer]
  mov dword [ata_memory], eax
  call jus_read_file
@@ -691,15 +719,44 @@ file_manager_read_file:
  ret
 
  .cdrom:
- ret
-
- .usb:
- FM_SHOW_MESSAGE file_manager_reading_file_str
+ mov eax, dword [fm_file_block]
+ mov dword [iso9660_file_lba], eax
  mov eax, dword [fm_file_size]
+ mov ebx, 2
+ mov edx, 0
+ div ebx ;optical disk sector is 2 KB
+ inc eax
+ mov dword [iso9660_file_length], eax
+ 
+ mov eax, dword [fm_file_size]
+ mov ebx, 1024
+ mov edx, 0
+ div ebx ;convert from KB to MB
+ inc eax
  mov dword [allocated_size], eax
  call allocate_memory
  cmp dword [allocated_memory_pointer], 0
  je .not_enough_memory
+ 
+ mov eax, dword [allocated_memory_pointer]
+ mov dword [iso9660_file_memory], eax
+ call iso9660_read_file
+ 
+ ret
+
+ .usb:
+ FM_SHOW_MESSAGE file_manager_reading_file_str
+ 
+ mov eax, dword [fm_file_size]
+ mov ebx, 1024
+ mov edx, 0
+ div ebx ;convert from KB to MB
+ inc eax
+ mov dword [allocated_size], eax
+ call allocate_memory
+ cmp dword [allocated_memory_pointer], 0
+ je .not_enough_memory
+ 
  mov eax, dword [allocated_memory_pointer]
  mov dword [fat_memory], eax
  mov eax, dword [fm_file_block]
