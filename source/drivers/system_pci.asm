@@ -133,7 +133,7 @@ pci_read_device:
  ENDIF pci_hda_if
 
  IF_E eax, 0x0C031000, pci_ohci_if ;OHCI
-  inc dword [ohci_num_of_ports]
+  inc dword [ohci_num_of_controllers]
 
   PCI_READ_MMIO_BAR BAR0
   mov esi, dword [ohci_pointer]
@@ -144,7 +144,7 @@ pci_read_device:
  ENDIF pci_ohci_if
 
  IF_E eax, 0x0C030000, pci_uhci_if ;UHCI
-  inc dword [uhci_num_of_ports]
+  inc dword [uhci_num_of_controllers]
 
   PCI_WRITE 0xC0, 0x8F00 ;disable legacy support
   PCI_READ_IO_BAR BAR4
@@ -156,7 +156,7 @@ pci_read_device:
  ENDIF pci_uhci_if
 
  IF_E eax, 0x0C032000, pci_ehci_if ;EHCI
-  inc dword [ehci_num_of_ports]
+  inc dword [ehci_num_of_controllers]
 
   PCI_READ_MMIO_BAR BAR0
   mov dword [ehci_base], eax
@@ -178,7 +178,7 @@ pci_read_device:
  ENDIF pci_ehci_if
 
  IF_E eax, 0x0C033000, pci_xhci_if ;xHCI
-  inc dword [xhci_num_of_ports]
+  inc dword [xhci_num_of_controllers]
   ret
  ENDIF pci_xhci_if
 
