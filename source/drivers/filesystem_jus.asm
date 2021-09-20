@@ -33,24 +33,34 @@ jus_number_of_bn_sectors dd 0
 jus_file_length dd 0
 jus_file_blocks dd 0
 jus_file_memory dd 0
+jus_file_descriptor_block dd 0
 
 jus_cycle dd 0
+
+init_jus:
+ mov eax, 0
+ mov ax, word [hard_disk_base]
+ mov word [pata_base], ax
+
+ cmp dword [hard_disk_drive], IDE_MASTER
+ jne .if_master
+  call pata_select_master
+  ret
+ .if_master:
+ 
+ cmp dword [hard_disk_drive], IDE_SLAVE
+ jne .if_slave
+  call pata_select_slave
+  ret
+ .if_slave:
+
+ ret
 
 jus_load_bn_part:
  cmp dword [hard_disk_size], 0
  je .done
 
- ;select hard disk
- mov ax, word [hard_disk_base]
- mov word [pata_base], ax
- cmp dword [hard_disk_drive], IDE_MASTER
- jne .if_master
-  call pata_select_master
- .if_master:
- cmp dword [hard_disk_drive], IDE_SLAVE
- jne .if_slave
-  call pata_select_slave
- .if_slave:
+ call init_jus
 
  mov esi, MEMORY_JUS_BN
  mov ecx, 0x100000
@@ -72,7 +82,6 @@ jus_load_bn_part:
  mov dword [ata_memory], MEMORY_JUS_BN
  .load_bn:
  push ecx
-  mov dword [ata_number_of_sectors], 1
   call read_hdd
   inc dword [ata_sector]
  pop ecx
@@ -97,10 +106,18 @@ jus_read_block:
  add eax, 4000
 
  mov dword [ata_sector], eax ;first sector of block
- mov dword [ata_number_of_sectors], 256
  ;ata memory is already set
- call read_hdd
-
+ mov ecx, 256
+ .read_block:
+ push ecx
+  call read_hdd ;read one sector
+  inc dword [ata_sector]
+ pop ecx
+ cmp dword [ata_status], ATA_ERROR
+ je .done
+ loop .read_block
+ 
+ .done:
  ret
 
 jus_write_block:
@@ -110,10 +127,19 @@ jus_write_block:
  add eax, 4000
 
  mov dword [ata_sector], eax ;first sector of block
- mov dword [ata_number_of_sectors], 256
+ mov dword [ata_number_of_sectors], 1
  ;ata memory is already set
- call write_hdd
+ mov ecx, 256
+ .write_block:
+ push ecx
+  call write_hdd ;write one sector
+  inc dword [ata_sector]
+ pop ecx
+ cmp dword [ata_status], ATA_ERROR
+ je .done
+ loop .write_block
 
+ .done:
  ret
 
 jus_read_file:
@@ -143,7 +169,7 @@ jus_read_file:
 jus_write_file:
  ;clear descriptor memory
  mov esi, MEMORY_FILE_DESCRIPTOR
- mov ecx, 0x100000
+ mov ecx, 0x10000 ;TEST VALUE
  .clear_descriptor:
   mov byte [esi], 0
   inc esi
@@ -183,6 +209,7 @@ jus_write_file:
  .write_descriptor_block:
  sub edi, 4
  mov eax, dword [edi] ;last block will be descriptor block
+ mov dword [jus_file_descriptor_block], eax ;save decriptor block value
  mov dword [edi], 0
  mov dword [jus_block_number], eax
  mov dword [ata_memory], MEMORY_FILE_DESCRIPTOR
@@ -312,4 +339,66 @@ jus_delete_block:
 
  .error:
  pop ecx
+ ret
+
+jus_create_folder:
+ ;find blocks
+ mov esi, MEMORY_JUS_BN+1 ;skip root folder
+ mov eax, 1 ;skip root folder
+ mov ecx, 1000 ;value for testing
+ .find_blocks:
+  cmp byte [esi], 0
+  jne .next_loop
+
+  ;free block
+  mov dword [jus_file_descriptor_block], eax
+  mov byte [esi], 1
+  jmp .create_folder
+
+ .next_loop:
+ inc esi
+ inc eax
+ loop .find_blocks
+
+ ret
+
+ .create_folder:
+ mov eax, dword [jus_file_descriptor_block]
+ mov ebx, 256
+ mul ebx
+ add eax, 4000 ;skip BleskOS code
+ mov dword [ata_sector], eax
+ mov dword [ata_number_of_sectors], 256
+ call delete_hdd
+
+ ;save block numbers
+ mov eax, dword [jus_file_descriptor_block]
+ mov ebx, 512
+ mov edx, 0
+ div ebx
+ push eax
+ 
+ add eax, 2000
+ mov dword [ata_sector], eax
+ 
+ pop eax
+ mov ebx, 512
+ mul ebx
+ add eax, MEMORY_JUS_BN
+ 
+ mov dword [ata_memory], eax
+ mov dword [ata_number_of_sectors], 1
+ call write_hdd
+
+ ret
+
+jus_delete_folder:
+ mov eax, dword [jus_block_number]
+ mov ebx, 256
+ mul ebx
+ add eax, 4000
+ mov dword [ata_sector], eax
+ mov dword [ata_number_of_sectors], 256
+ call delete_hdd
+
  ret
