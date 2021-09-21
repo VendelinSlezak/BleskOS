@@ -45,7 +45,7 @@
 %endmacro
 
 file_manager_up_str db 'File manager', 0
-file_manager_down_str db '[d] Select device [F12] Remove USB [b] Previous folder', 0
+file_manager_down_str db '[d] Select device [b] Previous folder [c] Create folder [F12] Delete file', 0
 file_manager_selecting_str db 'You are selecting drive', 0
 
 file_manager_reading_folder_str db 'Reading folder...', 0
@@ -68,7 +68,10 @@ fm_free_item_str db 'Free item', 0
 fm_folder_str db 'Folder', 0
 item_date_str db '    /  /', 0
 fm_item_str db 'Selected item:', 0
+
 file_manager_create_name_str db 'Name:', 0
+file_manager_delete_file_str db 'Are you sure you want to delete this file?', 0
+file_manager_delete_file_2_str db '[enter] Yes [other] No', 0
 
 file_manager_device dd 0
 file_manager_old_device dd 0
@@ -136,7 +139,7 @@ file_manager:
   je .fm_key_d
 
   cmp byte [key_code], KEY_F12
-  je .remove_usb
+  je .delete_file
 
   cmp byte [key_code], KEY_ESC
   je main_window
@@ -265,7 +268,7 @@ file_manager:
   call file_manager_show_folder ;this read folder from device and show it
  jmp .file_manager_halt
 
- ;;;;; TODO create folder ;;;;;
+ ;;;;; create folder ;;;;;
  .fm_key_c:
   mov edi, MEMORY_FOLDER
   mov ecx, 2046
@@ -515,34 +518,126 @@ file_manager:
   call file_manager_show_folder
  jmp .file_manager_halt
 
- ;;;;; remove USB drive ;;;;;
- .remove_usb:
-  cmp dword [file_manager_device], 2
-  jl .file_manager_halt
+ ;;;;; delete file ;;;;;
+ .delete_file:
+  ;draw dialog window
+  push edi
+  mov eax, dword [screen_y_center]
+  sub eax, 15
+  mov dword [cursor_line], eax
+  mov eax, dword [screen_x_center]
+  sub eax, COLUMNSZ*22
+  mov dword [cursor_column], eax
+  mov dword [square_length], COLUMNSZ*44
+  mov dword [square_heigth], 35
+  mov dword [color], 0xCC7000
+  call draw_square ;erase
 
-  mov eax, dword [file_manager_device]
-  sub eax, 2
-  mov ebx, 16
-  mul ebx
-  add eax, mass_storage_devices
-  mov dword [eax], 0
-  mov dword [eax+4], 0
-  mov dword [eax+8], 0
-  mov dword [eax+12], 0
-
-  mov eax, dword [file_manager_device]
-  sub eax, 2
-  mov ebx, 12
-  mul ebx
-  add eax, mass_storage_device_label
-  mov dword [eax], 0
-  mov dword [eax+4], 0
-  mov dword [eax+8], 0
-
-  call file_manager_redraw_devices
-  call file_manager_show_folder
+  mov dword [color], BLACK
+  call draw_empty_square ;draw border
+  
+  mov eax, dword [screen_y_center]
+  sub eax, 10
+  mov dword [cursor_line], eax
+  mov eax, dword [screen_x_center]
+  sub eax, (COLUMNSZ*22)-COLUMNSZ
+  mov dword [cursor_column], eax
+  mov esi, file_manager_delete_file_str
+  call print ;print "Are you sure you want to delete this file?"
+  
+  mov eax, dword [screen_y_center]
+  add eax, 5
+  mov dword [cursor_line], eax
+  mov eax, dword [screen_x_center]
+  sub eax, (COLUMNSZ*10)-COLUMNSZ
+  mov dword [cursor_column], eax
+  mov esi, file_manager_delete_file_2_str
+  call print ;print "[enter] Yes [other] No"
+  
   call redraw_screen
- jmp .file_manager_halt
+  
+  .delete_file_halt:
+   WAIT 200
+   call wait_for_keyboard
+   cmp byte [key_code], KEY_ENTER
+   je .delete
+   call file_manager_redraw_file_zone
+   call redraw_screen
+   jmp .file_manager_halt
+   
+  .delete:
+   mov eax, dword [fm_selected_item]
+   mov ebx, 128
+   mul ebx
+   add eax, MEMORY_FOLDER
+   mov ebx, dword [eax]
+   mov dword [jus_block_number], ebx
+   mov dx, word [eax+14]
+   push edx
+   
+   mov edi, eax
+   mov eax, 0
+   mov ecx, 128
+   rep stosb ;clear
+   
+   mov eax, dword [fm_selected_item]
+   mov ebx, 128
+   mul ebx
+   add eax, MEMORY_FOLDER
+   mov edi, eax
+   add eax, 128
+   mov esi, eax
+   
+   mov eax, 512
+   sub eax, dword [fm_selected_item]
+   mov ebx, 128
+   mul ebx
+   mov ecx, eax
+   rep movsb ;move items after deleted item
+   
+   cmp dword [file_manager_device], FM_HDD
+   je .delete_save_folder_hard_disk
+   
+   ;TODO USB drive
+   ret
+   
+   .delete_save_folder_hard_disk:
+   pop edx
+   cmp dx, 1
+   je .delete_folder
+   
+   mov dword [ata_memory], MEMORY_FILE_DESCRIPTOR
+   call jus_read_block ;load file descriptor data
+   call jus_delete_file
+   jmp .delete_hdd_update_folder
+   
+   .delete_folder:
+   mov eax, dword [jus_block_number]
+   mov byte [MEMORY_JUS_BN+eax], 0 ;clear block number
+   mov ebx, 128
+   mov edx, 0
+   div ebx
+   add eax, 2000 ;to first JUS BN sector   
+   mov dword [ata_sector], eax
+   sub eax, 2000
+   mov ebx, 512
+   mul ebx
+   add eax, MEMORY_JUS_BN
+   mov dword [ata_memory], eax
+   call write_hdd ;update jus
+   
+   .delete_hdd_update_folder:
+   mov eax, dword [fm_path_pointer]
+   mov ebx, dword [fm_path+eax]
+   mov dword [jus_block_number], ebx
+   mov dword [ata_memory], MEMORY_FOLDER
+   call jus_write_block
+   
+   cmp dword [ata_status], ATA_ERROR
+   je .writing_error
+   
+   call file_manager_show_folder
+  jmp .file_manager_halt
 
 ;;;;;          METHODS FOR READ/WRITE          ;;;;;
 file_manager_show_folder:
@@ -961,9 +1056,7 @@ file_manager_redraw_file_zone:
   mov dword [color], BLACK
   mov byte [esi+59], 0
   push esi
-  mov eax, esi
-  add eax, 120
-  mov esi, eax
+  add esi, 120
   call print_ascii
   pop esi
   jmp .show_item_info
