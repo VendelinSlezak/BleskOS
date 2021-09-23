@@ -8,26 +8,38 @@ allocated_memory_pointer dd 0
 
 read_memory_size:
  mov dword [memory_size], 0
- ;allocate all memory
+ 
+ ;deallocate all memory
  mov edi, memory
  mov eax, 1
  mov ecx, 4096
  rep stosb
  
- mov esi, 0x80000
+ mov esi, 0x80000 ;here bootloader load info about memory
  mov ecx, 20
  .find_entry:
-  cmp dword [esi], 0x100000
-  je .free_memory
-  add esi, 24
+  cmp dword [esi+16], 1 ;free memory
+  jne .next_loop
+  cmp dword [esi+12], 0
+  jne .64_bit
+  cmp dword [esi+8], 1024*1024*31 ;system need min first 32 MB of RAM (1 MB is low memory)
+  jg .32_bit
+  
+ .next_loop:
+ add esi, 24
  loop .find_entry
 
  ret
  
- .free_memory:
+ .64_bit:
+ mov dword [memory_size], 0xFFFFFFFF
+ jmp .free_memory
+ 
+ .32_bit:
  mov eax, dword [esi+8]
  mov dword [memory_size], eax
  
+ .free_memory:
  mov ebx, 1024*1024
  mov edx, 0
  div ebx ;convert to MB
