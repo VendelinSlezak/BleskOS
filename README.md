@@ -1,6 +1,8 @@
 # BleskOS
 Operation system working in protected mode with legacy boot. Main goal is develop operation system whose will be usable for normal user. Every version of BleskOS is tested on real computers. You do everything with BleskOS on your own risk!
 
+![Klaykap's github stats](https://github-readme-stats.vercel.app/api?username=Klaykap)
+
 ### Drivers
 Graphic:
 * VESA
