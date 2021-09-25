@@ -3,6 +3,7 @@
 patapi_base dw 0
 patapi_status dd 0
 patapi_transfer_lenght dw 0
+patapi_info times 512 db 0
 
 patapi_sector dd 0
 patapi_memory dd 0
@@ -11,10 +12,12 @@ disk_size dd 0
 
 patapi_select_master:
  BASE_OUTB patapi_base, 6, 0xE0
+ WAIT 2
  ret
 
 patapi_select_slave:
  BASE_OUTB patapi_base, 6, 0xF0
+ WAIT 2
  ret
 
 patapi_send_packet_command:
@@ -59,27 +62,30 @@ patapi_read_capabilites:
  call patapi_send_packet_command
 
  BASE_OUTW patapi_base, 0, 0x25 ;read capabilites
- BASE_OUTW patapi_base, 0, 0x0
+ BASE_OUTW patapi_base, 0, 0x1
  BASE_OUTW patapi_base, 0, 0x0
  BASE_OUTW patapi_base, 0, 0x0
  BASE_OUTW patapi_base, 0, 0x0
  BASE_OUTW patapi_base, 0, 0x0
 
- mov ecx, 1000
- .wait_for_patapi:
+ mov dword [ticks], 0
+ .wait_for_patapi_longer:
   BASE_INB patapi_base, 7
   and al, 0x88
   cmp al, 0x08
   je .patapi_is_ready
- loop .wait_for_patapi
+ cmp dword [ticks], 200
+ jl .wait_for_patapi_longer
  mov dword [patapi_status], IDE_ERROR
  ret
 
  .patapi_is_ready:
  BASE_INW patapi_base, 0
- mov word [disk_size], ax
+ mov byte [disk_size+3], al
+ mov byte [disk_size+2], ah
  BASE_INW patapi_base, 0
- mov word [disk_size+2], ax
+ mov byte [disk_size+1], al
+ mov byte [disk_size+0], ah
  BASE_INW patapi_base, 0
  BASE_INW patapi_base, 0
 
@@ -101,7 +107,7 @@ patapi_read:
  BASE_OUTW patapi_base, 0, 0x0100 ;one sector
  BASE_OUTW patapi_base, 0, 0x0
 
- mov ecx, 10000
+ mov ecx, 100000
  .wait_for_patapi:
   BASE_INB patapi_base, 7
   and al, 0x88
@@ -115,7 +121,7 @@ patapi_read:
   and al, 0x88
   cmp al, 0x08
   je .patapi_is_ready
- cmp dword [ticks], 1000
+ cmp dword [ticks], 2000
  jl .wait_for_patapi_longer
 
  mov dword [patapi_status], IDE_ERROR
