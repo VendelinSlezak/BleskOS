@@ -57,21 +57,7 @@ pata_detect_drive:
  .done:
  ret
  
-pata_select_sector_lba48:
- ;number of sectors >> 8
- BASE_OUTB pata_base, 2, 0
-
- ;sector >> 24
- mov eax, dword [ata_sector]
- shr eax, 24
- BASE_OUTB pata_base, 3, al
-
- ;sector >> 32
- BASE_OUTB pata_base, 4, 0
-
- ;sector >> 40
- BASE_OUTB pata_base, 5, 0
-
+pata_select_sector_lba28:
  ;number of sectors >> 0
  BASE_OUTB pata_base, 2, 1 ;one sector
 
@@ -88,6 +74,25 @@ pata_select_sector_lba48:
  mov eax, dword [ata_sector]
  shr eax, 16
  BASE_OUTB pata_base, 5, al
+
+ ret
+ 
+pata_select_sector_lba48:
+ ;number of sectors >> 8
+ BASE_OUTB pata_base, 2, 0
+
+ ;sector >> 24
+ mov eax, dword [ata_sector]
+ shr eax, 24
+ BASE_OUTB pata_base, 3, al
+
+ ;sector >> 32
+ BASE_OUTB pata_base, 4, 0
+
+ ;sector >> 40
+ BASE_OUTB pata_base, 5, 0
+
+ call pata_select_sector_lba28
 
  ret
 
@@ -110,9 +115,18 @@ pata_wait:
  ret
 
 pata_read:
+ cmp dword [ata_sector], 0x00FFFFFF
+ jg .lba48
+
+ call pata_select_sector_lba28
+ BASE_OUTB pata_base, 7, 0x20 ;read
+ jmp .wait
+ 
+ .lba48:
  call pata_select_sector_lba48
  BASE_OUTB pata_base, 7, 0x24 ;read ext
 
+ .wait:
  call pata_wait
  cmp dword [ata_status], ATA_OK
  je .data_are_ready
@@ -132,9 +146,18 @@ pata_read:
  ret
 
 pata_write:
+ cmp dword [ata_sector], 0x00FFFFFF
+ jg .lba48
+ 
+ call pata_select_sector_lba28
+ BASE_OUTB pata_base, 7, 0x30 ;write
+ jmp .wait
+ 
+ .lba48:
  call pata_select_sector_lba48
- BASE_OUTB pata_base, 7, 0x34 ;write
+ BASE_OUTB pata_base, 7, 0x34 ;write ext
 
+ .wait:
  call pata_wait
  cmp dword [ata_status], ATA_OK
  je .data_are_ready
@@ -167,9 +190,18 @@ pata_write:
  ret
 
 pata_delete:
+ cmp dword [ata_sector], 0x00FFFFFF
+ jg .lba48
+ 
+ call pata_select_sector_lba28
+ BASE_OUTB pata_base, 7, 0x30 ;write
+ jmp .wait
+ 
+ .lba48:
  call pata_select_sector_lba48
- BASE_OUTB pata_base, 7, 0x34 ;write command
+ BASE_OUTB pata_base, 7, 0x34 ;write ext
 
+ .wait:
  call pata_wait
  cmp dword [ata_status], ATA_OK
  je .data_are_ready
