@@ -35,6 +35,16 @@ detect_optical_disk:
   call patapi_select_slave
  ENDIF if_slave
  
+ call patapi_read_capabilites
+ cmp word [disk_size], 0
+ je .done
+ 
+ mov dword [patapi_sector], 0
+ mov dword [patapi_memory], MEMORY_ISO9660_FOLDER
+ call patapi_read
+ cmp dword [patapi_status], IDE_ERROR
+ je .done
+ 
  mov dword [disk_state], UNKNOWN_DISK_FORMAT
  
  call init_iso9660
