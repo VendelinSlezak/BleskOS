@@ -25,14 +25,6 @@ hardware_info:
  mov eax, dword [screen_lfb]
  PRINT_HEX eax, LINE(9), COLUMN(27)
 
- IF_E dword [serial_ata_ahci_enabled], 0x0, if_sata_legacy
-  PRINT 'Serial ATA is in legacy mode', dz_hw_sata_legacy_str, LINE(11), COLUMN(1)
- ENDIF if_sata_legacy
-
- IF_E dword [serial_ata_ahci_enabled], 0x1, if_sata_ahci
-  PRINT 'Serial ATA is in AHCI mode', dz_hw_sata_ahci_str, LINE(11), COLUMN(1)
- ENDIF if_sata_ahci
-
  PRINT 'Number of OHCI controllers:', dz_hw_str_ohci, LINE(13), COLUMN(1)
  mov eax, dword [ohci_num_of_controllers]
  PRINT_VAR eax, LINE(13), COLUMN(30)
