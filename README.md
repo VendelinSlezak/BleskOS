@@ -32,11 +32,11 @@ USB devices:
 ### Drivers in developing
 - [x] Intel HD Audio
 - [x] USB controller xHCI
-- [ ] AHCI hard disk
-- [ ] AHCI cdrom
+- [x] AHCI hard disk
+- [x] AHCI cdrom
 - [ ] Filesystems UDF and CDDA
 - [ ] USB printer
-- [ ] Enternet card Intel e1000
+- [x] Enternet card Intel e1000
 - [ ] TCP/IP stack
 
 ### Programs
