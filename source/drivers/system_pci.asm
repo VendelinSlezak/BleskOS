@@ -191,21 +191,6 @@ pci_read_device:
  IF_E eax, 0x02000000, pci_nic_if ;Network card
   PCI_READ_DEVICE_ID
   mov dword [ethernet_card_id], eax
-  
-  cmp ax, 0x8086 ;intel
-  jne .if_intel_nic
-   PCI_MMIO_ENABLE_BUSMASTERING
-   PCI_READ_IO_BAR BAR0
-   mov word [ethernet_card_io_base], ax
-   PCI_READ_MMIO_BAR BAR0
-   mov dword [ethernet_card_mmio_base], eax
-   jmp .nic_founded
-  .if_intel_nic
-  
-  ret
-  
-  .nic_founded:
-  PCI_SET_IRQ 3
   ret
  ENDIF pci_nic_if
  
