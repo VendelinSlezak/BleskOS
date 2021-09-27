@@ -27,15 +27,19 @@ start:
  %include "source/drivers/hardware_ps2_keyboard.asm"
  %include "source/drivers/hardware_ps2_mouse.asm"
 
- %include "source/drivers/hardware_ide.asm"
  %include "source/drivers/hardware_storage_center.asm"
+ %include "source/drivers/hardware_ide.asm"
+ %include "source/drivers/hardware_ahci.asm"
  %include "source/drivers/hardware_paralel_ata.asm"
  %include "source/drivers/hardware_paralel_atapi.asm"
+ %include "source/drivers/hardware_serial_ata.asm"
+ ;;;%include "source/drivers/hardware_serial_atapi.asm"
 
  %include "source/drivers/usb_center.asm"
  %include "source/drivers/usb_ohci.asm"
  %include "source/drivers/usb_uhci.asm"
  %include "source/drivers/usb_ehci.asm"
+ ;;;%include "source/drivers/usb_xhci.asm"
 
  %include "source/drivers/usb_keyboard.asm"
  %include "source/drivers/usb_mouse.asm"
@@ -46,19 +50,23 @@ start:
  %include "source/drivers/filesystem_iso9660.asm"
 
  %include "source/drivers/network_center.asm"
- 
+ ;;;%include "source/drivers/network_protocols.asm"
+ ;;;%include "source/drivers/network_ethernet_nic_intel.asm"
+
  %include "source/gui/board_main.asm"
  %include "source/gui/board_developer_zone.asm"
  %include "source/gui/board_hardware_centrum.asm"
  %include "source/gui/library_elements.asm"
+ %include "source/gui/library_programs.asm"
 
  %include "source/programs/dp_hardware_info.asm"
  %include "source/programs/dp_intel_hd_audio.asm"
  %include "source/programs/dp_ide.asm"
  %include "source/programs/dp_mouse.asm"
  %include "source/programs/dp_acpi.asm"
- 
- ;%include "source/programs/file_manager.asm"
+
+ ;;;%include "source/programs/text_editor.asm"
+ ;;;%include "source/programs/file_manager.asm"
 
 start_bleskos:
  call init_graphic
@@ -76,6 +84,7 @@ start_bleskos:
  PSTR 'Reading ACPI table...', bootstr_acpi
  call read_acpi
  PSTR 'Initalizing IDE drives...', bootstr_ide
+ call init_ahci
  call init_ide
  PSTR 'Initalizing sound card...', bootstr_sound_card
  call init_ac97
