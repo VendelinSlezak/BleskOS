@@ -37,30 +37,11 @@ jus_file_descriptor_block dd 0
 
 jus_cycle dd 0
 
-init_jus:
- mov eax, 0
- mov ax, word [hard_disk_base]
- mov word [pata_base], ax
-
- cmp dword [hard_disk_drive], IDE_MASTER
- jne .if_master
-  call pata_select_master
-  ret
- .if_master:
- 
- cmp dword [hard_disk_drive], IDE_SLAVE
- jne .if_slave
-  call pata_select_slave
-  ret
- .if_slave:
-
- ret
-
 jus_load_bn_part:
  cmp dword [hard_disk_size], 0
  je .done
 
- call init_jus
+ call select_hdd
 
  mov esi, MEMORY_JUS_BN
  mov ecx, 0x100000
@@ -168,12 +149,10 @@ jus_read_file:
 
 jus_write_file:
  ;clear descriptor memory
- mov esi, MEMORY_FILE_DESCRIPTOR
+ mov edi, MEMORY_FILE_DESCRIPTOR
+ mov eax, 0
  mov ecx, 0x10000 ;TEST VALUE
- .clear_descriptor:
-  mov byte [esi], 0
-  inc esi
- loop .clear_descriptor
+ rep stosb
 
  ;calculate number of file blocks
  mov eax, dword [jus_file_length]
@@ -221,12 +200,12 @@ jus_write_file:
  mov esi, MEMORY_FILE_DESCRIPTOR
  mov eax, dword [jus_file_memory]
  mov dword [ata_memory], eax
- mov dword [jus_cycle], 80 ;value for testing
+ mov dword [jus_cycle], 10000 ;value for testing
  .write_file_block:
   mov eax, dword [esi]
-  mov dword [jus_block_number], eax
   cmp eax, 0
   je .write_bn
+  mov dword [jus_block_number], eax
 
   call jus_write_block
   cmp dword [ata_status], ATA_ERROR
@@ -283,7 +262,7 @@ jus_write_file:
  pop ecx
  ret
 
-jus_delete_block:
+jus_delete_file:
  mov esi, MEMORY_FILE_DESCRIPTOR
  mov ecx, 800 ;value for testing
  .delete_block_from_bn:

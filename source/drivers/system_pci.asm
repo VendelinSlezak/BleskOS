@@ -179,18 +179,83 @@ pci_read_device:
 
  IF_E eax, 0x0C033000, pci_xhci_if ;xHCI
   inc dword [xhci_num_of_controllers]
+  
+  PCI_READ_MMIO_BAR BAR0
+  mov esi, dword [xhci_pointer]
+  mov dword [esi], eax ;save base
+  add dword [xhci_pointer], 4
+  
   ret
  ENDIF pci_xhci_if
 
  IF_E eax, 0x02000000, pci_nic_if ;Network card
   PCI_READ_DEVICE_ID
   mov dword [ethernet_card_id], eax
+  
+  cmp ax, 0x8086 ;intel
+  jne .if_intel_nic
+   PCI_MMIO_ENABLE_BUSMASTERING
+   PCI_READ_IO_BAR BAR0
+   mov word [ethernet_card_io_base], ax
+   PCI_READ_MMIO_BAR BAR0
+   mov dword [ethernet_card_mmio_base], eax
+   jmp .nic_founded
+  .if_intel_nic
+  
+  ret
+  
+  .nic_founded:
+  PCI_SET_IRQ 3
   ret
  ENDIF pci_nic_if
+ 
+ IF_E eax, 0x01060100, pci_serial_ata_if ;Serial ATA
+  PCI_READ_MMIO_BAR BAR5
+  cmp dword [eax+0x10], 0x00010200
+  jl .detect_sata_type
+  test dword [eax+0x24], 0x1
+  jz .detect_sata_type ;BIOS ownership is not supported
+  
+  mov dword [eax+0x28], 0x2 ;take ownership
+  mov dword [ticks], 0
+  .wait_for_handoff:
+   mov ebx, dword [eax+0x28]
+   and ebx, 0x3
+   cmp ebx, 0x2
+   je .detect_sata_type
+  cmp dword [ticks], 500
+  jl .wait_for_handoff
+  ret ;broken controller
+  
+  .detect_sata_type:
+  test dword [eax+4], 0x80000000
+  jz .ide_interface
+
+  add eax, 0x100 ;first SATA port
+  mov esi, dword [ahci_devices_pointer]
+  mov ecx, 32
+  .ahci_detect_devices:
+   cmp dword [eax+0x24], 0xFFFFFFFF
+   je .next_item
+   cmp dword [eax+0x24], 0x00000000
+   je .next_item
+   
+   mov dword [esi], eax ;save port number
+   mov ebx, dword [eax+0x24]
+   mov dword [esi+4], ebx ;save signature
+   add esi, 8
+   add dword [ahci_devices_pointer], 8
+  .next_item:
+  add eax, 0x80
+  loop .ahci_detect_devices
+  
+  ret
+ ENDIF pci_serial_ata_if
 
  mov ebx, eax
  and ebx, 0xFFFF0000 ;remove progif
  IF_E ebx, 0x01010000, pci_ide_if ;IDE controller
+  .ide_interface:
   mov edi, dword [ide_pointer]
 
   PCI_READ_IO_BAR BAR0
@@ -220,17 +285,6 @@ pci_read_device:
 
   ret
  ENDIF pci_ide_if
-
- mov ebx, eax
- and ebx, 0xFFFF0000 ;remove progif
- IF_E ebx, 0x01060000, pci_serial_ata_if ;Serial ATA
-  PCI_READ_MMIO_BAR BAR5
-  mov ebx, dword [eax]
-  shr ebx, 18 ;AHCI only bit
-  and ebx, 0x1
-  mov dword [serial_ata_ahci_enabled], ebx
-  mov dword [eax+4], 0x0 ;try to disable ahci
- ENDIF pci_serial_ata_if
 
  PCI_SET_IRQ 5 ;for all other devices
 
