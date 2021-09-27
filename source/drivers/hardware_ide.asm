@@ -1,11 +1,5 @@
 ;BleskOS
 
-%define IDE_OK 1
-%define IDE_ERROR 0
-
-%define IDE_MASTER 1
-%define IDE_SLAVE 2
-
 ide_pointer dd native_ide_controllers
 ide_controllers:
 dw 0x1F0, 0x3F4
@@ -14,17 +8,6 @@ dw 0x170, 0x374
 dq 0, 0
 native_ide_controllers:
 times 8 dd 0, 0, 0, 0, 0
-
-hard_disk_base dw 0
-hard_disk_drive dd 0
-hard_disk_size dd 0
-cdrom_base dw 0
-cdrom_drive dd 0
-
-ata_sector dq 0
-ata_number_of_sectors dw 0
-ata_memory dd 0
-ata_status dd 0
 
 init_ide:
  mov edi, ide_controllers
@@ -76,6 +59,9 @@ init_ide:
  jne .scan_controller
 
  ;FIND HARD DISK AND CDROM BASE AND DRIVE
+ cmp dword [cdrom_base], 0 ;CDROM is connected to AHCI
+ jne .cdrom_founded
+ mov dword [cdrom_mode], IDE_MODE
  mov esi, ide_controllers
  mov ecx, 10
  .find_cdrom:
@@ -93,6 +79,9 @@ init_ide:
  loop .find_cdrom
  .cdrom_founded:
 
+ cmp dword [hard_disk_base], 0 ;hard disk is connected to AHCI
+ jne .hard_disk_founded
+ mov dword [hard_disk_mode], IDE_MODE
  mov esi, ide_controllers
  mov ecx, 10
  .find_hard_disk:
