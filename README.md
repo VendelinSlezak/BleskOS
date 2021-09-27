@@ -13,6 +13,7 @@ Inbuilt hardware:
 * PS/2 mouse
 * IDE hard disk
 * IDE cdrom
+* AHCI hard disk
 
 Filesystems:
 * JUS
@@ -32,11 +33,11 @@ USB devices:
 ### Drivers in developing
 - [x] Intel HD Audio
 - [x] USB controller xHCI
-- [x] AHCI hard disk
 - [x] AHCI cdrom
 - [ ] Filesystems UDF and CDDA
 - [ ] USB printer
 - [x] Enternet card Intel e1000
+- [ ] Ethernet card Realtek 8139
 - [ ] TCP/IP stack
 
 ### Programs
