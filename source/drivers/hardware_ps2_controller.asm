@@ -4,14 +4,15 @@ ps2_exist db 0
 ps2_command db 0
 
 read_ps2_controller:
- mov ecx, 50
+ mov dword [ticks], 0
  .wait:
   INB 0x64
   and al, 0x1
   cmp al, 0x1
   je .read
-  WAIT 1
- loop .wait
+  hlt
+ cmp dword [ticks], 50
+ jl .wait
 
  .read:
  INB 0x60
@@ -19,14 +20,15 @@ read_ps2_controller:
  ret
 
 write_ps2_controller:
- mov ecx, 50
+ mov dword [ticks], 0
  .wait:
   INB 0x64
   and al, 0x2
   cmp al, 0
   je .write
-  WAIT 1
- loop .wait
+  hlt
+ cmp dword [ticks], 50
+ jl .wait
 
  .write:
  mov al, byte [ps2_command]
@@ -35,14 +37,15 @@ write_ps2_controller:
  ret
 
 write_command_ps2_controller:
- mov ecx, 50
+ mov dword [ticks], 0
  .wait:
   INB 0x64
   and al, 0x2
   cmp al, 0
   je .write
-  WAIT 1
- loop .wait
+  hlt
+ cmp dword [ticks], 50
+ jl .wait
 
  .write:
  mov al, byte [ps2_command]
