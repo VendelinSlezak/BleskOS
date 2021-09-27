@@ -82,10 +82,14 @@ read_acpi:
  mov word [acpi_pm1_control], ax
  mov ax, word [edi+68]
  mov word [acpi_pm2_control], ax
-
+ 
+ mov byte [ps2_exist], 0x2
+ cmp byte [edi+8], 3
+ jl .ps2_exist
  mov ax, word [edi+109]
  and ax, 0x2
  mov byte [ps2_exist], al
+ .ps2_exist:
 
  ;turn on ACPI
  cmp word [acpi_command], 0
