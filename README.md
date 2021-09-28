@@ -57,3 +57,8 @@ If you do not use linux, you can build BleskOS by this steps:
 5. write bleskos.bin from sixth sector(LBA 5) to bleskos.img
 6. connect file bleskos.img to emulator as hard disk
 7. and start emulator
+
+## License
+We do not have any responsibility for anything what will happen by using BleskOS or some part of BleskOS code.
+You can learn from BleskOS source code, but if you want to copy some part of it to your project, you have to let us know by email klaykap /@/ yandex /./ com .
+Anything you do with BleskOS, you do it on your own risk.
