@@ -28,7 +28,7 @@ pata_detect_drive:
  BASE_OUTB pata_base, 5, 0
  BASE_OUTB pata_base, 7, 0xEC
 
- mov ecx, 1000
+ mov ecx, 10000
  .wait_for_drive:
   BASE_INB pata_base, 7
   and al, 0x88
