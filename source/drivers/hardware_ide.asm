@@ -16,10 +16,18 @@ init_ide:
  push ecx
   cmp dword [edi], 0
   je .next_cycle ;no controller
+  
+  mov dx, word [edi]
+  add dx, 7
+  in al, dx
+  cmp al, 0xFF
+  je .next_cycle ;no controller
 
   mov dx, word [edi+2]
   add dx, 2 ;command port
-  OUTB dx, 0x2 ;disable interrupts
+  in al, dx
+  or al, 0x2
+  out dx, al ;disable interrupts
 
   mov ax, word [edi]
   mov word [pata_base], ax ;read base
