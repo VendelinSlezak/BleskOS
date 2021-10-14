@@ -110,9 +110,9 @@ nic_amd_irq:
  BASE_OUTD ethernet_card_io_base, 0x14, 0x0
  BASE_IND ethernet_card_io_base, 0x10
  test eax, 0x400
- je .packet_received
+ jnz .packet_received
  test eax, 0x200
- je .packet_transmitted
+ jnz .packet_transmitted
  PHEX eax ;print
  jmp .end
  
