@@ -65,7 +65,7 @@ start:
  %include "source/programs/dp_mouse.asm"
  %include "source/programs/dp_acpi.asm"
 
- ;;;%include "source/programs/text_editor.asm"
+ %include "source/programs/text_editor/text_editor.asm"
  ;;;%include "source/programs/file_manager.asm"
 
 start_bleskos:
@@ -96,6 +96,8 @@ start_bleskos:
  call jus_load_bn_part
  PSTR 'Initalizing USB ports...', bootstr_usb
  call init_usb_controllers
+ PSTR 'Allocating memory for programs...', bootstr_mem_alloc
+ call init_memory_of_programs
 
  call main_window
 
