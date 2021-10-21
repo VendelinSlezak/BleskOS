@@ -44,7 +44,7 @@ Ethernet cards:
 - [ ] TCP/IP stack
 
 ### Programs
-* File manager (in progress, not available on github now)
+* File manager (testing version)
 * Text editor (in progress, not available on github now)
 
 ## How to build
