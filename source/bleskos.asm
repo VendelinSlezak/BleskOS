@@ -52,6 +52,7 @@ start:
  %include "source/drivers/network_center.asm"
  ;;;%include "source/drivers/network_protocols.asm"
  ;;;%include "source/drivers/network_ethernet_nic_intel.asm"
+ %include "source/drivers/network_ethernet_nic_amd.asm"
 
  %include "source/gui/board_main.asm"
  %include "source/gui/board_developer_zone.asm"
