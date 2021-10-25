@@ -29,9 +29,7 @@ screen_pointer dd 0
 
 cursor_line dd 0
 cursor_column dd 0
-old_cursor_line dd 0
-old_cursor_column dd 0
-old_cursor_data times 100 dw 0
+old_cursor_data times 110 dd 0
 first_redraw_line dd 0
 how_much_lines_redraw dd 0
 line_length dd 0
@@ -354,7 +352,6 @@ redraw_lines_screen:
  .32_bpp:
  rep movsd
  ret
- 
 
 clear_screen:
  mov edi, MEMORY_RAM_SCREEN
@@ -545,53 +542,14 @@ draw_line_all:
  ret
  
  .draw_line:
+ ret
  
  .draw_column:
+ ret
 
 draw_cursor:
  CALCULATE_CURSOR_POSITION
- push dword [cursor_column]
- push dword [cursor_line]
- push eax ;screen pointer
- push eax ;screen pointer
-
- ;erase cursor from screen
- mov eax, dword [old_cursor_line]
- mov dword [cursor_line], eax
- mov eax, dword [old_cursor_column]
- mov dword [cursor_column], eax
- CALCULATE_CURSOR_POSITION
  mov ebx, dword [screen_pixels_per_line]
- mov esi, old_cursor_data
-
- FOR 11, erase_cursor
-  FOR 10, erase_cursor_line
-   mov edx, dword [esi]
-   mov dword [eax], edx
-   add esi, 4
-   add eax, 4
-  ENDFOR erase_cursor_line
-  sub eax, 40 ;cursor length
-  add eax, ebx ;next line
- ENDFOR erase_cursor
-
- ;read cursor
- pop eax ;screen pointer
- mov esi, old_cursor_data
-
- FOR 11, read_cursor_bg
-  FOR 10, read_cursor_bg_line
-   mov edx, dword [eax]
-   mov dword [esi], edx
-   add esi, 4
-   add eax, 4
-  ENDFOR read_cursor_bg_line
-  sub eax, 40 ;cursor length
-  add eax, ebx ;next line
- ENDFOR read_cursor_bg
-
- ;write cursor to screen
- pop eax ;screen pointer
 
  ;line 1
  mov dword [eax], BLACK
@@ -668,12 +626,6 @@ draw_cursor:
  add eax, ebx ;next line
  mov dword [eax], BLACK
 
- ;update values
- pop eax
- mov dword [old_cursor_line], eax
- pop eax
- mov dword [old_cursor_column], eax
-
  ret
 
 read_cursor_bg:
@@ -681,16 +633,44 @@ read_cursor_bg:
  mov ebx, dword [screen_pixels_per_line]
  mov esi, old_cursor_data
 
- FOR 11, read_cursor_bg
-  FOR 10, read_cursor_bg_line
+ mov ecx, 11
+ .read_cursor_bg:
+ push ecx
+  mov ecx, 10
+  .read_cursor_bg_line:
    mov edx, dword [eax]
    mov dword [esi], edx
    add esi, 4
    add eax, 4
-  ENDFOR read_cursor_bg_line
+  loop .read_cursor_bg_line
+  
   sub eax, 40 ;cursor length
   add eax, ebx ;next line
- ENDFOR read_cursor_bg
+ pop ecx
+ loop .read_cursor_bg
+
+ ret
+
+write_cursor_bg:
+ CALCULATE_CURSOR_POSITION
+ mov ebx, dword [screen_pixels_per_line]
+ mov esi, old_cursor_data
+
+ mov ecx, 11
+ .read_cursor_bg:
+ push ecx
+  mov ecx, 10
+  .read_cursor_bg_line:
+   mov edx, dword [esi]
+   mov dword [eax], edx
+   add esi, 4
+   add eax, 4
+  loop .read_cursor_bg_line
+  
+  sub eax, 40 ;cursor length
+  add eax, ebx ;next line
+ pop ecx
+ loop .read_cursor_bg
 
  ret
 
