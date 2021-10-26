@@ -107,6 +107,7 @@ draw_text_input:
  ret
 
 text_input:
+ mov dword [text_input_cursor], 0
  call draw_text_input
  call redraw_screen
 
@@ -207,3 +208,87 @@ text_input:
  call draw_text_input
  call redraw_screen
  jmp .text_input_halt
+
+;;; Mouse move ;;;
+
+mcursor_up_side dd 0
+mcursor_down_side dd 0
+mcursor_left_side dd 0
+mcursor_right_side dd 0
+
+move_mouse_cursor:
+ call write_cursor_bg ;erase cursor from screen
+ push dword [cursor_line]
+  
+ ;MOVE CURSOR HORIZONTAL
+ mov ebx, dword [mcursor_right_side]
+ mov ecx, dword [mcursor_left_side]
+ cmp byte [usb_mouse_data+1], 0x7F
+ ja .move_left
+  
+ ;move right
+ mov eax, 0
+ mov al, byte [usb_mouse_data+1]
+ add dword [cursor_column], eax
+  
+ cmp dword [cursor_column], ebx
+ jb .if_too_right
+  mov dword [cursor_column], ebx
+ .if_too_right:
+ jmp .test_vertical_move
+  
+ .move_left:
+ mov eax, 0xFF
+ sub al, byte [usb_mouse_data+1]
+ sub dword [cursor_column], eax
+  
+ cmp dword [cursor_column], ecx
+ ja .if_too_left
+  mov dword [cursor_column], ecx
+ .if_too_left:
+  
+ ;MOVE CURSOR VERTICAL
+ .test_vertical_move:
+ mov edx, dword [mcursor_down_side]
+ cmp byte [usb_mouse_data+2], 0x7F
+ ja .move_up
+  
+ ;move down
+ mov eax, 0
+ mov al, byte [usb_mouse_data+2]
+ add dword [cursor_line], eax
+  
+ cmp dword [cursor_line], edx
+ jb .if_too_down
+  mov dword [cursor_line], edx
+ .if_too_down:
+ jmp .draw_cursor
+  
+ .move_up:
+ mov eax, 0xFF
+ sub al, byte [usb_mouse_data+2]
+ mov ebx, dword [cursor_line]
+ sub ebx, eax
+ cmp ebx, dword [screen_y]
+ ja .too_up
+ cmp ebx, dword [mcursor_up_side]
+ jb .too_up
+ sub dword [cursor_line], eax
+ jmp .draw_cursor
+ 
+ .too_up:
+ mov dword [cursor_line], 20 
+ 
+ .draw_cursor: 
+ mov eax, dword [cursor_line]
+ mov dword [first_redraw_line], eax
+ call read_cursor_bg
+ call draw_cursor
+ 
+ mov dword [how_much_lines_redraw], 11
+ call redraw_lines_screen
+  
+ pop dword [first_redraw_line]
+ call redraw_lines_screen ;erase old cursor from screen
+ 
+ ret
