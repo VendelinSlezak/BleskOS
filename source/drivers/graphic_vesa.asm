@@ -16,6 +16,9 @@
  sub %1, %2
 %endmacro
 
+%define PLAIN 0
+%define BOLD 1
+
 screen_lfb dd 0
 screen_x dd 0
 screen_x_center dd 0
@@ -38,12 +41,16 @@ square_length dd 0
 square_heigth dd 0
 color dd 0
 
+type_of_text dd PLAIN
+size_of_text dd 1
 char_for_print dd 0
 hex_print_value dd 0
 hex_string times 11 db 0
 var_print_value dd 0
 var_string times 11 db 0
 debug_line dd 0
+
+cycle_var dd 0
 
 x1 dd 0
 y1 dd 0
@@ -126,6 +133,41 @@ line_y_pointer dd 0
  test al, %1
  jz .%1_over
   mov dword [edx+(%2*4)], BLACK ;draw pixel on screen
+ .%1_over:
+%endmacro
+
+%macro DRAW_PIXEL_OF_BIG_CHAR 1
+ push edi
+ push ecx
+ test byte [esi], %1
+ jz .%1_nothing_to_draw
+ 
+ ;draw full square
+ .draw_lines_%1:
+  mov eax, edi
+  push ecx
+  .draw_line_%1:
+   mov dword [eax], BLACK
+   add eax, 4
+  dec cl
+  cmp cl, 0
+  jne .draw_line_%1
+  pop ecx
+  
+  add edi, edx ;move pointer to next monitor line
+ dec ch
+ cmp ch, 0
+ jne .draw_lines_%1
+ pop ecx
+ pop edi
+ add edi, ebx ;move to position of next pixel of char
+ jmp .%1_over
+ 
+ .%1_nothing_to_draw:
+ pop ecx
+ pop edi
+ add edi, ebx ;move to position of next pixel of char
+ 
  .%1_over:
 %endmacro
 
@@ -275,21 +317,14 @@ redraw_screen:
  mov edi, dword [screen_lfb]
  mov ecx, dword [screen_all_pixels]
  .redraw_24_bpp:
-  mov al, byte [esi]
-  mov byte [edi], al
-  inc esi
-  inc edi
+  mov ax, word [esi]
+  mov word [edi], ax
 
-  mov al, byte [esi]
-  mov byte [edi], al
-  inc esi
-  inc edi
-
-  mov al, byte [esi]
-  mov byte [edi], al
-  inc esi
-  inc esi
-  inc edi
+  mov al, byte [esi+2]
+  mov byte [edi+2], al
+  
+  add esi, 4
+  add edi, 3
  loop .redraw_24_bpp
  ret
 
@@ -331,21 +366,14 @@ redraw_lines_screen:
  ret
 
  .24_bpp:
-  mov al, byte [esi]
-  mov byte [edi], al
-  inc esi
-  inc edi
+  mov ax, word [esi]
+  mov word [edi], ax
 
-  mov al, byte [esi]
-  mov byte [edi], al
-  inc esi
-  inc edi
-
-  mov al, byte [esi]
-  mov byte [edi], al
-  inc esi
-  inc esi
-  inc edi
+  mov al, byte [esi+2]
+  mov byte [edi+2], al
+  
+  add esi, 4
+  add edi, 3
  loop .24_bpp
  ret
 
@@ -550,6 +578,11 @@ draw_line_all:
 draw_cursor:
  CALCULATE_CURSOR_POSITION
  mov ebx, dword [screen_pixels_per_line]
+ 
+ mov ecx, dword [screen_x]
+ sub ecx, dword [cursor_column]
+ cmp ecx, 8
+ jb .border
 
  ;line 1
  mov dword [eax], BLACK
@@ -627,6 +660,161 @@ draw_cursor:
  mov dword [eax], BLACK
 
  ret
+ 
+ .border: ;if is cursor on border, draw only part
+ cmp ecx, 0
+ je .done
+ 
+ ;line 1
+ mov dword [eax], BLACK
+
+ ;line 2
+ add eax, ebx ;next line
+ mov dword [eax], BLACK
+ cmp ecx, 1
+ je .line3
+ mov dword [eax+4], BLACK
+
+ ;line 3
+ .line3:
+ add eax, ebx ;next line
+ mov dword [eax], BLACK
+ cmp ecx, 1
+ je .line4
+ mov dword [eax+4], WHITE
+ cmp ecx, 2
+ je .line4
+ mov dword [eax+8], BLACK
+
+ ;line 4
+ .line4:
+ add eax, ebx ;next line
+ mov dword [eax], BLACK
+ cmp ecx, 1
+ je .line5
+ mov dword [eax+4], WHITE
+ cmp ecx, 2
+ je .line5
+ mov dword [eax+8], WHITE
+ cmp ecx, 3
+ je .line5
+ mov dword [eax+12], BLACK
+
+ ;line 5
+ .line5:
+ add eax, ebx ;next line
+ mov dword [eax], BLACK
+ cmp ecx, 1
+ je .line6
+ mov dword [eax+4], WHITE
+ cmp ecx, 2
+ je .line6
+ mov dword [eax+8], WHITE
+ cmp ecx, 3
+ je .line6
+ mov dword [eax+12], WHITE
+ cmp ecx, 4
+ je .line6
+ mov dword [eax+16], BLACK
+
+ ;line 6
+ .line6:
+ add eax, ebx ;next line
+ mov dword [eax], BLACK
+ cmp ecx, 1
+ je .line7
+ mov dword [eax+4], WHITE
+ cmp ecx, 2
+ je .line7
+ mov dword [eax+8], WHITE
+ cmp ecx, 3
+ je .line7
+ mov dword [eax+12], WHITE
+ cmp ecx, 4
+ je .line7
+ mov dword [eax+16], WHITE
+ cmp ecx, 5
+ je .line7
+ mov dword [eax+20], BLACK
+
+ ;line 7
+ .line7:
+ add eax, ebx ;next line
+ mov dword [eax], BLACK
+ cmp ecx, 1
+ je .line8
+ mov dword [eax+4], WHITE
+ cmp ecx, 2
+ je .line8
+ mov dword [eax+8], WHITE
+ cmp ecx, 3
+ je .line8
+ mov dword [eax+12], WHITE
+ cmp ecx, 4
+ je .line8
+ mov dword [eax+16], WHITE
+ cmp ecx, 5
+ je .line8
+ mov dword [eax+20], WHITE
+ cmp ecx, 6
+ je .line8
+ mov dword [eax+24], BLACK
+
+ ;line 8
+ .line8:
+ add eax, ebx ;next line
+ mov dword [eax], BLACK
+ cmp ecx, 1
+ je .line9
+ mov dword [eax+4], WHITE
+ cmp ecx, 2
+ je .line9
+ mov dword [eax+8], WHITE
+ cmp ecx, 3
+ je .line9
+ mov dword [eax+12], WHITE
+ cmp ecx, 4
+ je .line9
+ mov dword [eax+16], WHITE
+ cmp ecx, 5
+ je .line9
+ mov dword [eax+20], BLACK
+
+ ;line 9
+ .line9:
+ add eax, ebx ;next line
+ mov dword [eax], BLACK
+ cmp ecx, 1
+ je .line10
+ mov dword [eax+4], WHITE
+ cmp ecx, 2
+ je .line10
+ mov dword [eax+8], WHITE
+ cmp ecx, 3
+ je .line10
+ mov dword [eax+12], BLACK
+ cmp ecx, 4
+ je .line10
+ mov dword [eax+16], BLACK
+
+ ;line 10
+ .line10:
+ add eax, ebx ;next line
+ mov dword [eax], BLACK
+ cmp ecx, 1
+ je .line11
+ mov dword [eax+4], BLACK
+ cmp ecx, 2
+ je .line11
+ mov dword [eax+8], BLACK
+
+ ;line 11
+ .line11:
+ add eax, ebx ;next line
+ mov dword [eax], BLACK
+
+ .done:
+ ret
 
 read_cursor_bg:
  CALCULATE_CURSOR_POSITION
@@ -673,8 +861,51 @@ write_cursor_bg:
  loop .read_cursor_bg
 
  ret
-
+ 
 print_char:
+ cmp dword [type_of_text], BOLD
+ je .bold
+ 
+ cmp dword [size_of_text], 1
+ je print_char_size1
+ 
+ push esi
+ call print_bigger_char
+ pop esi
+ mov eax, dword [size_of_text]
+ mov ebx, 8
+ mul ebx
+ sub eax, 8 ;this will be added in print method
+ add dword [cursor_column], eax 
+ 
+ ret
+ 
+ .bold:
+ cmp dword [size_of_text], 1
+ ja .big_bold
+ 
+ call print_char_size1
+ inc dword [cursor_column]
+ call print_char_size1
+ 
+ ret
+ 
+ .big_bold:
+ push esi
+ call print_bigger_char
+ mov eax, dword [size_of_text]
+ add dword [cursor_column], eax
+ call print_bigger_char
+ pop esi
+ mov eax, dword [size_of_text]
+ mov ebx, 8
+ mul ebx
+ sub eax, 8 ;this will be added in print method
+ add dword [cursor_column], eax 
+ 
+ ret
+
+print_char_size1:
  CALCULATE_CURSOR_POSITION
 
  ;calculate char memory
@@ -703,6 +934,62 @@ print_char:
   add edx, dword [screen_pixels_per_line] ;move one line down
   inc edi ;next line of char
  ENDFOR print_char_cycle
+
+ ret
+ 
+print_bigger_char:
+ CALCULATE_CURSOR_POSITION
+ 
+ ;pointer to screen memory
+ mov edi, eax
+
+ ;calculate char memory
+ mov eax, dword [char_for_print]
+ mov ebx, 8
+ mul ebx
+ add eax, bleskos_font
+ mov esi, eax
+ 
+ ;other values
+ mov eax, dword [size_of_text]
+ mov ebx, 4
+ mul ebx
+ mov ebx, eax ;how many bytes to next pixel of char
+ mov edx, dword [screen_pixels_per_line]
+ mov ch, byte [size_of_text]
+ mov cl, ch ;value for cycles
+ mov word [cycle_var], cx
+
+ ;char have eight lines
+ mov ecx, 8
+ .print_char:
+ push ecx
+  push edi
+  
+  mov cx, word [cycle_var]
+  DRAW_PIXEL_OF_BIG_CHAR 0x80
+  DRAW_PIXEL_OF_BIG_CHAR 0x40
+  DRAW_PIXEL_OF_BIG_CHAR 0x20
+  DRAW_PIXEL_OF_BIG_CHAR 0x10
+  DRAW_PIXEL_OF_BIG_CHAR 0x08
+  DRAW_PIXEL_OF_BIG_CHAR 0x04
+  DRAW_PIXEL_OF_BIG_CHAR 0x02
+  DRAW_PIXEL_OF_BIG_CHAR 0x01
+
+  ;go to next line
+  pop edi
+  mov al, cl ;skip all lines of one pixel of char
+  .next_line:
+   add edi, edx ;move on next monitor line
+  dec al
+  cmp al, 0
+  jne .next_line
+  
+  inc esi ;next line of char
+ pop ecx
+ dec ecx
+ cmp ecx, 0
+ jne .print_char
 
  ret
 
