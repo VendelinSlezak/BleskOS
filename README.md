@@ -47,6 +47,8 @@ Ethernet cards:
 
 ### Programs
 * File manager (testing version)
+* Graphic editor (in progress, not available on github now)
+* Media viewer (in progress, not available on github now)
 * Text editor (in progress, not available on github now)
 
 ## How to build
