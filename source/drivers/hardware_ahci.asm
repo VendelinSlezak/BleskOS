@@ -44,7 +44,7 @@ init_ahci:
   call sata_read_drive_info
   mov eax, dword [sata_drive_size]
   mov dword [hard_disk_size], eax
- .if_ahci_hdd
+ .if_ahci_hdd:
  
  mov eax, dword [cdrom_base]
  mov dword [ahci_port_base], eax
@@ -52,7 +52,7 @@ init_ahci:
  je .if_ahci_cdrom
   mov dword [cdrom_mode], AHCI_MODE
   call enable_ahci_port
- .if_ahci_cdrom
+ .if_ahci_cdrom:
  
  ret
 
