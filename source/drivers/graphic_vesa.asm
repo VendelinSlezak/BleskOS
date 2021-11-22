@@ -472,7 +472,7 @@ draw_line_all:
   mov ebx, dword [x2]
   mov dword [x1], ebx
   mov dword [x2], eax
- .if_reverse
+ .if_reverse:
  
  ;if straigth column
  mov eax, dword [x1]
