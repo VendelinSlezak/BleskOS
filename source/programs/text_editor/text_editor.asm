@@ -1,9 +1,7 @@
 ;BleskOS
 
-;this is testing version, many features are not here, you also can not save file
-
 text_editor_up_str db 'Text editor', 0
-text_editor_down_str db 'In next versions here will be something', 0
+text_editor_down_str db '[F1] Save file [F2] Open file', 0
 te_line_str db 'Line:', 0
 
 te_max_column dd 0
@@ -48,6 +46,12 @@ text_editor:
   cmp byte [key_code], KEY_ESC
   je main_window
   
+  cmp byte [key_code], KEY_F1
+  je .save_file
+  
+  cmp byte [key_code], KEY_F2
+  je .open_file
+  
   cmp byte [key_code], KEY_BACKSPACE
   je .key_backspace
   
@@ -69,6 +73,31 @@ text_editor:
   cmp word [key_unicode], 0
   jne .draw_char
  jmp .te_halt
+ 
+ .save_file:
+  mov eax, dword [text_editor_mem]
+  mov dword [file_memory], eax
+  call file_dialog_save
+ jmp text_editor
+ 
+ .open_file:
+  call file_dialog_open
+  cmp dword [fd_return], FD_NO_FILE
+  je text_editor
+  
+  mov eax, dword [file_memory]
+  mov dword [text_editor_mem], eax
+  mov dword [text_editor_first_line_mem], eax
+  mov dword [te_pointer], eax
+  mov dword [te_pointer_end], eax
+  mov dword [te_cursor_offset], 0
+  mov dword [te_length_of_text], 0
+  add eax, dword [file_size] ;length of file
+  mov dword [text_editor_end_mem], eax
+  mov dword [te_draw_line], 0
+  mov dword [te_draw_column], 0
+ jmp text_editor
+  
   
  .key_backspace:
   cmp dword [te_cursor_offset], 0
