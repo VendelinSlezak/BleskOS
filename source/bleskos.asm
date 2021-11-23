@@ -60,6 +60,7 @@ start:
  %include "source/gui/library_elements.asm"
  %include "source/gui/library_images.asm"
  %include "source/gui/library_programs.asm"
+ %include "source/gui/library_file_dialogue.asm"
  %include "source/gui/library_encrypting.asm"
 
  %include "source/programs/dp_hardware_info.asm"
