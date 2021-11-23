@@ -58,7 +58,9 @@ start:
  %include "source/gui/board_developer_zone.asm"
  %include "source/gui/board_hardware_centrum.asm"
  %include "source/gui/library_elements.asm"
+ %include "source/gui/library_images.asm"
  %include "source/gui/library_programs.asm"
+ %include "source/gui/library_encrypting.asm"
 
  %include "source/programs/dp_hardware_info.asm"
  %include "source/programs/dp_intel_hd_audio.asm"
@@ -67,6 +69,7 @@ start:
  %include "source/programs/dp_acpi.asm"
 
  %include "source/programs/text_editor/text_editor.asm"
+ %include "source/programs/media_viewer/media_viewer.asm"
  ;;;%include "source/programs/file_manager.asm"
 
 start_bleskos:
