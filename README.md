@@ -46,11 +46,10 @@ Ethernet cards:
 - [ ] TCP/IP stack
 
 ### Programs
-* File manager (testing version)
+* Text editor (TXT files) (very simple version, but it is working)
 * Graphic editor (in progress, not available on github now)
-* Media viewer (in progress, not available on github now) (coming soon!)
-* Text editor (in progress, not available on github now)
-* Internet browser (currently only HTML viewer, coming soon!)
+* Media viewer (in progress, not available on github now, coming soon!)
+* Internet browser (currently only HTML viewer, not available on github now, coming soon!)
 
 ## How to build
 BleskOS is completly written in NASM. You should use last version 2.1
