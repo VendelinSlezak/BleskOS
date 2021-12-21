@@ -100,7 +100,6 @@ init_fat:
 
 fat_get_entry:
  mov eax, dword [fat_entry]
- sub eax, 2
  mov ebx, 128
  mov edx, 0
  div ebx
@@ -127,7 +126,6 @@ fat_get_entry:
 
 fat_set_entry:
  mov eax, dword [fat_entry]
- sub eax, 2
  mov ebx, 128
  mov edx, 0
  div ebx
@@ -232,7 +230,19 @@ fat_read_folder:
  
  ret
  
-;TODO rewrite and write folder
+fat_rewrite_folder:
+ cmp eax, 0
+ jne .rewrite_folder
+ mov eax, dword [fat_root_dir_cluster]
+ .rewrite_folder:
+ call convert_jus_folder_to_fat_folder
+ mov dword [fat_cluster], eax
+ mov dword [fat_memory], MEMORY_FAT32_FOLDER
+ call fat_write_cluster
+ 
+ ret
+ 
+;TODO write folder
 
 fat_read_file:
  mov esi, MEMORY_FILE_DESCRIPTOR
@@ -247,13 +257,15 @@ fat_read_file:
  mov dword [esi], eax ;save first cluster
 
  mov eax, dword [fat_entry]
+ push esi
  call fat_get_entry ;get value of first cluster
+ pop esi
 
  mov ecx, 10000 ;max 10000 clusters
  .load_cluster_values:
  push ecx
   cmp dword [fat_entry_value], 0x0FFFFFF7
-  jg .read_file ;we found last entry
+  ja .read_file ;we found last entry
   je .error ;bad cluster
   cmp dword [fat_entry_value], 0x00000000
   je .error ;free cluster
@@ -261,14 +273,17 @@ fat_read_file:
   mov eax, dword [fat_entry_value]
   mov dword [fat_entry], eax ;point to next cluster
   add esi, 4
-  mov esi, dword [fat_entry] ;save cluster value
+  mov dword [esi], eax ;save cluster value
   push esi
   call fat_get_entry
   pop esi
  pop ecx
  loop .load_cluster_values
+ ret
 
  .error:
+ PSTR 'error', errorstre
+ WAIT 3000
  pop ecx
  ret
 
