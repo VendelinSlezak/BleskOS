@@ -98,7 +98,7 @@ start_bleskos:
  call init_ps2_controller
  call enable_touchpad
  PSTR 'Read JUS informations...', bootstr_jus
- call jus_load_bn_part
+ call init_jus
  PSTR 'Initalizing USB ports...', bootstr_usb
  call init_usb_controllers
  PSTR 'Allocating memory for programs...', bootstr_mem_alloc
