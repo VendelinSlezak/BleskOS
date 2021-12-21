@@ -50,6 +50,7 @@ Ethernet cards:
 * Graphic editor (in progress, not available on github now)
 * Media viewer (in progress, not available on github now) (coming soon!)
 * Text editor (in progress, not available on github now)
+* Internet browser (currently only HTML viewer, coming soon!)
 
 ## How to build
 BleskOS is completly written in NASM. You should use last version 2.1
