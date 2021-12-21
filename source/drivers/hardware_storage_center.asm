@@ -23,9 +23,14 @@ cdrom_base dd 0
 cdrom_drive dd 0
 
 ata_sector dq 0
+ata_sectors_num dd 0
 ata_number_of_sectors dw 0
 ata_memory dd 0
 ata_status dd 0
+
+atapi_status dd 0
+atapi_sector dd 0
+atapi_memory dd 0
 
 select_hdd:
  cmp dword [hard_disk_mode], IDE_MODE
@@ -71,6 +76,21 @@ read_hdd:
  .ahci:
  call sata_read
  ret
+ 
+read_hdd_sectors:
+ mov ecx, dword [ata_sectors_num]
+ .read_sector:
+  mov dword [ata_number_of_sectors], 1
+  push ecx
+  call read_hdd
+  pop ecx
+  cmp dword [ata_status], 0
+  je .done
+  inc dword [ata_sector]
+ loop .read_sector
+ 
+ .done:
+ ret
 
 write_hdd:
  cmp dword [hard_disk_mode], IDE_MODE
@@ -85,6 +105,21 @@ write_hdd:
  
  .ahci:
  call sata_write
+ ret
+ 
+write_hdd_sectors:
+ mov ecx, dword [ata_sectors_num]
+ .write_sector:
+  mov dword [ata_number_of_sectors], 1
+  push ecx
+  call write_hdd
+  pop ecx
+  cmp dword [ata_status], 0
+  je .done
+  inc dword [ata_sector]
+ loop .write_sector
+ 
+ .done:
  ret
 
 delete_hdd:
@@ -103,8 +138,11 @@ delete_hdd:
  ret
  
 select_optical_disk:
- cmp dword [cdrom_base], IDE_MODE
+ cmp dword [cdrom_mode], IDE_MODE
  je .ide
+ cmp dword [cdrom_mode], AHCI_MODE
+ je .ahci
+ ret
  
  .ide:
  mov ax, word [cdrom_base]
@@ -117,6 +155,11 @@ select_optical_disk:
  ENDIF if_slave
  ret
  
+ .ahci:
+ mov eax, dword [cdrom_base]
+ mov dword [ahci_port_base], eax
+ ret
+ 
 detect_optical_disk:
  mov dword [disk_state], NO_DISK
  call select_optical_disk
@@ -125,10 +168,10 @@ detect_optical_disk:
  cmp word [disk_size], 0
  je .done
  
- mov dword [patapi_sector], 0
- mov dword [patapi_memory], MEMORY_ISO9660_FOLDER
+ mov dword [atapi_sector], 0
+ mov dword [atapi_memory], MEMORY_ISO9660_FOLDER
  call patapi_read
- cmp dword [patapi_status], IDE_ERROR
+ cmp dword [atapi_status], IDE_ERROR
  je .done
  
  mov dword [disk_state], UNKNOWN_DISK_FORMAT
