@@ -299,7 +299,7 @@ file_dialog_open:
    je .halt
    cmp dword [disk_state], UNKNOWN_DISK_FORMAT
    je .halt
-  .if_cdrom
+  .if_cdrom:
   
   cmp byte [key_code], KEY_UP
   je .key_up
