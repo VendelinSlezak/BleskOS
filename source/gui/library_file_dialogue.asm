@@ -30,6 +30,7 @@ fd_highlighted_file dd 0
 fd_hdd_path times 10 dd 0
 
 fd_loaded_folder dd 0
+fd_folder_state dd 0
 
 ;STRINGS
 fd_no_usb db 'No USB device', 0
@@ -221,6 +222,29 @@ file_dialog_change_device:
   PRINT 'Loading folder...', loading_folder_str, LINESZ*5, COLUMNSZ*22
   call redraw_screen
   
+  cmp dword [fd_selected_medium], 2
+  jb .if_usb
+   mov eax, dword [fd_selected_medium]
+   sub eax, 2
+   mov dword [msd_number], eax
+   mov ebx, 16
+   mul ebx
+   add eax, mass_storage_devices+7
+   cmp byte [eax], NO_MSD
+   je .if_usb
+   cmp byte [eax], MSD_FAT32
+   jne .if_usb
+  
+   ;this is usb stick formatted as FAT32
+   call select_msd
+   call msd_read_mbr
+   mov eax, dword [first_partition_lba]
+   mov dword [fat_base_sector], eax
+   call init_fat
+   cmp dword [msd_status], MSD_ERROR
+   je file_dialog_load_folder.reading_folder_error
+  .if_usb:
+  
   call file_dialog_load_folder
  ret
  
@@ -229,12 +253,17 @@ file_dialog_load_folder:
  je .hard_disk
  cmp dword [fd_selected_medium], 1
  je .cdrom
+ jmp .usb_stick
  ret
  
  .hard_disk:
   mov eax, 0 ;root folder
   call jus_read_folder
   
+  cmp dword [ata_status], IDE_ERROR
+  je .reading_folder_error
+  
+  mov dword [fd_folder_state], 1
   call file_dialog_draw_items
   call redraw_screen
   ret
@@ -253,8 +282,12 @@ file_dialog_load_folder:
   mov dword [iso9660_file_length], eax
   mov dword [iso9660_file_memory], MEMORY_ISO9660_FOLDER
   call iso9660_read_file
-  call convert_iso9660_folder_to_jus_folder
   
+  cmp dword [atapi_status], IDE_ERROR
+  je .reading_folder_error
+  
+  mov dword [fd_folder_state], 1
+  call convert_iso9660_folder_to_jus_folder
   call file_dialog_draw_items
   call redraw_screen
   ret
@@ -264,6 +297,7 @@ file_dialog_load_folder:
    call file_dialog_draw_devices
    PRINT 'No disk is inserted', no_disk_str, LINESZ*5, COLUMNSZ*22
    call redraw_screen
+   mov dword [fd_folder_state], 0
    ret
    
   .unknown_disk_format:
@@ -271,6 +305,53 @@ file_dialog_load_folder:
    call file_dialog_draw_devices
    PRINT 'This disk is not formatted as ISO9660', not_iso9660_format_str, LINESZ*5, COLUMNSZ*22
    call redraw_screen
+   mov dword [fd_folder_state], 0
+   ret
+ 
+ .usb_stick:
+  mov eax, dword [fd_selected_medium]
+  sub eax, 2
+  mov ebx, 16
+  mul ebx
+  add eax, mass_storage_devices+7
+  cmp byte [eax], NO_MSD
+  je .no_usb_stick
+  cmp byte [eax], MSD_FAT32
+  jne .usb_stick_not_fat32
+  
+  ;this is usb stick formatted as FAT32
+  mov eax, 0 ;root folder
+  call fat_read_folder
+  cmp dword [msd_status], MSD_ERROR
+  je .reading_folder_error
+  
+  mov dword [fd_folder_state], 1
+  call file_dialog_draw_items
+  call redraw_screen
+  ret
+  
+  .no_usb_stick:
+   CLEAR_SCREEN 0x884E10 ;brown
+   call file_dialog_draw_devices
+   PRINT 'No USB stick is connected here', no_usb_stick_str, LINESZ*5, COLUMNSZ*22
+   call redraw_screen
+   mov dword [fd_folder_state], 0
+   ret
+   
+  .usb_stick_not_fat32:
+   CLEAR_SCREEN 0x884E10 ;brown
+   call file_dialog_draw_devices
+   PRINT 'This USB stick is not formatted as FAT32', usb_stick_not_formatted_as_FAT32_str, LINESZ*5, COLUMNSZ*22
+   call redraw_screen
+   mov dword [fd_folder_state], 0
+   ret
+   
+  .reading_folder_error:
+   CLEAR_SCREEN 0x884E10 ;brown
+   call file_dialog_draw_devices
+   PRINT 'Error during reading folder', reading_folder_error_str, LINESZ*5, COLUMNSZ*22
+   call redraw_screen
+   mov dword [fd_folder_state], 0
    ret
 
 file_dialog_open:
@@ -293,13 +374,8 @@ file_dialog_open:
   je .key_d
   
   ;these keys work only if is folder succesfully loaded
-  cmp dword [fd_selected_medium], 1
-  jne .if_cdrom
-   cmp dword [disk_state], NO_DISK
-   je .halt
-   cmp dword [disk_state], UNKNOWN_DISK_FORMAT
-   je .halt
-  .if_cdrom:
+  cmp dword [fd_folder_state], 0
+  je .halt
   
   cmp byte [key_code], KEY_UP
   je .key_up
@@ -371,7 +447,7 @@ file_dialog_open:
   je .load_file_from_hard_disk
   cmp dword [fd_selected_medium], 1
   je .load_file_from_cdrom
-  jmp .halt
+  jmp .load_file_from_usb_stick
   
   ;LOADING FROM HARD DISK
   .load_file_from_hard_disk:
@@ -471,6 +547,53 @@ file_dialog_open:
   mov dword [file_size], eax
   mov eax, dword [esi+116]
   mov dword [file_type], eax
+  mov dword [fd_return], FD_FILE
+  
+  ret
+  
+  ;LOADING FROM USB STICK
+  .load_file_from_usb_stick:
+  mov eax, dword [fd_selected_file]
+  mov ebx, 128
+  mul ebx
+  add eax, MEMORY_FOLDER
+  mov esi, eax
+  cmp dword [esi], 0
+  je .halt
+  
+  mov eax, dword [esi+4] ;here is length of file in KB
+  mov ebx, 1000
+  mov edx, 0
+  div ebx
+  inc eax
+  mov dword [allocated_size], eax
+  push esi
+  call allocate_memory ;allocate enough memory
+  pop esi
+  cmp dword [allocated_memory_pointer], 0
+  je .not_enough_memory_for_file
+  
+  mov eax, dword [allocated_memory_pointer]
+  mov dword [file_memory], eax
+  
+  ;load file
+  mov dword [fat_memory], eax
+  mov eax, dword [esi]
+  cmp eax, 0
+  je .halt
+  mov dword [fat_entry], eax
+  push esi
+  call fat_read_file
+  pop esi
+  
+  cmp dword [msd_status], MSD_ERROR
+  je .error_during_reading_file
+  
+  ;set variabiles
+  mov eax, dword [esi+4]
+  mov ebx, 1024
+  mul ebx
+  mov dword [file_size], eax
   mov dword [fd_return], FD_FILE
   
   ret
