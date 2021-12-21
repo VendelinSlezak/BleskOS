@@ -474,6 +474,16 @@ file_dialog_open:
   mov eax, dword [allocated_memory_pointer]
   mov dword [file_memory], eax
   
+  ;print message
+  push esi
+  push eax
+  CLEAR_SCREEN 0x884E10 ;brown
+  call file_dialog_draw_devices
+  PRINT 'Loading file...', loading_file_str1, LINESZ*5, COLUMNSZ*22
+  call redraw_screen
+  pop eax
+  pop esi
+  
   ;load file
   mov dword [jus_memory], eax
   mov eax, dword [esi]
@@ -492,6 +502,8 @@ file_dialog_open:
   mov ebx, 1024
   mul ebx
   mov dword [file_size], eax
+  mov eax, dword [esi+116]
+  mov dword [file_type], eax
   cmp dword [esi+116], 'TXT'
   jne .if_hdd_txt
    mov dword [file_type], 'BTXT'
@@ -524,6 +536,16 @@ file_dialog_open:
   
   mov eax, dword [allocated_memory_pointer]
   mov dword [file_memory], eax
+  
+  ;print message
+  push esi
+  push eax
+  CLEAR_SCREEN 0x884E10 ;brown
+  call file_dialog_draw_devices
+  PRINT 'Loading file...', loading_file_str2, LINESZ*5, COLUMNSZ*22
+  call redraw_screen
+  pop eax
+  pop esi
   
   ;load file
   mov dword [iso9660_file_memory], eax
@@ -576,6 +598,16 @@ file_dialog_open:
   mov eax, dword [allocated_memory_pointer]
   mov dword [file_memory], eax
   
+  ;print message
+  push esi
+  push eax
+  CLEAR_SCREEN 0x884E10 ;brown
+  call file_dialog_draw_devices
+  PRINT 'Loading file...', loading_file_str3, LINESZ*5, COLUMNSZ*22
+  call redraw_screen
+  pop eax
+  pop esi
+  
   ;load file
   mov dword [fat_memory], eax
   mov eax, dword [esi]
@@ -594,6 +626,8 @@ file_dialog_open:
   mov ebx, 1024
   mul ebx
   mov dword [file_size], eax
+  mov eax, dword [esi+116]
+  mov dword [file_type], eax
   mov dword [fd_return], FD_FILE
   
   ret
