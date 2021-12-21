@@ -20,21 +20,6 @@ te_cursor_offset dd 0
 te_length_of_text dd 0
 
 text_editor_files_mem times 4*10 dd 0
-
-text_editor_open_file:
- mov eax, dword [allocated_memory_pointer]
- mov dword [text_editor_mem], eax
- mov dword [text_editor_first_line_mem], eax
- mov dword [te_pointer], eax
- mov dword [te_pointer_end], eax
- mov dword [te_cursor_offset], 0
- mov dword [te_length_of_text], 0
- add eax, 0x100000
- mov dword [text_editor_end_mem], eax
- mov dword [te_draw_line], 0
- mov dword [te_draw_column], 0
-  
- ret
  
 text_editor: 
  call te_draw_text
@@ -77,6 +62,8 @@ text_editor:
  .save_file:
   mov eax, dword [text_editor_mem]
   mov dword [file_memory], eax
+  mov dword [file_size], 1000 ;in KB
+  mov dword [file_type], 'TXT'
   call file_dialog_save
  jmp text_editor
  
@@ -84,7 +71,13 @@ text_editor:
   call file_dialog_open
   cmp dword [fd_return], FD_NO_FILE
   je text_editor
+  cmp dword [file_type], 'BTXT'
+  je .bleskos_txt
   
+  call text_editor_convert_to_unicode
+  jmp text_editor
+  
+  .bleskos_txt:
   mov eax, dword [file_memory]
   mov dword [text_editor_mem], eax
   mov dword [text_editor_first_line_mem], eax
@@ -97,7 +90,6 @@ text_editor:
   mov dword [te_draw_line], 0
   mov dword [te_draw_column], 0
  jmp text_editor
-  
   
  .key_backspace:
   cmp dword [te_cursor_offset], 0
@@ -533,7 +525,18 @@ text_editor_convert_to_unicode:
  mov ecx, 0x100000
  rep stosb ;clear memory
  
- call text_editor_open_file
+ ;set variabiles
+ mov eax, dword [allocated_memory_pointer]
+ mov dword [text_editor_mem], eax
+ mov dword [text_editor_first_line_mem], eax
+ mov dword [te_pointer], eax
+ mov dword [te_pointer_end], eax
+ mov dword [te_cursor_offset], 0
+ mov dword [te_length_of_text], 0
+ add eax, 0x100000
+ mov dword [text_editor_end_mem], eax
+ mov dword [te_draw_line], 0
+ mov dword [te_draw_column], 0
  
  pop edi
  mov esi, dword [allocated_memory_pointer]
@@ -543,8 +546,8 @@ text_editor_convert_to_unicode:
   
   mov eax, 0
   mov al, byte [edi]
-  cmp al, 0x80
-  jg .ascii_char
+  test al, 0x80
+  jz .ascii_char
   
   and al, 0xE0
   cmp al, 0xC0
@@ -565,7 +568,7 @@ text_editor_convert_to_unicode:
    mov bx, 0
    mov bl, byte [edi+1]
    and al, 0x1F
-   shl ax, 7
+   shl ax, 6
    and bl, 0x3F
    or ax, bx
    mov word [esi], ax
@@ -584,5 +587,5 @@ text_editor_convert_to_unicode:
    inc dword [te_length_of_text]
   jmp .convert_char
  
- .done: 
+ .done:
  ret
