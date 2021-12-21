@@ -1,6 +1,19 @@
 ;BleskOS
 
 init_memory_of_programs:
+ ;FILE DIALOG
+ mov eax, dword [screen_y]
+ sub eax, LINESZ*6
+ mov ebx, LINESZ
+ mov edx, 0
+ div ebx
+ mov dword [fd_files_on_screen], eax
+ 
+ mov dword [fd_first_file], 0
+ mov dword [fd_selected_file], 0
+ mov dword [fd_highlighted_file], 0
+ mov dword [fd_loaded_folder], 0
+ 
  ;TEXT EDITOR
  mov dword [allocated_size], 1 ;one MB
  call allocate_memory
