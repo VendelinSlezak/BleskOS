@@ -27,7 +27,6 @@ fd_files_on_screen dd 0
 fd_selected_file dd 0
 fd_first_file dd 0
 fd_highlighted_file dd 0
-fd_hdd_path times 10 dd 0
 
 fd_loaded_folder dd 0
 fd_folder_state dd 0
