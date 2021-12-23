@@ -35,6 +35,7 @@ fd_folder_state dd 0
 ;STRINGS
 fd_no_usb db 'No USB device', 0
 fd_usb_not_fat32 db 'USB stick', 0
+fd_fat_name times 20 db 0
 
 file_dialog_draw_items:
  ;clear background
@@ -592,10 +593,6 @@ file_dialog_open:
   mov dword [file_size], eax
   mov eax, dword [esi+116]
   mov dword [file_type], eax
-  cmp dword [esi+116], 'TXT'
-  jne .if_hdd_txt
-   mov dword [file_type], 'BTXT'
-  .if_hdd_txt:
   mov dword [fd_return], FD_FILE
   
   ret
@@ -894,7 +891,7 @@ file_dialog_save:
   push esi
   call jus_write_file
   pop esi
-  cmp dword [ata_status], IDE_ERROR
+  cmp dword [msd_status], MSD_ERROR
   je .error_during_writing_file
   
   mov eax, dword [jus_file_sector]
@@ -903,13 +900,118 @@ file_dialog_save:
   ;save folder
   mov eax, 0 ;root folder
   call jus_rewrite_folder
-  cmp dword [ata_status], IDE_ERROR
+  cmp dword [msd_status], MSD_ERROR
   je .error_during_rewriting_folder
   
   ret
   
   ;SAVE FILE TO USB STICK
   .save_file_to_usb_stick:
+  ;calculate if in folder is enough free space
+  mov eax, dword [fat_sectors_per_cluster]
+  mov ebx, 16
+  mul ebx
+  mov ebx, 0
+  mov esi, MEMORY_FAT32_FOLDER
+  mov ecx, 1024
+  .fat32_find_free_entry:
+   cmp dword [esi], 0
+   je .fat32_free_entry
+   inc ebx
+   cmp ebx, eax
+   je .no_free_entry
+   add esi, 32
+  loop .fat32_find_free_entry
+  jmp .no_free_entry
+  
+  .fat32_free_entry:
+  ;name
+  mov dword [text_input_pointer], fd_fat_name
+  mov dword [text_input_length], 8
+  mov dword [cursor_line], LINESZ*2
+  SCREEN_X_SUB eax, COLUMNSZ*10
+  mov dword [cursor_column], eax
+  push esi
+  call text_input
+  pop esi
+  ;convert from unicode to ascii
+  mov al, byte [fd_fat_name]
+  mov byte [esi], al
+  mov al, byte [fd_fat_name+2]
+  mov byte [esi+1], al
+  mov al, byte [fd_fat_name+4]
+  mov byte [esi+2], al
+  mov al, byte [fd_fat_name+6]
+  mov byte [esi+3], al
+  mov al, byte [fd_fat_name+8]
+  mov byte [esi+4], al
+  mov al, byte [fd_fat_name+10]
+  mov byte [esi+5], al
+  mov al, byte [fd_fat_name+12]
+  mov byte [esi+6], al
+  mov al, byte [fd_fat_name+14]
+  mov byte [esi+7], al
+  
+  ;extension
+  mov eax, dword [file_type]
+  mov dword [esi+8], eax
+  
+  ;type of item
+  mov byte [esi+11], 0x20
+  mov word [esi+12], 0
+  
+  ;time
+  call read_time
+  mov eax, dword [year]
+  sub eax, 1980
+  shl eax, 9
+  mov ebx, dword [month]
+  shl ebx, 5
+  or eax, ebx
+  or eax, dword [day]
+  
+  mov ecx, dword [hour]
+  shl ecx, 11
+  mov ebx, dword [minute]
+  shl ebx, 5
+  or ecx, ebx
+  or ecx, dword [second]
+  
+  mov word [esi+14], cx
+  mov word [esi+16], ax
+  mov word [esi+18], ax
+  mov word [esi+22], cx
+  mov word [esi+24], ax
+  
+  ;size
+  mov eax, dword [file_size]
+  mov ebx, 1024
+  mul ebx ;convert from KB to bytes
+  mov dword [esi+28], eax
+  
+  ;write file and save first cluster
+  mov eax, dword [file_size]
+  mov dword [fat_file_length], eax
+  mov eax, dword [file_memory]
+  mov dword [fat_memory], eax
+  push esi
+  call fat_write_file
+  pop esi
+  cmp dword [msd_status], MSD_ERROR
+  je .error_during_writing_file
+  
+  mov eax, dword [fat_first_file_cluster]
+  shr eax, 16
+  mov word [esi+20], ax
+  mov eax, dword [fat_first_file_cluster]
+  mov word [esi+26], ax
+  
+  ;save folder
+  mov eax, 0
+  call fat_rewrite_folder
+  cmp dword [msd_status], MSD_ERROR
+  je .error_during_rewriting_folder
+  
   ret
   
   ;ERRORS
