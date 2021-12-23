@@ -62,7 +62,7 @@ text_editor:
  .save_file:
   mov eax, dword [text_editor_mem]
   mov dword [file_memory], eax
-  mov dword [file_size], 1000 ;in KB
+  mov dword [file_size], 100 ;in KB
   mov dword [file_type], 'TXT'
   call file_dialog_save
  jmp text_editor
@@ -79,16 +79,28 @@ text_editor:
   
   .bleskos_txt:
   mov eax, dword [file_memory]
+  mov esi, eax
   mov dword [text_editor_mem], eax
   mov dword [text_editor_first_line_mem], eax
   mov dword [te_pointer], eax
   mov dword [te_pointer_end], eax
-  mov dword [te_cursor_offset], 0
   mov dword [te_length_of_text], 0
-  add eax, dword [file_size] ;length of file
-  mov dword [text_editor_end_mem], eax
+  mov dword [te_cursor_offset], 0
   mov dword [te_draw_line], 0
   mov dword [te_draw_column], 0
+  
+  add eax, 0x100000
+  mov dword [text_editor_end_mem], eax
+  
+  mov ecx, 0x100000
+  .find_end_of_file:
+   cmp word [esi], 0
+   je text_editor
+   add esi, 2
+   inc dword [te_length_of_text]
+   add dword [te_pointer_end], 2
+  loop .find_end_of_file
+
  jmp text_editor
   
  .key_backspace:
@@ -513,13 +525,15 @@ text_editor_found_cursor_position:
  ret
 
 text_editor_convert_to_unicode:
+ push dword [allocated_memory_pointer]
+ push dword [allocated_size]
  mov edi, dword [allocated_memory_pointer]
  push edi
 
  mov dword [allocated_size], 1
  call allocate_memory
  cmp dword [allocated_memory_pointer], 0
- je .done
+ je .not_enough_memory
  mov edi, dword [allocated_memory_pointer]
  mov eax, 0
  mov ecx, 0x100000
@@ -533,10 +547,10 @@ text_editor_convert_to_unicode:
  mov dword [te_pointer_end], eax
  mov dword [te_cursor_offset], 0
  mov dword [te_length_of_text], 0
- add eax, 0x100000
- mov dword [text_editor_end_mem], eax
  mov dword [te_draw_line], 0
  mov dword [te_draw_column], 0
+ add eax, 0x100000
+ mov dword [text_editor_end_mem], eax
  
  pop edi
  mov esi, dword [allocated_memory_pointer]
@@ -588,4 +602,14 @@ text_editor_convert_to_unicode:
   jmp .convert_char
  
  .done:
+ ;release memory with uncoded file
+ pop dword [allocated_size]
+ pop dword [allocated_memory_pointer]
+ call release_memory
+ ret
+ 
+ .not_enough_memory:
+ pop eax
+ pop eax
+ pop eax
  ret
