@@ -10,10 +10,10 @@ iso9660_file_memory dd 0
 init_iso9660:
  mov dword [iso9660_present], 0
  
- mov dword [patapi_sector], 0x10
- mov dword [patapi_memory], MEMORY_ISO9660_FOLDER
+ mov dword [atapi_sector], 0x10
+ mov dword [atapi_memory], MEMORY_ISO9660_FOLDER
  call patapi_read
- cmp dword [patapi_status], IDE_ERROR
+ cmp dword [atapi_status], IDE_ERROR
  je .done
  cmp dword [MEMORY_ISO9660_FOLDER+1], 0x30304443
  jne .done
@@ -23,12 +23,12 @@ init_iso9660:
   cmp byte [MEMORY_ISO9660_FOLDER], 1
   je .read_primary_volume_record
 
-  mov dword [patapi_memory], MEMORY_ISO9660_FOLDER
-  inc dword [patapi_sector]
+  mov dword [atapi_memory], MEMORY_ISO9660_FOLDER
+  inc dword [atapi_sector]
   push ecx
   call patapi_read
   pop ecx
- cmp dword [patapi_status], IDE_ERROR
+ cmp dword [atapi_status], IDE_ERROR
  je .done
  loop .find_primary_volume_record
 
@@ -66,17 +66,17 @@ init_iso9660:
 
 iso9660_read_file:
  mov eax, dword [iso9660_file_memory]
- mov dword [patapi_memory], eax
+ mov dword [atapi_memory], eax
  mov eax, dword [iso9660_file_lba]
- mov dword [patapi_sector], eax
+ mov dword [atapi_sector], eax
 
  mov ecx, dword [iso9660_file_length]
  .load_file:
  push ecx
   call patapi_read
-  inc dword [patapi_sector]
+  inc dword [atapi_sector]
  pop ecx
- cmp dword [patapi_status], IDE_ERROR
+ cmp dword [atapi_status], IDE_ERROR
  je .done
  loop .load_file
 
@@ -90,7 +90,7 @@ convert_iso9660_folder_to_jus_folder:
  mov ecx, 10000
  stosd
  
- mov esi, MEMORY_ISO9660_FOLDER
+ mov esi, MEMORY_ISO9660_FOLDER+0x22+0x22 ;skip first two entries
  mov edi, MEMORY_FOLDER
  mov ecx, 2048 ;max 2048 entries
  .convert_entry:
@@ -162,6 +162,8 @@ convert_iso9660_folder_to_jus_folder:
   mov ecx, 50
   .char:
    mov dl, byte [eax]
+   cmp dl, '.'
+   je .extension
    cmp dl, ';'
    je .end_of_string
    cmp dl, 0
@@ -172,8 +174,15 @@ convert_iso9660_folder_to_jus_folder:
   dec ecx
   cmp ecx, 0
   jne .char
+  jmp .end_of_string
+  
+  ;extension
+  .extension:
+  mov ecx, dword [eax+1]
+  and ecx, 0x00FFFFFF
+  mov dword [edi+116], ecx
   .end_of_string:
-
+  
   ;next item
   mov eax, 0
   mov al, byte [esi]
