@@ -189,7 +189,7 @@ file_dialog_draw_devices:
  .if_open:
  cmp dword [fd_type_of_dialog], FD_SAVE
  jne .if_save
-  PRINT 'Save file           [d] Select medium', save_dialog_title_str, LINE(2)+1, COLUMN(2)
+  PRINT 'Save file           [d] Select medium [s] Save file', save_dialog_title_str, LINE(2)+1, COLUMN(2)
  .if_save:
 
  ;draw square of selected medium
@@ -739,7 +739,9 @@ file_dialog_save:
  mov dword [fd_type_of_dialog], FD_SAVE
  CLEAR_SCREEN 0x884E10 ;brown
  call file_dialog_draw_devices
- call redraw_screen
+ mov dword [fd_selected_medium], 0 ;hard disk
+ call file_dialog_change_device.enter ;load folder
+
  .halt:
   call wait_for_keyboard
   
@@ -751,9 +753,23 @@ file_dialog_save:
   
   cmp byte [key_code], KEY_D
   je .key_d
+  
+  ;these keys work only if is folder succesfully loaded
+  cmp dword [fd_folder_state], 0
+  je .halt
+  
+  cmp byte [key_code], KEY_UP
+  je .key_up
+  
+  cmp byte [key_code], KEY_DOWN
+  je .key_down
+  
+  cmp byte [key_code], KEY_S
+  je .key_s
  jmp .halt
  
  .done:
+ mov dword [fd_return], FD_NO_FILE
  ret
  
  .ram_memory:
@@ -766,3 +782,154 @@ file_dialog_save:
  .key_d:
   call file_dialog_change_device
  jmp .halt
+ 
+ .key_up:
+  cmp dword [fd_highlighted_file], 0
+  jne .go_up
+  cmp dword [fd_first_file], 0
+  je .halt
+  
+  dec dword [fd_first_file]
+  jmp .go_up_redraw
+  
+  .go_up:
+  dec dword [fd_highlighted_file]
+  .go_up_redraw:
+  dec dword [fd_selected_file]
+  call file_dialog_draw_items
+  call redraw_screen
+ jmp .halt
+ 
+ .key_down:
+  mov eax, dword [fd_files_on_screen]
+  cmp dword [fd_highlighted_file], eax
+  jne .go_down
+  mov ebx, 1024
+  sub ebx, eax
+  cmp dword [fd_first_file], ebx
+  je .halt
+  
+  inc dword [fd_first_file]
+  jmp .go_down_redraw
+  
+  .go_down:
+  inc dword [fd_highlighted_file]
+  .go_down_redraw:
+  inc dword [fd_selected_file]
+  call file_dialog_draw_items
+  call redraw_screen
+ jmp .halt
+ 
+ .key_s:
+  cmp dword [fd_selected_medium], 0
+  je .save_file_to_hard_disk
+  cmp dword [fd_selected_medium], 1
+  jne .save_file_to_usb_stick
+  jmp .halt
+  
+  ;SAVE FILE TO HARD DISK
+  .save_file_to_hard_disk:
+  mov esi, MEMORY_FOLDER
+  mov ecx, 1024
+  .hdd_find_free_entry:
+   cmp dword [esi], 0
+   je .hdd_free_entry
+   add esi, 128
+  loop .hdd_find_free_entry
+  jmp .no_free_entry
+  
+  .hdd_free_entry:
+  ;name
+  mov eax, esi
+  add eax, 16
+  mov dword [text_input_pointer], eax
+  mov dword [text_input_length], 50
+  mov dword [cursor_line], LINESZ*2
+  SCREEN_X_SUB eax, COLUMNSZ*52
+  mov dword [cursor_column], eax
+  push esi
+  call text_input
+  pop esi
+  
+  ;extension
+  mov eax, dword [file_type]
+  mov dword [esi+116], eax
+  
+  ;time
+  call read_time
+  mov eax, 0
+  mov ax, word [year]
+  mov word [esi+8], ax
+  mov ax, 0
+  mov al, byte [month]
+  mov byte [esi+10], al
+  mov al, byte [day]
+  mov byte [esi+11], al
+  mov al, byte [hour]
+  mov byte [esi+12], al
+  mov al, byte [minute]
+  mov byte [esi+13], al
+  
+  ;type
+  mov word [esi+14], 1
+  
+  ;size
+  mov eax, dword [file_size]
+  mov dword [esi+4], eax
+  
+  ;print message
+  push esi
+  push eax
+  CLEAR_SCREEN 0x884E10 ;brown
+  call file_dialog_draw_devices
+  PRINT 'Saving file...', saving_file_str1, LINESZ*5, COLUMNSZ*22
+  call redraw_screen
+  pop eax
+  pop esi
+  
+  ;write file and save first sector
+  mov dword [jus_file_size], eax
+  mov eax, dword [file_memory]
+  mov dword [jus_memory], eax
+  push esi
+  call jus_write_file
+  pop esi
+  cmp dword [ata_status], IDE_ERROR
+  je .error_during_writing_file
+  
+  mov eax, dword [jus_file_sector]
+  mov dword [esi], eax
+  
+  ;save folder
+  mov eax, 0 ;root folder
+  call jus_rewrite_folder
+  cmp dword [ata_status], IDE_ERROR
+  je .error_during_rewriting_folder
+  
+  ret
+  
+  ;SAVE FILE TO USB STICK
+  .save_file_to_usb_stick:
+  ret
+  
+  ;ERRORS
+  .no_free_entry:
+   CLEAR_SCREEN 0x884E10 ;brown
+   call file_dialog_draw_devices
+   PRINT 'ERROR: not enough free memory for this file in this folder', not_enough_free_memory_in_folder_str, LINESZ*5, COLUMNSZ*22
+   call redraw_screen
+  jmp .halt
+  
+  .error_during_writing_file:
+   CLEAR_SCREEN 0x884E10 ;brown
+   call file_dialog_draw_devices
+   PRINT 'error occured during writing file', error_during_writing_file_str, LINESZ*5, COLUMNSZ*22
+   call redraw_screen
+  jmp .halt
+  
+  .error_during_rewriting_folder:
+   CLEAR_SCREEN 0x884E10 ;brown
+   call file_dialog_draw_devices
+   PRINT 'error occured during rewriting folder', error_during_rewriting_folder_str, LINESZ*5, COLUMNSZ*22
+   call redraw_screen
+  jmp .halt
