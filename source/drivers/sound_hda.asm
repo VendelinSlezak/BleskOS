@@ -141,6 +141,7 @@ hda_nodes_list times 128 dd 0
 hda_line_out_node dd 0
 hda_line_in_node dd 0
 hda_speaker_node dd 0
+hda_headphone_node dd 0
 hda_mic_node dd 0
 
 hda_data_pointer dd 0
@@ -316,12 +317,6 @@ codec_find_widgets:
   mov dword [verb_command], 0x00
   call hda_send_verb
 
-  ;turn on every audio output
-  IF_E byte [esi+1], 0x0, if_audio_output
-   mov dword [hda_data_format], 0x0010 ;16 bit, 48000 sample rate
-   call hda_enable_audio_output
-  ENDIF if_audio_output
-
  .next_cycle:
  inc dword [verb_node]
  add esi, 2
@@ -329,19 +324,143 @@ codec_find_widgets:
  dec ecx
  cmp ecx, 0
  jne .scan_node
-
+ 
+ ;FIND SPEAKER NODE
+ mov esi, hda_nodes_list
+ mov ecx, 128
+ .find_speaker_node:
+  cmp byte [esi+1], 0x11 ;speaker
+  je .speaker
+  cmp byte [esi+1], 0x10 ;line out
+  je .line_out
+  jmp .next_loop
+  
+  .speaker:
+  mov eax, 0
+  mov al, byte [esi]
+  mov dword [verb_node], eax
+  
+  ;get capabilites of pin
+  mov dword [verb_verb], 0xF00
+  mov dword [verb_command], 0x9
+  call hda_send_verb
+  mov eax, dword [hda_response]
+  
+  ;now we can find if is amp present
+  mov eax, dword [hda_response]
+  test eax, 0x4
+  jz .speaker_not_present
+  
+  mov eax, dword [verb_node]
+  mov dword [hda_speaker_node], eax ;save speaker node
+  jmp .speaker_founded 
+  
+  .speaker_not_present:
+  cmp dword [hda_speaker_node], 0
+  jne .next_loop
+  mov eax, dword [verb_node]
+  mov dword [hda_speaker_node], eax 
+  jmp .next_loop
+  
+  .line_out:
+  cmp dword [hda_line_out_node], 0
+  jne .next_loop
+  mov eax, dword [verb_node]
+  mov dword [hda_line_out_node], eax 
+  jmp .next_loop
+ .next_loop:
+ add esi, 2
+ dec ecx
+ cmp ecx, 0
+ jne .find_speaker_node
+ 
  .done:
  ret
 
+ .speaker_founded:
+ mov eax, dword [hda_speaker_node]
+ mov dword [verb_node], eax
+ PSTR 'speaker', speaker_str
+ PVAR eax
+ ;call hda_enable_pin_output
+ 
+ ;found path - NOT COMPLETE!
+ mov dword [verb_verb], 0xF02
+ mov dword [verb_command], 0x00
+ call hda_send_verb
+ mov eax, dword [hda_response]
+ and eax, 0xFF ;get first entry
+ 
+ mov dword [verb_node], eax
+ mov dword [verb_verb], 0xF00
+ mov dword [verb_command], 0x9
+ call hda_send_verb
+ mov eax, dword [hda_response]
+ shr eax, 20
+ and eax, 0xF ;parse type of node
+ PHEX eax
+ cmp eax, 0x0
+ je .enable_output_converter ;speaker is directly connected to output converter
+ cmp eax, 0x2
+ je .path_node_mixer
+ jmp .done ;TODO another types of nodes
+ 
+ .path_node_mixer:
+  mov eax, dword [verb_node]
+  PSTR 'Mixer', mixer_str
+  PHEX eax
+ 
+  mov dword [verb_command], 0
+  mov ecx, 10 ;scan 10 nodes connected to mixer
+  .scan_mixer_node:
+   mov dword [verb_verb], 0xF02
+   call hda_send_verb
+   mov eax, dword [hda_response]
+   and eax, 0xFF
+   cmp eax, 0
+   je .done ;this mixer do not have connection to output converter
+   
+   ;read type of node
+   mov ebx, dword [verb_node]
+   mov edx, dword [verb_command]
+   mov dword [verb_node], eax
+   mov dword [verb_verb], 0xF00
+   mov dword [verb_command], 0x9
+   push ebx
+   push edx
+   call hda_send_verb
+   pop edx
+   pop ebx
+   
+   mov eax, dword [hda_response]
+   shr eax, 20
+   and eax, 0xF
+   cmp eax, 0x0
+   je .enable_output_converter ;we found output converter
+   
+   mov dword [verb_node], ebx
+   inc edx
+   mov dword [verb_command], edx
+  loop .scan_mixer_node
+ 
+ .enable_output_converter:
+ PSTR 'audio output', audio_output_str
+ PHEX eax
+ ;call hda_enable_audio_output
+ jmp .done
+
 hda_send_verb:
+ push ecx
  cmp dword [verb_interface], HDA_PIO_INTERFACE
  je .pio
 
  call hda_send_verb_corb
+ pop ecx
  ret
 
  .pio:
  call hda_send_verb_pio
+ pop ecx
  ret
 
 hda_send_verb_corb:
@@ -455,6 +574,39 @@ hda_set_volume:
 
  .done:
  ret
+ 
+hda_enable_pin_output:
+ ;enable pin
+ mov dword [verb_verb], 0xF07
+ mov dword [verb_command], 0x00
+ call hda_send_verb
+ mov eax, dword [hda_response]
+ and eax, 0x20 ;set enable bit
+ mov dword [verb_verb], 0x707
+ mov dword [verb_command], eax
+ call hda_send_verb
+ 
+ ;enable external speaker
+ mov dword [verb_verb], 0xF0C
+ mov dword [verb_command], 0x00
+ call hda_send_verb
+ mov eax, dword [hda_response]
+ or eax, 0x2
+ mov dword [verb_verb], 0x70C
+ mov dword [verb_command], eax
+ call hda_send_verb
+ 
+ ;set volume
+ mov dword [hda_volume], 100
+ call hda_set_volume
+ 
+ ret
+ 
+hda_enable_mixer:
+ mov dword [hda_volume], 100
+ call hda_set_volume
+ 
+ ret
 
 hda_enable_audio_output:
  ;unmute output
@@ -469,16 +621,6 @@ hda_enable_audio_output:
  ;set data format
  mov dword [verb_verb], 0x200
  mov eax, dword [hda_data_format]
- mov dword [verb_command], eax
- call hda_send_verb
-
- ;turn EAPD on
- mov dword [verb_verb], 0xF0C
- mov dword [verb_command], 0x00
- call hda_send_verb
- mov eax, dword [hda_response]
- or eax, 0x2
- mov dword [verb_verb], 0x70C
  mov dword [verb_command], eax
  call hda_send_verb
 
