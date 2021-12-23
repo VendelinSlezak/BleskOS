@@ -61,46 +61,35 @@ text_editor:
  
  .save_file:
   mov eax, dword [text_editor_mem]
+  mov dword [allocated_memory_pointer], eax
+  call text_editor_convert_to_utf8
+  
+  mov eax, dword [allocated_memory_pointer]
   mov dword [file_memory], eax
-  mov dword [file_size], 100 ;in KB
-  mov dword [file_type], 'TXT'
+  mov ebx, 0
+  mov ecx, 0x100000
+  .count_file_size:
+   cmp byte [eax], 0
+   je .end_of_file
+   inc ebx
+   inc eax
+  loop .count_file_size
+  .end_of_file:
+  mov eax, ebx
+  mov ebx, 1024
+  mov edx, 0
+  div ebx ;convert from bytes to KB
+  inc eax
+  mov dword [file_size], eax ;in KB
+  mov dword [file_type], 'txt'
   call file_dialog_save
  jmp text_editor
  
  .open_file:
   call file_dialog_open
   cmp dword [fd_return], FD_NO_FILE
-  je text_editor
-  cmp dword [file_type], 'BTXT'
-  je .bleskos_txt
-  
+  je text_editor  
   call text_editor_convert_to_unicode
-  jmp text_editor
-  
-  .bleskos_txt:
-  mov eax, dword [file_memory]
-  mov esi, eax
-  mov dword [text_editor_mem], eax
-  mov dword [text_editor_first_line_mem], eax
-  mov dword [te_pointer], eax
-  mov dword [te_pointer_end], eax
-  mov dword [te_length_of_text], 0
-  mov dword [te_cursor_offset], 0
-  mov dword [te_draw_line], 0
-  mov dword [te_draw_column], 0
-  
-  add eax, 0x100000
-  mov dword [text_editor_end_mem], eax
-  
-  mov ecx, 0x100000
-  .find_end_of_file:
-   cmp word [esi], 0
-   je text_editor
-   add esi, 2
-   inc dword [te_length_of_text]
-   add dword [te_pointer_end], 2
-  loop .find_end_of_file
-
  jmp text_editor
   
  .key_backspace:
@@ -611,5 +600,51 @@ text_editor_convert_to_unicode:
  .not_enough_memory:
  pop eax
  pop eax
+ pop eax
+ ret
+
+text_editor_convert_to_utf8:
+ push dword [allocated_memory_pointer]
+
+ mov dword [allocated_size], 1
+ call allocate_memory
+ cmp dword [allocated_memory_pointer], 0
+ je .not_enough_memory
+ mov edi, dword [allocated_memory_pointer]
+ mov eax, 0
+ mov ecx, 0x100000
+ rep stosb ;clear memory
+ pop esi
+ push dword [allocated_memory_pointer]
+ mov edi, dword [allocated_memory_pointer]
+ 
+ mov ecx, 0x100000
+ .convert_char:
+  cmp word [esi], 0
+  je .done
+  
+  mov eax, 0
+  mov ax, word [esi]
+  test ax, 0x80
+  jz .convert_to_ascii
+  jmp .next_char
+  
+  .convert_to_ascii:
+  mov byte [edi], al
+  inc edi
+  jmp .next_char
+  
+  .next_char:
+  add esi, 2
+ loop .convert_char
+ 
+ .done:
+ pop dword [allocated_memory_pointer]
+ mov dword [allocated_size], 1
+ call release_memory
+ 
+ ret
+ 
+ .not_enough_memory:
  pop eax
  ret
