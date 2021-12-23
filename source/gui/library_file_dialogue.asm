@@ -65,6 +65,8 @@ file_dialog_draw_items:
   push dword [cursor_line]
   push esi
   push esi
+  push esi
+  push esi
   
   ;print name
   add esi, 16 ;pointer to name
@@ -78,12 +80,98 @@ file_dialog_draw_items:
   mov dword [cursor_column], eax
   call print_ascii
   
+  ;print size
+  SCREEN_X_SUB ecx, COLUMNSZ*14
+  mov dword [cursor_column], ecx
+  pop esi
+  mov eax, dword [esi+4]
+  cmp eax, 1024
+  jb .size_kb
+  cmp eax, 1024*1024
+  jb .size_mb
+  
+  ;size GB
+  mov ebx, 1024*1024
+  mov edx, 0
+  div ebx
+  mov dword [var_print_value], eax
+  call print_var
+  add dword [cursor_column], COLUMNSZ
+  mov dword [char_for_print], 'G'
+  call print_char
+  add dword [cursor_column], COLUMNSZ
+  mov dword [char_for_print], 'B'
+  call print_char
+  jmp .draw_time
+  
+  ;size KB
+  .size_kb:
+  mov dword [var_print_value], eax
+  call print_var
+  add dword [cursor_column], COLUMNSZ
+  mov dword [char_for_print], 'K'
+  call print_char
+  add dword [cursor_column], COLUMNSZ
+  mov dword [char_for_print], 'B'
+  call print_char
+  jmp .draw_time
+  
+  ;size MB
+  .size_mb:
+  mov ebx, 1024
+  mov edx, 0
+  div ebx
+  mov dword [var_print_value], eax
+  call print_var
+  add dword [cursor_column], COLUMNSZ
+  mov dword [char_for_print], 'M'
+  call print_char
+  add dword [cursor_column], COLUMNSZ
+  mov dword [char_for_print], 'B'
+  call print_char
+  jmp .draw_time
+  
+  ;print time
+  .draw_time:
+  SCREEN_X_SUB ecx, COLUMNSZ*25
+  mov dword [cursor_column], ecx
+  pop esi
+  ;year
+  mov eax, 0
+  mov ax, word [esi+8]
+  mov dword [var_print_value], eax
+  push esi
+  call print_var
+  pop esi
+  ;/
+  mov dword [char_for_print], '/'
+  call print_char
+  add dword [cursor_column], COLUMNSZ
+  ;month
+  mov eax, 0
+  mov al, byte [esi+10]
+  mov dword [var_print_value], eax
+  push esi
+  call print_var
+  pop esi
+  ;/
+  mov dword [char_for_print], '/'
+  call print_char
+  add dword [cursor_column], COLUMNSZ
+  ;day
+  mov eax, 0
+  mov al, byte [esi+11]
+  mov dword [var_print_value], eax
+  call print_var
+  
   pop esi
   add esi, 128
   pop dword [cursor_line]
   add dword [cursor_line], LINESZ
   pop ecx
- loop .draw_item
+ dec ecx
+ cmp ecx, 0
+ jne .draw_item
  
  .done:
  ret
