@@ -137,6 +137,21 @@ delete_hdd:
  call sata_delete
  ret
  
+delete_hdd_sectors:
+ mov ecx, dword [ata_sectors_num]
+ .write_sector:
+  mov dword [ata_number_of_sectors], 1
+  push ecx
+  call delete_hdd
+  pop ecx
+  cmp dword [ata_status], 0
+  je .done
+  inc dword [ata_sector]
+ loop .write_sector
+ 
+ .done:
+ ret
+ 
 select_optical_disk:
  cmp dword [cdrom_mode], IDE_MODE
  je .ide
