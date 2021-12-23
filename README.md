@@ -48,7 +48,7 @@ Ethernet cards:
 ### Programs
 * Text editor (TXT files) (very simple version, but it is working)
 * Graphic editor (in progress, not available on github now)
-* Media viewer (in progress, not available on github now, coming soon!)
+* Media viewer (BMP files)
 * Internet browser (currently only HTML viewer, not available on github now, coming soon!)
 
 ## How to build
