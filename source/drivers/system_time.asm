@@ -60,17 +60,17 @@ read_time:
  mul bl
  add byte [month], al
 
- mov dword [year], 2000
+ mov dword [year], 0
  OUTB 0x70, 0x89 ;years
  INB 0x71
  mov bl, al
  and bl, 0xF
- mov cl, bl
+ add byte [year], bl
  shr al, 4
  mov bl, 10
  mul bl
- add cl, al
- add byte [year], cl
+ add byte [year], al
+ add dword [year], 2000
 
  ret
 
