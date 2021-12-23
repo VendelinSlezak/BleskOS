@@ -48,7 +48,7 @@ jus_save_bn_part:
  mov dword [ata_memory], eax
  mov dword [ata_sectors_num], 200
  mov dword [ata_sector], JUS_BN_PART
- call read_hdd_sectors
+ call write_hdd_sectors
  
  ret
  
@@ -69,33 +69,77 @@ jus_read_file:
  
  .error:
  mov dword [jus_status], JUS_ERROR
- PSTR 'error', errors_stresterter
+ PSTR 'error with reading file', error_str
  ret
  
 jus_write_file:
+ ;calculate how many blocks we need
+ mov eax, dword [jus_file_size]
+ mov ebx, 128
+ mov edx, 0
+ div ebx
+ inc eax
+ mov edx, eax
+ mov ebx, 0
+ 
  ;find enough free space for file
  mov eax, dword [jus_bn_mem]
  mov esi, eax
- mov eax, JUS_DATA ;sector of block
+ mov eax, JUS_DATA+256 ;sector of block
  mov ecx, 200*512
  .find_free_block:
-  cmp byte [esi], 0
-  je .free_block
+  cmp byte [esi], 1
+  je .full_block
+  
+  cmp ebx, 0
+  jne .if_first_zero_block
+   mov edi, eax
+  .if_first_zero_block:
+  inc ebx
+  cmp ebx, edx
+  je .write_file ;we found enough free memory
+  jmp .next_item
+  
+  .full_block:
+  mov ebx, 0
+  
+  .next_item:
   inc esi
   add eax, 256
  loop .find_free_block
  ret ;no free block founded
  
- .free_block:
- mov ebx, dword [jus_memory]
- mov dword [ata_memory], ebx
- mov byte [esi], 1 ;now is this block full
- mov dword [ata_sector], eax
- mov dword [jus_file_sector], eax
- mov dword [ata_sectors_num], 256
+ .write_file:
+ sub esi, edx ;pointer to first block
+ inc esi
+ mov eax, dword [jus_memory]
+ mov dword [ata_memory], eax
+ mov dword [ata_sector], edi
+ mov dword [jus_file_sector], edi
+ mov eax, dword [jus_file_size]
+ mov ebx, 128
+ mov edx, 0
+ div ebx
+ inc eax
+ mov ebx, 256
+ mul ebx
+ mov dword [ata_sectors_num], eax
+ push esi
  call write_hdd_sectors ;save file
+ pop esi
  cmp dword [ata_status], IDE_ERROR
  je .error
+ 
+ ;fill block numbers
+ mov edi, esi
+ mov eax, dword [jus_file_size]
+ mov ebx, 128
+ mov edx, 0
+ div ebx
+ inc eax
+ mov ecx, eax
+ mov eax, 1
+ rep stosb ;fill blocks
  
  ;save block numbers
  call jus_save_bn_part
@@ -105,7 +149,7 @@ jus_write_file:
  .error:
  mov dword [jus_status], JUS_ERROR
  mov byte [esi], 0
- PSTR 'error', errors_stresterter
+ PSTR 'error with writing file', error_str
  ret
 
 jus_read_folder:
