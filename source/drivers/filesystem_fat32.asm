@@ -235,7 +235,6 @@ fat_rewrite_folder:
  jne .rewrite_folder
  mov eax, dword [fat_root_dir_cluster]
  .rewrite_folder:
- call convert_jus_folder_to_fat_folder
  mov dword [fat_cluster], eax
  mov dword [fat_memory], MEMORY_FAT32_FOLDER
  call fat_write_cluster
@@ -244,7 +243,7 @@ fat_rewrite_folder:
  
 ;TODO write folder
 
-fat_read_file:
+fat_read_file: 
  mov esi, MEMORY_FILE_DESCRIPTOR
  mov ecx, 10000
  .clear:
@@ -266,9 +265,9 @@ fat_read_file:
  push ecx
   cmp dword [fat_entry_value], 0x0FFFFFF7
   ja .read_file ;we found last entry
-  je .error ;bad cluster
+  je .error1 ;bad cluster
   cmp dword [fat_entry_value], 0x00000000
-  je .error ;free cluster
+  je .error2 ;free cluster
 
   mov eax, dword [fat_entry_value]
   mov dword [fat_entry], eax ;point to next cluster
@@ -281,8 +280,14 @@ fat_read_file:
  loop .load_cluster_values
  ret
 
- .error:
- PSTR 'error', errorstre
+ .error1:
+ PSTR 'error bad cluster', errorstre1
+ WAIT 3000
+ pop ecx
+ ret
+ 
+ .error2:
+ PSTR 'error free entry', errorstre2
  WAIT 3000
  pop ecx
  ret
@@ -335,14 +340,12 @@ fat_delete_file:
  ret
 
 fat_write_file:
- mov esi, MEMORY_FILE_DESCRIPTOR
+ mov edi, MEMORY_FILE_DESCRIPTOR
+ mov eax, 0
  mov ecx, 10000
- .clear:
-  mov dword [esi], 0
-  add esi, 4
- loop .clear
+ rep stosd
 
- ;calculate length of FAT table
+ ;calculate number of entries of FAT table
  mov eax, dword [fat_sectors_per_table]
  mov ebx, 128
  mul ebx
@@ -359,32 +362,11 @@ fat_write_file:
  inc eax ;number of clusters
  mov dword [fat_file_clusters], eax
 
- ;save first file cluster
- mov esi, MEMORY_FILE_DESCRIPTOR
- cmp dword [fat_first_file_cluster], 0
- je .skip_first_cluster
-  mov eax, dword [fat_first_file_cluster]
-  mov dword [esi], eax
-  add esi, 4
-
-  mov dword [fat_entry], eax
-  mov dword [fat_entry_value], 0x0FFFFFFF
-  push esi
-  push ecx
-  call fat_set_entry
-  pop ecx
-  pop esi
-  cmp dword [msd_status], MSD_ERROR
-  je .done
-
-  dec dword [fat_file_clusters]
-  cmp dword [fat_file_clusters], 0
-  je .write_clusters
- .skip_first_cluster:
-
+ ;find free clusters
  mov dword [fat_entry], 2
+ mov esi, MEMORY_FILE_DESCRIPTOR
  mov eax, dword [fat_file_clusters]
- ;ecx was calculated above
+ ;ecx was calculated above - number of all fat entries
  .find_free_clusters:
   push eax
   push ecx
@@ -407,6 +389,7 @@ fat_write_file:
  .next_entry:
  inc dword [fat_entry]
  loop .find_free_clusters
+ jmp .done ;not enough clusters
 
  .write_clusters:
  mov dword [esi], 0x0FFFFFFF ;last pointer
@@ -633,128 +616,4 @@ convert_fat_folder_to_jus_folder:
  jne .convert_item
  
  .done:
- ret
-
-convert_jus_folder_to_fat_folder:
- mov edi, MEMORY_FOLDER
- mov ecx, 2048 ;convert max 2048 items
- .convert_item:
-  cmp dword [edi], 0
-  je .done
-
-  mov eax, dword [edi+116]
-  mov ebx, 32
-  mul ebx
-  add eax, MEMORY_FAT32_FOLDER ;pointer to right item
-  mov esi, eax
-
-  ;name
-  mov al, byte [edi+16]
-  mov byte [esi], al
-  mov al, byte [edi+18]
-  mov byte [esi+1], al
-  mov al, byte [edi+20]
-  mov byte [esi+2], al
-  mov al, byte [edi+22]
-  mov byte [esi+3], al
-  mov al, byte [edi+24]
-  mov byte [esi+4], al
-  mov al, byte [edi+26]
-  mov byte [esi+5], al
-  mov al, byte [edi+28]
-  mov byte [esi+6], al
-  mov al, byte [edi+30]
-  mov byte [esi+7], al
-
-  ;type
-  mov al, byte [edi+120]
-  mov byte [esi+8], al
-  mov al, byte [edi+121]
-  mov byte [esi+9], al
-  mov al, byte [edi+122]
-  mov byte [esi+10], al
-
-  ;size
-  mov eax, dword [edi+4]
-  mov ebx, 1024
-  mul ebx
-  mov dword [esi+28], eax
-
-  add edi, 128
- .next_item:
- dec ecx
- cmp ecx, 0
- jne .convert_item
-
- .done:
- ret
-
-create_new_fat_entry:
- mov esi, MEMORY_FAT32_FOLDER
- mov ecx, 2048
- .find_free_entry:
-  cmp byte [esi], 0
-  je .create_entry
-  add esi, 32
- loop .find_free_entry
- ret
-
- .create_entry:
- ;name
- mov al, byte [edi+16]
- mov byte [esi], al
- mov al, byte [edi+18]
- mov byte [esi+1], al
- mov al, byte [edi+20]
- mov byte [esi+2], al
- mov al, byte [edi+22]
- mov byte [esi+3], al
- mov al, byte [edi+24]
- mov byte [esi+4], al
- mov al, byte [edi+26]
- mov byte [esi+5], al
- mov al, byte [edi+28]
- mov byte [esi+6], al
- mov al, byte [edi+30]
- mov byte [esi+7], al
-
- ;type
- mov al, byte [edi+120]
- mov byte [esi+8], al
- mov al, byte [edi+121]
- mov byte [esi+9], al
- mov al, byte [edi+122]
- mov byte [esi+10], al
-
- ;attribute
- mov al, 0x10
- cmp word [edi+14], 1
- je .write_attribute
- mov al, 0x01
- .write_attribute:
- mov byte [esi+11], al
-
- ;time
- mov byte [esi+12], 0
- mov byte [esi+13], 0
- mov word [esi+14], 0x0821
- mov word [esi+16], 0x0F01
- mov word [esi+18], 0x0821
- mov word [esi+22], 0x0821
- mov word [esi+24], 0x0821
-
- ;cluster
- mov eax, dword [edi]
- shr eax, 16
- mov word [esi+20], ax
- mov eax, dword [esi]
- mov word [esi+26], ax
-
- ;size
- mov eax, dword [edi+4]
- mov ebx, 1024
- mul ebx
- mov dword [esi+28], eax
-
- call convert_fat_folder_to_jus_folder
  ret
