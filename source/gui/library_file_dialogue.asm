@@ -868,7 +868,7 @@ file_dialog_save:
   mov byte [esi+13], al
   
   ;type
-  mov word [esi+14], 1
+  mov word [esi+14], 2
   
   ;size
   mov eax, dword [file_size]
@@ -891,7 +891,7 @@ file_dialog_save:
   push esi
   call jus_write_file
   pop esi
-  cmp dword [msd_status], MSD_ERROR
+  cmp dword [ata_status], IDE_ERROR
   je .error_during_writing_file
   
   mov eax, dword [jus_file_sector]
@@ -900,7 +900,7 @@ file_dialog_save:
   ;save folder
   mov eax, 0 ;root folder
   call jus_rewrite_folder
-  cmp dword [msd_status], MSD_ERROR
+  cmp dword [ata_status], IDE_ERROR
   je .error_during_rewriting_folder
   
   ret
