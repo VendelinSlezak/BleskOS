@@ -3,9 +3,11 @@
 ac97_nam_base dw 0
 ac97_nabm_base dw 0
 ac97_sound_data dd 0
+ac97_sound_length dw 0
 ac97_sample_rate dd 0
 ac97_volume dd 0
 ac97_last_entry dd 0
+ac97_last_entry_length dw 0xFFFF
 
 init_ac97:
  cmp word [ac97_nam_base], 0
@@ -22,6 +24,7 @@ init_ac97:
  BASE_OUTB ac97_nabm_base, 0x1B, 0x2
  BASE_OUTB ac97_nabm_base, 0x2B, 0x2
  WAIT 20
+ BASE_OUTB ac97_nabm_base, 0x15, 0
 
  ;register reset
  BASE_OUTW ac97_nam_base, 0x0, 0xFF
@@ -79,27 +82,34 @@ ac97_set_volume:
  .no_volume:
  BASE_OUTW ac97_nam_base, 0x18, 0x8000
  ret
+ 
+ac97_sound_position:
+ BASE_INB ac97_nabm_base, 0x14
+ 
+ ret
 
-ac97_play_sound:
+ac97_fill_buffer:
  mov eax, dword [ac97_last_entry]
- mov ebx, 8
- mul ebx
+ shl eax, 3 ;mul 8
  add eax, MEMORY_AC97_BUFFER
  mov ebx, dword [ac97_sound_data]
  mov dword [eax+0], ebx
- mov dword [eax+4], 0x4000FFFE ;lenght 64 KB
+ mov ebx, 0
+ mov bx, word [ac97_sound_length]
+ dec bx
+ mov dword [eax+4], ebx
  
- ;start transfer
+ ;update pointer in LVI register
  mov eax, dword [ac97_last_entry]
  BASE_OUTB ac97_nabm_base, 0x15, al
- BASE_OUTB ac97_nabm_base, 0x1B, 0x1
  inc dword [ac97_last_entry]
  and dword [ac97_last_entry], 0x1F
 
  ret
  
-ac97_sound_position:
- BASE_INB ac97_nabm_base, 0x14
+ac97_play_sound:
+ BASE_OUTB ac97_nabm_base, 0x1B, 0x1
+ BASE_OUTW ac97_nabm_base, 0x16, 0x1C
  
  ret
 
@@ -108,9 +118,14 @@ ac97_stop_sound:
  BASE_OUTW ac97_nabm_base, 0x16, 0x1C
 
  ret
- 
-ac97_resume_sound:
- BASE_OUTB ac97_nabm_base, 0x1B, 0x1
- BASE_OUTW ac97_nabm_base, 0x16, 0x1C
 
- ret
+ac97_clear_buffer:
+ mov edi, MEMORY_AC97_BUFFER
+ mov eax, 0
+ mov ecx, 32*2
+ rep stosd
+
+ BASE_INB ac97_nabm_base, 0x14
+ mov byte [ac97_last_entry], al
+ 
+ jmp ac97_stop_sound
