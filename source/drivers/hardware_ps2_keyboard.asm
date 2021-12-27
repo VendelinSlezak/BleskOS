@@ -41,10 +41,14 @@ keyboard_irq:
 
 wait_for_keyboard:
  mov dword [keyboard_wait], 1
+ mov dword [ticks2], 0
 
  .wait:
   cmp dword [keyboard_wait], 0
   je .done
+  
+  cmp dword [ticks2], 100
+  ja .done
   hlt
  jmp .wait
 
