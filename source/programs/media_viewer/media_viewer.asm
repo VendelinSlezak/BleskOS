@@ -329,7 +329,7 @@ media_viewer_play_file:
    DRAW_SQUARE ebx, COLUMNSZ*1+1, eax, LINESZ-1, 0x0900FF ;deep blue
    SCREEN_Y_SUB ebx, 20+LINESZ*4
    REDRAW_LINES_SCREEN ebx, LINESZ
-   .skip_drawing_square
+   .skip_drawing_square:
    
    ;draw seconds
    SCREEN_Y_SUB eax, 20+LINESZ*2
@@ -444,7 +444,7 @@ media_viewer_play_file:
    call ac97_fill_buffer
    sub dword [media_viewer_sound_samples], 0xFFFF*2
    add dword [ac97_sound_data], 0xFFFF*2
-  .if_fill_next_buffer
+  .if_fill_next_buffer:
   .if_all_is_played:
  jmp .halt
  
