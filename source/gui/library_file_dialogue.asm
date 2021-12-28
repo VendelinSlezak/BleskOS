@@ -382,7 +382,7 @@ file_dialog_load_folder:
   cmp eax, 0
   jne .if_cdrom_root_folder
    mov eax, dword [iso9660_root_dir_lba]
-  .if_cdrom_root_folder
+  .if_cdrom_root_folder:
   mov dword [iso9660_file_lba], eax
   mov dword [iso9660_file_length], 1 ;only one sector
   mov dword [iso9660_file_memory], MEMORY_ISO9660_FOLDER
