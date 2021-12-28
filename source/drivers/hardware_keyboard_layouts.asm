@@ -94,7 +94,7 @@ english_shift_keyboard_layout:
  dw 0, 0 ;zero, escape
  dw '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', 0, 0 ;first line, backspace, tab
  dw 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', 0xA, 0 ;second line, enter, left ctrl
- dw 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', '¨', '~', 0, '|' ;third line, left shift
+ dw 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', '"', '~', 0, '|' ;third line, left shift
  dw 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '<', '>', '?', 0, '*', 0, ' ' ;fourth line, right shift
  times 10 dw 0 ;other control keys
  dw '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3', '0', '.' ;numpad
