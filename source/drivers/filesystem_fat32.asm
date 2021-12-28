@@ -244,12 +244,10 @@ fat_rewrite_folder:
 ;TODO write folder
 
 fat_read_file: 
- mov esi, MEMORY_FILE_DESCRIPTOR
- mov ecx, 10000
- .clear:
-  mov dword [esi], 0
-  add esi, 4
- loop .clear
+ mov edi, MEMORY_FILE_DESCRIPTOR
+ mov eax, 0
+ mov ecx, 100000
+ rep stosd
 
  mov esi, MEMORY_FILE_DESCRIPTOR
  mov eax, dword [fat_entry]
@@ -260,7 +258,7 @@ fat_read_file:
  call fat_get_entry ;get value of first cluster
  pop esi
 
- mov ecx, 10000 ;max 10000 clusters
+ mov ecx, 100000 ;max 100000 clusters
  .load_cluster_values:
  push ecx
   cmp dword [fat_entry_value], 0x0FFFFFF7
@@ -311,7 +309,7 @@ fat_read_file:
  ret
 
 fat_delete_file:
- mov ecx, 10000 ;max 10000 clusters
+ mov ecx, 100000 ;max 100000 clusters
  .load_cluster_values:
   mov eax, dword [fat_entry]
   push ecx
@@ -324,7 +322,7 @@ fat_delete_file:
   call fat_set_entry ;delete cluster
   pop ecx
   cmp dword [msd_status], MSD_ERROR
-  je .done
+  je .error
 
   pop dword [fat_entry_value]
   cmp dword [fat_entry_value], 0x0FFFFFF6
@@ -338,11 +336,15 @@ fat_delete_file:
 
  .done:
  ret
+ 
+ .error:
+ pop eax
+ ret
 
 fat_write_file:
  mov edi, MEMORY_FILE_DESCRIPTOR
  mov eax, 0
- mov ecx, 10000
+ mov ecx, 100000
  rep stosd
 
  ;calculate number of entries of FAT table
