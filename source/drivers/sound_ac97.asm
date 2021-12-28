@@ -126,6 +126,8 @@ ac97_clear_buffer:
  rep stosd
 
  BASE_INB ac97_nabm_base, 0x14
+ inc al
+ and al, 0x1F
  mov byte [ac97_last_entry], al
  
  jmp ac97_stop_sound
