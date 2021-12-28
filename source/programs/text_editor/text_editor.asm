@@ -1,8 +1,10 @@
 ;BleskOS
 
 text_editor_up_str db 'Text editor', 0
-text_editor_down_str db '[F1] Save file [F2] Open file', 0
+text_editor_down_str db '[F1] Save file [F2] Open file [F3] New file', 0
 te_line_str db 'Line:', 0
+te_message_new_file_up db 'Are you sure you want to erase actual text?', 0
+te_message_new_file_down db '[enter] Yes [esc] Cancel', 0
 
 te_max_column dd 0
 te_max_line dd 0
@@ -19,7 +21,7 @@ te_pointer_end dd 0
 te_cursor_offset dd 0
 te_length_of_text dd 0
 
-text_editor_files_mem times 4*10 dd 0
+text_editor_file_pointer dd 0
  
 text_editor: 
  call te_draw_text
@@ -36,6 +38,9 @@ text_editor:
   
   cmp byte [key_code], KEY_F2
   je .open_file
+  
+  cmp byte [key_code], KEY_F3
+  je .new_file
   
   cmp byte [key_code], KEY_BACKSPACE
   je .key_backspace
@@ -88,9 +93,60 @@ text_editor:
  .open_file:
   call file_dialog_open
   cmp dword [fd_return], FD_NO_FILE
-  je text_editor  
+  je text_editor
+  
+  ;release memory of previous file
+  cmp dword [text_editor_file_pointer], 0
+  je .if_loaded_file
+   push dword [allocated_memory_pointer]
+   push dword [allocated_size]
+   mov eax, dword [text_editor_file_pointer]
+   mov dword [allocated_memory_pointer], eax
+   mov dword [allocated_size], 1
+   call release_memory
+   pop dword [allocated_size]
+   pop dword [allocated_memory_pointer]
+  .if_loaded_file
+  
   call text_editor_convert_to_unicode
  jmp text_editor
+ 
+ .new_file:
+  mov esi, te_message_new_file_up
+  mov edi, te_message_new_file_down
+  call show_message_window
+  cmp byte [key_code], KEY_ESC
+  je .cancel
+  
+  ;release actual memory
+  mov eax, dword [text_editor_file_pointer]
+  mov dword [allocated_memory_pointer], eax
+  mov dword [allocated_size], 1
+  call release_memory
+
+  ;create new file
+  mov dword [allocated_size], 1
+  call allocate_memory
+  mov edi, dword [allocated_memory_pointer]
+  mov ecx, 0x100000
+  mov eax, 0
+  rep stosb ;clean memory
+
+  mov eax, dword [allocated_memory_pointer]
+  mov dword [text_editor_mem], eax
+  mov dword [text_editor_first_line_mem], eax
+  mov dword [te_pointer], eax
+  mov dword [te_pointer_end], eax
+  mov dword [te_cursor_offset], 0
+  mov dword [te_length_of_text], 0
+  mov dword [te_draw_line], 0
+  mov dword [te_draw_column], 0
+  add eax, 0x100000
+  mov dword [text_editor_end_mem], eax
+  
+  .cancel:
+  mov byte [key_code], 0
+ jmp .te_redraw_screen
   
  .key_backspace:
   cmp dword [te_cursor_offset], 0
@@ -307,7 +363,15 @@ text_editor:
   .if_enter:
   
   inc dword [te_column]
- jmp .te_redraw_screen
+  
+  ;redraw line where was char inserted
+  call te_draw_text
+  call text_editor_found_cursor_position
+  mov eax, dword [te_draw_line]
+  mov ebx, LINESZ
+  mul ebx
+  REDRAW_LINES_SCREEN eax, LINESZ
+ jmp .te_halt
  
  .te_redraw_screen:
   call te_draw_text
@@ -530,6 +594,7 @@ text_editor_convert_to_unicode:
  
  ;set variabiles
  mov eax, dword [allocated_memory_pointer]
+ mov dword [text_editor_file_pointer], eax
  mov dword [text_editor_mem], eax
  mov dword [text_editor_first_line_mem], eax
  mov dword [te_pointer], eax
@@ -627,11 +692,27 @@ text_editor_convert_to_utf8:
   mov ax, word [esi]
   test ax, 0x80
   jz .convert_to_ascii
+  
+  mov ax, word [esi]
+  cmp ax, 0x7FF
+  jb .convert_to_2_bytes
   jmp .next_char
   
   .convert_to_ascii:
   mov byte [edi], al
   inc edi
+  jmp .next_char
+  
+  .convert_to_2_bytes:
+  shr ax, 6
+  and al, 0x1F
+  or al, 0xC0
+  mov byte [edi], al
+  
+  mov ax, word [esi]
+  and al, 0x3F
+  or al, 0x80
+  mov byte [edi+1], al
   jmp .next_char
   
   .next_char:
