@@ -43,6 +43,87 @@ draw_window:
  call print
 
  ret
+ 
+;;;;; Message window ;;;;;
+
+show_message_window:
+ push edi
+ push esi
+ 
+ mov eax, 0
+ .length_of_string:
+  cmp byte [esi], 0
+  je .draw_window
+  inc eax
+  inc esi
+ jmp .length_of_string
+ 
+ .draw_window:
+ add eax, 2
+ push eax ;number of columns of message
+ mov ebx, COLUMNSZ
+ mul ebx
+ shr eax, 1 ;div 2
+ mov ebx, dword [screen_x_center]
+ sub ebx, eax
+ mov dword [cursor_column], ebx
+ 
+ mov eax, dword [screen_y_center]
+ sub eax, LINESZ*5/2
+ mov dword [cursor_line], eax
+ 
+ mov dword [square_heigth], LINESZ*5
+ 
+ pop eax
+ mov ebx, COLUMNSZ
+ mul ebx
+ mov dword [square_length], eax
+ 
+ ;draw background
+ mov dword [color], 0xDD8000 ;orange
+ call draw_square
+ mov dword [color], BLACK
+ call draw_empty_square
+ 
+ ;print messages
+ add dword [cursor_column], COLUMNSZ
+ add dword [cursor_line], LINESZ
+ pop esi
+ call print
+ add dword [cursor_line], LINESZ*2
+ pop eax
+ mov esi, eax
+ mov ebx, 0
+ .length_of_second_string:
+  cmp byte [eax], 0
+  je .print_second_string
+  inc ebx ;length of string
+  inc eax
+ jmp .length_of_second_string
+ .print_second_string:
+ mov eax, ebx
+ mov ebx, COLUMNSZ
+ mul ebx
+ shr eax, 1 ;div 2
+ mov ebx, dword [screen_x_center]
+ sub ebx, eax
+ mov dword [cursor_column], ebx
+ call print
+ 
+ call redraw_screen
+ 
+ .halt:
+  call wait_for_keyboard
+  
+  cmp byte [key_code], KEY_ESC
+  je .return
+  
+  cmp byte [key_code], KEY_ENTER
+  je .return
+ jmp .halt
+ 
+ .return:
+ ret
 
 ;;;;; Text input ;;;;;
 
@@ -200,6 +281,19 @@ text_input:
  mov eax, dword [text_input_length]
  cmp dword [text_input_cursor], eax
  je .text_input_halt
+ 
+ ;move other chars
+ mov edi, dword [text_input_pointer]
+ add edi, dword [text_input_length]
+ add edi, dword [text_input_length]
+ mov esi, edi
+ sub esi, 2
+ mov ecx, dword [text_input_length]
+ sub ecx, dword [text_input_cursor]
+ std
+ rep movsw
+ cld
+ 
  mov eax, dword [text_input_pointer]
  mov ebx, dword [text_input_cursor]
  mov cx, word [key_unicode]
