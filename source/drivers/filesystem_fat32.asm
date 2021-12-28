@@ -223,9 +223,9 @@ fat_read_folder:
  jne .read_folder
  mov eax, dword [fat_root_dir_cluster]
  .read_folder:
- mov dword [fat_cluster], eax
+ mov dword [fat_entry], eax
  mov dword [fat_memory], MEMORY_FAT32_FOLDER
- call fat_read_cluster
+ call fat_read_file
  call convert_fat_folder_to_jus_folder
  
  ret
@@ -441,7 +441,7 @@ convert_fat_folder_to_jus_folder:
  mov ecx, 0x10000
  rep stosb
  
- mov esi, MEMORY_FAT32_FOLDER
+ mov esi, MEMORY_FAT32_FOLDER+64 ;skip first two entries - they are never files
  mov edi, MEMORY_FOLDER
  mov eax, fat_lfn_file_name 
  mov ecx, 2048 ;convert max 2048 items
