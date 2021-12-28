@@ -30,6 +30,9 @@ fd_highlighted_file dd 0
 
 fd_loaded_folder dd 0
 fd_folder_state dd 0
+fd_path times 50 dd 0
+fd_path_pointer dd fd_path
+fd_path_entry dd 0
 
 ;STRINGS
 fd_no_usb db 'No USB device', 0
@@ -75,10 +78,13 @@ file_dialog_draw_items:
   
   ;print type
   pop esi
+  cmp word [esi+14], 1
+  je .skip_printing_type ;this entry is folder
   add esi, 116 ;pointer to type
   SCREEN_X_SUB eax, COLUMNSZ*4
   mov dword [cursor_column], eax
   call print_ascii
+  .skip_printing_type:
   
   ;print size
   SCREEN_X_SUB ecx, COLUMNSZ*14
@@ -185,11 +191,11 @@ file_dialog_draw_devices:
  DRAW_SQUARE LINE(1), COLUMN(1), eax, LINESZ*3, 0x60BD00 ;green
  cmp dword [fd_type_of_dialog], FD_OPEN
  jne .if_open
-  PRINT 'Open file           [d] Select medium [enter] Open file', open_dialog_title_str, LINE(2)+1, COLUMN(2)
+  PRINT 'Open file           [d] Select medium [b] Previous folder [enter] Open file', open_dialog_title_str, LINE(2)+1, COLUMN(2)
  .if_open:
  cmp dword [fd_type_of_dialog], FD_SAVE
  jne .if_save
-  PRINT 'Save file           [d] Select medium [s] Save file', save_dialog_title_str, LINE(2)+1, COLUMN(2)
+  PRINT 'Save file           [d] Select medium [b] Previous folder [s] Save file [enter] Rewrite file', save_dialog_title_str, LINE(2)+1, COLUMN(2)
  .if_save:
 
  ;draw square of selected medium
@@ -333,6 +339,13 @@ file_dialog_change_device:
    je file_dialog_load_folder.reading_folder_error
   .if_usb:
   
+  mov dword [fd_path_entry], 0
+  mov dword [fd_path_pointer], fd_path
+  mov edi, fd_path
+  mov eax, 0
+  mov ecx, 50
+  rep stosd
+  
   call file_dialog_load_folder
  ret
  
@@ -345,7 +358,8 @@ file_dialog_load_folder:
  ret
  
  .hard_disk:
-  mov eax, 0 ;root folder
+  mov ebx, dword [fd_path_pointer]
+  mov eax, dword [ebx]
   call jus_read_folder
   
   cmp dword [ata_status], IDE_ERROR
@@ -363,11 +377,14 @@ file_dialog_load_folder:
   cmp dword [disk_state], UNKNOWN_DISK_FORMAT
   je .unknown_disk_format
   
-  mov eax, dword [iso9660_root_dir_lba]
+  mov ebx, dword [fd_path_pointer]
+  mov eax, dword [ebx]
+  cmp eax, 0
+  jne .if_cdrom_root_folder
+   mov eax, dword [iso9660_root_dir_lba]
+  .if_cdrom_root_folder
   mov dword [iso9660_file_lba], eax
-  mov eax, dword [iso9660_root_dir_length]
-  and eax, 0xFFF
-  mov dword [iso9660_file_length], eax
+  mov dword [iso9660_file_length], 1 ;only one sector
   mov dword [iso9660_file_memory], MEMORY_ISO9660_FOLDER
   call iso9660_read_file
   
@@ -408,7 +425,8 @@ file_dialog_load_folder:
   jne .usb_stick_not_fat32
   
   ;this is usb stick formatted as FAT32
-  mov eax, 0 ;root folder
+  mov ebx, dword [fd_path_pointer]
+  mov eax, dword [ebx]
   call fat_read_folder
   cmp dword [msd_status], MSD_ERROR
   je .reading_folder_error
@@ -461,6 +479,9 @@ file_dialog_open:
   cmp byte [key_code], KEY_D
   je .key_d
   
+  cmp byte [key_code], KEY_B
+  je .key_b
+  
   ;these keys work only if is folder succesfully loaded
   cmp dword [fd_folder_state], 0
   je .halt
@@ -491,6 +512,17 @@ file_dialog_open:
  
  .key_d:
   call file_dialog_change_device
+ jmp .halt
+ 
+ .key_b:
+  cmp dword [fd_path_entry], 0
+  je .halt
+  dec dword [fd_path_entry]
+  sub dword [fd_path_pointer], 4
+  mov dword [fd_first_file], 0
+  mov dword [fd_highlighted_file], 0
+  mov dword [fd_selected_file], 0
+  call file_dialog_load_folder
  jmp .halt
  
  .key_up:
@@ -546,6 +578,10 @@ file_dialog_open:
   mov esi, eax
   cmp dword [esi], 0
   je .halt
+  
+  ;folder
+  cmp word [esi+14], 1
+  je .open_folder
   
   mov eax, dword [esi+4] ;here is length of file in KB
   mov ebx, 1000
@@ -605,6 +641,10 @@ file_dialog_open:
   mov esi, eax
   cmp dword [esi], 0
   je .halt
+  
+  ;folder
+  cmp word [esi+14], 1
+  je .open_folder
   
   mov eax, dword [esi+4] ;here is length of file in KB
   mov ebx, 1000
@@ -667,6 +707,10 @@ file_dialog_open:
   cmp dword [esi], 0
   je .halt
   
+  ;folder
+  cmp word [esi+14], 1
+  je .open_folder
+  
   mov eax, dword [esi+4] ;here is length of file in KB
   mov ebx, 1000
   mov edx, 0
@@ -716,6 +760,21 @@ file_dialog_open:
   
   ret
   
+  ;OPEN FOLDER
+  .open_folder:
+   cmp dword [fd_path_entry], 50
+   je .error_too_many_folders
+   inc dword [fd_path_entry]
+   add dword [fd_path_pointer], 4
+   mov ebx, dword [fd_path_pointer]
+   mov eax, dword [esi]
+   mov dword [ebx], eax
+   mov dword [fd_first_file], 0
+   mov dword [fd_highlighted_file], 0
+   mov dword [fd_selected_file], 0
+   call file_dialog_load_folder
+  jmp .halt
+  
   ;ERRORS
   .not_enough_memory_for_file:
    CLEAR_SCREEN 0x884E10 ;brown
@@ -728,6 +787,13 @@ file_dialog_open:
    CLEAR_SCREEN 0x884E10 ;brown
    call file_dialog_draw_devices
    PRINT 'Error occured during reading this file', reading_error_str, LINESZ*5, COLUMNSZ*22
+   call redraw_screen
+  jmp .halt
+  
+  .error_too_many_folders:
+   CLEAR_SCREEN 0x884E10 ;brown
+   call file_dialog_draw_devices
+   PRINT 'You can not open deeper that 50 folders', too_many_folders_str, LINESZ*5, COLUMNSZ*22
    call redraw_screen
   jmp .halt
  
@@ -750,6 +816,9 @@ file_dialog_save:
   cmp byte [key_code], KEY_D
   je .key_d
   
+  cmp byte [key_code], KEY_B
+  je .key_b
+  
   ;these keys work only if is folder succesfully loaded
   cmp dword [fd_folder_state], 0
   je .halt
@@ -762,6 +831,9 @@ file_dialog_save:
   
   cmp byte [key_code], KEY_S
   je .key_s
+  
+  cmp byte [key_code], KEY_ENTER
+  je .key_enter
  jmp .halt
  
  .done:
@@ -777,6 +849,17 @@ file_dialog_save:
  
  .key_d:
   call file_dialog_change_device
+ jmp .halt
+ 
+ .key_b:
+  cmp dword [fd_path_entry], 0
+  je .halt
+  dec dword [fd_path_entry]
+  sub dword [fd_path_pointer], 4
+  mov dword [fd_first_file], 0
+  mov dword [fd_highlighted_file], 0
+  mov dword [fd_selected_file], 0
+  call file_dialog_load_folder
  jmp .halt
  
  .key_up:
@@ -816,6 +899,150 @@ file_dialog_save:
   call redraw_screen
  jmp .halt
  
+ .key_enter:
+  mov eax, dword [fd_selected_file]
+  mov ebx, 128
+  mul ebx
+  add eax, MEMORY_FOLDER
+  mov esi, eax
+  cmp dword [esi], 0
+  je .halt
+  
+  ;folder
+  cmp word [esi+14], 1
+  je .open_folder
+
+  ;there is some file, so we can rewrite it
+  cmp dword [fd_selected_medium], 0
+  je .rewrite_file_on_hard_disk
+  cmp dword [fd_selected_medium], 1
+  jne .rewrite_file_on_usb_stick
+  jmp .halt
+  
+  ;REWRITE FILE ON HARD DISK
+  .rewrite_file_on_hard_disk:
+  mov eax, dword [esi]
+  mov dword [jus_file_sector], eax
+  mov eax, dword [esi+4]
+  mov dword [jus_file_size], eax
+  push esi
+  call jus_delete_file
+  pop esi
+  
+  ;size
+  mov eax, dword [file_size]
+  mov dword [esi+4], eax
+  
+  ;print message
+  push esi
+  push eax
+  CLEAR_SCREEN 0x884E10 ;brown
+  call file_dialog_draw_devices
+  PRINT 'Rewriting file...', rewriting_file_str1, LINESZ*5, COLUMNSZ*22
+  call redraw_screen
+  pop eax
+  pop esi
+  
+  ;write file and save first sector
+  mov dword [jus_file_size], eax
+  mov eax, dword [file_memory]
+  mov dword [jus_memory], eax
+  push esi
+  call jus_write_file
+  pop esi
+  cmp dword [ata_status], IDE_ERROR
+  je .error_during_writing_file
+  
+  mov eax, dword [jus_file_sector]
+  mov dword [esi], eax
+  
+  ;save folder
+  mov ebx, dword [fd_path_pointer]
+  mov eax, dword [ebx]
+  call jus_rewrite_folder
+  cmp dword [ata_status], IDE_ERROR
+  je .error_during_rewriting_folder
+  
+  ret
+  
+  ;REWRITE FILE ON USB STICK
+  .rewrite_file_on_usb_stick:
+  ;find where is entry of selected file
+  mov esi, MEMORY_FAT32_FOLDER+64
+  mov eax, 0
+  mov ecx, 1024
+  .rewriting_find_selected_fat_entry:
+   cmp byte [esi+11], 0xF ;long file name entry
+   je .rewriting_next_fat_entry
+   mov bl, byte [esi+11]
+   test bl, 0xE ;hidden, system, volume id
+   jnz .rewriting_next_fat_entry
+   cmp byte [esi], 0xE5 ;not used item
+   je .rewriting_next_fat_entry
+   
+   cmp eax, dword [fd_selected_file]
+   je .entry_founded
+   inc eax
+   
+   .rewriting_next_fat_entry:
+   add esi, 32
+  loop .rewriting_find_selected_fat_entry
+  ret
+  
+  .entry_founded:
+  mov eax, dword [esi]
+  mov dword [fat_entry], eax
+  push esi
+  call fat_delete_file
+  pop esi
+  
+  ;size
+  mov eax, dword [file_size]
+  mov ebx, 1024
+  mul ebx ;convert from KB to bytes
+  mov dword [esi+28], eax
+  
+  ;write file and save first cluster
+  mov eax, dword [file_size]
+  mov dword [fat_file_length], eax
+  mov eax, dword [file_memory]
+  mov dword [fat_memory], eax
+  push esi
+  call fat_write_file
+  pop esi
+  cmp dword [msd_status], MSD_ERROR
+  je .error_during_writing_file
+  
+  mov eax, dword [fat_first_file_cluster]
+  shr eax, 16
+  mov word [esi+20], ax
+  mov eax, dword [fat_first_file_cluster]
+  mov word [esi+26], ax
+  
+  ;save folder
+  mov ebx, dword [fd_path_pointer]
+  mov eax, dword [ebx]
+  call fat_rewrite_folder
+  cmp dword [msd_status], MSD_ERROR
+  je .error_during_rewriting_folder
+  
+  ret
+  
+  ;OPEN FOLDER
+  .open_folder:
+   cmp dword [fd_path_entry], 50
+   je .error_too_many_folders
+   inc dword [fd_path_entry]
+   add dword [fd_path_pointer], 4
+   mov ebx, dword [fd_path_pointer]
+   mov eax, dword [esi]
+   mov dword [ebx], eax
+   mov dword [fd_first_file], 0
+   mov dword [fd_highlighted_file], 0
+   mov dword [fd_selected_file], 0
+   call file_dialog_load_folder
+  jmp .halt
+  
  .key_s:
   cmp dword [fd_selected_medium], 0
   je .save_file_to_hard_disk
@@ -897,7 +1124,8 @@ file_dialog_save:
   mov dword [esi], eax
   
   ;save folder
-  mov eax, 0 ;root folder
+  mov ebx, dword [fd_path_pointer]
+  mov eax, dword [ebx]
   call jus_rewrite_folder
   cmp dword [ata_status], IDE_ERROR
   je .error_during_rewriting_folder
@@ -1006,7 +1234,8 @@ file_dialog_save:
   mov word [esi+26], ax
   
   ;save folder
-  mov eax, 0
+  mov ebx, dword [fd_path_pointer]
+  mov eax, dword [ebx]
   call fat_rewrite_folder
   cmp dword [msd_status], MSD_ERROR
   je .error_during_rewriting_folder
@@ -1032,5 +1261,12 @@ file_dialog_save:
    CLEAR_SCREEN 0x884E10 ;brown
    call file_dialog_draw_devices
    PRINT 'error occured during rewriting folder', error_during_rewriting_folder_str, LINESZ*5, COLUMNSZ*22
+   call redraw_screen
+  jmp .halt
+  
+  .error_too_many_folders:
+   CLEAR_SCREEN 0x884E10 ;brown
+   call file_dialog_draw_devices
+   PRINT 'You can not open deeper that 50 folders', too_many_folders_str, LINESZ*5, COLUMNSZ*22
    call redraw_screen
   jmp .halt
