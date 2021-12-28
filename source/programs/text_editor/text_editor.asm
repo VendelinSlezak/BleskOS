@@ -106,7 +106,7 @@ text_editor:
    call release_memory
    pop dword [allocated_size]
    pop dword [allocated_memory_pointer]
-  .if_loaded_file
+  .if_loaded_file:
   
   call text_editor_convert_to_unicode
  jmp text_editor
