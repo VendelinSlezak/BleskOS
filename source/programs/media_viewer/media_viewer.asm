@@ -242,6 +242,7 @@ media_viewer_play_file:
  mov eax, dword [media_viewer_sound_length]
  mov edx, 0
  div ebx
+ add eax, 500
  mov dword [media_viewer_sound_length_milisec], eax
  
  mov eax, dword [media_viewer_sound_length_sec]
