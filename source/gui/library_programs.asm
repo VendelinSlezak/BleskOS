@@ -20,6 +20,7 @@ init_memory_of_programs:
  mov eax, dword [allocated_memory_pointer]
  mov edi, eax
  
+ mov dword [text_editor_file_pointer], eax
  mov dword [text_editor_mem], eax
  mov dword [text_editor_first_line_mem], eax
  mov dword [te_pointer], eax
