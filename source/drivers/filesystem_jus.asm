@@ -151,6 +151,32 @@ jus_write_file:
  mov byte [esi], 0
  PSTR 'error with writing file', error_str
  ret
+ 
+jus_delete_file:
+ mov eax, dword [jus_file_sector]
+ sub eax, JUS_DATA+256
+ mov ebx, 256
+ mov edx, 0
+ div ebx
+ add eax, dword [jus_bn_mem]
+ mov edi, eax ;pointer to first block of file
+ 
+ mov eax, dword [jus_file_size]
+ shr eax, 7 ;div 128 - convert from KB to blocks
+ inc eax
+ mov ebx, 256
+ mov edx, 0
+ div ebx
+ inc eax
+ mov ecx, eax
+ 
+ mov eax, 0
+ rep stosd ;clear all blocks of file
+ 
+ ;save block numbers
+ call jus_save_bn_part
+ 
+ ret
 
 jus_read_folder:
  cmp eax, 0
