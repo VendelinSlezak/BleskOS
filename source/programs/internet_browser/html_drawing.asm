@@ -352,11 +352,8 @@ draw_html_code:
   push esi
   call print_char
   pop esi
-  
-  cmp dword [size_of_text], 1
-  jne .if_text_1
-   add dword [cursor_column], 8
-  .if_text_1:
+  add dword [cursor_column], 8
+
   jmp .next_char
   
   ;print char to next line
@@ -376,11 +373,7 @@ draw_html_code:
   push esi
   call print_char
   pop esi
-  
-  cmp dword [size_of_text], 1
-  jne .if_next_line_text_1
-   add dword [cursor_column], 8
-  .if_next_line_text_1:
+  add dword [cursor_column], 8
   
   jmp .next_char
   
