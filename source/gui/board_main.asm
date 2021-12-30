@@ -24,7 +24,7 @@ main_window:
  PRINT '[a] Text editor', main_text_editor_str, LINE(6), COLUMN(2)
  PRINT '    Graphic editor (not in this version)', main_graphic_editor_str, LINE(8), COLUMN(2)
  PRINT '[c] Media viewer', main_media_viewer_str, LINE(10), COLUMN(2)
- PRINT '    Internet browser - HTML viewer (not in this version)', main_internet_browser_str, LINE(12), COLUMN(2)
+ PRINT '[d] Internet browser', main_internet_browser_str, LINE(12), COLUMN(2)
  PRINT '[F1] Hardware centrum', main_hardware_centrum_str, LINE(14), COLUMN(2)
  PRINT '[F2] Developer zone', main_te_str, LINE(16), COLUMN(2)
 
@@ -38,6 +38,9 @@ main_window:
   
   cmp byte [key_code], KEY_C
   je media_viewer
+  
+  cmp byte [key_code], KEY_D
+  je internet_browser
 
   cmp byte [key_code], KEY_F1
   je hardware_centrum
