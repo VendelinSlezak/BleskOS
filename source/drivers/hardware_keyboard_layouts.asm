@@ -10,8 +10,10 @@
 %define KEY_LEFT_SHIFT 0x2A
 %define KEY_RIGHT_SHIFT 0x36
 
+%define KEY_HOME 0x47
 %define KEY_PAGE_UP 0x49
 %define KEY_PAGE_DOWN 0x51
+%define KEY_END 0x4F
 %define KEY_UP 0x48
 %define KEY_DOWN 0x50
 %define KEY_LEFT 0x4B
