@@ -14,9 +14,44 @@ window_border_color dd 0
  call draw_window
 %endmacro
 
+%macro DRAW_WINDOW_BORDERS 3
+ mov dword [window_up_string_ptr], %1
+ mov dword [window_down_string_ptr], %2
+ mov dword [window_border_color], %3
+ call draw_window_borders
+%endmacro
+
 draw_window:
  call clear_screen
 
+ mov dword [cursor_line], 0
+ mov dword [cursor_column], 0
+ mov eax, dword [screen_x]
+ mov dword [square_length], eax
+ mov dword [square_heigth], 20
+ mov eax, dword [window_border_color]
+ mov dword [color], eax
+ call draw_square
+
+ SCREEN_Y_SUB eax, 20
+ mov dword [cursor_line], eax
+ call draw_square
+
+ mov dword [cursor_line], 5
+ mov dword [cursor_column], 8
+ mov dword [color], BLACK
+ mov esi, dword [window_up_string_ptr]
+ call print
+
+ SCREEN_Y_SUB eax, 15
+ mov dword [cursor_line], eax
+ mov dword [cursor_column], 8
+ mov esi, dword [window_down_string_ptr]
+ call print
+
+ ret
+ 
+draw_window_borders:
  mov dword [cursor_line], 0
  mov dword [cursor_column], 0
  mov eax, dword [screen_x]
