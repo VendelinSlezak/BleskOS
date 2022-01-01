@@ -179,6 +179,13 @@ jus_delete_file:
  ret
 
 jus_read_folder:
+ push eax
+ mov edi, MEMORY_FOLDER
+ mov eax, 0
+ mov ecx, 1024*128
+ rep stosb ;clear memory
+ pop eax
+
  cmp eax, 0
  jne .read_folder
  mov eax, JUS_DATA ;root folder
