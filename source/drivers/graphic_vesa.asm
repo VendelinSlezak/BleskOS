@@ -51,6 +51,8 @@ var_string times 11 db 0
 debug_line dd 0
 
 cycle_var dd 0
+actual_char_pixel dd 0
+actual_char_line dd 0
 
 x1 dd 0
 y1 dd 0
@@ -164,6 +166,8 @@ line_y_pointer dd 0
  jmp .%1_over
  
  .%1_nothing_to_draw:
+ mov dword [actual_char_pixel], %1
+ ;;;;;call draw_antialiased_pixel_of_char
  pop ecx
  pop edi
  add edi, ebx ;move to position of next pixel of char
@@ -907,9 +911,14 @@ print_char:
 
 print_char_size1:
  CALCULATE_CURSOR_POSITION
+ 
+ mov eax, dword [char_for_print]
+ cmp eax, 512
+ jb .if_unsupported_char
+  mov eax, 30 ;square
+ .if_unsupported_char:
 
  ;calculate char memory
- mov eax, dword [char_for_print]
  mov ebx, 8
  mul ebx
  add eax, bleskos_font
@@ -942,9 +951,14 @@ print_bigger_char:
  
  ;pointer to screen memory
  mov edi, eax
+ 
+ mov eax, dword [char_for_print]
+ cmp eax, 512
+ jb .if_unsupported_char
+  mov eax, 30 ;square
+ .if_unsupported_char:
 
  ;calculate char memory
- mov eax, dword [char_for_print]
  mov ebx, 8
  mul ebx
  add eax, bleskos_font
@@ -961,6 +975,7 @@ print_bigger_char:
  mov word [cycle_var], cx
 
  ;char have eight lines
+ mov dword [actual_char_line], 0
  mov ecx, 8
  .print_char:
  push ecx
@@ -988,9 +1003,169 @@ print_bigger_char:
   inc esi ;next line of char
  pop ecx
  dec ecx
+ inc dword [actual_char_line]
  cmp ecx, 0
  jne .print_char
 
+ ret
+ 
+draw_antialiased_pixel_of_char:
+ push ebx
+ mov eax, 0 ;no full pixel
+ 
+ ;left side
+ cmp dword [actual_char_pixel], 0x80
+ je .if_left
+  mov ebx, dword [actual_char_pixel]
+  shl ebx, 1
+  test byte [esi], bl
+  jz .no_pixel_on_left
+   or eax, 0x01000000 ;save if is some pixel here
+  .no_pixel_on_left:
+ .if_left:
+ 
+ ;right side
+ cmp dword [actual_char_pixel], 0x01
+ je .if_right
+  mov ebx, dword [actual_char_pixel]
+  shr ebx, 1
+  test byte [esi], bl
+  jz .no_pixel_on_right
+   or eax, 0x00010000 ;save if is some pixel here
+  .no_pixel_on_right:
+ .if_right:
+ 
+ ;up side
+ cmp dword [actual_char_line], 0
+ je .if_up
+  dec esi
+  mov bl, byte [actual_char_pixel]
+  test byte [esi], bl
+  jz .no_pixel_on_up
+   or eax, 0x00000100 ;save if is some pixel here
+  .no_pixel_on_up:
+  inc esi
+ .if_up:
+ 
+ ;down side
+ cmp dword [actual_char_line], 7
+ je .if_down
+  mov bl, byte [actual_char_pixel]
+  test byte [esi+1], bl
+  jz .no_pixel_on_down
+   or eax, 0x00000001 ;save if is some pixel here
+  .no_pixel_on_down:
+ .if_down:
+ 
+ pop ebx
+ push ebx
+
+ ;select what will be drawed for antialiasing
+ cmp eax, 0x0
+ je .done
+ cmp eax, 0x01010101
+ je .done
+ cmp eax, 0x01000100
+ je .triangle_left_dec
+ cmp eax, 0x01000001
+ je .triangle_left_inc
+ cmp eax, 0x00010100
+ je .triangle_right_dec
+ cmp eax, 0x00010001
+ je .triangle_right_inc
+ 
+ cmp eax, 0x00010101
+ je .triangle_right_dec
+ cmp eax, 0x01000101
+ je .triangle_left_dec
+ pop ebx
+ ret
+ 
+ .triangle_left_inc:
+  mov bl, 1 ;length of drawed line
+  mov cl, bl
+  .draw_triangle_left_inc:
+   mov eax, edi
+   .draw_line_left_inc:
+    mov dword [eax], BLACK
+    add eax, 4
+   dec cl
+   cmp cl, 0
+   jne .draw_line_left_inc
+  
+   inc bl ;next line will be longer
+   mov cl, bl
+   add edi, edx ;move on next line on monitor
+  dec ch
+  cmp ch, 0
+  jne .draw_triangle_left_inc
+ jmp .done
+ 
+ .triangle_left_dec:
+  mov bl, ch ;length of drawed line
+  mov cl, bl
+  .draw_triangle_left_dec:
+   mov eax, edi
+   .draw_line_left_dec:
+    mov dword [eax], BLACK
+    add eax, 4
+   dec cl
+   cmp cl, 0
+   jne .draw_line_left_dec
+  
+   dec bl ;next line will be shorter
+   mov cl, bl
+   add edi, edx ;move on next line on monitor
+  dec ch
+  cmp ch, 0
+  jne .draw_triangle_left_dec
+ jmp .done
+ 
+ .triangle_right_inc:
+  add edi, ebx
+  sub edi, 4
+  mov bl, 1 ;length of drawed line
+  mov cl, bl
+  .draw_triangle_right_inc:
+   mov eax, edi
+   .draw_line_right_inc:
+    mov dword [eax], BLACK
+    sub eax, 4
+   dec cl
+   cmp cl, 0
+   jne .draw_line_right_inc
+  
+   inc bl ;next line will be longer
+   mov cl, bl
+   add edi, edx ;move on next line on monitor
+  dec ch
+  cmp ch, 0
+  jne .draw_triangle_right_inc
+ jmp .done
+ 
+ .triangle_right_dec:
+  add edi, ebx
+  sub edi, 4
+  mov bl, ch ;length of drawed line
+  mov cl, bl
+  .draw_triangle_right_dec:
+   mov eax, edi
+   .draw_line_right_dec:
+    mov dword [eax], BLACK
+    sub eax, 4
+   dec cl
+   cmp cl, 0
+   jne .draw_line_right_dec
+  
+   dec bl ;next line will be shorter
+   mov cl, bl
+   add edi, edx ;move on next line on monitor
+  dec ch
+  cmp ch, 0
+  jne .draw_triangle_right_dec
+ 
+ .done:
+ pop ebx
  ret
 
 print:
