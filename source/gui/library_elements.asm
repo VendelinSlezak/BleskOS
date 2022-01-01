@@ -351,6 +351,7 @@ move_mouse_cursor:
   
  ;MOVE CURSOR HORIZONTAL
  mov ebx, dword [mcursor_right_side]
+ dec ebx
  mov ecx, dword [mcursor_left_side]
  cmp byte [usb_mouse_data+1], 0x7F
  ja .move_left
@@ -379,6 +380,7 @@ move_mouse_cursor:
  ;MOVE CURSOR VERTICAL
  .test_vertical_move:
  mov edx, dword [mcursor_down_side]
+ dec edx
  cmp byte [usb_mouse_data+2], 0x7F
  ja .move_up
   
@@ -399,14 +401,19 @@ move_mouse_cursor:
  mov ebx, dword [cursor_line]
  sub ebx, eax
  cmp ebx, dword [screen_y]
- ja .too_up
+ ja .above_screen
  cmp ebx, dword [mcursor_up_side]
  jb .too_up
  sub dword [cursor_line], eax
  jmp .draw_cursor
  
- .too_up:
+ .above_screen:
  mov dword [cursor_line], 20 
+ jmp .draw_cursor
+ 
+ .too_up:
+ mov eax, dword [mcursor_up_side]
+ mov dword [cursor_line], eax
  
  .draw_cursor: 
  mov eax, dword [cursor_line]
