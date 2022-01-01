@@ -87,8 +87,8 @@ convert_iso9660_folder_to_jus_folder:
  ;clear memory
  mov edi, MEMORY_FOLDER
  mov eax, 0
- mov ecx, 10000
- rep stosd
+ mov ecx, 1024*128
+ rep stosb ;clear memory
  
  mov esi, MEMORY_ISO9660_FOLDER+0x22+0x22 ;skip first two entries
  mov edi, MEMORY_FOLDER
