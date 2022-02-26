@@ -43,6 +43,7 @@ color dd 0
 
 type_of_text dd PLAIN
 size_of_text dd 1
+font_pointer dd bleskos_font
 char_for_print dd 0
 hex_print_value dd 0
 hex_string times 11 db 0
@@ -134,7 +135,7 @@ line_y_pointer dd 0
  mov al, bl
  test al, %1
  jz .%1_over
-  mov dword [edx+(%2*4)], BLACK ;draw pixel on screen
+  mov dword [edx+(%2*4)], ebp ;draw pixel on screen
  .%1_over:
 %endmacro
 
@@ -149,7 +150,7 @@ line_y_pointer dd 0
   mov eax, edi
   push ecx
   .draw_line_%1:
-   mov dword [eax], BLACK
+   mov dword [eax], ebp
    add eax, 4
   dec cl
   cmp cl, 0
@@ -921,13 +922,14 @@ print_char_size1:
  ;calculate char memory
  mov ebx, 8
  mul ebx
- add eax, bleskos_font
+ add eax, dword [font_pointer]
  mov edi, eax
 
  ;pointer to char memory
  mov edx, dword [screen_pointer]
 
  ;char have eight lines
+ mov ebp, dword [color]
  FOR 8, print_char_cycle
   mov bl, byte [edi] ;load line of char
   DRAW_PIXEL_OF_CHAR 0x80, 0
@@ -961,7 +963,7 @@ print_bigger_char:
  ;calculate char memory
  mov ebx, 8
  mul ebx
- add eax, bleskos_font
+ add eax, dword [font_pointer]
  mov esi, eax
  
  ;other values
@@ -975,6 +977,7 @@ print_bigger_char:
  mov word [cycle_var], cx
 
  ;char have eight lines
+ mov ebp, dword [color]
  mov dword [actual_char_line], 0
  mov ecx, 8
  .print_char:
@@ -1303,7 +1306,10 @@ pstr:
  mov eax, dword [debug_line]
  mov dword [cursor_line], eax
  mov dword [cursor_column], 0
+ push dword [color]
+ mov dword [color], BLACK
  call print
+ pop dword [color]
 
  ;show on screen
  mov eax, dword [debug_line]
@@ -1321,7 +1327,10 @@ phex:
  mov eax, dword [debug_line]
  mov dword [cursor_line], eax
  mov dword [cursor_column], 0
+ push dword [color]
+ mov dword [color], BLACK
  call print_hex
+ pop dword [color]
 
  ;show on screen
  mov eax, dword [debug_line]
@@ -1339,7 +1348,10 @@ pvar:
  mov eax, dword [debug_line]
  mov dword [cursor_line], eax
  mov dword [cursor_column], 0
+ push dword [color]
+ mov dword [color], BLACK
  call print_var
+ pop dword [color]
 
  ;show on screen
  mov eax, dword [debug_line]
