@@ -53,6 +53,7 @@ file_dialog_draw_items:
  SCREEN_X_SUB ebx, COLUMNSZ*23
  DRAW_SQUARE eax, COLUMNSZ*22, ebx, LINESZ, 0xFF0000 ;red
 
+ mov dword [color], BLACK
  mov dword [cursor_line], LINESZ*5+1
  mov eax, dword [fd_first_file]
  mov ebx, 128
@@ -189,6 +190,7 @@ file_dialog_draw_devices:
  ;draw title
  SCREEN_X_SUB eax, COLUMNSZ*2
  DRAW_SQUARE LINE(1), COLUMN(1), eax, LINESZ*3, 0x60BD00 ;green
+ mov dword [color], BLACK
  cmp dword [fd_type_of_dialog], FD_OPEN
  jne .if_open
   PRINT 'Open file           [d] Select medium [b] Previous folder [enter] Open file', open_dialog_title_str, LINE(2)+1, COLUMN(2)
@@ -211,6 +213,7 @@ file_dialog_draw_devices:
  call draw_square
  
  ;print labels
+ mov dword [color], BLACK
  PRINT 'Hard disk', hard_disk_str, LINESZ*5+6, COLUMNSZ*2
  PRINT 'Optical disk', optical_disk_str, LINESZ*5+LINESZ*2+6, COLUMNSZ*2
  mov dword [cursor_line], LINESZ*5+LINESZ*4+6
