@@ -4,8 +4,8 @@ document_editor_up_str db 'Document editor', 0
 document_editor_down_str db '[F1] Save file [F2] Open file [F3] New file [F4] Show tools', 0
 de_message_new_file_up db 'Are you sure you want to erase actual document?', 0
 de_message_new_file_down db '[enter] Yes [esc] Cancel', 0
-de_message_change_color_str_up db 'Choose color:'
-de_message_change_color_str_down db '[a] black [r] red [g] green [b] blue [p] purple [o] orange [esc] back'
+de_message_change_color_str_up db 'Choose color:', 0
+de_message_change_color_str_down db '[a] black [r] red [g] green [b] blue [p] purple [o] orange [esc] back', 0
 
 document_editor_file_pointer dd 0
 de_pointer dd 0
@@ -36,7 +36,7 @@ de_cursor_char_color dd 0
 de_aligment dd DE_LEFT
 de_show_tools dd 0
 
-%define DE_COMMAND 0xF000
+%define DE_COMMAND 127
 
 document_editor:
  call de_draw_document
@@ -432,6 +432,7 @@ document_editor:
   mov word [edi], DE_COMMAND
   mov word [edi+2], 'f'
   mov word [edi+4], DE_COMMAND
+  mov word [edi+6], 'B'
   cmp dword [de_cursor_char_font], bleskos_font
   jne .change_font_if_bleskos_font
    mov word [edi+6], 'V' ;VGA font
@@ -450,7 +451,7 @@ document_editor:
    cmp word [edi+2], 'f'
    je .change_font_execute
    add edi, 4
-  jmp .change_bold_group
+  jmp .change_font_group
   
   .change_font_execute:
   cmp word [edi+6], 'B'
