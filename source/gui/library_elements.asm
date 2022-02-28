@@ -402,6 +402,11 @@ move_mouse_cursor:
  ja .if_too_left
   mov dword [cursor_column], ecx
  .if_too_left:
+ mov eax, dword [screen_x]
+ cmp dword [cursor_column], eax
+ jb .if_outside_of_x_screen
+  mov dword [cursor_column], ecx
+ .if_outside_of_x_screen:
   
  ;MOVE CURSOR VERTICAL
  .test_vertical_move:
@@ -419,6 +424,11 @@ move_mouse_cursor:
  jb .if_too_down
   mov dword [cursor_line], edx
  .if_too_down:
+ mov eax, dword [screen_y]
+ cmp dword [cursor_line], eax
+ jb .if_outside_of_y_screen
+  mov dword [cursor_line], edx
+ .if_outside_of_y_screen:
  jmp .draw_cursor
   
  .move_up:
