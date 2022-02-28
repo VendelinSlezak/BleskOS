@@ -49,5 +49,30 @@ init_memory_of_programs:
  mov edx, 0
  div ebx
  mov dword [te_max_line], eax
+ 
+ ;DOCUMENT EDITOR
+ mov dword [allocated_size], 1
+ call allocate_memory
+ mov eax, dword [allocated_memory_pointer]
+ mov dword [document_editor_file_pointer], eax
+ mov dword [de_pointer], eax
+ mov dword [de_pointer_end_of_text], eax
+ add eax, 0x100000
+ mov dword [document_editor_file_end], eax
+ ;clear memory of document_editor
+ sub eax, 0x100000
+ mov edi, eax
+ mov eax, 0
+ mov ecx, 0x100000
+ rep stosb
+ 
+ mov eax, dword [screen_y]
+ sub eax, 40
+ mov dword [de_last_show_line], eax
+ 
+ mov eax, dword [screen_x]
+ sub eax, 600
+ shr eax, 1 ;div 2
+ mov dword [de_left_border_start], eax
 
  ret
