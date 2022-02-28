@@ -81,6 +81,13 @@ draw_window_borders:
  
 ;;;;; Message window ;;;;;
 
+message_window_key0 dd 0
+message_window_key1 dd 0
+message_window_key2 dd 0
+message_window_key3 dd 0
+message_window_key4 dd 0
+message_window_key5 dd 0
+
 show_message_window:
  push edi
  push esi
@@ -154,6 +161,25 @@ show_message_window:
   je .return
   
   cmp byte [key_code], KEY_ENTER
+  je .return
+  
+  mov eax, dword [message_window_key0]
+  cmp byte [key_code], al
+  je .return
+  mov eax, dword [message_window_key1]
+  cmp byte [key_code], al
+  je .return
+  mov eax, dword [message_window_key2]
+  cmp byte [key_code], al
+  je .return
+  mov eax, dword [message_window_key3]
+  cmp byte [key_code], al
+  je .return
+  mov eax, dword [message_window_key4]
+  cmp byte [key_code], al
+  je .return
+  mov eax, dword [message_window_key5]
+  cmp byte [key_code], al
   je .return
  jmp .halt
  
