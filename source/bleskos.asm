@@ -74,6 +74,7 @@ start:
  %include "source/programs/media_viewer/media_viewer.asm"
  %include "source/programs/internet_browser/html_drawing.asm"
  %include "source/programs/internet_browser/internet_browser.asm"
+ %include "source/programs/document_editor/document_editor.asm"
 
 start_bleskos:
  call init_graphic
