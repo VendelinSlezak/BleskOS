@@ -70,6 +70,7 @@ hardware_centrum:
  .update_time:
  call read_time
  DRAW_SQUARE LINE(4), COLUMN(2), COLUMNSZ*32, LINESZ, 0x00C000 ;erase time from screen
+ mov dword [color], BLACK
  PRINT '    /  /     :  :', time_str, LINE(4), COLUMN(2)
  mov eax, dword [year]
  PRINT_VAR eax, LINE(4), COLUMN(2)
@@ -121,6 +122,7 @@ hardware_centrum:
 
  .detect_usb_devices:
   DRAW_SQUARE LINE(6), COLUMN(2), COLUMNSZ*36, LINESZ*10, 0x00C000 ;erase messages from screen
+  mov dword [color], BLACK
   PRINT 'Detecting USB devices...', detecting_usb_str, LINE(6), COLUMN(2)
   call redraw_screen
   WAIT 100
@@ -129,21 +131,25 @@ hardware_centrum:
 
  .shutdown:
   CLEAR_SCREEN 0x00C000
-  PRINT 'Do you really want to shutdown computer? [enter] Yes [other] No', shutdown_ask_str, LINE(1), COLUMN(1)
+  mov dword [color], BLACK
+  PRINT 'Do you really want to shutdown computer? [enter] Yes [esc] No', shutdown_ask_str, LINE(1), COLUMN(1)
   call redraw_screen
-
-  WAIT 200
+ .shutdown_halt:
   call wait_for_usb_keyboard
+  cmp byte [key_code], KEY_ESC
+  je hardware_centrum
   cmp byte [key_code], KEY_ENTER
-  jne hardware_centrum
+  jne .shutdown_halt
 
   CLEAR_SCREEN 0x00C000
+  mov dword [color], BLACK
   PRINT 'Turning off...', turning_off_str, LINE(1), COLUMN(1)
   call redraw_screen
   call shutdown
 
   WAIT 4000
   CLEAR_SCREEN 0x00C000
+  mov dword [color], BLACK
   PRINT 'We are sorry, some problem occured, you can shutdown with pressing power button', shutdown_problem_str, LINE(1), COLUMN(1)
   call redraw_screen
  .halt:
