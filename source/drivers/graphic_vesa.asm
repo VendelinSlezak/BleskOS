@@ -29,6 +29,7 @@ screen_bpp dd 0
 screen_all_pixels dd 0
 screen_pixels_per_line dd 0
 screen_pointer dd 0
+screen_mem_pointer dd MEMORY_RAM_SCREEN
 
 cursor_line dd 0
 cursor_column dd 0
@@ -74,7 +75,7 @@ line_y_pointer dd 0
  add eax, dword [cursor_column]
  mov ebx, 4
  mul ebx
- add eax, MEMORY_RAM_SCREEN
+ add eax, dword [screen_mem_pointer]
 
  mov dword [screen_pointer], eax
 %endmacro
@@ -468,7 +469,7 @@ draw_line_all:
  
  ;line will be drawed from down to up
  cmp eax, dword [y2]
- jg .if_reverse
+ ja .if_reverse
   mov ebx, dword [y2]
   mov dword [y2], eax
   mov dword [y1], ebx
@@ -486,7 +487,7 @@ draw_line_all:
  
  ;direction of line
  cmp eax, dword [x2]
- jg .direction_left
+ ja .direction_left
  
  mov dword [line_direction], 1 ;right
  mov eax, dword [x2]
@@ -522,22 +523,30 @@ draw_line_all:
  mov edx, dword [line_y_length]
  
  ;draw line
- cmp dword [line_direction], 1
- je .right_draw_pixel_of_line
+ mov eax, dword [line_x_length]
+ cmp dword [line_y_length], eax
+ ja .draw_line_up
+  cmp dword [line_direction], 1
+  je .right_draw_pixel_of_line
+  jmp .left_draw_pixel_of_line
+ .draw_line_up:
+  cmp dword [line_direction], 1
+  je .right_up_draw_pixel_of_line
+  jmp .left_up_draw_pixel_of_line
  
  .left_draw_pixel_of_line:
   mov ebp, dword [line_x_pointer]
   cmp ebp, dword [x2]
-  jg .continue_draw_left
+  ja .continue_draw_left
   jmp .done
   
   .continue_draw_left:
   mov dword [esi], BLACK ;draw pixel
   
   cmp eax, ebx
-  jg .move_cursor_left
+  ja .move_cursor_left
   
-  ;move cursor right up
+  ;move cursor left up
   sub esi, dword [screen_pixels_per_line] ;up
   dec dword [line_y_pointer]
   add eax, ecx
@@ -548,17 +557,40 @@ draw_line_all:
   add ebx, edx
  jmp .left_draw_pixel_of_line
  
+ .left_up_draw_pixel_of_line:
+  mov ebp, dword [line_y_pointer]
+  cmp ebp, dword [y2]
+  ja .continue_draw_left_up
+  jmp .done
+  
+  .continue_draw_left_up:
+  mov dword [esi], BLACK ;draw pixel
+  
+  cmp ebx, eax
+  ja .move_cursor_left_up
+  
+  ;move cursor left up
+  sub esi, 4 ;left
+  inc dword [line_x_pointer]
+  add ebx, edx
+  
+  .move_cursor_left_up:
+  sub esi, dword [screen_pixels_per_line] ;up
+  dec dword [line_y_pointer]
+  add eax, ecx
+ jmp .left_up_draw_pixel_of_line
+ 
  .right_draw_pixel_of_line:
   mov ebp, dword [line_x_pointer]
   cmp ebp, dword [x2]
-  jl .continue_draw_right
+  jb .continue_draw_right
   jmp .done
   
   .continue_draw_right:
   mov dword [esi], BLACK ;draw pixel
   
   cmp eax, ebx
-  jg .move_cursor_right
+  ja .move_cursor_right
   
   ;move cursor right up
   sub esi, dword [screen_pixels_per_line] ;up
@@ -571,13 +603,68 @@ draw_line_all:
   add ebx, edx
  jmp .right_draw_pixel_of_line
  
+ .right_up_draw_pixel_of_line:
+  mov ebp, dword [line_y_pointer]
+  cmp ebp, dword [y2]
+  ja .continue_draw_right_up
+  jmp .done
+  
+  .continue_draw_right_up:
+  mov dword [esi], BLACK ;draw pixel
+  
+  cmp ebx, eax
+  ja .move_cursor_right_up
+  
+  ;move cursor right up
+  add esi, 4 ;right
+  inc dword [line_x_pointer]
+  add ebx, edx
+  
+  .move_cursor_right_up:
+  sub esi, dword [screen_pixels_per_line] ;up
+  dec dword [line_y_pointer]
+  add eax, ecx
+ jmp .right_up_draw_pixel_of_line
+ 
  .done:
  ret
  
  .draw_line:
+ mov eax, dword [y1]
+ mov dword [cursor_line], eax
+ mov ebx, dword [x1]
+ mov eax, dword [x2]
+ sub eax, dword [x1]
+ mov ebx, dword [x2]
+ cmp dword [x1], ebx
+ jb .if_x1_higher_than_x2_line
+  mov ebx, dword [x2]
+  mov eax, dword [x1]
+  sub eax, dword [x2]
+ .if_x1_higher_than_x2_line:
+ mov dword [line_length], eax
+ mov dword [cursor_column], ebx
+ call draw_line
+ 
  ret
  
  .draw_column:
+ mov eax, dword [x1]
+ mov dword [cursor_column], eax
+ mov ebx, dword [y1]
+ mov eax, dword [y2]
+ sub eax, dword [y1]
+ mov ebx, dword [y2]
+ cmp dword [y1], ebx
+ jb .if_y1_higher_than_y2_column
+  mov ebx, dword [y2]
+  mov eax, dword [y1]
+  sub eax, dword [y2]
+ .if_y1_higher_than_y2_column:
+ mov dword [column_heigth], eax
+ mov dword [cursor_line], ebx
+ call draw_column
+ 
  ret
 
 draw_cursor:
