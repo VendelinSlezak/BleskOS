@@ -993,6 +993,12 @@ file_dialog_save:
   ret
   
   .entry_founded:
+  push esi
+  CLEAR_SCREEN 0x884E10 ;brown
+  call file_dialog_draw_devices
+  PRINT 'Rewriting file...', rewriting_file_str2, LINESZ*5, COLUMNSZ*22
+  call redraw_screen
+  pop esi
   mov eax, dword [esi]
   mov dword [fat_entry], eax
   push esi
@@ -1218,6 +1224,14 @@ file_dialog_save:
   mov ebx, 1024
   mul ebx ;convert from KB to bytes
   mov dword [esi+28], eax
+  
+  ;message
+  push esi
+  CLEAR_SCREEN 0x884E10 ;brown
+  call file_dialog_draw_devices
+  PRINT 'Saving file...', saving_file_str2, LINESZ*5, COLUMNSZ*22
+  call redraw_screen
+  pop esi
   
   ;write file and save first cluster
   mov eax, dword [file_size]
