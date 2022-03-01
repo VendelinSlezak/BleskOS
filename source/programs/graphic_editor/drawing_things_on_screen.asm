@@ -30,7 +30,7 @@ graphic_editor_draw_panel:
  ;print first string
  mov eax, dword [ge_panel_column]
  add eax, COLUMNSZ
- PRINT '[e] Select color', ge_select_color_str, 25, eax
+ PRINT '[w] Select color', ge_select_color_str, 25, eax
  
  ;draw square with selected color
  mov eax, dword [ge_panel_column]
@@ -73,26 +73,57 @@ graphic_editor_draw_panel:
  pop ecx
  loop .draw_color_table
  
+ ;draw square for selected tool
+ mov eax, dword [ge_draw_object]
+ mov ebx, 20
+ mul ebx
+ add eax, 200
+ mov dword [cursor_line], eax
+ mov eax, dword [ge_panel_column]
+ add eax, COLUMNSZ
+ mov dword [cursor_column], eax
+ mov dword [square_length], COLUMNSZ*23
+ mov dword [square_heigth], 15
+ mov dword [color], 0xFF0000
+ call draw_square
+ mov dword [color], BLACK
+ call draw_empty_square
+ 
+ ;print tools
+ mov eax, dword [ge_panel_column]
+ add eax, COLUMNSZ*2
+ PRINT '[a] Pen', ge_pen_str, 200+4, eax
+ mov eax, dword [ge_panel_column]
+ add eax, COLUMNSZ*2
+ PRINT '[s] Line', ge_line_str, 200+20+4, eax
+ mov eax, dword [ge_panel_column]
+ add eax, COLUMNSZ*2
+ PRINT '[d] Square', ge_square_str, 200+20+20+4, eax
+ 
  ret
 
 graphic_editor_draw_image:
  mov eax, dword [ge_image_pointer]
  mov dword [li_source_memory], eax
- mov eax, dword [ge_img_width]
+ mov eax, dword [ge_image_width]
  mov dword [li_source_width], eax
- mov eax, dword [ge_img_heigth]
- mov dword [li_source_line], 0
- mov dword [li_source_column], 0
- mov eax, dword [ge_img_heigth]
+ mov eax, dword [ge_image_heigth]
+ mov dword [li_source_heigth], eax
+ 
+ mov eax, dword [ge_image_first_show_line]
+ mov dword [li_source_line], eax
+ mov eax, dword [ge_image_first_show_column]
+ mov dword [li_source_column], eax
+ 
+ mov eax, dword [ge_image_show_heigth]
  mov dword [li_image_heigth], eax
- mov eax, dword [ge_img_width]
+ mov eax, dword [ge_image_show_width]
  mov dword [li_image_width], eax
  
  mov dword [li_destination_memory], LI_MONITOR
- mov dword [li_destination_line], 21
- mov dword [li_destination_column], 1
- 
- DRAW_EMPTY_SQUARE 20, 0, 641, 481, BLACK
+ mov dword [li_destination_line], 20
+ mov dword [li_destination_column], 0
+
  call transfer_image
  
  ret
