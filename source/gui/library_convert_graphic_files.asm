@@ -1,5 +1,7 @@
 ;BleskOS
 
+; BMP FILE
+
 lc_image_width dd 0
 lc_image_heigth dd 0
 lc_image_bpp dd 0
@@ -140,3 +142,74 @@ convert_bmp_file:
  loop .convert_pixel_two_bytes_bmp
  
  jmp .done
+ 
+create_bmp_file:
+ mov eax, dword [lc_image_width]
+ mov ebx, dword [lc_image_heigth]
+ mul ebx
+ shl eax, 2 ;mul 4
+ mov ecx, eax ;length of image in bytes
+ add eax, 54 ;size of header
+ mov ebx, 0x100000
+ mov edx, 0
+ div ebx
+ inc eax
+ mov dword [allocated_size], eax ;size of BMP file in MB
+ push ecx
+ call allocate_memory
+ pop ecx
+ cmp dword [allocated_memory_pointer], 0
+ je .done
+ mov esi, dword [allocated_memory_pointer]
+
+ ;create header
+ mov byte [esi], 'B'
+ mov byte [esi+1], 'M'
+ mov dword [esi+2], ecx ;size of file
+ mov dword [esi+6], 0
+ mov dword [esi+10], 54 ;offset to image data
+ mov dword [esi+14], 40 ;size of extended header
+ mov eax, dword [lc_image_width]
+ mov dword [esi+18], eax
+ mov eax, dword [lc_image_heigth]
+ mov dword [esi+22], eax
+ mov word [esi+26], 1
+ mov word [esi+28], 32 ;4 bytes per pixel
+ mov dword [esi+30], 0 ;no compression
+ mov dword [esi+34], ecx ;size of image
+ mov eax, dword [lc_image_width]
+ mov dword [esi+38], eax
+ mov eax, dword [lc_image_heigth]
+ mov dword [esi+42], eax
+ mov dword [esi+46], 0 ;number of colors in pallete
+ mov dword [esi+50], 0 ;number of important colors
+ 
+ ;create image data
+ push ecx
+ mov edi, esi
+ add edi, 54
+ mov esi, dword [file_memory]
+ add edi, ecx
+ mov edx, dword [lc_image_width]
+ shl edx, 2 ;mul 4 - number of bytes per line
+ mov ecx, dword [lc_image_heigth]
+ .convert_pixel_four_bytes_bmp:
+ push ecx
+  mov ecx, dword [lc_image_width]
+  sub edi, edx
+  .convert_line_four_bytes_bmp:
+   mov eax, dword [esi]
+   and eax, 0x00FFFFFF
+   mov dword [edi], eax
+   add esi, 4
+   add edi, 4
+  loop .convert_line_four_bytes_bmp
+  sub edi, edx
+ pop ecx
+ loop .convert_pixel_four_bytes_bmp
+ 
+ pop ecx
+ add ecx, 54 ;length of file
+ 
+ .done:
+ ret
