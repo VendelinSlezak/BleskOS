@@ -1,7 +1,9 @@
 ;BleskOS
 
 graphic_editor_up_str db 'Graphic editor', 0
-graphic_editor_down_str db '[F1] Save file [F2] Open file [q] Mouse on image [arrows] Move image', 0
+graphic_editor_down_str db '[F1] Save file [F2] Open file [F3] New file [q] Mouse on image [arrows] Move image', 0
+ge_new_file_up_str db 'Please select size of new image:', 0
+ge_new_file_down_str db '[a] 100x100 [b] 640x480 [c] 800x600 [d] 1024x768', 0
 
 ge_selected_color dd BLACK
 ge_drawing_state dd 0
@@ -60,6 +62,9 @@ graphic_editor:
   
   cmp byte [key_code], KEY_F2
   je .open_file
+  
+  cmp byte [key_code], KEY_F3
+  je .new_file
   
   cmp byte [key_code], KEY_UP
   je .key_up
@@ -137,6 +142,7 @@ graphic_editor:
   call convert_bmp_file
   
   ;set variabiles
+  .set_new_image_variabiles:
   mov eax, dword [file_memory]
   add eax, 8
   mov dword [ge_image_pointer], eax
@@ -165,6 +171,98 @@ graphic_editor:
   
   mov dword [ge_image_first_show_line], 0
   mov dword [ge_image_first_show_column], 0
+ jmp graphic_editor
+ 
+ .new_file:
+  mov esi, ge_new_file_up_str
+  mov edi, ge_new_file_down_str
+  mov dword [message_window_key0], KEY_A
+  mov dword [message_window_key1], KEY_B
+  mov dword [message_window_key2], KEY_C
+  mov dword [message_window_key3], KEY_D
+  call show_message_window
+  mov dword [message_window_key0], 0
+  mov dword [message_window_key1], 0
+  mov dword [message_window_key2], 0
+  mov dword [message_window_key3], 0
+  cmp byte [key_code], KEY_ESC
+  je graphic_editor
+  
+  mov eax, dword [ge_image_pointer]
+  mov dword [allocated_memory_pointer], eax
+  mov eax, dword [ge_image_width]
+  mov ebx, dword [ge_image_heigth]
+  mul ebx
+  shl eax, 2 ;mul 4
+  mov ebx, 0x100000
+  mov edx, 0
+  div ebx
+  inc eax
+  mov dword [allocated_size], eax
+  call release_memory
+  
+  mov dword [ge_mouse_img_line], 20
+  mov dword [ge_mouse_img_column], 0
+  
+  cmp byte [key_code], KEY_A
+  jne .if_resoultion_a
+   mov dword [lc_image_width], 100
+   mov dword [lc_image_heigth], 100
+   mov dword [allocated_size], 1
+   call allocate_memory
+   mov eax, dword [allocated_memory_pointer]
+   mov dword [file_memory], eax
+   mov edi, eax
+   mov eax, WHITE
+   mov ecx, 100*100+2
+   rep stosd
+   jmp .set_new_image_variabiles
+  .if_resoultion_a:
+  
+  cmp byte [key_code], KEY_B
+  jne .if_resoultion_b
+   mov dword [lc_image_width], 640
+   mov dword [lc_image_heigth], 480
+   mov dword [allocated_size], 2
+   call allocate_memory
+   mov eax, dword [allocated_memory_pointer]
+   mov dword [file_memory], eax
+   mov edi, eax
+   mov eax, WHITE
+   mov ecx, 640*480+2
+   rep stosd
+   jmp .set_new_image_variabiles
+  .if_resoultion_b:
+  
+  cmp byte [key_code], KEY_C
+  jne .if_resoultion_c
+   mov dword [lc_image_width], 800
+   mov dword [lc_image_heigth], 600
+   mov dword [allocated_size], 2
+   call allocate_memory
+   mov eax, dword [allocated_memory_pointer]
+   mov dword [file_memory], eax
+   mov edi, eax
+   mov eax, WHITE
+   mov ecx, 800*600+2
+   rep stosd
+   jmp .set_new_image_variabiles
+  .if_resoultion_c:
+  
+  cmp byte [key_code], KEY_D
+  jne .if_resoultion_d
+   mov dword [lc_image_width], 1024
+   mov dword [lc_image_heigth], 768
+   mov dword [allocated_size], 3
+   call allocate_memory
+   mov eax, dword [allocated_memory_pointer]
+   mov dword [file_memory], eax
+   mov edi, eax
+   mov eax, WHITE
+   mov ecx, 1024*768+2
+   rep stosd
+   jmp .set_new_image_variabiles
+  .if_resoultion_d:
  jmp graphic_editor
   
  .key_up:
@@ -544,9 +642,10 @@ ge_draw_object_on_screen:
 
 ge_select_color:
  call graphic_editor_draw_image
- mov dword [ge_mouse_line], 20
- mov dword [cursor_line], 20
+ mov dword [ge_mouse_line], 55+LINESZ
+ mov dword [cursor_line], 55+LINESZ
  mov eax, dword [ge_panel_column]
+ add eax, COLUMNSZ
  mov dword [ge_mouse_column], eax
  mov dword [cursor_column], eax
  call read_cursor_bg
