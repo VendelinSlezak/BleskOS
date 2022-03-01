@@ -95,11 +95,24 @@ show_message_window:
  mov eax, 0
  .length_of_string:
   cmp byte [esi], 0
-  je .draw_window
+  je .length_of_2_string
   inc eax
   inc esi
  jmp .length_of_string
  
+ .length_of_2_string:
+ mov ebx, 0
+ .length_of_string_2:
+  cmp byte [edi], 0
+  je .compare_strings_length
+  inc ebx
+  inc edi
+ jmp .length_of_string_2
+ 
+ .compare_strings_length:
+ cmp eax, ebx
+ ja .draw_window
+ mov eax, ebx 
  .draw_window:
  add eax, 2
  push eax ;number of columns of message
