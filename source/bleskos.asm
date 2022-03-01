@@ -71,6 +71,8 @@ start:
  %include "source/programs/dp_acpi.asm"
 
  %include "source/programs/text_editor/text_editor.asm"
+ %include "source/programs/graphic_editor/graphic_editor.asm"
+ %include "source/programs/graphic_editor/drawing_things_on_screen.asm"
  %include "source/programs/media_viewer/media_viewer.asm"
  %include "source/programs/internet_browser/html_drawing.asm"
  %include "source/programs/internet_browser/internet_browser.asm"
