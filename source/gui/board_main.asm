@@ -22,7 +22,7 @@ main_window:
  PRINT 'Welcome in BleskOS', main_up_str, LINE(2), COLUMN(2)
  PRINT 'You can open programs with keyboard:', main_second_str, LINE(4), COLUMN(2)
  PRINT '[a] Text editor', main_text_editor_str, LINE(6), COLUMN(2)
- PRINT '    Graphic editor (not in this version)', main_graphic_editor_str, LINE(8), COLUMN(2)
+ PRINT '[b] Graphic editor', main_graphic_editor_str, LINE(8), COLUMN(2)
  PRINT '[c] Media viewer', main_media_viewer_str, LINE(10), COLUMN(2)
  PRINT '[d] Document editor', main_document_editor_str, LINE(12), COLUMN(2)
  PRINT '[e] Internet browser', main_internet_browser_str, LINE(14), COLUMN(2)
@@ -36,6 +36,9 @@ main_window:
   
   cmp byte [key_code], KEY_A
   je text_editor
+  
+  cmp byte [key_code], KEY_B
+  je graphic_editor
   
   cmp byte [key_code], KEY_C
   je media_viewer
