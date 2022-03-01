@@ -10,17 +10,17 @@ dd 0xFFCCCC, 0xFF9999, 0xFF6666, 0xFF3333, 0xFF0000, 0xCC0000, 0x990000, 0x66000
 dd 0xFFE5CC, 0xFFCC99, 0xFFB266, 0xFF9933, 0xFF8000, 0xCC6600, 0x994C00, 0x663300 ;ORANGE to BROWN
 dd 0xFFFFCC, 0xFFFF99, 0xFFFF66, 0xFFFF33, 0xFFFF00, 0xCCCC00, 0x999900, 0x333300 ;YELLOW
 dd 0xE5FFCC, 0xCCFF99, 0xB2FF66, 0x99FF33, 0x80FF00, 0x00CC00, 0x009900, 0x006600 ;GREEN
-dd 0xCCFFFF, 0x99FFFF, 0x66FFFF, 0x33FFFF, 0x00FFFF, 0x2222FF, 0x0000FF, 0x000099 ;BLUE
+dd 0xCCFFFF, 0x99FFFF, 0x66FFFF, 0x33FFFF, 0x00FFFF, 0x0088FF, 0x0000FF, 0x000099 ;BLUE
 dd 0xE5CCFF, 0xCC99FF, 0xB266FF, 0x9933FF, 0x7F00FF, 0x6600CC, 0x4C0099, 0x330066 ;PURPLE
 dd 0xFFCCFF, 0xFF99FF, 0xFF66FF, 0xFF33FF, 0xFF00FF, 0xCC00CC, 0x990099, 0x660066 ;PINK
 
 graphic_editor_draw_panel:
  ;draw background
- SCREEN_X_SUB eax, COLUMNSZ*25
+ SCREEN_X_SUB eax, COLUMNSZ*2+16*8
  mov dword [ge_panel_column], eax
  SCREEN_Y_SUB ebx, 40
  mov dword [ge_draw_heigth], ebx
- DRAW_SQUARE 20, eax, COLUMNSZ*25, ebx, 0x999999
+ DRAW_SQUARE 20, eax, COLUMNSZ*2+16*8, ebx, 0x999999
  
  ;draw column between draw zone
  mov eax, dword [ge_panel_column]
@@ -82,7 +82,7 @@ graphic_editor_draw_panel:
  mov eax, dword [ge_panel_column]
  add eax, COLUMNSZ
  mov dword [cursor_column], eax
- mov dword [square_length], COLUMNSZ*23
+ mov dword [square_length], 16*8
  mov dword [square_heigth], 15
  mov dword [color], 0xFF0000
  call draw_square
