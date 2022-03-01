@@ -65,6 +65,9 @@ line_x_length dd 0
 line_y_length dd 0
 line_x_pointer dd 0
 line_y_pointer dd 0
+circle_radius dd 0
+ellipse_x_radius dd 0
+ellipse_y_radius dd 0
 
 ;;;;; END OF DEFINITIONS OF VARIABILES ;;;;;
 
@@ -462,12 +465,8 @@ draw_empty_square:
  ret
  
 draw_line_all:
- ;if straigth line
- mov eax, dword [y1]
- cmp eax, dword [y2]
- je .draw_line
- 
  ;line will be drawed from down to up
+ mov eax, dword [y1]
  cmp eax, dword [y2]
  ja .if_reverse
   mov ebx, dword [y2]
@@ -480,12 +479,8 @@ draw_line_all:
   mov dword [x2], eax
  .if_reverse:
  
- ;if straigth column
- mov eax, dword [x1]
- cmp eax, dword [x2]
- je .draw_column
- 
  ;direction of line
+ mov eax, dword [x1]
  cmp eax, dword [x2]
  ja .direction_left
  
@@ -516,6 +511,8 @@ draw_line_all:
  mov dword [cursor_line], eax
  CALCULATE_CURSOR_POSITION
  mov esi, eax ;pointer
+ mov eax, dword [color]
+ mov edi, eax
  
  mov eax, dword [line_x_length]
  mov ebx, dword [line_y_length]
@@ -538,10 +535,10 @@ draw_line_all:
   mov ebp, dword [line_x_pointer]
   cmp ebp, dword [x2]
   ja .continue_draw_left
-  jmp .done
+  jmp .finish_line
   
   .continue_draw_left:
-  mov dword [esi], BLACK ;draw pixel
+  mov dword [esi], edi ;draw pixel
   
   cmp eax, ebx
   ja .move_cursor_left
@@ -561,10 +558,10 @@ draw_line_all:
   mov ebp, dword [line_y_pointer]
   cmp ebp, dword [y2]
   ja .continue_draw_left_up
-  jmp .done
+  jmp .finish_line
   
   .continue_draw_left_up:
-  mov dword [esi], BLACK ;draw pixel
+  mov dword [esi], edi ;draw pixel
   
   cmp ebx, eax
   ja .move_cursor_left_up
@@ -584,10 +581,10 @@ draw_line_all:
   mov ebp, dword [line_x_pointer]
   cmp ebp, dword [x2]
   jb .continue_draw_right
-  jmp .done
+  jmp .finish_line
   
   .continue_draw_right:
-  mov dword [esi], BLACK ;draw pixel
+  mov dword [esi], edi ;draw pixel
   
   cmp eax, ebx
   ja .move_cursor_right
@@ -607,10 +604,10 @@ draw_line_all:
   mov ebp, dword [line_y_pointer]
   cmp ebp, dword [y2]
   ja .continue_draw_right_up
-  jmp .done
+  jmp .finish_line
   
   .continue_draw_right_up:
-  mov dword [esi], BLACK ;draw pixel
+  mov dword [esi], edi ;draw pixel
   
   cmp ebx, eax
   ja .move_cursor_right_up
@@ -626,45 +623,8 @@ draw_line_all:
   add eax, ecx
  jmp .right_up_draw_pixel_of_line
  
- .done:
- ret
- 
- .draw_line:
- mov eax, dword [y1]
- mov dword [cursor_line], eax
- mov ebx, dword [x1]
- mov eax, dword [x2]
- sub eax, dword [x1]
- mov ebx, dword [x2]
- cmp dword [x1], ebx
- jb .if_x1_higher_than_x2_line
-  mov ebx, dword [x2]
-  mov eax, dword [x1]
-  sub eax, dword [x2]
- .if_x1_higher_than_x2_line:
- mov dword [line_length], eax
- mov dword [cursor_column], ebx
- call draw_line
- 
- ret
- 
- .draw_column:
- mov eax, dword [x1]
- mov dword [cursor_column], eax
- mov ebx, dword [y1]
- mov eax, dword [y2]
- sub eax, dword [y1]
- mov ebx, dword [y2]
- cmp dword [y1], ebx
- jb .if_y1_higher_than_y2_column
-  mov ebx, dword [y2]
-  mov eax, dword [y1]
-  sub eax, dword [y2]
- .if_y1_higher_than_y2_column:
- mov dword [column_heigth], eax
- mov dword [cursor_line], ebx
- call draw_column
- 
+ .finish_line:
+ mov dword [esi], edi ;draw last pixel
  ret
 
 draw_cursor:
