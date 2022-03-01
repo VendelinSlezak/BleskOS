@@ -7,6 +7,7 @@ developer_zone:
  CLEAR_SCREEN DEVELOPER_ZONE_COLOR
 
  ;text
+ mov dword [color], BLACK
  PRINT 'Developer zone', dz_up_str, LINE(1), COLUMN(1)
  PRINT '[a] Hardware info', dz_hw_str, LINE(3), COLUMN(1)
  PRINT '[b] Intel HD Audio', dz_hda_str, LINE(5), COLUMN(1)
