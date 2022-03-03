@@ -1,11 +1,11 @@
 ;BleskOS
 
 document_editor_up_str db 'Document editor', 0
-document_editor_down_str db '[F1] Save file [F2] Open file [F3] New file [F4] Show tools', 0
+document_editor_down_str db '[F1] Save file [F2] Open file [F3] New file [page up/down] Move page', 0
 de_message_new_file_up db 'Are you sure you want to erase actual document?', 0
 de_message_new_file_down db '[enter] Yes [esc] Cancel', 0
 de_message_change_color_str_up db 'Choose color:', 0
-de_message_change_color_str_down db '[a] black [r] red [g] green [b] blue [p] purple [o] orange [esc] back', 0
+de_message_change_color_str_down db '[a] black [r] red [g] green [b] blue [p] light blue [o] orange [esc] back', 0
 
 document_editor_file_pointer dd 0
 de_pointer dd 0
@@ -34,20 +34,35 @@ de_cursor_char_color dd 0
 %define DE_MIDDLE 1
 %define DE_RIGHT 2
 de_aligment dd DE_LEFT
-de_show_tools dd 0
+de_actual_page dd 0
+
+de_mouse_line dd 20
+de_mouse_column dd 0
+de_mouse_cursor_document_pointer dd 0
+de_left_column_of_print dd 0
+de_draw_on_end_of_line dd 0
 
 %define DE_COMMAND 127
 
 document_editor:
  call de_draw_document
- cmp dword [de_show_tools], 1
- jne .if_show_tools
-  call document_editor_draw_tools
- .if_show_tools:
+ mov eax, dword [de_mouse_line]
+ mov dword [cursor_line], eax
+ mov eax, dword [de_mouse_column]
+ mov dword [cursor_column], eax
+ call read_cursor_bg
+ call draw_cursor
  call redraw_screen
+ 
+ mov dword [mcursor_up_side], 20
+ mov dword [mcursor_left_side], 0
+ SCREEN_Y_SUB eax, 20
+ mov dword [mcursor_down_side], eax
+ mov eax, dword [screen_x]
+ mov dword [mcursor_right_side], eax
 
  .halt:
-  call wait_for_keyboard
+  call wait_for_usb_mouse
   
   cmp byte [key_code], KEY_ESC
   je main_window
@@ -60,9 +75,6 @@ document_editor:
   
   cmp byte [key_code], KEY_F3
   je .new_file
-  
-  cmp byte [key_code], KEY_F4
-  je .show_hide_tools
   
   cmp byte [key_code], KEY_F5
   je .change_bold
@@ -97,12 +109,28 @@ document_editor:
   cmp byte [key_code], KEY_RIGHT
   je .key_right
   
+  cmp byte [key_code], KEY_UP
+  je .key_up
+  
+  cmp byte [key_code], KEY_DOWN
+  je .key_down
+  
   cmp byte [key_code], KEY_PAGE_UP
   je .key_page_up
   
   cmp byte [key_code], KEY_PAGE_DOWN
   je .key_page_down
   
+  cmp byte [key_code], KEY_HOME
+  je .key_home
+  
+  cmp byte [key_code], KEY_END
+  je .key_end
+  
+  cmp byte [usb_mouse_data], 0
+  jne .mouse_event
+  
+  .test_if_add_char:
   cmp word [key_unicode], 0
   jne .add_char
  jmp .halt
@@ -199,11 +227,6 @@ document_editor:
   
   .cancel:
   mov byte [key_code], 0
- jmp document_editor
- 
- .show_hide_tools:
-  or dword [de_show_tools], 0xFFFFFFFE
-  not dword [de_show_tools] ;reverse bit 0
  jmp document_editor
  
  ;CHANGES ON DOCUMENT FORMATTING
@@ -410,6 +433,129 @@ document_editor:
    mov word [edi+2], 'l'
    jmp document_editor
    
+ .change_aligment_left:
+  mov edi, dword [de_pointer]
+  cmp edi, dword [document_editor_file_pointer]
+  je .change_aligment_left_group
+  cmp word [edi], DE_COMMAND
+  je .change_aligment_left_group
+  sub edi, 4
+  cmp word [edi], DE_COMMAND
+  jne .change_aligment_left_add
+  .change_aligment_left_skip_commands:
+   sub edi, 4
+   cmp word [edi], DE_COMMAND
+   jne .change_aligment_left_group_add
+  jmp .change_aligment_left_skip_commands
+  
+  .change_aligment_left_add:
+  mov eax, 4
+  call document_editor_shift_text
+  mov edi, dword [de_pointer]
+  mov word [edi], DE_COMMAND
+  mov word [edi+2], 'l'
+  jmp .key_right ;skip all commands
+  
+  .change_aligment_left_group_add:
+  add edi, 4
+  .change_aligment_left_group:
+   cmp word [edi], DE_COMMAND
+   jne .change_aligment_left_add ;in this group is not any aligment command
+   cmp word [edi+2], 'l'
+   je document_editor
+   cmp word [edi+2], 'm'
+   je .change_aligment_left_to_left
+   cmp word [edi+2], 'r'
+   je .change_aligment_left_to_left
+   add edi, 4
+  jmp .change_aligment_left_group
+  
+  .change_aligment_left_to_left:
+   mov word [edi+2], 'l'
+   jmp document_editor
+   
+ .change_aligment_middle:
+  mov edi, dword [de_pointer]
+  cmp edi, dword [document_editor_file_pointer]
+  je .change_aligment_middle_group
+  cmp word [edi], DE_COMMAND
+  je .change_aligment_middle_group
+  sub edi, 4
+  cmp word [edi], DE_COMMAND
+  jne .change_aligment_middle_add
+  .change_aligment_middle_skip_commands:
+   sub edi, 4
+   cmp word [edi], DE_COMMAND
+   jne .change_aligment_middle_group_add
+  jmp .change_aligment_middle_skip_commands
+  
+  .change_aligment_middle_add:
+  mov eax, 4
+  call document_editor_shift_text
+  mov edi, dword [de_pointer]
+  mov word [edi], DE_COMMAND
+  mov word [edi+2], 'm'
+  jmp .key_right ;skip all commands
+  
+  .change_aligment_middle_group_add:
+  add edi, 4
+  .change_aligment_middle_group:
+   cmp word [edi], DE_COMMAND
+   jne .change_aligment_middle_add ;in this group is not any aligment command
+   cmp word [edi+2], 'l'
+   je .change_aligment_middle_to_middle
+   cmp word [edi+2], 'm'
+   je document_editor
+   cmp word [edi+2], 'r'
+   je .change_aligment_middle_to_middle
+   add edi, 4
+  jmp .change_aligment_middle_group
+  
+  .change_aligment_middle_to_middle:
+   mov word [edi+2], 'm'
+   jmp document_editor
+   
+ .change_aligment_right:
+  mov edi, dword [de_pointer]
+  cmp edi, dword [document_editor_file_pointer]
+  je .change_aligment_right_group
+  cmp word [edi], DE_COMMAND
+  je .change_aligment_right_group
+  sub edi, 4
+  cmp word [edi], DE_COMMAND
+  jne .change_aligment_right_add
+  .change_aligment_right_skip_commands:
+   sub edi, 4
+   cmp word [edi], DE_COMMAND
+   jne .change_aligment_right_group_add
+  jmp .change_aligment_right_skip_commands
+  
+  .change_aligment_right_add:
+  mov eax, 4
+  call document_editor_shift_text
+  mov edi, dword [de_pointer]
+  mov word [edi], DE_COMMAND
+  mov word [edi+2], 'r'
+  jmp .key_right ;skip all commands
+  
+  .change_aligment_right_group_add:
+  add edi, 4
+  .change_aligment_right_group:
+   cmp word [edi], DE_COMMAND
+   jne .change_aligment_right_add ;in this group is not any aligment command
+   cmp word [edi+2], 'l'
+   je .change_aligment_right_to_right
+   cmp word [edi+2], 'm'
+   je .change_aligment_right_to_right
+   cmp word [edi+2], 'r'
+   je document_editor
+   add edi, 4
+  jmp .change_aligment_right_group
+  
+  .change_aligment_right_to_right:
+   mov word [edi+2], 'r'
+   jmp document_editor
+   
  .change_font:
   mov edi, dword [de_pointer]
   cmp edi, dword [document_editor_file_pointer]
@@ -499,9 +645,9 @@ document_editor:
    mov bx, 0x001F
   .change_color_if_blue:
   cmp byte [key_code], KEY_P
-  jne .change_color_if_purple
+  jne .change_color_if_light_blue
    mov bx, 0x07FF
-  .change_color_if_purple:
+  .change_color_if_light_blue:
   cmp byte [key_code], KEY_O
   jne .change_color_if_orange
    mov bx, 0xFAE0
@@ -642,18 +788,131 @@ document_editor:
   mov dword [de_pointer], eax
  jmp document_editor
  
+ .key_up:
+  mov eax, dword [de_pointer]
+  cmp eax, dword [document_editor_file_pointer]
+  je .halt
+  .key_up_move:
+  cmp eax, dword [document_editor_file_pointer]
+  je .move_key_up
+  sub eax, 4
+  cmp word [eax], DE_COMMAND
+  je .key_up_command
+  add eax, 2
+  cmp word [eax], 0xA
+  je .move_key_up
+  jmp .key_up_move
+  
+  .key_up_command:
+  cmp word [eax+2], 'l'
+  je .move_key_up_skip_commands
+  cmp word [eax+2], 'm'
+  je .move_key_up_skip_commands
+  cmp word [eax+2], 'r'
+  je .move_key_up_skip_commands
+  jmp .key_up_move
+  
+  .move_key_up_skip_commands:
+   sub eax, 4
+   cmp word [eax], DE_COMMAND
+   jne .move_key_up_after_commands
+  jmp .move_key_up_skip_commands
+  
+  .move_key_up_after_commands:
+  add eax, 4
+  .move_key_up:
+  mov dword [de_pointer], eax
+ jmp document_editor
+ 
+ .key_down:
+  mov eax, dword [de_pointer]
+  .key_down_move:
+  cmp word [eax], 0
+  je .move_key_down
+  cmp word [eax], DE_COMMAND
+  je .key_down_command
+  add eax, 2
+  cmp word [eax], 0xA
+  je .move_key_down
+  jmp .key_down_move
+  
+  .key_down_command:
+  cmp word [eax+2], 'l'
+  je .move_key_down
+  cmp word [eax+2], 'm'
+  je .move_key_down
+  cmp word [eax+2], 'r'
+  je .move_key_down
+  add eax, 4
+  jmp .key_down_move
+  
+  .move_key_down:
+  mov dword [de_pointer], eax
+ jmp document_editor
+ 
  .key_page_up:
   cmp dword [de_first_show_line], 0
   je .halt
-  sub dword [de_first_show_line], 32
-  sub dword [de_last_show_line], 32
+  sub dword [de_first_show_line], 40
+  sub dword [de_last_show_line], 40
  jmp document_editor
  
  .key_page_down:
-  cmp dword [de_first_show_line], 4096
+  cmp dword [de_first_show_line], 880*39
   je .halt
-  add dword [de_first_show_line], 32
-  add dword [de_last_show_line], 32
+  add dword [de_first_show_line], 40
+  add dword [de_last_show_line], 40
+ jmp document_editor
+ 
+ .key_home:
+  mov dword [de_first_show_line], 0
+ jmp document_editor
+ 
+ .key_end:
+  mov dword [de_first_show_line], 880*39
+ jmp document_editor
+ 
+ .mouse_event:
+  mov eax, dword [de_mouse_line]
+  mov dword [cursor_line], eax
+  mov eax, dword [de_mouse_column]
+  mov dword [cursor_column], eax
+  call move_mouse_cursor
+  mov eax, dword [cursor_line]
+  mov dword [de_mouse_line], eax
+  mov eax, dword [cursor_column]
+  mov dword [de_mouse_column], eax
+  
+  cmp dword [usb_mouse_dnd], 0x1
+  je .mouse_click
+ jmp .test_if_add_char
+ 
+ .mouse_click:
+  TEST_CLICK_ZONE_WITH_JUMP click_zone_font, de_mouse_line, de_mouse_column, 18+LINESZ, 18+LINESZ+14, COLUMNSZ-2, COLUMNSZ*15-2, .change_font
+  TEST_CLICK_ZONE_WITH_JUMP click_zone_bold, de_mouse_line, de_mouse_column, 20+LINESZ*3, 20+LINESZ*3+16, COLUMNSZ-2, COLUMNSZ+14, .change_bold
+  TEST_CLICK_ZONE_WITH_JUMP click_zone_size_sub, de_mouse_line, de_mouse_column, 20+LINESZ*3, 20+LINESZ*3+16, COLUMNSZ*15-26, COLUMNSZ*15-14, .change_size_sub
+  TEST_CLICK_ZONE_WITH_JUMP click_zone_size_add, de_mouse_line, de_mouse_column, 20+LINESZ*3, 20+LINESZ*3+16, COLUMNSZ*15-14, COLUMNSZ*15-2, .change_size_add
+  TEST_CLICK_ZONE_WITH_JUMP click_zone_left, de_mouse_line, de_mouse_column, 20+LINESZ*5, 20+LINESZ*5+16, COLUMNSZ-2, COLUMNSZ+14, .change_aligment_left
+  TEST_CLICK_ZONE_WITH_JUMP click_zone_middle, de_mouse_line, de_mouse_column, 20+LINESZ*5, 20+LINESZ*5+16, COLUMNSZ*4-2, COLUMNSZ*4+14, .change_aligment_middle
+  TEST_CLICK_ZONE_WITH_JUMP click_zone_right, de_mouse_line, de_mouse_column, 20+LINESZ*5, 20+LINESZ*5+16, COLUMNSZ*7-2, COLUMNSZ*7+14, .change_aligment_right
+  TEST_CLICK_ZONE_WITH_JUMP click_zone_color, de_mouse_line, de_mouse_column, 20+LINESZ*7, 20+LINESZ*7+16, COLUMNSZ-2, COLUMNSZ*15-2, .change_color
+  
+  SCREEN_Y_SUB eax, 20
+  mov ebx, dword [de_left_border_start]
+  mov ecx, ebx
+  add ecx, dword [de_right_border_column]
+  sub ebx, 40
+  add ecx, 40
+  TEST_CLICK_ZONE_WITH_JUMP click_zone_document, de_mouse_line, de_mouse_column, 20, eax, ebx, ecx, .mouse_click_document
+ jmp .test_if_add_char
+ 
+ .mouse_click_document:
+  mov eax, dword [de_pointer]
+  mov dword [de_mouse_cursor_document_pointer], eax
+  call de_draw_document
+  mov eax, dword [de_mouse_cursor_document_pointer]
+  mov dword [de_pointer], eax
+  mov dword [de_mouse_cursor_document_pointer], 0
  jmp document_editor
  
  .add_char:
@@ -744,7 +1003,9 @@ de_draw_document:
  mov dword [de_draw_line], 40
  mov dword [de_printing_base_line], 48
  mov dword [de_draw_column], 0
- 
+ mov eax, dword [de_left_border_start]
+ mov dword [de_left_column_of_print], eax
+  
  mov eax, dword [document_editor_file_pointer]
  mov esi, eax
  .draw_char:
@@ -752,6 +1013,24 @@ de_draw_document:
   je .done
   cmp esi, dword [document_editor_file_end]
   je .done
+  
+  ;find if this is on end of line
+  mov dword [de_draw_on_end_of_line], 0
+  mov edi, esi
+  .find_if_this_is_end_of_line:
+   cmp word [edi], DE_COMMAND
+   jne .done_find_if_this_is_end_of_line
+   cmp word [edi+2], 'l'
+   je .find_if_this_is_end_of_line_yes
+   cmp word [edi+2], 'm'
+   je .find_if_this_is_end_of_line_yes
+   cmp word [edi+2], 'r'
+   je .find_if_this_is_end_of_line_yes
+   add edi, 4
+  jmp .find_if_this_is_end_of_line
+  .find_if_this_is_end_of_line_yes:
+   mov dword [de_draw_on_end_of_line], 1
+  .done_find_if_this_is_end_of_line:
   
   cmp word [esi], DE_COMMAND
   jne .if_command
@@ -790,6 +1069,14 @@ de_draw_document:
     mov dword [de_cursor_char_color], eax
     mov eax, dword [de_aligment]
     mov dword [de_cursor_char_aligment], eax
+    
+    ;actual page number
+    mov eax, dword [de_draw_line]
+    mov ebx, 880
+    mov edx, 0
+    div ebx
+    inc eax
+    mov dword [de_actual_page], eax
    .if_cursor_on_command:
  
    cmp word [esi+2], 'p'
@@ -902,6 +1189,75 @@ de_draw_document:
   cmp eax, dword [de_last_show_line]
   ja .done
   
+  cmp word [esi], 0xA
+  jne .if_enter_char
+   mov dword [de_draw_on_end_of_line], 1
+  .if_enter_char:
+  mov eax, dword [size_of_text]
+  shl eax, 3 ;mul 8
+  add eax, dword [de_draw_column]
+  cmp eax, dword [de_right_border_column]
+  jb .if_on_end_of_line2
+   mov dword [de_draw_on_end_of_line], 2
+  .if_on_end_of_line2:
+  
+  ;test if mouse cursor is not here
+  cmp dword [de_mouse_cursor_document_pointer], 0
+  je .if_mouse_cursor_here
+  mov eax, dword [de_mouse_line]
+  mov ebx, dword [cursor_line]
+  cmp eax, ebx
+  jb .if_mouse_cursor_here ;if cursor below first line of char
+  mov ecx, dword [size_of_text]
+  shl ecx, 3 ;mul 8
+  add ebx, ecx
+  cmp eax, ebx
+  ja .if_mouse_cursor_here ;if cursor above last line of char
+  mov eax, dword [de_mouse_column]
+  mov ebx, dword [cursor_column]
+  cmp eax, ebx
+  jb .if_mouse_cursor_here_start_of_line ;if cursor above first column of char
+  add ebx, ecx
+  cmp eax, ebx
+  ja .if_mouse_cursor_here_end_of_line ;if cursor below last line of char
+   ;mouse cursor is on this char
+   shr ecx, 1 ;div 2
+   sub ebx, ecx ;half of char
+   cmp eax, ebx
+   jb .if_mouse_cursor_move_cursor_back ;cursor in first half of char - move cursor pointer to this char
+   jmp .if_mouse_cursor_move_cursor_here ;cursor in second half of char - move cursor pointer on next char
+  .if_mouse_cursor_here_start_of_line: ;click below first drawed char - move on first drawed char
+   mov eax, dword [de_left_column_of_print]
+   cmp ebx, dword [de_left_column_of_print]
+   jne .if_mouse_cursor_here ;this char is not on start of line
+   ;move cursor to start of this line
+   .if_mouse_cursor_move_cursor_back:
+   mov dword [de_mouse_cursor_document_pointer], esi
+   sub dword [de_mouse_cursor_document_pointer], 2
+   jmp .if_mouse_cursor_here
+  .if_mouse_cursor_here_end_of_line: ;click above last drawed char - move on last drawed char
+   cmp dword [de_draw_on_end_of_line], 0
+   je .if_mouse_cursor_here
+   mov edi, esi
+   .move_cursor_back_commands:
+    sub edi, 4
+    cmp word [edi], DE_COMMAND
+    jne .move_cursor_end_of_line
+   jmp .move_cursor_back_commands
+   .move_cursor_end_of_line:
+    add edi, 4
+    mov dword [de_mouse_cursor_document_pointer], edi
+   cmp dword [de_draw_on_end_of_line], 1 ;to next line is enter/aligment
+   je .if_mouse_cursor_here
+   cmp edi, dword [document_editor_file_pointer]
+   je .if_mouse_cursor_here ;we are on start of document
+    sub edi, 2
+    mov dword [de_mouse_cursor_document_pointer], edi
+   jmp .if_mouse_cursor_here
+  .if_mouse_cursor_move_cursor_here:
+   mov dword [de_mouse_cursor_document_pointer], esi
+  .if_mouse_cursor_here:
+  
   ;if on end of line, move to next line
   mov eax, dword [size_of_text]
   shl eax, 3 ;mul 8
@@ -963,6 +1319,14 @@ de_draw_document:
    mov dword [de_cursor_char_color], eax
    mov eax, dword [de_aligment]
    mov dword [de_cursor_char_aligment], eax
+   
+   ;actual page number
+   mov eax, dword [de_draw_line]
+   mov ebx, 880
+   mov edx, 0
+   div ebx
+   inc eax
+   mov dword [de_actual_page], eax
   .if_draw_cursor:
   .do_not_draw:
   
@@ -983,6 +1347,20 @@ de_draw_document:
  jmp .draw_char
  
  .done:
+ cmp dword [de_mouse_cursor_document_pointer], 0
+  je .if_mouse_cursor_on_end_of_document
+  mov eax, dword [de_mouse_line]
+  mov ebx, dword [cursor_line]
+  cmp eax, ebx
+  jb .if_mouse_cursor_on_end_of_document
+  mov eax, dword [de_mouse_column]
+  mov ebx, dword [cursor_column]
+  cmp eax, ebx
+  jb .if_mouse_cursor_on_end_of_document
+  
+  mov dword [de_mouse_cursor_document_pointer], esi
+ .if_mouse_cursor_on_end_of_document:
+ 
  cmp esi, dword [de_pointer]
  jne .if_cursor_end_of_text
   mov eax, dword [de_printing_base_line]
@@ -1016,6 +1394,14 @@ de_draw_document:
   mov dword [de_cursor_char_color], eax
   mov eax, dword [de_aligment]
   mov dword [de_cursor_char_aligment], eax
+  
+  ;actual page number
+  mov eax, dword [de_draw_line]
+  mov ebx, 880
+  mov edx, 0
+  div ebx
+  inc eax
+  mov dword [de_actual_page], eax
  .if_cursor_end_of_text:
  mov dword [type_of_text], PLAIN
  mov dword [size_of_text], 1
@@ -1024,7 +1410,24 @@ de_draw_document:
  mov dword [de_right_border_column], 600
  DRAW_WINDOW_BORDERS document_editor_up_str, document_editor_down_str, 0x4444FF
  
- ret
+ ;print actual page number
+ cmp dword [de_actual_page], 10
+ jb .actual_page_below_10
+ 
+ .actual_page_below_100:
+ SCREEN_X_SUB eax, COLUMNSZ*8
+ PRINT 'page', de_page_str10, 5, eax
+ mov eax, dword [de_actual_page]
+ SCREEN_X_SUB ebx, COLUMNSZ*3
+ PRINT_VAR eax, 5, ebx
+ jmp document_editor_draw_tools
+ 
+ .actual_page_below_10:
+ SCREEN_X_SUB eax, COLUMNSZ*7
+ PRINT 'page', de_page_str20, 5, eax
+ mov eax, dword [de_actual_page]
+ SCREEN_X_SUB ebx, COLUMNSZ*2
+ PRINT_VAR eax, 5, ebx
  
 document_editor_draw_tools:
  ;background
@@ -1242,6 +1645,9 @@ document_editor_move_to_next_line:
  
  .done:
  pop dword [size_of_text]
+ mov eax, dword [de_draw_column]
+ add eax, dword [de_left_border_start]
+ mov dword [de_left_column_of_print], eax
  ret
 
 document_editor_shift_text:
