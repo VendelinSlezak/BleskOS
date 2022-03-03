@@ -61,6 +61,10 @@ internet_browser:
  jmp .halt
  
  .open:
+  mov dword [fd_file_type_1], 'htm'
+  mov dword [fd_file_type_2], 'HTM'
+  mov dword [fd_file_type_3], 'txt'
+  mov dword [fd_file_type_4], 'TXT'
   call file_dialog_open
   cmp dword [fd_return], FD_NO_FILE
   je internet_browser
