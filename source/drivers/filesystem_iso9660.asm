@@ -71,10 +71,22 @@ iso9660_read_file:
  mov dword [atapi_sector], eax
 
  mov ecx, dword [iso9660_file_length]
+ mov dword [fd_file_length], ecx
+ mov dword [fd_file_loaded_length], 0
+ mov eax, 0
  .load_file:
  push ecx
+  push eax
   call patapi_read
+  pop eax
   inc dword [atapi_sector]
+  inc dword [fd_file_loaded_length]
+  inc eax
+  cmp eax, 10
+  jb .next_sector
+  call file_dialog_draw_percents_of_file ;draw how many of file is already loaded
+  mov eax, 0
+ .next_sector:
  pop ecx
  cmp dword [atapi_status], IDE_ERROR
  je .done
