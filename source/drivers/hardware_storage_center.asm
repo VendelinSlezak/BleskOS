@@ -24,7 +24,7 @@ cdrom_drive dd 0
 
 ata_sector dq 0
 ata_sectors_num dd 0
-ata_number_of_sectors dw 0
+ata_number_of_sectors dd 0
 ata_memory dd 0
 ata_status dd 0
 
