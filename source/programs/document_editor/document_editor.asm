@@ -162,6 +162,8 @@ document_editor:
  jmp document_editor
  
  .open_file:
+  mov dword [fd_file_type_1], 'td'
+  mov dword [fd_file_type_2], 'TD'
   call file_dialog_open
   cmp dword [fd_return], FD_NO_FILE
   je document_editor
