@@ -62,6 +62,9 @@ init_ps2_controller:
  call write_command_ps2_controller
  mov byte [ps2_command], 0xA7
  call write_command_ps2_controller
+ mov byte [ps2_command], 0x20
+ call write_command_ps2_controller
+ call read_ps2_controller
 
  ;enable interrupts
  mov byte [ps2_command], 0x60
