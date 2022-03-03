@@ -53,6 +53,8 @@ jus_save_bn_part:
  ret
  
 jus_read_file:
+ mov dword [fd_file_loaded_length], 0
+ 
  mov eax, dword [jus_memory]
  mov dword [ata_memory], eax
  mov eax, dword [jus_file_sector]
