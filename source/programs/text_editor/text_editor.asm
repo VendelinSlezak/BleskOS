@@ -91,6 +91,10 @@ text_editor:
  jmp text_editor
  
  .open_file:
+  mov dword [fd_file_type_1], 'txt'
+  mov dword [fd_file_type_2], 'TXT'
+  mov dword [fd_file_type_3], 'htm'
+  mov dword [fd_file_type_4], 'HTM'
   call file_dialog_open
   cmp dword [fd_return], FD_NO_FILE
   je text_editor
@@ -515,6 +519,8 @@ te_draw_text:
  .done:
  pop dword [te_draw_column]
  pop dword [te_draw_line]
+ DRAW_WINDOW_BORDERS text_editor_up_str, text_editor_down_str, 0xFF0000
+ 
  ret
 
 te_move_first_line_up:
