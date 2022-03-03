@@ -53,9 +53,6 @@ jus_save_bn_part:
  ret
  
 jus_read_file:
- mov dword [fd_file_loaded_length], 0
- call file_dialog_draw_percents_of_file
- 
  mov eax, dword [jus_memory]
  mov dword [ata_memory], eax
  mov eax, dword [jus_file_sector]
