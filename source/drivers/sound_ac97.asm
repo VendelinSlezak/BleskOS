@@ -13,8 +13,6 @@ init_ac97:
  cmp word [ac97_nam_base], 0
  je .end
 
- PSTR 'Sound card AC97', ac97_string
-
  ;resume from cold reset
  BASE_OUTD ac97_nabm_base, 0x2C, 0x2
  WAIT 20
