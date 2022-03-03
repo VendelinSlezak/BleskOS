@@ -198,6 +198,57 @@ show_message_window:
  
  .return:
  ret
+ 
+message_window_length dd 0
+message_window_heigth dd 0
+message_window_line dd 0
+message_window_column dd 0
+
+show_empty_message_window:
+ mov eax, dword [screen_x_center]
+ mov ecx, dword [message_window_length]
+ shr ecx, 1 ;div 2
+ sub eax, ecx
+ mov dword [cursor_column], eax
+ mov dword [message_window_column], eax
+ mov eax, dword [screen_y_center]
+ mov ecx, dword [message_window_heigth]
+ shr ecx, 1 ;div 2
+ sub eax, ecx
+ mov dword [cursor_line], eax
+ mov dword [message_window_line], eax
+ 
+ mov eax, dword [message_window_length]
+ mov dword [square_length], eax
+ mov eax, dword [message_window_heigth]
+ mov dword [square_heigth], eax
+ 
+ mov dword [color], 0xDD8000
+ call draw_square
+ mov dword [color], BLACK
+ call draw_empty_square
+ 
+ ret
+ 
+print_to_message_window:
+ mov edi, esi
+ mov eax, 0
+ .length_of_message:
+  cmp byte [edi], 0
+  je .print
+  inc eax
+  inc edi
+ jmp .length_of_message
+ 
+ .print:
+ shl eax, 2 ;mul 4
+ mov ebx, dword [screen_x_center]
+ sub ebx, eax
+ mov dword [cursor_column], ebx
+ mov dword [color], BLACK
+ call print
+ 
+ ret
 
 ;;;;; Text input ;;;;;
 
@@ -206,6 +257,10 @@ show_message_window:
 text_input_pointer dd 0
 text_input_length dd 0
 text_input_cursor dd 0
+
+%define TEXT_INPUT_ALL 0
+%define TEXT_INPUT_NUMBERS 1
+text_input_type dd 0
 
 draw_text_input:
  push dword [cursor_line]
@@ -284,10 +339,19 @@ text_input:
   cmp byte [key_code], KEY_BACKSPACE
   je .key_backspace
 
+  cmp dword [text_input_type], TEXT_INPUT_NUMBERS
+  je .test_if_number_input
+  
   cmp word [key_unicode], 0
   jne .char
  jmp .text_input_halt
-
+  .test_if_number_input:
+  cmp word [key_unicode], '0'
+  jb .text_input_halt
+  cmp word [key_unicode], '9'
+  ja .text_input_halt
+ jmp .char
+  
  .done:
  ret
 
@@ -376,6 +440,33 @@ text_input:
  call draw_text_input
  call redraw_screen
  jmp .text_input_halt
+ 
+number_input_return dd 0 
+ 
+number_input:
+ mov dword [text_input_type], TEXT_INPUT_NUMBERS
+ call text_input
+ mov dword [text_input_type], TEXT_INPUT_ALL
+ 
+ mov dword [number_input_return], 0
+ mov ecx, 0
+ mov esi, dword [text_input_pointer]
+ .calculate_number:
+  cmp word [esi], 0
+  je .done
+  mov eax, ecx
+  mov ebx, 10
+  mul ebx
+  mov bx, word [esi]
+  sub ebx, '0'
+  add eax, ebx
+  mov ecx, eax
+  add esi, 2
+ jmp .calculate_number
+  
+ .done:
+ mov dword [number_input_return], ecx
+ ret
 
 ;;; Mouse move ;;;
 
