@@ -293,6 +293,7 @@ fat_read_file:
  ret
 
  .read_file:
+ mov dword [fd_file_loaded_length], 0
  mov ebx, 0
  pop ecx
  mov esi, MEMORY_FILE_DESCRIPTOR
