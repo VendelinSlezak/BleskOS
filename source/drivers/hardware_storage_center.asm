@@ -22,7 +22,7 @@ hard_disk_size dd 0
 cdrom_base dd 0
 cdrom_drive dd 0
 
-ata_sector dq 0
+ata_sector dd 0
 ata_sectors_num dd 0
 ata_number_of_sectors dd 0
 ata_memory dd 0
