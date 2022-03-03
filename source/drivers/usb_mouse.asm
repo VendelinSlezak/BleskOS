@@ -16,6 +16,19 @@
  .%1_over:
 %endmacro
 
+%macro TEST_CLICK_ZONE_WITH_JUMP 8
+ cmp dword [%2], %4
+ jb .%1_not_pass
+ cmp dword [%2], %5
+ ja .%1_not_pass
+ cmp dword [%3], %6
+ jb .%1_not_pass
+ cmp dword [%3], %7
+ ja .%1_not_pass
+ jmp %8
+ .%1_not_pass:
+%endmacro
+
 usb_mouse_controller dd 0
 usb_mouse_base dd 0
 usb_mouse_controller_number dd 0
