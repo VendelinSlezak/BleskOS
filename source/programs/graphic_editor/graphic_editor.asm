@@ -126,6 +126,8 @@ graphic_editor:
  jmp graphic_editor
  
  .open_file:
+  mov dword [fd_file_type_1], 'bmp'
+  mov dword [fd_file_type_2], 'BMP'
   call file_dialog_open
   cmp dword [fd_return], FD_NO_FILE
   je graphic_editor
