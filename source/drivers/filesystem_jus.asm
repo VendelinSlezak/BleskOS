@@ -53,15 +53,35 @@ jus_save_bn_part:
  ret
  
 jus_read_file:
+ mov dword [fd_file_loaded_length], 0
+ call file_dialog_draw_percents_of_file
+ 
  mov eax, dword [jus_memory]
  mov dword [ata_memory], eax
  mov eax, dword [jus_file_sector]
  mov dword [ata_sector], eax
  mov eax, dword [jus_file_size]
  shl eax, 1 ;mul 2 - jus_file_size is in KB
- mov dword [ata_sectors_num], eax
- call read_hdd_sectors
- 
+ mov ecx, eax
+ mov dword [fd_file_length], eax
+ mov eax, 0
+ .read_sector:
+ push ecx
+  push eax
+  mov dword [ata_number_of_sectors], 1
+  call read_hdd
+  pop eax
+  inc dword [ata_sector]
+  inc dword [fd_file_loaded_length]
+  inc eax
+  cmp eax, 200
+  jb .next_sector
+  call file_dialog_draw_percents_of_file
+  mov eax, 0
+ .next_sector:
+ pop ecx
+ loop .read_sector
+  
  cmp dword [ata_status], IDE_ERROR
  je .error
  
