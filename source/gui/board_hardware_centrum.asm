@@ -32,8 +32,10 @@ hardware_centrum:
 
  ;text
  PRINT 'Hardware centrum', hc_str, LINE(2), COLUMN(2)
- SCREEN_Y_SUB eax, LINESZ*5
+ SCREEN_Y_SUB eax, LINESZ*7
  PRINT '[enter] Detect USB devices', detect_usb_devices_str, eax, COLUMN(2)
+ SCREEN_Y_SUB eax, LINESZ*5
+ PRINT '[space] Change keyboard layout', change_keyboard_layout_str, eax, COLUMN(2)
  SCREEN_Y_SUB eax, LINESZ*3
  PRINT '[F12] Shutdown', shutdown_str, eax, COLUMN(2)
 
@@ -105,6 +107,9 @@ hardware_centrum:
 
   cmp byte [key_code], KEY_ENTER
   je .detect_usb_devices
+  
+  cmp byte [key_code], KEY_SPACE
+  je .change_keyboard_layout
 
   cmp byte [key_code], KEY_F12
   je .shutdown
@@ -128,6 +133,45 @@ hardware_centrum:
   WAIT 100
   call detect_usb_devices
  jmp hardware_centrum
+ 
+ .change_keyboard_layout:
+  SCREEN_X_SUB eax, 20
+  SCREEN_Y_SUB ebx, 20
+  DRAW_SQUARE 10, 10, eax, ebx, 0x00C000 ;clear screen
+  mov dword [color], BLACK
+  PRINT 'Actual keyboard:', actual_keyboard_str, LINE(2), COLUMN(2)
+  cmp dword [selected_keyboard_set], english_keyboard_layout
+  jne .if_english_keyboard
+   PRINT 'English', english_str, LINE(2), COLUMN(19)
+  .if_english_keyboard:
+  cmp dword [selected_keyboard_set], slovak_keyboard_layout
+  jne .if_slovak_keyboard
+   PRINT 'Slovak', slovak_str, LINE(2), COLUMN(19)
+  .if_slovak_keyboard:
+  PRINT '[e] English keyboard', english_keyboard_str, LINE(4), COLUMN(2)
+  PRINT '[s] Slovak keyboard', slovak_keyboard_str, LINE(6), COLUMN(2)
+  call redraw_screen
+  
+  .change_keyboard_layout_halt:
+   call wait_for_keyboard
+   
+   cmp byte [key_code], KEY_ESC
+   je hardware_centrum
+   
+   cmp byte [key_code], KEY_E
+   jne .if_change_to_english_keyboard
+    mov dword [selected_keyboard_set], english_keyboard_layout
+    mov dword [selected_keyboard_shift_set], english_shift_keyboard_layout
+    jmp .change_keyboard_layout
+   .if_change_to_english_keyboard:
+   
+   cmp byte [key_code], KEY_S
+   jne .if_change_to_slovak_keyboard
+    mov dword [selected_keyboard_set], slovak_keyboard_layout
+    mov dword [selected_keyboard_shift_set], slovak_shift_keyboard_layout
+    jmp .change_keyboard_layout
+   .if_change_to_slovak_keyboard:
+  jmp .change_keyboard_layout_halt
 
  .shutdown:
   CLEAR_SCREEN 0x00C000
