@@ -100,7 +100,6 @@ read_acpi:
  cmp ax, 0x1
  je .read_shutdown_value
 
- PSTR 'Turning ACPI on...', acpi_on_str
  mov dx, word [acpi_command]
  mov al, byte [acpi_turn_on]
  OUTB dx, al
