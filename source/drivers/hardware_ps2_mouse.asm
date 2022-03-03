@@ -25,6 +25,8 @@ enable_touchpad:
 
  ;enable sending packets
  mov dword [ps2_mouse_ack], 1
+ WRITE_PS2_MOUSE 0xF6
+ READ_PS2_MOUSE
  WRITE_PS2_MOUSE 0xF4
  READ_PS2_MOUSE
  mov dword [ps2_mouse_data_pointer], ps2_mouse_data
