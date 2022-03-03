@@ -258,6 +258,7 @@ fat_read_file:
  call fat_get_entry ;get value of first cluster
  pop esi
 
+ mov dword [fd_file_length], 0
  mov ecx, 100000 ;max 100000 clusters
  .load_cluster_values:
  push ecx
@@ -271,6 +272,7 @@ fat_read_file:
   mov dword [fat_entry], eax ;point to next cluster
   add esi, 4
   mov dword [esi], eax ;save cluster value
+  inc dword [fd_file_length]
   push esi
   call fat_get_entry
   pop esi
@@ -291,6 +293,7 @@ fat_read_file:
  ret
 
  .read_file:
+ mov ebx, 0
  pop ecx
  mov esi, MEMORY_FILE_DESCRIPTOR
  .read_cluster:
@@ -300,7 +303,16 @@ fat_read_file:
   mov eax, dword [esi]
   mov dword [fat_cluster], eax
   push esi
+  push ebx
   call fat_read_cluster
+  pop ebx
+  inc dword [fd_file_loaded_length]
+  inc ebx
+  cmp ebx, 100
+  jb .if_redraw_percents
+   call file_dialog_draw_percents_of_file
+   mov ebx, 0
+  .if_redraw_percents:
   pop esi
   add esi, 4
  jmp .read_cluster
