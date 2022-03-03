@@ -11,7 +11,7 @@ read_ps2_controller:
   cmp al, 0x1
   je .read
   hlt
- cmp dword [ticks], 50
+ cmp dword [ticks], 200
  jl .wait
 
  .read:
@@ -27,7 +27,7 @@ write_ps2_controller:
   cmp al, 0
   je .write
   hlt
- cmp dword [ticks], 50
+ cmp dword [ticks], 200
  jl .wait
 
  .write:
@@ -44,7 +44,7 @@ write_command_ps2_controller:
   cmp al, 0
   je .write
   hlt
- cmp dword [ticks], 50
+ cmp dword [ticks], 200
  jl .wait
 
  .write:
@@ -54,7 +54,6 @@ write_command_ps2_controller:
  ret
 
 init_ps2_controller:
- mov dword [ps2_mouse_present], 0
  cmp byte [ps2_exist], 0
  je .done
 
@@ -63,14 +62,6 @@ init_ps2_controller:
  call write_command_ps2_controller
  mov byte [ps2_command], 0xA7
  call write_command_ps2_controller
-
- ;detect second PS/2 port
- mov byte [ps2_command], 0x20
- call write_command_ps2_controller
- call read_ps2_controller
- and al, 0x20
- cmp al, 0x0
- je .enable_only_keyboard
 
  ;enable interrupts
  mov byte [ps2_command], 0x60
@@ -87,17 +78,4 @@ init_ps2_controller:
  mov dword [ps2_mouse_present], 1
 
  .done:
- ret
-
- .enable_only_keyboard:
- mov byte [ps2_command], 0x60
- call write_command_ps2_controller
- mov byte [ps2_command], 0x45
- call write_ps2_controller
-
- mov byte [ps2_command], 0xAE
- call write_command_ps2_controller
-
- mov dword [ps2_mouse_present], 0
-
  ret
