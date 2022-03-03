@@ -48,6 +48,7 @@ init_memory_of_programs:
  mov ebx, LINESZ
  mov edx, 0
  div ebx
+ inc eax
  mov dword [te_max_line], eax
  
  ;GRAPHIC EDITOR
