@@ -34,6 +34,20 @@ fd_path times 50 dd 0
 fd_path_pointer dd fd_path
 fd_path_entry dd 0
 
+fd_file_type_1 dd 0
+fd_file_type_2 dd 0
+fd_file_type_3 dd 0
+fd_file_type_4 dd 0
+fd_file_type_5 dd 0
+fd_file_type_6 dd 0
+fd_file_type_7 dd 0
+fd_file_type_8 dd 0
+fd_file_type_9 dd 0
+fd_file_type_10 dd 0
+
+fd_file_length dd 0
+fd_file_loaded_length dd 0
+
 ;STRINGS
 fd_no_usb db 'No USB device', 0
 fd_usb_not_fat32 db 'USB stick', 0
@@ -262,6 +276,42 @@ file_dialog_draw_devices:
  loop .print_labels_of_usb
  PRINT '[F12] RAM memory', ram_memory_str, LINESZ*5+LINESZ*12+6, COLUMNSZ*2 
  
+ ret
+ 
+file_dialog_draw_percents_of_file:
+ SCREEN_X_SUB eax, COLUMNSZ*5
+ DRAW_SQUARE LINESZ*5, eax, COLUMNSZ*4, LINESZ, 0x884E10
+ mov dword [color], BLACK
+ 
+ mov eax, dword [fd_file_loaded_length]
+ mov ebx, 100
+ mul ebx
+ mov ebx, dword [fd_file_length]
+ mov edx, 0
+ div ebx
+ cmp eax, 10
+ jb .print_under_10
+ cmp eax, 100
+ je .print_100
+ 
+ SCREEN_X_SUB ebx, COLUMNSZ*4
+ PRINT_VAR eax, LINESZ*5, ebx
+ mov dword [char_for_print], '%'
+ call print_char
+ jmp .done
+ 
+ .print_under_10:
+ SCREEN_X_SUB ebx, COLUMNSZ*3
+ PRINT_VAR eax, LINESZ*5, ebx
+ mov dword [char_for_print], '%'
+ call print_char
+ jmp .done
+ 
+ .print_100:
+ SCREEN_X_SUB ebx, COLUMNSZ*5
+ PRINT '100%', 100_percents_str, LINESZ*5, ebx
+ .done:
+ REDRAW_LINES_SCREEN LINESZ*5, LINESZ
  ret
  
 file_dialog_change_device:
@@ -586,6 +636,31 @@ file_dialog_open:
   cmp word [esi+14], 1
   je .open_folder
   
+  ;open only if program support this type of files
+  mov eax, dword [esi+116]
+  cmp eax, dword [fd_file_type_1]
+  je .hdd_supported_file
+  cmp eax, dword [fd_file_type_2]
+  je .hdd_supported_file
+  cmp eax, dword [fd_file_type_3]
+  je .hdd_supported_file
+  cmp eax, dword [fd_file_type_4]
+  je .hdd_supported_file
+  cmp eax, dword [fd_file_type_5]
+  je .hdd_supported_file
+  cmp eax, dword [fd_file_type_6]
+  je .hdd_supported_file
+  cmp eax, dword [fd_file_type_7]
+  je .hdd_supported_file
+  cmp eax, dword [fd_file_type_8]
+  je .hdd_supported_file
+  cmp eax, dword [fd_file_type_9]
+  je .hdd_supported_file
+  cmp eax, dword [fd_file_type_10]
+  je .hdd_supported_file
+  jmp .halt
+  .hdd_supported_file:
+  
   mov eax, dword [esi+4] ;here is length of file in KB
   mov ebx, 1000
   mov edx, 0
@@ -648,6 +723,31 @@ file_dialog_open:
   ;folder
   cmp word [esi+14], 1
   je .open_folder
+  
+  ;open only if program support this type of files
+  mov eax, dword [esi+116]
+  cmp eax, dword [fd_file_type_1]
+  je .cdrom_supported_file
+  cmp eax, dword [fd_file_type_2]
+  je .cdrom_supported_file
+  cmp eax, dword [fd_file_type_3]
+  je .cdrom_supported_file
+  cmp eax, dword [fd_file_type_4]
+  je .cdrom_supported_file
+  cmp eax, dword [fd_file_type_5]
+  je .cdrom_supported_file
+  cmp eax, dword [fd_file_type_6]
+  je .cdrom_supported_file
+  cmp eax, dword [fd_file_type_7]
+  je .cdrom_supported_file
+  cmp eax, dword [fd_file_type_8]
+  je .cdrom_supported_file
+  cmp eax, dword [fd_file_type_9]
+  je .cdrom_supported_file
+  cmp eax, dword [fd_file_type_10]
+  je .cdrom_supported_file
+  jmp .halt
+  .cdrom_supported_file:
   
   mov eax, dword [esi+4] ;here is length of file in KB
   mov ebx, 1000
@@ -713,6 +813,31 @@ file_dialog_open:
   ;folder
   cmp word [esi+14], 1
   je .open_folder
+  
+  ;open only if program support this type of files
+  mov eax, dword [esi+116]
+  cmp eax, dword [fd_file_type_1]
+  je .usb_stick_supported_file
+  cmp eax, dword [fd_file_type_2]
+  je .usb_stick_supported_file
+  cmp eax, dword [fd_file_type_3]
+  je .usb_stick_supported_file
+  cmp eax, dword [fd_file_type_4]
+  je .usb_stick_supported_file
+  cmp eax, dword [fd_file_type_5]
+  je .usb_stick_supported_file
+  cmp eax, dword [fd_file_type_6]
+  je .usb_stick_supported_file
+  cmp eax, dword [fd_file_type_7]
+  je .usb_stick_supported_file
+  cmp eax, dword [fd_file_type_8]
+  je .usb_stick_supported_file
+  cmp eax, dword [fd_file_type_9]
+  je .usb_stick_supported_file
+  cmp eax, dword [fd_file_type_10]
+  je .usb_stick_supported_file
+  jmp .halt
+  .usb_stick_supported_file:
   
   mov eax, dword [esi+4] ;here is length of file in KB
   mov ebx, 1000
