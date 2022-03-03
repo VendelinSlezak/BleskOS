@@ -62,6 +62,10 @@ media_viewer:
   jmp media_viewer_draw_image_to_center
 
  .open_file:
+  mov dword [fd_file_type_1], 'bmp'
+  mov dword [fd_file_type_2], 'BMP'
+  mov dword [fd_file_type_3], 'wav'
+  mov dword [fd_file_type_4], 'WAV'
   call file_dialog_open
   cmp dword [fd_return], FD_NO_FILE
   je media_viewer
@@ -79,6 +83,8 @@ media_viewer:
   je .play_wav_file
   cmp dword [file_type], 'WAV'
   je .play_wav_file
+  
+  call release_memory ;this is not supported type of file
   jmp media_viewer
   
   .convert_bmp_file:
@@ -306,6 +312,7 @@ media_viewer_play_file:
  SCREEN_X_SUB eax, COLUMNSZ*12
  mov dword [cursor_column], eax
  mov dword [char_for_print], '0'
+ mov dword [color], BLACK
  cmp dword [media_viewer_sound_played_min], 9
  ja .if_played_min_above_10_redrawing
   call print_char
@@ -358,6 +365,7 @@ media_viewer_play_file:
  call print_var
  
  ;volume
+ mov dword [color], BLACK
  SCREEN_Y_SUB ebx, 20+LINESZ*6
  PRINT 'Volume:', volume_str, ebx, COLUMNSZ*1
  SCREEN_Y_SUB ebx, 20+LINESZ*6
@@ -423,6 +431,7 @@ media_viewer_play_file:
    SCREEN_X_SUB eax, COLUMNSZ*12
    mov dword [cursor_column], eax
  
+   mov dword [color], BLACK
    mov dword [char_for_print], '0'
    cmp dword [media_viewer_sound_played_min], 9
    ja .if_played_min_above_10
@@ -585,6 +594,7 @@ media_viewer_play_file:
   DRAW_SQUARE ebx, COLUMNSZ*9, COLUMNSZ*3, LINESZ, WHITE
   SCREEN_Y_SUB ebx, 20+LINESZ*6
   mov eax, dword [ac97_volume]
+  mov dword [color], BLACK
   PRINT_VAR eax, ebx, COLUMNSZ*9
   SCREEN_Y_SUB ebx, 20+LINESZ*6
   REDRAW_LINES_SCREEN ebx, LINESZ
@@ -606,6 +616,6 @@ media_viewer_play_file:
  
  .can_not_play:
   DRAW_WINDOW media_viewer_up_str, media_viewer_down_str, 0x00FFEF, WHITE
-  PRINT 'This file can not be play on this hardware', hardware_can_not_play_file_str, 20+LINESZ*1, COLUMNSZ*1
+  PRINT 'This file can not be played on this hardware', hardware_can_not_play_file_str, 20+LINESZ*1, COLUMNSZ*1
   call redraw_screen
   jmp media_viewer.media_viewer_halt
