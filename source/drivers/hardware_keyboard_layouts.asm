@@ -87,7 +87,7 @@ english_keyboard_layout:
  dw 0, 0 ;zero, escape
  dw '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 0, 0 ;first line, backspace, tab
  dw 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', 0xA, 0 ;second line, enter, left ctrl
- dw 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\', '`', 0, '\' ;third line, left shift
+ dw 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '`', '`', 0, '\' ;third line, left shift
  dw 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 0, '*', 0, ' ' ;fourth line, right shift
  times 10 dw 0 ;other control keys
  dw '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3', '0', '.' ;numpad
@@ -98,6 +98,25 @@ english_shift_keyboard_layout:
  dw 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', 0xA, 0 ;second line, enter, left ctrl
  dw 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', '"', '~', 0, '|' ;third line, left shift
  dw 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '<', '>', '?', 0, '*', 0, ' ' ;fourth line, right shift
+ times 10 dw 0 ;other control keys
+ dw '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3', '0', '.' ;numpad
+ times 230 dw 0
+ 
+slovak_keyboard_layout:
+ dw 0, 0 ;zero, escape
+ dw '+', 0x13E, 0x161, 0x10D, 0x165, 0x17E, 0xFD, 0xE1, 0xED, 0xE9, '=', 0, 0, 0 ;first line, backspace, tab
+ dw 'q', 'w', 'e', 'r', 't', 'z', 'u', 'i', 'o', 'p', 0xFA, 0xE4, 0xA, 0 ;second line, enter, left ctrl
+ dw 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 0xF4, 0xA7, ';', 0, 0x148 ;third line, left shift
+ dw 'y', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '-', 0, '\', 0, ' ' ;fourth line, right shift
+ times 10 dw 0 ;other control keys
+ dw '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3', '0', '.' ;numpad
+ times 230 dw 0
+slovak_shift_keyboard_layout:
+ dw 0, 0 ;zero, escape
+ dw '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '%', 0, 0, 0 ;first line, backspace, tab
+ dw 'Q', 'W', 'E', 'R', 'T', 'Z', 'U', 'I', 'O', 'P', '/', '(', 0xA, 0 ;second line, enter, left ctrl
+ dw 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', '"', '!', '°', 0, ')' ;third line, left shift
+ dw 'Y', 'X', 'C', 'V', 'B', 'N', 'M', '?', ':', '_', 0, '|', 0, ' ' ;fourth line, right shift
  times 10 dw 0 ;other control keys
  dw '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3', '0', '.' ;numpad
  times 230 dw 0
@@ -116,7 +135,8 @@ usb_keyboard_layout:
 key_code dd 0
 keyboard_shift dd 0
 key_unicode dw 0
-selected_keyboard_set dd 0
+selected_keyboard_set dd english_keyboard_layout
+selected_keyboard_shift_set dd english_shift_keyboard_layout
 
 keyboard_convert_to_unicode:
  ;if some shift key is presses
@@ -142,9 +162,9 @@ keyboard_convert_to_unicode:
  cmp dword [key_code], 0x79
  jg .done ;released key
 
- mov eax, english_keyboard_layout
+ mov eax, dword [selected_keyboard_set]
  IF_E dword [keyboard_shift], 1, if_shift_yes
-  mov eax, english_shift_keyboard_layout
+  mov eax, dword [selected_keyboard_shift_set]
  ENDIF if_shift_yes
 
  mov ecx, dword [key_code]
