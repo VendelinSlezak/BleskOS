@@ -69,10 +69,6 @@ init_nic_intel:
  NIC_INTEL_WRITE 0x0, 0x04000000
  WAIT 100
  
- ;enable interrupts
- NIC_INTEL_WRITE 0xD0, 0xFFFF
- NIC_INTEL_WRITE 0xD8, 0xFFFF
- 
  ;read card MAC
  NIC_INTEL_WRITE 0x10, 0xE ;unlock EEPROM
  NIC_INTEL_WRITE 0x14, 0x1
@@ -204,11 +200,8 @@ nic_intel_send_packet:
  mov byte [eax+11], 0x3 ;send packet
 
  inc dword [nic_intel_last_t]
- cmp dword [nic_intel_last_t], 8
- jne .send
- mov dword [nic_intel_last_t], 0
- 
- .send:
+ and dword [nic_intel_last_t], 0x7
+
  mov eax, dword [nic_intel_last_t]
  NIC_INTEL_WRITE 0x3818, eax
  
