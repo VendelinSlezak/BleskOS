@@ -2,8 +2,8 @@
 
 nic_amd_initalization_block:
 dw 0x8000 ;promiscuous mode
-db 8 << 4 ;8 receive buffers
-db 8 << 4 ;8 transmit buffers
+db 3 << 4 ;8 receive buffers
+db 3 << 4 ;8 transmit buffers
 .mac0: db 0
 .mac1: db 0
 .mac2: db 0
@@ -76,7 +76,7 @@ init_nic_amd:
  mov ecx, 8
  .init_transmit:
   mov dword [esi], 0
-  mov dword [esi+4], (0xF << 12)
+  mov dword [esi+4], 0
   mov dword [esi+8], 0
   mov dword [esi+12], 0
   add esi, 0x10
@@ -98,30 +98,54 @@ init_nic_amd:
  WAIT 50
  
  ;start card
- BASE_OUTD ethernet_card_io_base, 0x14, 0x4
- BASE_OUTD ethernet_card_io_base, 0x10, 0x0C00
  BASE_OUTD ethernet_card_io_base, 0x14, 0x0
  BASE_OUTD ethernet_card_io_base, 0x10, 0x142
  
  ret
+ 
+nic_amd_send_packet:
+ mov eax, dword [nic_amd_transmit_buffer]
+ mov ebx, 0x10
+ mul ebx
+ add eax, MEMORY_NIC+0x1000
+ mov esi, eax
+ 
+ mov dword [esi+8], 0
+ mov dword [esi+12], 0
+ mov eax, dword [packet_pointer]
+ mov dword [esi], eax
+ mov eax, 0xFFF
+ sub eax, dword [packet_length]
+ or eax, 0x8300F000
+ mov dword [esi+4], eax
+ 
+ inc dword [nic_amd_transmit_buffer]
+ and dword [nic_amd_transmit_buffer], 0x7
+ ret
 
 nic_amd_irq:
- ;read interrupts reason
+ ;read interrupt reason
  BASE_OUTD ethernet_card_io_base, 0x14, 0x0
  BASE_IND ethernet_card_io_base, 0x10
  test eax, 0x400
  jnz .packet_received
  test eax, 0x200
  jnz .packet_transmitted
- PHEX eax ;print
  jmp .end
  
  .packet_received:
- PSTR 'packet received', recstr
+  mov eax, dword [nic_amd_receive_buffer]
+  shl eax, 4 ;mul 16
+  add eax, MEMORY_NIC
+  mov ebx, dword [eax]
+  mov dword [received_packet_pointer], ebx
+  inc dword [nic_amd_receive_buffer]
+  and dword [nic_amd_receive_buffer], 0x7
+  call ethernet_card_process_packet
  jmp .end
  
  .packet_transmitted:
- PSTR 'packet transmitted', transstr
+  inc dword [number_of_transmitted_packets]
  jmp .end
  
  ;clear interrupt state
@@ -136,29 +160,4 @@ nic_amd_irq:
  or eax, 0x022A
  BASE_OUTD ethernet_card_io_base, 0x10, eax
  
- ret
-
-nic_amd_send_packet:
- mov eax, dword [nic_amd_transmit_buffer]
- mov ebx, 0x10
- mul ebx
- add eax, MEMORY_NIC+0x1000
- mov esi, eax
- 
- mov dword [esi+8], 0
- mov dword [esi+12], 0
- mov eax, dword [packet_pointer]
- mov dword [esi], eax
- mov eax, dword [packet_length]
- or eax, 0x8300F000
- mov dword [esi+4], eax
- 
- BASE_OUTD ethernet_card_io_base, 0x14, 0x0
- BASE_OUTD ethernet_card_io_base, 0x10, 0x48
- 
- inc dword [nic_amd_transmit_buffer]
- cmp dword [nic_amd_transmit_buffer], 8
- jl .done
- mov dword [nic_amd_transmit_buffer], 0
- .done:
  ret
