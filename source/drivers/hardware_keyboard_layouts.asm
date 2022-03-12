@@ -9,6 +9,7 @@
 %define KEY_DELETE 0x53
 %define KEY_LEFT_SHIFT 0x2A
 %define KEY_RIGHT_SHIFT 0x36
+%define KEY_CTRL 0x1D
 
 %define KEY_HOME 0x47
 %define KEY_PAGE_UP 0x49
@@ -134,12 +135,23 @@ usb_keyboard_layout:
 
 key_code dd 0
 keyboard_shift dd 0
+keyboard_ctrl dd 0
 key_unicode dw 0
 selected_keyboard_set dd english_keyboard_layout
 selected_keyboard_shift_set dd english_shift_keyboard_layout
 
-keyboard_convert_to_unicode:
- ;if some shift key is presses
+keyboard_convert_to_unicode: 
+ ;if ctrl key is pressed
+ cmp al, KEY_CTRL
+ jne .if_ctrl_pressed
+  mov dword [keyboard_ctrl], 1
+ .if_ctrl_pressed:
+ cmp al, KEY_CTRL+0x80
+ jne .if_ctrl_released
+  mov dword [keyboard_ctrl], 0
+ .if_ctrl_released:
+ 
+ ;if some shift key is pressed
  cmp al, KEY_CAPSLOCK
  je .reverse_shift_state
  cmp al, KEY_LEFT_SHIFT
