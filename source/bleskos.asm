@@ -63,6 +63,7 @@ start:
  %include "source/gui/library_file_dialogue.asm"
  %include "source/gui/library_encrypting.asm"
  %include "source/gui/library_convert_graphic_files.asm"
+ %include "source/gui/library_copy.asm"
 
  %include "source/programs/dp_hardware_info.asm"
  %include "source/programs/dp_intel_hd_audio.asm"
