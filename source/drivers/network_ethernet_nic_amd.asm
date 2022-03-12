@@ -138,10 +138,16 @@ nic_amd_irq:
   shl eax, 4 ;mul 16
   add eax, MEMORY_NIC
   mov ebx, dword [eax]
+  mov dword [eax+4], 0x80000000 | (0xF << 12) | (1520) ;restore pointer
   mov dword [received_packet_pointer], ebx
   inc dword [nic_amd_receive_buffer]
   and dword [nic_amd_receive_buffer], 0x7
   call ethernet_card_process_packet
+  
+  mov edi, dword [received_packet_pointer]
+  mov eax, 0
+  mov ecx, 1440
+  rep stosb
  jmp .end
  
  .packet_transmitted:
