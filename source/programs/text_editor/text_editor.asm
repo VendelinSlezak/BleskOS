@@ -515,8 +515,6 @@ text_editor:
   mov dword [te_mouse_cursor_text_pointer], eax
   call te_draw_text
   mov eax, dword [te_mouse_cursor_text_pointer]
-  cmp eax, dword [te_pointer]
-  je .mouse_double_click
   mov dword [te_pointer], eax
   mov dword [te_mouse_cursor_first_pointer], eax
   mov dword [te_mouse_cursor_second_pointer], eax
@@ -526,76 +524,11 @@ text_editor:
   mov dword [te_cursor_offset], eax
  jmp .te_redraw_screen
  
- .mouse_double_click:
-  mov dword [te_mouse_cursor_text_pointer], 0
-  
-  mov eax, dword [te_pointer]
-  mov ebx, eax
-  mov ecx, eax
-  mov edx, eax
-  mov dword [te_mouse_cursor_first_pointer], eax
-  mov dword [te_mouse_cursor_second_pointer], eax
-  .mouse_double_click_go_left:
-   cmp eax, dword [text_editor_mem]
-   je .mouse_double_click_go_right
-   sub ebx, 2
-   cmp word [ebx], ' '
-   je .mouse_double_click_go_right
-   cmp word [ebx], 0xA
-   je .mouse_double_click_go_right
-   cmp word [ebx], '"'
-   je .mouse_double_click_go_right
-   cmp word [ebx], '('
-   je .mouse_double_click_go_right
-   cmp word [ebx], ')'
-   je .mouse_double_click_go_right
-   cmp word [ebx], '['
-   je .mouse_double_click_go_right
-   cmp word [ebx], ']'
-   je .mouse_double_click_go_right
-   cmp word [ebx], '<'
-   je .mouse_double_click_go_right
-   cmp word [ebx], '>'
-   je .mouse_double_click_go_right
-   sub eax, 2
-  jmp .mouse_double_click_go_left
-  
-  .mouse_double_click_go_right:
-   cmp word [ecx], 0
-   je .mouse_double_click_set_values
-   cmp word [ecx], ' '
-   je .mouse_double_click_set_values
-   cmp word [ecx], 0xA
-   je .mouse_double_click_set_values
-   cmp word [ecx], '"'
-   je .mouse_double_click_set_values
-   cmp word [ecx], '('
-   je .mouse_double_click_set_values
-   cmp word [ecx], ')'
-   je .mouse_double_click_set_values
-   cmp word [ecx], '['
-   je .mouse_double_click_set_values
-   cmp word [ecx], ']'
-   je .mouse_double_click_set_values
-   cmp word [ecx], '<'
-   je .mouse_double_click_set_values
-   cmp word [ecx], '>'
-   je .mouse_double_click_set_values
-   add ecx, 2
-  jmp .mouse_double_click_go_right
-  
-  .mouse_double_click_set_values:
-  mov dword [te_mouse_cursor_first_pointer], eax
-  mov dword [te_mouse_cursor_second_pointer], ecx
- jmp .te_redraw_screen
- 
  .mouse_drag_and_drop:
   mov eax, dword [te_pointer]
   mov dword [te_mouse_cursor_text_pointer], eax
   call te_draw_text
   mov eax, dword [te_mouse_cursor_text_pointer]
-  cmp eax, dword [te_pointer]
-  je .mouse_double_click
   mov dword [te_mouse_cursor_second_pointer], eax
   mov dword [te_mouse_cursor_text_pointer], 0
  jmp .te_redraw_screen
