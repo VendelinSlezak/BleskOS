@@ -13,22 +13,22 @@ init_ethernet_card:
  cmp dword [ethernet_card_id], 0
  je .done
  
- cmp word [ethernet_card_id], 0x1022
- je init_nic_amd
+ ;;cmp word [ethernet_card_id], 0x1022
+ ;;je init_nic_amd
  
  .done:
  ret
  
 nic_send_packet:
- cmp word [ethernet_card_id], 0x1022
- je nic_amd_send_packet
+ ;;cmp word [ethernet_card_id], 0x1022
+ ;;je nic_amd_send_packet
  
  ret
 
 ethernet_card_irq:
  cmp word [ethernet_card_id], 0x1022
  jne .if_amd_nic
-  call nic_amd_irq
+  ;;call nic_amd_irq
   jmp .done
  .if_amd_nic:
  
