@@ -88,6 +88,25 @@ graphic_editor_draw_panel:
  call draw_square
  mov dword [color], BLACK
  call draw_empty_square
+ cmp dword [ge_draw_object], GE_SQUARE
+ jb .if_draw_empty_full
+ cmp dword [ge_draw_object], GE_CIRCLE
+ ja .if_draw_empty_full
+  mov eax, dword [ge_tool_option]
+  mov ebx, 20
+  mul ebx
+  add eax, 200+20+20+20+20+20
+  mov dword [cursor_line], eax
+  mov eax, dword [ge_panel_column]
+  add eax, COLUMNSZ
+  mov dword [cursor_column], eax
+  mov dword [square_length], 16*8
+  mov dword [square_heigth], 15
+  mov dword [color], 0x00FF00
+  call draw_square
+  mov dword [color], BLACK
+  call draw_empty_square
+ .if_draw_empty_full:
  
  ;print tools
  mov eax, dword [ge_panel_column]
@@ -99,6 +118,24 @@ graphic_editor_draw_panel:
  mov eax, dword [ge_panel_column]
  add eax, COLUMNSZ*2
  PRINT '[d] Square', ge_square_str, 200+20+20+4, eax
+ mov eax, dword [ge_panel_column]
+ add eax, COLUMNSZ*2
+ PRINT '[f] Circle', ge_circle_str, 200+20+20+20+4, eax
+ mov eax, dword [ge_panel_column]
+ add eax, COLUMNSZ*2
+ PRINT '[g] Fill', ge_fill_str, 200+20+20+20+20+4, eax
+ 
+ cmp dword [ge_draw_object], GE_SQUARE
+ jb .if_print_empty_full
+ cmp dword [ge_draw_object], GE_CIRCLE
+ ja .if_print_empty_full
+ mov eax, dword [ge_panel_column]
+ add eax, COLUMNSZ*2
+ PRINT '[1] Empty', ge_full_square_str, 200+20+20+20+20+20+4, eax
+ mov eax, dword [ge_panel_column]
+ add eax, COLUMNSZ*2
+ PRINT '[2] Full', ge_full_circle_str, 200+20+20+20+20+20+20+4, eax
+ .if_print_empty_full:
  
  ret
 
