@@ -32,9 +32,10 @@ USB devices:
 * USB mouse
 * USB mass storage
 
-Ethernet cards:
-* Realtek 8139 (not available on GitHub now)
-* AMD PC-net II/III (in testing)
+Ethernet cards (on GitHub not connected with other code):
+* Realtek 8139/8169 (not complete yet)
+* AMD PC-net II/III
+* Intel e1000
 
 ### Drivers in developing
 - [x] Intel HD Audio
@@ -42,8 +43,7 @@ Ethernet cards:
 - [x] AHCI cdrom
 - [ ] Filesystems UDF and CDDA
 - [ ] USB printer
-- [x] Ethernet card Intel e1000
-- [ ] TCP/IP stack
+- [x] TCP/IP stack
 
 ### Programs
 * Text editor (TXT files)
