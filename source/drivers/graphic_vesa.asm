@@ -65,9 +65,12 @@ line_x_length dd 0
 line_y_length dd 0
 line_x_pointer dd 0
 line_y_pointer dd 0
-circle_radius dd 0
 ellipse_x_radius dd 0
 ellipse_y_radius dd 0
+circle_radius dd 0
+decision dd 0
+de_val dd 0
+dse_val dd 0
 
 ;;;;; END OF DEFINITIONS OF VARIABILES ;;;;;
 
@@ -627,6 +630,818 @@ draw_line_all:
  mov dword [esi], edi ;draw last pixel
  ret
 
+circle_draw_8_pixels:
+ mov eax, dword [screen_pixels_per_line]
+ mov ebx, dword [x1]
+ mul ebx
+ mov ecx, eax
+ 
+ mov eax, dword [screen_pixels_per_line]
+ mov ebx, dword [y1]
+ mul ebx
+ mov ebx, dword [x1]
+ shl ebx, 2 ;mul 4
+ mov edx, dword [y1]
+ shl edx, 2 ;mul 4
+ 
+ mov edi, esi
+ sub edi, eax
+ add edi, ebx
+ mov dword [edi], ebp
+ 
+ mov edi, esi
+ sub edi, eax
+ sub edi, ebx
+ mov dword [edi], ebp
+ 
+ mov edi, esi
+ add edi, edx
+ sub edi, ecx
+ mov dword [edi], ebp
+ 
+ mov edi, esi
+ sub edi, edx
+ sub edi, ecx
+ mov dword [edi], ebp
+ 
+ mov edi, esi
+ add edi, eax
+ add edi, ebx
+ mov dword [edi], ebp
+ 
+ mov edi, esi
+ add edi, eax
+ sub edi, ebx
+ mov dword [edi], ebp
+ 
+ mov edi, esi
+ add edi, edx
+ add edi, ecx
+ mov dword [edi], ebp
+ 
+ mov edi, esi
+ sub edi, edx
+ add edi, ecx
+ mov dword [edi], ebp
+ 
+ ret
+ 
+circle_draw_4_lines:
+ mov eax, dword [screen_pixels_per_line]
+ mov ebx, dword [y1]
+ mul ebx
+ mov ebx, eax
+ mov edx, dword [x1]
+ shl edx, 2 ;mul 4
+
+ mov edi, esi
+ sub edi, ebx
+ sub edi, edx
+ mov eax, ebp
+ mov ecx, dword [x1]
+ shl ecx, 1 ;mul 2
+ rep stosd
+ 
+ mov edi, esi
+ add edi, ebx
+ sub edi, edx
+ mov eax, ebp
+ mov ecx, dword [x1]
+ shl ecx, 1 ;mul 2
+ rep stosd
+ 
+ mov eax, dword [screen_pixels_per_line]
+ mov ebx, dword [x1]
+ mul ebx
+ mov ebx, eax
+ mov edx, dword [y1]
+ shl edx, 2 ;mul 4
+
+ mov edi, esi
+ sub edi, ebx
+ sub edi, edx
+ mov eax, ebp
+ mov ecx, dword [y1]
+ shl ecx, 1 ;mul 2
+ rep stosd
+ 
+ mov edi, esi
+ add edi, ebx
+ sub edi, edx
+ mov eax, ebp
+ mov ecx, dword [y1]
+ shl ecx, 1 ;mul 2
+ rep stosd
+ 
+ ret
+
+draw_empty_circle:
+ CALCULATE_CURSOR_POSITION
+ mov esi, eax
+ mov ebp, dword [color]
+ 
+ mov eax, dword [circle_radius]
+ mov dword [y1], eax
+ mov dword [x1], 0
+ mov eax, 1001
+ sub eax, dword [circle_radius]
+ mov dword [decision], eax
+ mov dword [de_val], 3
+ mov eax, 1000
+ mov ebx, dword [circle_radius]
+ shl ebx, 1 ;mul 2
+ sub ebx, 5
+ sub eax, ebx
+ mov dword [dse_val], eax
+ 
+ .draw_pixel:
+  mov eax, dword [x1]
+  cmp dword [y1], eax
+  je .done
+  jb .done
+  
+  call circle_draw_8_pixels
+  
+  cmp dword [decision], 1000
+  jb .negative_decision
+  
+  cmp dword [dse_val], 1000
+  ja .add_dse
+   mov eax, 1000
+   sub eax, dword [dse_val]
+   sub dword [decision], eax
+   jmp .other
+  .add_dse:
+   mov eax, dword [dse_val]
+   add dword [decision], eax
+  .other:
+  add dword [de_val], 2
+  add dword [dse_val], 4
+  inc dword [x1]
+  dec dword [y1]
+ jmp .draw_pixel
+  
+  .negative_decision:
+  mov eax, dword [de_val]
+  add dword [decision], eax
+  add dword [de_val], 2
+  add dword [dse_val], 2
+  inc dword [x1]
+ jmp .draw_pixel
+  
+ .done:
+ call circle_draw_8_pixels
+ ret
+ 
+draw_circle:
+ CALCULATE_CURSOR_POSITION
+ mov esi, eax
+ mov ebp, dword [color]
+ 
+ mov eax, dword [circle_radius]
+ mov dword [y1], eax
+ mov dword [x1], 0
+ mov eax, 1001
+ sub eax, dword [circle_radius]
+ mov dword [decision], eax
+ mov dword [de_val], 3
+ mov eax, 1000
+ mov ebx, dword [circle_radius]
+ shl ebx, 1 ;mul 2
+ sub ebx, 5
+ sub eax, ebx
+ mov dword [dse_val], eax
+ 
+ .draw_pixel:
+  mov eax, dword [x1]
+  cmp dword [y1], eax
+  je .done
+  jb .done
+  
+  call circle_draw_4_lines
+  
+  cmp dword [decision], 1000
+  jb .negative_decision
+  
+  cmp dword [dse_val], 1000
+  ja .add_dse
+   mov eax, 1000
+   sub eax, dword [dse_val]
+   sub dword [decision], eax
+   jmp .other
+  .add_dse:
+   mov eax, dword [dse_val]
+   add dword [decision], eax
+  .other:
+  add dword [de_val], 2
+  add dword [dse_val], 4
+  inc dword [x1]
+  dec dword [y1]
+ jmp .draw_pixel
+  
+  .negative_decision:
+  mov eax, dword [de_val]
+  add dword [decision], eax
+  add dword [de_val], 2
+  add dword [dse_val], 2
+  inc dword [x1]
+ jmp .draw_pixel
+  
+ .done:
+ call circle_draw_4_lines
+ ret
+ 
+el_ta dd 0
+el_tb dd 0
+el_xc dd 0
+el_yc dd 0
+el_x dd 0
+el_y dd 0
+el_ee dd 0
+el_sx dd 0
+el_sy dd 0
+
+ellipse_draw_4_pixels:
+ mov eax, dword [screen_pixels_per_line]
+ mov ebx, dword [el_x]
+ mul ebx
+ mov ecx, eax
+ 
+ mov eax, dword [screen_pixels_per_line]
+ mov ebx, dword [el_y]
+ mul ebx
+ mov ebx, dword [el_x]
+ shl ebx, 2 ;mul 4
+ mov edx, dword [el_y]
+ shl edx, 2 ;mul 4
+ 
+ mov edi, esi
+ sub edi, eax
+ add edi, ebx
+ mov dword [edi], ebp
+ 
+ mov edi, esi
+ sub edi, eax
+ sub edi, ebx
+ mov dword [edi], ebp
+ 
+ mov edi, esi
+ add edi, eax
+ add edi, ebx
+ mov dword [edi], ebp
+ 
+ mov edi, esi
+ add edi, eax
+ sub edi, ebx
+ mov dword [edi], ebp
+
+ ret
+ 
+ellipse_draw_2_lines:
+ mov eax, dword [screen_pixels_per_line]
+ mov ebx, dword [el_y]
+ mul ebx
+ mov ebx, eax
+ mov edx, dword [el_x]
+ shl edx, 2 ;mul 4
+
+ mov edi, esi
+ sub edi, ebx
+ sub edi, edx
+ mov eax, ebp
+ mov ecx, dword [el_x]
+ shl ecx, 1 ;mul 2
+ rep stosd
+ 
+ mov edi, esi
+ add edi, ebx
+ sub edi, edx
+ mov eax, ebp
+ mov ecx, dword [el_x]
+ shl ecx, 1 ;mul 2
+ rep stosd
+ 
+ ret
+ 
+draw_empty_ellipse:
+ cmp dword [ellipse_x_radius], 3
+ jb .done
+ cmp dword [ellipse_y_radius], 3
+ jb .done
+ 
+ CALCULATE_CURSOR_POSITION
+ mov esi, eax
+ mov ebp, dword [color]
+ 
+ ;calculate values
+ mov eax, dword [ellipse_x_radius]
+ mov ebx, eax
+ mul ebx
+ shl eax, 1 ;mul 2
+ mov dword [el_ta], eax
+ mov eax, dword [ellipse_y_radius]
+ mov ebx, eax
+ mul ebx
+ shl eax, 1 ;mul 2
+ mov dword [el_tb], eax
+ 
+ mov dword [el_x], 0
+ 
+ mov eax, dword [ellipse_y_radius]
+ mov dword [el_y], eax
+ 
+ mov eax, dword [ellipse_y_radius]
+ mov ebx, eax
+ mul ebx
+ mov dword [el_xc], eax
+ 
+ mov eax, dword [ellipse_y_radius]
+ shl eax, 1 ;mul 2
+ mov ebx, 1
+ sub ebx, eax
+ mov eax, ebx
+ mov ebx, dword [ellipse_x_radius]
+ mul ebx
+ mul ebx
+ mov dword [el_yc], eax
+ 
+ mov dword [el_ee], 0
+ 
+ mov dword [el_sx], 0
+ 
+ mov eax, dword [el_ta]
+ mov ebx, dword [ellipse_y_radius]
+ mul ebx
+ mov dword [el_sy], eax
+ 
+ .draw_first_half:
+  mov eax, dword [el_sx]
+  cmp eax, dword [el_sy]
+  ja .calculate_for_second_half
+  
+  call ellipse_draw_4_pixels
+  
+  inc dword [el_x]
+  
+  mov eax, dword [el_tb]
+  add dword [el_sx], eax
+  
+  mov eax, dword [el_xc]
+  add dword [el_ee], eax
+  
+  mov eax, dword [el_tb]
+  add dword [el_xc], eax
+  
+  mov eax, dword [el_ee]
+  shl eax, 1 ;mul 2
+  add eax, dword [el_yc]
+  cmp eax, 0x80000000
+  ja .draw_first_half
+  
+   dec dword [el_y]
+   
+   mov eax, dword [el_ta]
+   sub dword [el_sy], eax
+   
+   mov eax, dword [el_yc]
+   add dword [el_ee], eax
+   
+   mov eax, dword [el_ta]
+   add dword [el_yc], eax
+  jmp .draw_first_half
+  
+ .calculate_for_second_half:
+ mov dword [el_y], 0
+ 
+ mov eax, dword [ellipse_x_radius]
+ mov dword [el_x], eax
+ 
+ mov eax, dword [ellipse_x_radius]
+ mov ebx, eax
+ mul ebx
+ mov dword [el_yc], eax
+ 
+ mov eax, dword [ellipse_x_radius]
+ shl eax, 1 ;mul 2
+ mov ebx, 1
+ sub ebx, eax
+ mov eax, ebx
+ mov ebx, dword [ellipse_y_radius]
+ mul ebx
+ mul ebx
+ mov dword [el_xc], eax
+ 
+ mov dword [el_ee], 0
+ 
+ mov dword [el_sy], 0
+ 
+ mov eax, dword [el_tb]
+ mov ebx, dword [ellipse_x_radius]
+ mul ebx
+ mov dword [el_sx], eax
+ 
+ .draw_second_half:
+  mov eax, dword [el_sx]
+  cmp eax, dword [el_sy]
+  jb .done
+  
+  call ellipse_draw_4_pixels
+  
+  inc dword [el_y]
+  
+  mov eax, dword [el_ta]
+  add dword [el_sy], eax
+  
+  mov eax, dword [el_yc]
+  add dword [el_ee], eax
+  
+  mov eax, dword [el_ta]
+  add dword [el_yc], eax
+  
+  mov eax, dword [el_ee]
+  shl eax, 1 ;mul 2
+  add eax, dword [el_xc]
+  cmp eax, 0x80000000
+  ja .draw_second_half
+  
+   dec dword [el_x]
+   
+   mov eax, dword [el_tb]
+   sub dword [el_sx], eax
+   
+   mov eax, dword [el_xc]
+   add dword [el_ee], eax
+   
+   mov eax, dword [el_tb]
+   add dword [el_xc], eax
+  jmp .draw_second_half
+  
+ .done:
+ ret
+ 
+draw_ellipse:
+ cmp dword [ellipse_x_radius], 3
+ jb .done
+ cmp dword [ellipse_y_radius], 3
+ jb .done
+ 
+ CALCULATE_CURSOR_POSITION
+ mov esi, eax
+ mov ebp, dword [color]
+ 
+ ;calculate values
+ mov eax, dword [ellipse_x_radius]
+ mov ebx, eax
+ mul ebx
+ shl eax, 1 ;mul 2
+ mov dword [el_ta], eax
+ mov eax, dword [ellipse_y_radius]
+ mov ebx, eax
+ mul ebx
+ shl eax, 1 ;mul 2
+ mov dword [el_tb], eax
+ 
+ mov dword [el_x], 0
+ 
+ mov eax, dword [ellipse_y_radius]
+ mov dword [el_y], eax
+ 
+ mov eax, dword [ellipse_y_radius]
+ mov ebx, eax
+ mul ebx
+ mov dword [el_xc], eax
+ 
+ mov eax, dword [ellipse_y_radius]
+ shl eax, 1 ;mul 2
+ mov ebx, 1
+ sub ebx, eax
+ mov eax, ebx
+ mov ebx, dword [ellipse_x_radius]
+ mul ebx
+ mul ebx
+ mov dword [el_yc], eax
+ 
+ mov dword [el_ee], 0
+ 
+ mov dword [el_sx], 0
+ 
+ mov eax, dword [el_ta]
+ mov ebx, dword [ellipse_y_radius]
+ mul ebx
+ mov dword [el_sy], eax
+ 
+ .draw_first_half:
+  mov eax, dword [el_sx]
+  cmp eax, dword [el_sy]
+  ja .calculate_for_second_half
+  
+  call ellipse_draw_2_lines
+  
+  inc dword [el_x]
+  
+  mov eax, dword [el_tb]
+  add dword [el_sx], eax
+  
+  mov eax, dword [el_xc]
+  add dword [el_ee], eax
+  
+  mov eax, dword [el_tb]
+  add dword [el_xc], eax
+  
+  mov eax, dword [el_ee]
+  shl eax, 1 ;mul 2
+  add eax, dword [el_yc]
+  cmp eax, 0x80000000
+  ja .draw_first_half
+  
+   dec dword [el_y]
+   
+   mov eax, dword [el_ta]
+   sub dword [el_sy], eax
+   
+   mov eax, dword [el_yc]
+   add dword [el_ee], eax
+   
+   mov eax, dword [el_ta]
+   add dword [el_yc], eax
+  jmp .draw_first_half
+  
+ .calculate_for_second_half:
+ mov dword [el_y], 0
+ 
+ mov eax, dword [ellipse_x_radius]
+ mov dword [el_x], eax
+ 
+ mov eax, dword [ellipse_x_radius]
+ mov ebx, eax
+ mul ebx
+ mov dword [el_yc], eax
+ 
+ mov eax, dword [ellipse_x_radius]
+ shl eax, 1 ;mul 2
+ mov ebx, 1
+ sub ebx, eax
+ mov eax, ebx
+ mov ebx, dword [ellipse_y_radius]
+ mul ebx
+ mul ebx
+ mov dword [el_xc], eax
+ 
+ mov dword [el_ee], 0
+ 
+ mov dword [el_sy], 0
+ 
+ mov eax, dword [el_tb]
+ mov ebx, dword [ellipse_x_radius]
+ mul ebx
+ mov dword [el_sx], eax
+ 
+ .draw_second_half:
+  mov eax, dword [el_sx]
+  cmp eax, dword [el_sy]
+  jb .done
+  
+  call ellipse_draw_2_lines
+  
+  inc dword [el_y]
+  
+  mov eax, dword [el_ta]
+  add dword [el_sy], eax
+  
+  mov eax, dword [el_yc]
+  add dword [el_ee], eax
+  
+  mov eax, dword [el_ta]
+  add dword [el_yc], eax
+  
+  mov eax, dword [el_ee]
+  shl eax, 1 ;mul 2
+  add eax, dword [el_xc]
+  cmp eax, 0x80000000
+  ja .draw_second_half
+  
+   dec dword [el_x]
+   
+   mov eax, dword [el_tb]
+   sub dword [el_sx], eax
+   
+   mov eax, dword [el_xc]
+   add dword [el_ee], eax
+   
+   mov eax, dword [el_tb]
+   add dword [el_xc], eax
+  jmp .draw_second_half
+  
+ .done:
+ ret
+
+fill_area:
+ mov edi, MEMORY_GRAPHIC_FILL
+ mov eax, 0
+ mov ecx, 0x40000
+ rep stosb
+ 
+ CALCULATE_CURSOR_POSITION
+ mov esi, eax
+ mov dword [MEMORY_GRAPHIC_FILL], eax ;pointer to point
+ mov ax, word [cursor_line]
+ mov word [MEMORY_GRAPHIC_FILL+4], ax
+ mov ax, word [cursor_column]
+ mov word [MEMORY_GRAPHIC_FILL+6], ax
+ mov ebx, dword [esi] ;color for replace
+ mov ebp, dword [color] ;our color
+ cmp ebx, ebp
+ je .done
+ 
+ mov ecx, dword [screen_pixels_per_line]
+ 
+ .fill_1:
+ mov dword [MEMORY_GRAPHIC_FILL+0x20000], 0
+ 
+ mov eax, MEMORY_GRAPHIC_FILL
+ mov edi, MEMORY_GRAPHIC_FILL+0x20000
+ cmp dword [eax], 0
+ je .done
+  
+ .expand_points:
+  cmp dword [eax], 0
+  je .fill_2
+  
+  mov esi, dword [eax]
+  mov dword [esi], ebp ;draw pixel on screen
+  
+  cmp word [eax+4], 0
+  je .if_up_1
+   sub esi, ecx
+   cmp dword [esi], ebx ;there is pixel of filled color
+   jne .if_up_1_add_pixel
+    mov dword [edi], esi
+    mov dword [esi], ebp ;fill pixel
+    mov dx, word [eax+4]
+    dec dx
+    mov word [edi+4], dx
+    mov dx, word [eax+6]
+    mov word [edi+6], dx
+    
+    add edi, 8
+   .if_up_1_add_pixel:
+   add esi, ecx
+  .if_up_1:
+  
+  mov edx, dword [screen_y]
+  cmp word [eax+4], dx
+  je .if_down_1
+   add esi, ecx
+   cmp dword [esi], ebx ;there is pixel of filled color
+   jne .if_down_1_add_pixel
+    mov dword [edi], esi
+    mov dword [esi], ebp ;fill pixel
+    mov dx, word [eax+4]
+    inc dx
+    mov word [edi+4], dx
+    mov dx, word [eax+6]
+    mov word [edi+6], dx
+    
+    add edi, 8
+   .if_down_1_add_pixel:
+   sub esi, ecx 
+  .if_down_1:
+  
+  cmp word [eax+6], 0
+  je .if_left_1
+   sub esi, 4
+   cmp dword [esi], ebx ;there is pixel of filled color
+   jne .if_left_1_add_pixel
+    mov dword [edi], esi
+    mov dword [esi], ebp ;fill pixel
+    mov dx, word [eax+4]
+    mov word [edi+4], dx
+    mov dx, word [eax+6]
+    dec dx
+    mov word [edi+6], dx
+    
+    add edi, 8
+   .if_left_1_add_pixel:
+   add esi, 4 
+  .if_left_1:
+  
+  mov edx, dword [screen_x]
+  cmp word [eax+6], dx
+  je .if_right_1
+   add esi, 4
+   cmp dword [esi], ebx ;there is pixel of filled color
+   jne .if_right_1_add_pixel
+    mov dword [edi], esi
+    mov dword [esi], ebp ;fill pixel
+    mov dx, word [eax+4]
+    mov word [edi+4], dx
+    mov dx, word [eax+6]
+    inc dx
+    mov word [edi+6], dx
+    
+    add edi, 8
+   .if_right_1_add_pixel:
+   sub esi, 4 
+  .if_right_1:
+   
+  add eax, 8
+ jmp .expand_points
+  
+ .fill_2:
+ mov dword [MEMORY_GRAPHIC_FILL], 0
+ 
+ mov eax, MEMORY_GRAPHIC_FILL+0x20000
+ mov edi, MEMORY_GRAPHIC_FILL
+ cmp dword [eax], 0
+ je .done
+  
+ .expand_points_2:
+  cmp dword [eax], 0
+  je .fill_1
+  
+  mov esi, dword [eax]
+  mov dword [esi], ebp ;draw pixel on screen
+  
+  cmp word [eax+4], 0
+  je .if_up_2
+   sub esi, ecx
+   cmp dword [esi], ebx ;there is pixel of filled color
+   jne .if_up_2_add_pixel
+    mov dword [edi], esi
+    mov dword [esi], ebp ;fill pixel
+    mov dx, word [eax+4]
+    dec dx
+    mov word [edi+4], dx
+    mov dx, word [eax+6]
+    mov word [edi+6], dx
+    
+    add edi, 8
+   .if_up_2_add_pixel:
+   add esi, ecx 
+  .if_up_2:
+  
+  mov edx, dword [screen_y]
+  cmp word [eax+4], dx
+  je .if_down_2
+   add esi, ecx
+   cmp dword [esi], ebx ;there is pixel of filled color
+   jne .if_down_2_add_pixel
+    mov dword [edi], esi
+    mov dword [esi], ebp ;fill pixel
+    mov dx, word [eax+4]
+    inc dx
+    mov word [edi+4], dx
+    mov dx, word [eax+6]
+    mov word [edi+6], dx
+    
+    add edi, 8
+   .if_down_2_add_pixel:
+   sub esi, ecx 
+  .if_down_2:
+  
+  cmp word [eax+6], 0
+  je .if_left_2
+   sub esi, 4
+   cmp dword [esi], ebx ;there is pixel of filled color
+   jne .if_left_2_add_pixel
+    mov dword [edi], esi
+    mov dword [esi], ebp ;fill pixel
+    mov dx, word [eax+4]
+    mov word [edi+4], dx
+    mov dx, word [eax+6]
+    dec dx
+    mov word [edi+6], dx
+    
+    add edi, 8
+   .if_left_2_add_pixel:
+   add esi, 4 
+  .if_left_2:
+  
+  mov edx, dword [screen_x]
+  cmp word [eax+6], dx
+  je .if_right_2
+   add esi, 4
+   cmp dword [esi], ebx ;there is pixel of filled color
+   jne .if_right_2_add_pixel
+    mov dword [edi], esi
+    mov dword [esi], ebp ;fill pixel
+    mov dx, word [eax+4]
+    mov word [edi+4], dx
+    mov dx, word [eax+6]
+    inc dx
+    mov word [edi+6], dx
+    
+    add edi, 8
+   .if_right_2_add_pixel:
+   sub esi, 4 
+  .if_right_2:
+   
+  add eax, 8
+ jmp .expand_points_2
+ 
+ .done:
+ ret
+ 
 draw_cursor:
  CALCULATE_CURSOR_POSITION
  mov ebx, dword [screen_pixels_per_line]
@@ -1346,6 +2161,9 @@ print_var:
  ret
 
 pstr:
+ push dword [cursor_line]
+ push dword [cursor_column]
+ 
  IF_E dword [debug_line], 600, if1
   mov dword [debug_line], 0
  ENDIF if1
@@ -1364,9 +2182,15 @@ pstr:
 
  add dword [debug_line], 10
 
+ pop dword [cursor_column]
+ pop dword [cursor_line]
+ 
  ret
 
 phex:
+ push dword [cursor_line]
+ push dword [cursor_column]
+ 
  IF_E dword [debug_line], 600, if1
   mov dword [debug_line], 0
  ENDIF if1
@@ -1385,9 +2209,15 @@ phex:
 
  add dword [debug_line], 10
 
+ pop dword [cursor_column]
+ pop dword [cursor_line]
+ 
  ret
 
 pvar:
+ push dword [cursor_line]
+ push dword [cursor_column]
+ 
  IF_E dword [debug_line], 600, if1
   mov dword [debug_line], 0
  ENDIF if1
@@ -1406,4 +2236,7 @@ pvar:
 
  add dword [debug_line], 10
 
+ pop dword [cursor_column]
+ pop dword [cursor_line]
+ 
  ret
