@@ -61,6 +61,15 @@ init_memory_of_programs:
  mov ecx, 640*480
  rep stosd ;clear image
  
+ mov dword [allocated_size], 2
+ call allocate_memory
+ mov eax, dword [allocated_memory_pointer]
+ mov dword [ge_image_step_back_pointer], eax
+ mov edi, eax
+ mov eax, WHITE
+ mov ecx, 640*480
+ rep stosd ;clear image
+ 
  ;DOCUMENT EDITOR
  mov dword [allocated_size], 1
  call allocate_memory
