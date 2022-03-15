@@ -1,7 +1,7 @@
 # BleskOS
 Operation system working in protected mode with legacy boot. Main goal is develop operation system whose will be usable for normal user. Every version of BleskOS is tested on real computers.
 
-![VirtualBox_BleskOS_01_03_2022_18_35_56](https://user-images.githubusercontent.com/43180618/156219798-6dcbe727-31ea-4e46-915f-1003996d4a4d.png)
+![VirtualBox_BleskOS_01_03_2022_18_35_56](https://user-images.githubusercontent.com/43180618/158465860-774658ef-97f6-4463-9d15-8c61bfe6e234.png)
 
 ### Drivers
 Graphic:
