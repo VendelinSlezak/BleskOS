@@ -405,7 +405,7 @@ text_editor:
     mov ebx, dword [te_mouse_cursor_second_pointer]
     mov dword [te_mouse_cursor_first_pointer], ebx
     mov dword [te_mouse_cursor_second_pointer], eax
-   .key_ctrl_copy_if_change_pointer
+   .key_ctrl_copy_if_change_pointer:
    
    mov eax, dword [te_mouse_cursor_first_pointer]
    mov dword [copy_source], eax
