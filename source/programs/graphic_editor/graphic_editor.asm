@@ -603,7 +603,7 @@ graphic_editor:
    pop dword [screen_mem_pointer]
    
    jmp graphic_editor
-  .if_mouse_click_fill
+  .if_mouse_click_fill:
  jmp .graphic_editor_halt
  
  .mouse_drag_and_drop:
@@ -1045,7 +1045,7 @@ ge_select_color:
   pop dword [cursor_column]
   pop dword [cursor_line]
   call redraw_screen
- jmp .graphic_editor_halt
+ jmp .ge_select_color_halt
  
  .tool_fill:
   mov dword [ge_draw_object], GE_FILL
@@ -1056,7 +1056,7 @@ ge_select_color:
   pop dword [cursor_column]
   pop dword [cursor_line]
   call redraw_screen
- jmp .graphic_editor_halt
+ jmp .ge_select_color_halt
  
  .empty_tool:
   mov dword [ge_tool_option], GE_EMPTY
@@ -1067,7 +1067,7 @@ ge_select_color:
   pop dword [cursor_column]
   pop dword [cursor_line]
   call redraw_screen
- jmp .graphic_editor_halt
+ jmp .ge_select_color_halt
  
  .full_tool:
   mov dword [ge_tool_option], GE_FULL
@@ -1078,7 +1078,7 @@ ge_select_color:
   pop dword [cursor_column]
   pop dword [cursor_line]
   call redraw_screen
- jmp .graphic_editor_halt
+ jmp .ge_select_color_halt
  
  .move_mouse:
   mov eax, dword [ge_mouse_line]
