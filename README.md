@@ -54,9 +54,9 @@ Ethernet cards (on GitHub not connected with other code):
 * Document editor (extremly simple, TD files only for BleskOS)
 
 ## How to build
-BleskOS is completly written in NASM. You should use last version 2.1
+BleskOS is completly written in assembly language and can be compiled using NASM. You should use the latest version (2.1)
 
-compile.sh is written for linux. After download, you have to check in properties "Allow run this file as program" and you can compile BleskOS by running this file.
+compile.sh is written for linux systems. After download, you have to check in properties "Allow executing file as program" or you can enter the following in your terminal: ```chmod +x compile.sh``` and you can compile BleskOS by running this file.
 
 If you do not use linux, you can build BleskOS by this steps:
 1. compile bootloader/bootloader.asm to bootloader.bin
