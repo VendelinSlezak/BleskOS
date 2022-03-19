@@ -846,16 +846,6 @@ ethernet_card_process_packet:
   mov ax, word [esi+14+20+14]
   mov word [tcp_control_packet.window], ax
   mov word [tcp_control_packet.tcp_checksum], 0
-  mov byte [tcp_control_packet.control], 0x10 ;ACK flag
-  mov esi, tcp_control_packet.tcp_layer
-  mov ecx, 20
-  call read_checksum_tcp
-  mov word [tcp_control_packet.tcp_checksum], ax
-  mov dword [packet_pointer], tcp_control_packet
-  mov dword [packet_length], tcp_control_packet_end-tcp_control_packet
-  call nic_send_packet ;send ACK packet
-  
-  mov word [tcp_control_packet.tcp_checksum], 0
   mov byte [tcp_control_packet.control], 0x11 ;FIN and ACK flag
   mov esi, tcp_control_packet.tcp_layer
   mov ecx, 20
@@ -863,7 +853,7 @@ ethernet_card_process_packet:
   mov word [tcp_control_packet.tcp_checksum], ax
   mov dword [packet_pointer], tcp_control_packet
   mov dword [packet_length], tcp_control_packet_end-tcp_control_packet
-  call nic_send_packet ;send FIN and ACK packet
+  call nic_send_packet ;send ACK packet
   
   mov dword [tcp_communication_type], TCP_FINALIZING
  jmp .done
