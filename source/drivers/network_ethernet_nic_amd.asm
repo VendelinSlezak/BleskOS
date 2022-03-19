@@ -124,6 +124,8 @@ nic_amd_send_packet:
  ret
 
 nic_amd_irq:
+ mov dword [last_arrived_packet], 0
+ 
  ;read interrupt reason
  BASE_OUTD ethernet_card_io_base, 0x14, 0x0
  BASE_IND ethernet_card_io_base, 0x10
@@ -140,14 +142,24 @@ nic_amd_irq:
   mov ebx, dword [eax]
   mov dword [eax+4], 0x80000000 | (0xF << 12) | (1520) ;restore pointer
   mov dword [received_packet_pointer], ebx
+  
   inc dword [nic_amd_receive_buffer]
   and dword [nic_amd_receive_buffer], 0x7
+  
+  mov eax, dword [nic_amd_receive_buffer]
+  shl eax, 4 ;mul 16
+  add eax, MEMORY_NIC
+  test dword [eax+4], 0x80000000
+  jz .not_last_packet 
+   mov dword [last_arrived_packet], 1
+  .not_last_packet:
   call ethernet_card_process_packet
   
-  mov edi, dword [received_packet_pointer]
-  mov eax, 0
-  mov ecx, 1440
-  rep stosb
+  mov eax, dword [nic_amd_receive_buffer]
+  shl eax, 4 ;mul 16
+  add eax, MEMORY_NIC
+  test dword [eax+4], 0x80000000
+  jz .packet_received
  jmp .end
  
  .packet_transmitted:
