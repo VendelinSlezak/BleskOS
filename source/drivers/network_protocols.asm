@@ -2,7 +2,6 @@
 
 ; not complete!
 ; work only with HTTP pages
-; DNS response parsing is not good now
 
 internet_connection_status dd 0
 last_arrived_packet dd 0
@@ -721,6 +720,10 @@ ethernet_card_process_packet:
       inc esi
      jmp .content_length_convert_to_number
      .save_content_length:
+     cmp ecx, 0
+     jne .if_content_length_zero
+      mov ecx, 0x100000
+     .if_content_length_zero:
      mov dword [tcp_file_length], ecx
      popa
     .if_content_length:
@@ -788,11 +791,14 @@ ethernet_card_process_packet:
   mov word [tcp_control_packet.tcp_checksum], ax
   mov dword [packet_pointer], tcp_control_packet
   mov dword [packet_length], tcp_control_packet_end-tcp_control_packet
+  
+  cmp dword [last_arrived_packet], 1
+  jne .if_last_packet
   call nic_send_packet ;send ACK packet
+  .if_last_packet:
   
   mov dword [tcp_communication_type], TCP_FILE_TRANSFERRING
   
-  mov eax, dword [tcp_file_length]
   cmp dword [tcp_file_transferred_length], eax
   jb .done
   mov dword [tcp_communication_type], TCP_FINALIZING
@@ -965,13 +971,27 @@ ethernet_card_process_packet:
    mov ebx, 0
    mov bl, byte [esi]
    cmp ebx, 0
-   je .dns_read_ip
+   je .dns_skip_answers
    inc ebx
    add esi, ebx
   jmp .dns_skip_question
   
+  .dns_skip_answers:
+  add esi, 5
+  .dns_found_answer:
+   cmp word [esi], 0
+   je .dns_no_ip
+   cmp word [esi+2], 0x0100
+   je .dns_read_ip
+   mov eax, 0
+   mov al, byte [esi+11]
+   mov ah, byte [esi+10]
+   add eax, 12
+   add esi, eax
+  jmp .dns_found_answer
+  
   .dns_read_ip:
-  add esi, 17
+  add esi, 12
   mov eax, dword [esi]
   mov dword [dns_ip_address], eax
   mov dword [dns_report], 1
