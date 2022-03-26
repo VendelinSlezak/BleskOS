@@ -31,8 +31,8 @@
  shr eax, 16
 %endmacro
 
-%define nic_intel_receive_d MEMORY_NIC+0xA000
-%define nic_intel_transmit_d MEMORY_NIC+0xB000
+%define nic_intel_receive_d MEMORY_NIC+0xA0000
+%define nic_intel_transmit_d MEMORY_NIC+0xB0000
 nic_intel_last_r dd 0
 nic_intel_last_t dd 0
 
@@ -168,7 +168,7 @@ init_nic_intel:
  NIC_INTEL_WRITE 0x3818, 0 ;tail
  
  ;enable receiving and transmitting packets
- NIC_INTEL_WRITE 0x100, ((1 << 1) | (1 << 3) | (1 << 15) | (1 << 16)) ;receive
+ NIC_INTEL_WRITE 0x100, ((1 << 1) | (1 << 3) | (1 << 15)) ;receive
  
  mov eax, ((1 << 1) | (1 << 3) | (4 << 15))
  cmp word [ethernet_card_id+2], 0x10F5
@@ -209,10 +209,11 @@ nic_intel_send_packet:
 
 nic_intel_irq:
  NIC_INTEL_READ 0xC0 ;read status
- test eax, 0x4
- jnz .packet_transmitted
+ mov dword [last_arrived_packet], 0
  test eax, 0x80
  jnz .packet_received
+ test eax, 0x4
+ jnz .packet_transmitted
  
  ret
  
@@ -221,12 +222,31 @@ nic_intel_irq:
  ret
  
  .packet_received:
+  NIC_INTEL_READ 0x2810
+  mov ebx, dword [nic_intel_last_r]
+  inc ebx
+  and ebx, 0x7
+  cmp eax, ebx
+  jne .if_last_arrived_packet
+   mov dword [last_arrived_packet], 1
+  .if_last_arrived_packet:
+  
   mov eax, dword [nic_intel_last_r]
   shl eax, 4 ;mul 16
   add eax, nic_intel_receive_d
   mov ebx, dword [eax]
+  mov dword [eax+4], 0
+  mov dword [eax+8], 0
+  mov dword [eax+12], 0
   mov dword [received_packet_pointer], ebx
   call ethernet_card_process_packet
+  
+  mov eax, dword [nic_intel_last_r]
+  NIC_INTEL_WRITE 0x2818, eax ;move tail
+  
   inc dword [nic_intel_last_r]
-  and dword [nic_intel_last_r], 0x7
+  and dword [nic_intel_last_r], 0x7  
+ cmp dword [last_arrived_packet], 1
+ jne .packet_received
+ mov dword [last_arrived_packet], 0
  ret
