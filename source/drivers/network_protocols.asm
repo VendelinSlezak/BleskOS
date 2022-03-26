@@ -1,6 +1,5 @@
 ;BleskOS
 
-; not complete!
 ; work only with HTTP pages
 
 internet_connection_status dd 0
@@ -243,7 +242,7 @@ db 6 ;TCP protocol
 
 ;tcp layer
 .tcp_layer:
-dw BIG_ENDAIN(40000) ;source port
+.tcp_source_port: dw BIG_ENDAIN(40000) ;source port
 dw BIG_ENDAIN(80) ;destination port
 .sequence_number: dd 0
 .acknowledgment_number: dd 0
@@ -277,7 +276,7 @@ db 6 ;TCP protocol
 
 ;tcp layer
 .tcp_layer:
-dw BIG_ENDAIN(40000) ;source port
+.tcp_source_port: dw BIG_ENDAIN(40000) ;source port
 dw BIG_ENDAIN(80) ;destination port
 .sequence_number: dd 0
 .acknowledgment_number: dd 0
@@ -616,6 +615,8 @@ ethernet_card_process_packet:
   je .tcp_ack
   cmp byte [esi+14+20+13], 0x11
   je .tcp_final
+  cmp byte [esi+14+20+13], 0x19
+  je .tcp_final
  jmp .done
  
  .tcp_handshake:
@@ -647,6 +648,7 @@ ethernet_card_process_packet:
   mov bl, byte [esi+14+20+7]
 
   inc ebx
+  mov dword [tcp_last_ack_number], ebx
   mov dh, bl
   mov dl, bh
   shl edx, 16
@@ -657,7 +659,6 @@ ethernet_card_process_packet:
   mov dword [tcp_control_packet.acknowledgment_number], edx
   mov dword [tcp_get_packet.sequence_number], eax
   mov dword [tcp_get_packet.acknowledgment_number], edx
-  mov dword [tcp_last_ack_number], edx
   
   mov dword [tcp_communication_type], TCP_HANDSHAKE_RECEIVED
   
@@ -677,9 +678,20 @@ ethernet_card_process_packet:
 
   cmp dword [tcp_communication_type], TCP_REQUEST_FOR_FILE
   jb .done
+  je .process_tcp_packet
   cmp dword [tcp_communication_type], TCP_FINALIZING
   je .done
   
+  ;if this is retransmitted packet, do not catch it
+  mov bh, byte [esi+14+20+4] ;sequence number
+  mov bl, byte [esi+14+20+5]
+  shl ebx, 16
+  mov bh, byte [esi+14+20+6]
+  mov bl, byte [esi+14+20+7]
+  cmp ebx, dword [tcp_last_ack_number]
+  jb .do_not_catch_this_packet
+  
+  .process_tcp_packet:
   mov edi, dword [http_file_pointer]
   mov ecx, 0
   mov ch, byte [esi+14+2]
@@ -693,7 +705,7 @@ ethernet_card_process_packet:
   jne .copy_http_file
    .find_http_file_start:
     cmp dword [esi], 0
-    je .done
+    je .do_not_catch_this_packet
     
     cmp dword [esi], 'Cont'
     jne .if_content_length
@@ -744,6 +756,20 @@ ethernet_card_process_packet:
   sub ecx, edx
   add dword [http_file_pointer], ecx
   add dword [tcp_file_transferred_length], ecx
+  
+  SCREEN_X_SUB eax, COLUMNSZ*40
+  DRAW_SQUARE 20+LINESZ*1, COLUMNSZ*41, eax, LINESZ, WHITE
+  mov dword [color], BLACK
+  mov eax, dword [tcp_file_transferred_length]
+  PRINT_VAR eax, 20+LINESZ*1, COLUMNSZ*41
+  mov dword [char_for_print], '/'
+  call print_char
+  add dword [cursor_column], COLUMNSZ
+  mov eax, dword [tcp_file_length]
+  mov dword [var_print_value], eax
+  call print_var
+  REDRAW_LINES_SCREEN 20+LINESZ*1, LINESZ
+  
   pop esi
 
   mov eax, dword [esi+14+20+8] ;acknowledgment number
@@ -759,6 +785,7 @@ ethernet_card_process_packet:
   sub ecx, 40 ;length of TCP data
   
   add ebx, ecx
+  mov dword [tcp_last_ack_number], ebx
   mov dh, bl
   mov dl, bh
   shl edx, 16
@@ -770,6 +797,7 @@ ethernet_card_process_packet:
   mov dword [tcp_get_packet.sequence_number], eax
   mov dword [tcp_get_packet.acknowledgment_number], edx
   
+  .do_not_catch_this_packet:
   mov al, byte [esi+6]
   mov byte [tcp_control_packet.destination_mac+0], al
   mov al, byte [esi+7]
@@ -798,10 +826,6 @@ ethernet_card_process_packet:
   .if_last_packet:
   
   mov dword [tcp_communication_type], TCP_FILE_TRANSFERRING
-  
-  cmp dword [tcp_file_transferred_length], eax
-  jb .done
-  mov dword [tcp_communication_type], TCP_FINALIZING
  jmp .done
  
  .tcp_ack:
@@ -1047,7 +1071,8 @@ connect_to_network:
  .wait_for_dhcp_offer:
   cmp dword [type_of_received_packet], DHCP_OFFER
   je .dhcp_request
- cmp dword [ticks], 1000
+  hlt
+ cmp dword [ticks], 500
  jb .wait_for_dhcp_offer
  mov dword [internet_connection_status], 2 ;error
  jmp .done
@@ -1061,7 +1086,8 @@ connect_to_network:
  .wait_for_dhcp_ack:
   cmp dword [type_of_received_packet], DHCP_ACK
   je .connection_succesful
- cmp dword [ticks], 1000
+  hlt
+ cmp dword [ticks], 500
  jb .wait_for_dhcp_ack
  mov dword [internet_connection_status], 2 ;error
  jmp .done
@@ -1150,6 +1176,19 @@ create_tcp_connection:
  cmp dword [tcp_communication_type], NO_TCP
  jne .done
  
+ ;select next TCP port
+ mov al, byte [tcp_control_packet.tcp_source_port+1]
+ mov ah, byte [tcp_control_packet.tcp_source_port+0]
+ inc ax
+ cmp ax, 50000
+ jb .if_port_50000
+  mov ax, 40000
+ .if_port_50000:
+ mov byte [tcp_control_packet.tcp_source_port+0], ah
+ mov byte [tcp_control_packet.tcp_source_port+1], al
+ mov byte [tcp_get_packet.tcp_source_port+0], ah
+ mov byte [tcp_get_packet.tcp_source_port+1], al
+ 
  mov word [tcp_control_packet.ip_checksum], 0
  mov word [tcp_control_packet.tcp_checksum], 0
  
@@ -1182,6 +1221,7 @@ create_tcp_connection:
  .wait_for_tcp_handshake:
   cmp dword [tcp_communication_type], TCP_HANDSHAKE_RECEIVED
   je .tcp_ack_handshake
+  hlt
  cmp dword [ticks], 1000
  jb .wait_for_tcp_handshake
  jmp .done
