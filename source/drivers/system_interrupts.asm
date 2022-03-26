@@ -5,20 +5,24 @@
 %macro IDT_ENTRY 1
  dw %1
  dw 0x0008
- db 0, 0x8E
- dw 0x0001
+ dw 0x8E00
+ dw (%1 - $$ + 0x10000) >> 16
 %endmacro
 
 %macro EOI_MASTER_PIC 0
+ push eax
  mov al, 0x20
  out 0x20, al
+ pop eax
 %endmacro
 
 %macro EOI_SLAVE_PIC 0
+ push eax
  mov al, 0x20
  out 0xA0, al
  mov al, 0x20
  out 0x20, al
+ pop eax
 %endmacro
 
 idt:
@@ -45,8 +49,8 @@ init_idt:
  OUTB 0xA1, 0x02
  OUTB 0x21, 0x01
  OUTB 0xA1, 0x01
- OUTB 0x21, 0xF8 ;irq 0, 1, 2
- OUTB 0xA1, 0xEF ;irq 12
+ OUTB 0x21, 0x00 ;all irq
+ OUTB 0xA1, 0xE0 ;all irq
 
  ;load idt
  mov edx, idt_wrap
