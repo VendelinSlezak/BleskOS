@@ -125,7 +125,7 @@ nic_amd_send_packet:
 
 nic_amd_irq:
  mov dword [last_arrived_packet], 0
- 
+
  ;read interrupt reason
  BASE_OUTD ethernet_card_io_base, 0x14, 0x0
  BASE_IND ethernet_card_io_base, 0x10
