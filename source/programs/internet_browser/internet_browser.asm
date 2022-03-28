@@ -284,7 +284,7 @@ internet_browser:
   REDRAW_LINES_SCREEN 5, 10
  jmp .transfer_page
  
- .move
+ .move:
  
  .key_enter:
   cmp word [internet_browser_url], 0
