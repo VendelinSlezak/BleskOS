@@ -24,7 +24,8 @@ http_file_pointer dd 0
 %define TCP_HANDSHAKE_RECEIVED 2
 %define TCP_REQUEST_FOR_FILE 3
 %define TCP_FILE_TRANSFERRING 4
-%define TCP_FINALIZING 5
+%define TCP_WAIT_FOR_FIN_ACK 5
+%define TCP_FINALIZED 6
 tcp_communication_type dd 0
 tcp_file_length dd 0
 tcp_file_transferred_length dd 0
@@ -252,6 +253,9 @@ db 0x50 ;length of tcp layer
 .tcp_checksum: dw 0
 dw 0 ;urgent pointer
 tcp_control_packet_end:
+
+;Transmit Control Protocol - space for second control message
+tcp_second_control_packet: times (tcp_control_packet_end-tcp_control_packet) db 0
 
 ;Transmit Control Protocol - messages with payload
 tcp_get_packet:
@@ -679,8 +683,6 @@ ethernet_card_process_packet:
   cmp dword [tcp_communication_type], TCP_REQUEST_FOR_FILE
   jb .done
   je .process_tcp_packet
-  cmp dword [tcp_communication_type], TCP_FINALIZING
-  je .done
   
   ;if this is retransmitted packet, do not catch it
   mov bh, byte [esi+14+20+4] ;sequence number
@@ -757,19 +759,6 @@ ethernet_card_process_packet:
   add dword [http_file_pointer], ecx
   add dword [tcp_file_transferred_length], ecx
   
-  SCREEN_X_SUB eax, COLUMNSZ*40
-  DRAW_SQUARE 20+LINESZ*1, COLUMNSZ*41, eax, LINESZ, WHITE
-  mov dword [color], BLACK
-  mov eax, dword [tcp_file_transferred_length]
-  PRINT_VAR eax, 20+LINESZ*1, COLUMNSZ*41
-  mov dword [char_for_print], '/'
-  call print_char
-  add dword [cursor_column], COLUMNSZ
-  mov eax, dword [tcp_file_length]
-  mov dword [var_print_value], eax
-  call print_var
-  REDRAW_LINES_SCREEN 20+LINESZ*1, LINESZ
-  
   pop esi
 
   mov eax, dword [esi+14+20+8] ;acknowledgment number
@@ -813,6 +802,12 @@ ethernet_card_process_packet:
 
   mov word [tcp_control_packet.tcp_checksum], 0
   mov byte [tcp_control_packet.control], (1 << 4) ;ACK flag
+  mov eax, dword [http_file_pointer]
+  sub eax, 4
+  cmp dword [eax], 0x0A0D0A0D ;this is last packet of transferred file
+  jne .if_close_connection
+   mov dword [tcp_communication_type], TCP_FINALIZED
+  .if_close_connection:
   mov esi, tcp_control_packet.tcp_layer
   mov ecx, 20
   call read_checksum_tcp
@@ -820,11 +815,16 @@ ethernet_card_process_packet:
   mov dword [packet_pointer], tcp_control_packet
   mov dword [packet_length], tcp_control_packet_end-tcp_control_packet
   
+  cmp dword [tcp_communication_type], TCP_FINALIZED
+  je .if_finalized_send_ack_packet
   cmp dword [last_arrived_packet], 1
   jne .if_last_packet
-  call nic_send_packet ;send ACK packet
+   .if_finalized_send_ack_packet:
+   call nic_send_packet ;send ACK packet
   .if_last_packet:
   
+  cmp dword [tcp_communication_type], TCP_FINALIZED
+  je .done
   mov dword [tcp_communication_type], TCP_FILE_TRANSFERRING
  jmp .done
  
@@ -834,19 +834,25 @@ ethernet_card_process_packet:
  jmp .done
  
  .tcp_final:
+  push esi
+  mov esi, tcp_control_packet
+  mov edi, tcp_second_control_packet
+  mov ecx, tcp_control_packet_end-tcp_control_packet
+  rep movsb
+  pop esi
   mov dword [type_of_received_packet], TCP_END
   mov al, byte [esi+6]
-  mov byte [tcp_get_packet.destination_mac+0], al
+  mov byte [tcp_second_control_packet+0], al
   mov al, byte [esi+7]
-  mov byte [tcp_get_packet.destination_mac+1], al
+  mov byte [tcp_second_control_packet+1], al
   mov al, byte [esi+8]
-  mov byte [tcp_get_packet.destination_mac+2], al
+  mov byte [tcp_second_control_packet+2], al
   mov al, byte [esi+9]
-  mov byte [tcp_get_packet.destination_mac+3], al
+  mov byte [tcp_second_control_packet+3], al
   mov al, byte [esi+10]
-  mov byte [tcp_get_packet.destination_mac+4], al
+  mov byte [tcp_second_control_packet+4], al
   mov al, byte [esi+11]
-  mov byte [tcp_get_packet.destination_mac+5], al
+  mov byte [tcp_second_control_packet+5], al
   
   mov eax, dword [esi+14+20+8] ;acknowledgment number
   mov bh, byte [esi+14+20+4] ;sequence number
@@ -862,24 +868,29 @@ ethernet_card_process_packet:
   shr ebx, 16
   mov dh, bl
   mov dl, bh
-  mov dword [tcp_control_packet.sequence_number], eax
-  mov dword [tcp_control_packet.acknowledgment_number], edx
-  mov dword [tcp_get_packet.sequence_number], eax
-  mov dword [tcp_get_packet.acknowledgment_number], edx
+  mov dword [tcp_second_control_packet+14+20+4], eax ;sequence number
+  mov dword [tcp_second_control_packet+14+20+8], edx ;acknowledgment number
   
+  mov ax, word [esi+14+20+2]
+  mov word [tcp_second_control_packet+14+20], ax ;source port
+  mov ax, word [esi+14+20+0]
+  mov word [tcp_second_control_packet+14+20+2], ax ;destination port
   mov ax, word [esi+14+20+14]
-  mov word [tcp_control_packet.window], ax
-  mov word [tcp_control_packet.tcp_checksum], 0
-  mov byte [tcp_control_packet.control], 0x11 ;FIN and ACK flag
-  mov esi, tcp_control_packet.tcp_layer
+  mov word [tcp_second_control_packet+14+20+14], ax ;window
+  mov word [tcp_second_control_packet+14+20+16], 0 ;checksum
+  mov byte [tcp_second_control_packet+14+20+13], 0x11 ;FIN and ACK flag
+  mov esi, tcp_second_control_packet+14+20
   mov ecx, 20
   call read_checksum_tcp
-  mov word [tcp_control_packet.tcp_checksum], ax
-  mov dword [packet_pointer], tcp_control_packet
+  mov word [tcp_second_control_packet+14+20+16], ax ;checksum
+  mov dword [packet_pointer], tcp_second_control_packet
   mov dword [packet_length], tcp_control_packet_end-tcp_control_packet
   call nic_send_packet ;send ACK packet
   
-  mov dword [tcp_communication_type], TCP_FINALIZING
+  mov ax, word [tcp_control_packet.tcp_layer]
+  cmp ax, word [tcp_second_control_packet+14+20]
+  jne .done
+  mov dword [tcp_communication_type], TCP_FINALIZED
  jmp .done
  
  .udp:
