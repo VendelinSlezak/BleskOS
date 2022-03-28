@@ -191,6 +191,80 @@ pci_read_device:
  IF_E eax, 0x02000000, pci_nic_if ;Network card
   PCI_READ_DEVICE_ID
   mov dword [ethernet_card_id], eax
+  
+  cmp eax, 0x813910EC ;realtek 8139
+  jne .if_realtek_nic_8139
+   PCI_IO_ENABLE_BUSMASTERING
+   PCI_READ_IO_BAR BAR0
+   mov word [ethernet_card_io_base], ax
+   mov dword [nic_realtek_type], 0
+   jmp .nic_founded
+  .if_realtek_nic_8139:
+  
+  ;realtek 8169
+  cmp eax, 0x816110EC
+  je .if_realtek_nic_8169
+  cmp eax, 0x816810EC
+  je .if_realtek_nic_8169
+  cmp eax, 0x816910EC
+  je .if_realtek_nic_8169
+  cmp eax, 0xC1071259
+  je .if_realtek_nic_8169
+  cmp eax, 0x10321737
+  je .if_realtek_nic_8169
+  cmp eax, 0x011616EC
+  je .if_realtek_nic_8169
+  
+  cmp ax, 0x8086 ;intel
+  jne .if_intel_nic
+   PCI_MMIO_ENABLE_BUSMASTERING
+   PCI_READ_IO_BAR BAR0
+   mov word [ethernet_card_io_base], ax
+   PCI_READ_MMIO_BAR BAR0
+   mov dword [ethernet_card_mmio_base], eax
+   PCI_READ_BAR_TYPE BAR0
+   mov dword [ethernet_card_bar_type], eax
+   jmp .nic_founded
+  .if_intel_nic:
+  
+  cmp ax, 0x1022 ;AMD
+  jne .if_amd_nic
+   PCI_IO_ENABLE_BUSMASTERING
+   PCI_READ_IO_BAR BAR0
+   mov word [ethernet_card_io_base], ax
+   jmp .nic_founded
+  .if_amd_nic:
+  
+  cmp ax, 0x14E4 ;broadcom
+  jne .if_broadcom_nic
+   PCI_MMIO_ENABLE_BUSMASTERING
+   PCI_READ_MMIO_BAR BAR0
+   mov dword [ethernet_card_mmio_base], eax
+   jmp .nic_founded
+  .if_broadcom_nic:
+  
+  ret
+  
+  .if_realtek_nic_8169:
+  PCI_IO_ENABLE_BUSMASTERING
+  PCI_READ_IO_BAR BAR0
+  mov dword [ethernet_card_io_base], eax
+  mov dword [nic_realtek_type], 1
+   
+  .nic_founded:
+  PCI_READ 0x3C
+  mov byte [ethernet_card_irq_num], al
+  and eax, 0xFF
+  add eax, 32 ;skip ISR
+  mov ebx, 8
+  mul ebx
+  add eax, idt
+  
+  ;create IDT entry
+  mov word [eax], ethernet_card_irq
+  mov word [eax+2], 0x0008
+  mov word [eax+4], 0x8E00
+  mov word [eax+6], (ethernet_card_irq - $$ + 0x10000) >> 16
   ret
  ENDIF pci_nic_if
  
