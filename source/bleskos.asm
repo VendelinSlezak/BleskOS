@@ -50,9 +50,9 @@ start:
  %include "source/drivers/filesystem_iso9660.asm"
 
  %include "source/drivers/network_center.asm"
- ;;;%include "source/drivers/network_protocols.asm"
- ;;;%include "source/drivers/network_ethernet_nic_intel.asm"
- ;;;%include "source/drivers/network_ethernet_nic_amd.asm"
+ %include "source/drivers/network_protocols.asm"
+ %include "source/drivers/network_ethernet_nic_intel.asm"
+ %include "source/drivers/network_ethernet_nic_amd.asm"
 
  %include "source/gui/board_main.asm"
  %include "source/gui/board_developer_zone.asm"
@@ -165,8 +165,9 @@ start_bleskos:
  call init_usb_controllers
  START_SCREEN_DRAW_SQUARE 270
  START_SCREEN_PRINT 'Initalizing network cards...', bootstr_nic
- ;call init_ethernet_card
- ;call init_network_stack
+ call init_ethernet_card
+ call init_network_stack
+ call connect_to_network
  START_SCREEN_DRAW_SQUARE 300
  START_SCREEN_PRINT 'Allocating memory for programs...', bootstr_mem_alloc
  call init_memory_of_programs
