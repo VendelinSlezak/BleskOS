@@ -198,29 +198,6 @@ pci_read_device:
   PCI_READ_DEVICE_ID
   mov dword [ethernet_card_id], eax
   
-  cmp eax, 0x813910EC ;realtek 8139
-  jne .if_realtek_nic_8139
-   PCI_IO_ENABLE_BUSMASTERING
-   PCI_READ_IO_BAR BAR0
-   mov word [ethernet_card_io_base], ax
-   mov dword [nic_realtek_type], 0
-   jmp .nic_founded
-  .if_realtek_nic_8139:
-  
-  ;realtek 8169
-  cmp eax, 0x816110EC
-  je .if_realtek_nic_8169
-  cmp eax, 0x816810EC
-  je .if_realtek_nic_8169
-  cmp eax, 0x816910EC
-  je .if_realtek_nic_8169
-  cmp eax, 0xC1071259
-  je .if_realtek_nic_8169
-  cmp eax, 0x10321737
-  je .if_realtek_nic_8169
-  cmp eax, 0x011616EC
-  je .if_realtek_nic_8169
-  
   cmp ax, 0x8086 ;intel
   jne .if_intel_nic
    PCI_MMIO_ENABLE_BUSMASTERING
@@ -250,12 +227,6 @@ pci_read_device:
   .if_broadcom_nic:
   
   ret
-  
-  .if_realtek_nic_8169:
-  PCI_IO_ENABLE_BUSMASTERING
-  PCI_READ_IO_BAR BAR0
-  mov dword [ethernet_card_io_base], eax
-  mov dword [nic_realtek_type], 1
    
   .nic_founded:
   PCI_READ 0x3C
