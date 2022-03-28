@@ -46,6 +46,12 @@ pci_write_value dd 0
  call pci_write
 %endmacro
 
+%macro PCI_READ_BAR_TYPE 1
+ mov dword [pci_offset], %1
+ call pci_read
+ and eax, 0x1
+%endmacro
+
 %macro PCI_READ_MMIO_BAR 1
  mov dword [pci_offset], %1
  call pci_read
