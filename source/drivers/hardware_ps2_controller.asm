@@ -11,7 +11,7 @@ read_ps2_controller:
   cmp al, 0x1
   je .read
   hlt
- cmp dword [ticks], 200
+ cmp dword [ticks], 100
  jl .wait
 
  .read:
@@ -27,7 +27,7 @@ write_ps2_controller:
   cmp al, 0
   je .write
   hlt
- cmp dword [ticks], 200
+ cmp dword [ticks], 100
  jl .wait
 
  .write:
@@ -44,7 +44,7 @@ write_command_ps2_controller:
   cmp al, 0
   je .write
   hlt
- cmp dword [ticks], 200
+ cmp dword [ticks], 100
  jl .wait
 
  .write:
