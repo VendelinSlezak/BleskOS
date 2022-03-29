@@ -209,6 +209,10 @@ nic_intel_send_packet:
 
 nic_intel_irq:
  NIC_INTEL_READ 0xC0 ;read status
+ push eax
+ and eax, 0xEFFFF
+ NIC_INTEL_WRITE 0xC0, eax
+ pop eax
  mov dword [last_arrived_packet], 0
  test eax, 0x80
  jnz .packet_received
