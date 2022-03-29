@@ -1,4 +1,4 @@
-;BleskOS live bootloader v16/09/2021
+;BleskOS live bootloader v29/03/2022
 
 org 0x7C00
 
@@ -149,7 +149,7 @@ extended_bootloader_redraw:
  .enter:
   cmp word [selected_entry], 1
   je .special_boot
-  
+ .start_bleskos:
   call highest_graphic_mode
   jmp load_bleskos
   
@@ -417,6 +417,12 @@ error_graphic_mode:
  call print
  jmp error_halt
  
+error_floppy_boot:
+ call error_background
+ mov si, boot_error_floppy_boot
+ call print
+ jmp error_halt
+ 
 error_halt:
  hlt
  jmp error_halt
@@ -483,6 +489,7 @@ print_var:
  boot_error_loading db 'Error during loading BleskOS', 0
  boot_error_graphic_info db 'Informations about graphic mode can not be readed', 0
  boot_error_graphic_mode db 'Error during setting graphic mode', 0
+ boot_error_floppy_boot db 'Floppy can not be readed by this version of bootloader', 0
 
  options_graphic_mode_str db '[g] Select graphic mode', 0
  
@@ -522,109 +529,51 @@ load_bleskos:
  loop .get_memory_entry
  .last_entry:
  
+ ;get EDID
+ mov ax, 0x7800
+ mov es, ax
+ mov di, 0
+ mov dword [di], 0
+ mov ax, 0x4F15
+ mov bl, 0x1
+ mov cx, 0
+ mov dx, 0
+ int 10h
+ 
  ;load bleskos
  cmp byte [boot_drive], 0
- je .floppy_boot
+ je error_floppy_boot
  cmp byte [boot_drive], 1
- je .floppy_boot
+ je error_floppy_boot
  
- mov word [0xF000], 0x0010 ;singature
- mov word [0xF002], 64
- mov word [0xF004], 0x0000 ;memory offset
- mov word [0xF006], 0x1000 ;segment
  mov dword [0xF008], 5
- mov dword [0xF00C], 0
- mov ah, 0x42
- mov si, 0xF000
- mov dl, byte [boot_drive]
- int 13h
- jc error_loading
- 
- mov word [0xF000], 0x0010 ;singature
- mov word [0xF002], 64
- mov word [0xF004], 0x8000 ;memory offset
- mov word [0xF006], 0x1000 ;segment
- mov dword [0xF008], 5+64
- mov dword [0xF00C], 0
- mov ah, 0x42
- mov si, 0xF000
- mov dl, byte [boot_drive]
- int 13h
- jc error_loading
- 
- mov word [0xF000], 0x0010 ;singature
- mov word [0xF002], 64
- mov word [0xF004], 0x0000 ;memory offset
- mov word [0xF006], 0x2000 ;segment
- mov dword [0xF008], 5+64+64
- mov dword [0xF00C], 0
- mov ah, 0x42
- mov si, 0xF000
- mov dl, byte [boot_drive]
- int 13h
- jc error_loading
- 
- mov word [0xF000], 0x0010 ;singature
- mov word [0xF002], 64
- mov word [0xF004], 0x8000 ;memory offset
- mov word [0xF006], 0x2000 ;segment
- mov dword [0xF008], 5+64+64+64
- mov dword [0xF00C], 0
- mov ah, 0x42
- mov si, 0xF000
- mov dl, byte [boot_drive]
- int 13h
- jc error_loading
+ mov edx, 5
+ mov cx, 8 ;load 8x64 sectors = 256 KB
+ mov ax, 0x10
+ .load_bleskos_from_hard_disk:
+  mov word [0xF000], 0x0010 ;singature
+  mov word [0xF002], 64
+  mov bx, ax
+  shl bx, 12
+  mov word [0xF004], bx ;memory offset
+  mov bx, ax
+  shl bx, 8
+  and bx, 0xF000
+  mov word [0xF006], bx ;segment
+  mov dword [0xF00C], 0
+  pusha ;some hardware change values in registers during int 13h so we have to save everything
+  mov ah, 0x42
+  mov si, 0xF000
+  mov dl, byte [boot_drive]
+  int 13h
+  popa
+  jc error_loading
+  
+  add edx, 64
+  mov dword [0xF008], edx
+  add ax, 0x8
+ loop .load_bleskos_from_hard_disk
  jmp .select_graphic_mode
- 
- .floppy_boot:
- mov ax, 0x1000
- mov es, ax
- mov bx, 0
- mov ah, 0x2 ;read
- mov al, 72
- mov ch, 0
- mov dh, 0
- mov cl, 6
- mov dl, byte [boot_drive]
- int 13h
- jc error_loading
- 
- mov ax, 0x1900
- mov es, ax
- mov bx, 0
- mov ah, 0x2 ;read
- mov al, 56
- mov ch, 2
- mov dh, 0
- mov cl, 6
- mov dl, byte [boot_drive]
- int 13h
- jc error_loading
- 
- mov ax, 0x2000
- mov es, ax
- mov bx, 0
- mov ah, 0x2 ;read
- mov al, 72
- mov ch, 3
- mov dh, 1
- mov cl, 8
- mov dl, byte [boot_drive]
- int 13h
- jc error_loading
- 
- mov ax, 0x2900
- mov es, ax
- mov bx, 0
- mov ah, 0x2 ;read
- mov al, 56
- mov ch, 5
- mov dh, 1
- mov cl, 8
- mov dl, byte [boot_drive]
- int 13h
- jc error_loading
  
  ;select vesa graphic mode
  .select_graphic_mode:
