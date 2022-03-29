@@ -33,25 +33,32 @@ USB devices:
 * USB mouse
 * USB mass storage
 
-Ethernet cards (on GitHub not connected with other code):
-* Realtek 8139/8169 (not complete yet)
+Ethernet cards:
 * AMD PC-net II/III
 * Intel e1000
 
+Internet stack:
+* DHCP
+* ARP
+* DNS
+* IPv4
+* TCP
+
 ### Drivers in developing
+- [x] Ethernet card Realtek 8139
+- [x] Ethernet card Realtek 8169
 - [x] Intel HD Audio
-- [x] USB controller xHCI
-- [x] AHCI cdrom
+- [ ] USB controller xHCI
+- [ ] AHCI cdrom
 - [ ] Filesystems UDF and CDDA
 - [ ] USB printer
-- [x] TCP/IP stack
 
 ### Programs
 * Text editor (TXT files)
 * Graphic editor (BMP files)
 * Media viewer (BMP and WAV files)
-* Internet browser (currently only HTML viewer)
-* Document editor (extremly simple, TD files only for BleskOS)
+* Internet browser (only HTTP pages)
+* Document editor (very simple, TD files only for BleskOS)
 
 ## How to build
 BleskOS is completly written in assembly language and can be compiled using NASM. You should use the latest version (2.1)
