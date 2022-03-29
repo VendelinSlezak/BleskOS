@@ -570,7 +570,7 @@ ethernet_card_process_packet:
   je .arp_request
   mov dword [type_of_received_packet], ARP_REPLY
   cmp word [esi+20], 0x0200
-  je .print
+  je .done
   mov dword [type_of_received_packet], 0
  jmp .done
  
@@ -743,11 +743,18 @@ ethernet_card_process_packet:
     .if_content_length:
     
     cmp dword [esi], 0x0A0D0A0D
-    je .copy_http_file_header
+    je .test_if_http_checksum_presented
     inc esi
     inc edx
    jmp .find_http_file_start
   .if_http_start:
+  
+  .test_if_http_checksum_presented:
+   cmp word [esi+8], 0x0A0D
+   jne .copy_http_file_header
+   add esi, 6
+   sub ecx, 6
+  
   .copy_http_file_header:
   add esi, 4
   add edx, 4
@@ -1026,47 +1033,6 @@ ethernet_card_process_packet:
   mov dword [dns_report], 2
  jmp .done
  
- .print:
-  cmp dword [type_of_received_packet], ARP_REQUEST
-  jne .if_arp_request
-   PSTR 'ARP request', arp_request_str
-  .if_arp_request:
-  
-  cmp dword [type_of_received_packet], ARP_REPLY
-  jne .if_arp_reply
-   PSTR 'ARP reply', arp_reply_str
-  .if_arp_reply:
-  
-  cmp dword [type_of_received_packet], DHCP_OFFER
-  jne .if_dhcp_offer
-   PSTR 'DHCP offer', dhcp_offer_str
-  .if_dhcp_offer:
-  
-  cmp dword [type_of_received_packet], DHCP_ACK
-  jne .if_dhcp_ack
-   PSTR 'DHCP ack', dhcp_ack_str
-  .if_dhcp_ack:
-  
-  cmp dword [type_of_received_packet], DHCP_NAK
-  jne .if_dhcp_nak
-   PSTR 'DHCP nak', dhcp_nak_str
-  .if_dhcp_nak:
-  
-  cmp dword [type_of_received_packet], DNS_RESPONSE
-  jne .if_dns_response
-   PSTR 'DNS response', dns_response_str
-  .if_dns_response:
-  
-  cmp dword [type_of_received_packet], TCP_HANDSHAKE
-  jne .if_tcp_handshake
-   PSTR 'TCP handshake', tcp_handshake_str
-  .if_tcp_handshake:
-  
-  cmp dword [type_of_received_packet], TCP_HTTP
-  jne .if_tcp_http
-   PSTR 'TCP HTTP', tcp_http_str
-  .if_tcp_http:
- 
  .done:
  ret
  
@@ -1100,8 +1066,6 @@ connect_to_network:
   hlt
  cmp dword [ticks], 500
  jb .wait_for_dhcp_ack
- mov dword [internet_connection_status], 2 ;error
- jmp .done
  
  .connection_succesful:
  mov dword [internet_connection_status], 1
