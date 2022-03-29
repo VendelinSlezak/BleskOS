@@ -7,6 +7,7 @@ ps2_mouse_data_pointer dd ps2_mouse_data
 ps2_mouse_data dd 0
 ps2_mouse_wait dd 0
 ps2_mouse_ack dd 0
+ps2_mouse_ack_data dd 0
 
 %macro WRITE_PS2_MOUSE 1
  mov byte [ps2_command], 0xD4
@@ -27,6 +28,25 @@ enable_touchpad:
  mov dword [ps2_mouse_ack], 1
  WRITE_PS2_MOUSE 0xF6
  READ_PS2_MOUSE
+ 
+ ;enable wheel
+ WRITE_PS2_MOUSE 0xF3
+ READ_PS2_MOUSE
+ WRITE_PS2_MOUSE 200
+ READ_PS2_MOUSE
+ WRITE_PS2_MOUSE 0xF3
+ READ_PS2_MOUSE
+ WRITE_PS2_MOUSE 100
+ READ_PS2_MOUSE
+ WRITE_PS2_MOUSE 0xF3
+ READ_PS2_MOUSE
+ WRITE_PS2_MOUSE 80
+ READ_PS2_MOUSE
+ 
+ ;read mouse ID - needed for proper enabling wheel on some hardware
+ WRITE_PS2_MOUSE 0xF2
+ READ_PS2_MOUSE
+ 
  WRITE_PS2_MOUSE 0xF4
  READ_PS2_MOUSE
  mov dword [ps2_mouse_data_pointer], ps2_mouse_data
@@ -55,7 +75,7 @@ ps2_mouse_irq:
 
  ;ACK
  cmp dword [ps2_mouse_ack], 1
- je .done
+ je .read_returned_mouse_data
 
  ;save data
  mov ebx, dword [ps2_mouse_data_pointer]
@@ -63,7 +83,7 @@ ps2_mouse_irq:
  inc dword [ps2_mouse_data_pointer]
 
  ;packet is received
- cmp dword [ps2_mouse_data_pointer], ps2_mouse_data+3
+ cmp dword [ps2_mouse_data_pointer], ps2_mouse_data+4
  jl .done
 
  mov dword [ps2_mouse_data_pointer], ps2_mouse_data
@@ -74,3 +94,9 @@ ps2_mouse_irq:
  pop ebx
  pop eax
  iret
+ 
+ .read_returned_mouse_data:
+  cmp al, 0xFA
+  je ps2_mouse_irq.done
+  mov byte [ps2_mouse_ack_data], al
+ jmp ps2_mouse_irq.done
