@@ -9,7 +9,7 @@
 %endmacro
 
 internet_browser_up_str db 'Internet browser', 0
-internet_browser_down_str db '[F1] Clear URL [F2] Open file [F3] Back [up/down] Move page', 0
+internet_browser_down_str db '[F1] Clear URL [F2] Back [F3] Open file [F4] Close file [up/down] Move page', 0
 internet_browser_file_pointer dd 0
 internet_browser_file_size dd 0
 internet_browser_url times 202 dw 0
@@ -17,15 +17,34 @@ internet_browser_previous_url_1 times 202 dw 0
 internet_browser_previous_url_2 times 202 dw 0
 internet_browser_previous_url_3 times 202 dw 0
 internet_browser_previous_url_4 times 202 dw 0
-%define IB_ROLLING_BACK_IN_HISTORY 1
 ib_url_history_state dd 0
 ib_url_cursor dd 0
+ib_file_opened dd 0
 
 ib_mouse_line dd 20
 ib_mouse_column dd 0
+ib_mouse_halt dd 0
 
 internet_browser:
+ mov dword [ib_mouse_halt], 1
  DRAW_WINDOW internet_browser_up_str, internet_browser_down_str, 0x17A4AD, WHITE ;light blue
+ 
+ cmp dword [internet_connection_status], 1
+ je .connected_to_internet
+  cmp dword [internet_browser_file_pointer], 0
+  jne .draw_html
+  call redraw_screen
+  IB_MESSAGE 'You are not connected to internet', no_internet_connection_str
+  .no_connection_halt:
+   call wait_for_keyboard
+   
+   cmp byte [key_code], KEY_ESC
+   je main_window
+   
+   cmp byte [key_code], KEY_F2
+   je .open
+  jmp .no_connection_halt
+ .connected_to_internet:
  
  mov dword [mcursor_up_side], 20
  mov dword [mcursor_left_side], 0
@@ -34,14 +53,7 @@ internet_browser:
  mov eax, dword [screen_x]
  mov dword [mcursor_right_side], eax
  
- mov dword [cursor_line], 5
- SCREEN_X_SUB eax, COLUMNSZ*101
- mov dword [cursor_column], eax
- mov dword [text_input_pointer], internet_browser_url
- mov dword [text_input_length], 100
- mov eax, dword [ib_url_cursor]
- mov dword [text_input_cursor], eax
- call draw_text_input
+ call internet_browser_redraw_url
  cmp dword [internet_browser_file_pointer], 0
  jne .draw_html
  call redraw_screen
@@ -52,20 +64,29 @@ internet_browser:
   cmp byte [key_code], KEY_ESC
   je main_window
   
-  cmp byte [key_code], KEY_F1
-  je .clear_url
-
-  cmp byte [key_code], KEY_F2
+  cmp byte [key_code], KEY_F3
   je .open
   
-  cmp byte [key_code], KEY_F3
-  je .back
+  cmp byte [key_code], KEY_F4
+  je .close
   
   cmp byte [key_code], KEY_UP
   je .key_up
   
   cmp byte [key_code], KEY_DOWN
   je .key_down
+  
+  cmp byte [usb_mouse_data], 0
+  jne .mouse_event
+  
+ cmp dword [ib_file_opened], 1
+ je .halt
+  
+  cmp byte [key_code], KEY_F1
+  je .clear_url
+  
+  cmp byte [key_code], KEY_F2
+  je .back
   
   cmp byte [key_code], KEY_HOME
   je .key_home
@@ -78,9 +99,6 @@ internet_browser:
   
   cmp byte [key_code], KEY_BACKSPACE
   je .key_backspace
-  
-  cmp byte [usb_mouse_data], 0
-  jne .mouse_event
   
   cmp byte [key_code], KEY_RIGHT
   je .key_right
@@ -106,6 +124,14 @@ internet_browser:
   sub dword [html_end_of_screen], 20
   DRAW_WINDOW internet_browser_up_str, internet_browser_down_str, 0x17A4AD, WHITE ;light blue
   call draw_html_code
+  call internet_browser_redraw_url
+  
+  mov eax, dword [ib_mouse_line]
+  mov dword [cursor_line], eax
+  mov eax, dword [ib_mouse_column]
+  mov dword [cursor_column], eax
+  call read_cursor_bg
+  call draw_cursor
   call redraw_screen
  jmp .redraw_url
  
@@ -116,6 +142,14 @@ internet_browser:
   add dword [html_end_of_screen], 20
   DRAW_WINDOW internet_browser_up_str, internet_browser_down_str, 0x17A4AD, WHITE ;light blue
   call draw_html_code
+  call internet_browser_redraw_url
+  
+  mov eax, dword [ib_mouse_line]
+  mov dword [cursor_line], eax
+  mov eax, dword [ib_mouse_column]
+  mov dword [cursor_column], eax
+  call read_cursor_bg
+  call draw_cursor
   call redraw_screen
  jmp .redraw_url
  
@@ -177,15 +211,7 @@ internet_browser:
   inc dword [ib_url_cursor]
  
  .redraw_url:
-  mov dword [cursor_line], 5
-  SCREEN_X_SUB eax, COLUMNSZ*101
-  mov dword [cursor_column], eax
-  mov dword [text_input_pointer], internet_browser_url
-  mov dword [text_input_length], 100
-  mov eax, dword [ib_url_cursor]
-  mov dword [text_input_cursor], eax
-  call draw_text_input
-  REDRAW_LINES_SCREEN 5, 10
+  call internet_browser_redraw_url
  jmp .halt
  
  .key_home:
@@ -194,77 +220,33 @@ internet_browser:
   mov dword [html_end_of_screen], eax
   DRAW_WINDOW internet_browser_up_str, internet_browser_down_str, 0x17A4AD, WHITE ;light blue
   call draw_html_code
+  call internet_browser_redraw_url
   call redraw_screen
  jmp .halt
  
  .back:
-  cmp word [internet_browser_previous_url_1], 0
-  je .halt
-  cmp dword [ib_url_history_state], IB_ROLLING_BACK_IN_HISTORY
-  jne .start_of_rolling_back
-  
-  mov esi, internet_browser_previous_url_1
-  mov edi, internet_browser_url
-  mov ecx, 100
-  rep movsw
-  
-  mov esi, internet_browser_previous_url_2
-  mov edi, internet_browser_previous_url_1
-  mov ecx, 100
-  rep movsw
-  
-  mov esi, internet_browser_previous_url_3
-  mov edi, internet_browser_previous_url_2
-  mov ecx, 100
-  rep movsw
-  
-  mov esi, internet_browser_previous_url_4
-  mov edi, internet_browser_previous_url_3
-  mov ecx, 100
-  rep movsw
-  
-  mov edi, internet_browser_previous_url_4
-  mov ecx, 100
-  mov eax, 0
-  rep stosw
-  
-  call internet_browser_move_url_cursor_to_end
-  
-  mov dword [cursor_line], 5
-  SCREEN_X_SUB eax, COLUMNSZ*101
-  mov dword [cursor_column], eax
-  mov dword [text_input_pointer], internet_browser_url
-  mov dword [text_input_length], 100
-  mov eax, dword [ib_url_cursor]
-  mov dword [text_input_cursor], eax
-  call draw_text_input
-  REDRAW_LINES_SCREEN 5, 10
-  
-  mov dword [ib_url_history_state], IB_ROLLING_BACK_IN_HISTORY
- jmp .transfer_page
- 
-  .start_of_rolling_back:
   cmp word [internet_browser_previous_url_2], 0
   je .halt
+
   mov esi, internet_browser_previous_url_2
   mov edi, internet_browser_url
   mov ecx, 100
   rep movsw
   
-  mov esi, internet_browser_previous_url_3
+  mov esi, internet_browser_previous_url_2
   mov edi, internet_browser_previous_url_1
   mov ecx, 100
   rep movsw
   
-  mov esi, internet_browser_previous_url_4
+  mov esi, internet_browser_previous_url_3
   mov edi, internet_browser_previous_url_2
   mov ecx, 100
   rep movsw
   
+  mov esi, internet_browser_previous_url_4
   mov edi, internet_browser_previous_url_3
   mov ecx, 100
-  mov eax, 0
-  rep stosw
+  rep movsw
   
   mov edi, internet_browser_previous_url_4
   mov ecx, 100
@@ -272,16 +254,7 @@ internet_browser:
   rep stosw
   
   call internet_browser_move_url_cursor_to_end
-  
-  mov dword [cursor_line], 5
-  SCREEN_X_SUB eax, COLUMNSZ*101
-  mov dword [cursor_column], eax
-  mov dword [text_input_pointer], internet_browser_url
-  mov dword [text_input_length], 100
-  mov eax, dword [ib_url_cursor]
-  mov dword [text_input_cursor], eax
-  call draw_text_input
-  REDRAW_LINES_SCREEN 5, 10
+  call internet_browser_redraw_url
  jmp .transfer_page
  
  .move:
@@ -311,8 +284,6 @@ internet_browser:
   mov edi, internet_browser_previous_url_1
   mov ecx, 100
   rep movsw
-  
-  mov dword [ib_url_history_state], 0
 
  .transfer_page:
   cmp word [internet_browser_url], 0
@@ -321,15 +292,7 @@ internet_browser:
   je .halt
  
   DRAW_WINDOW internet_browser_up_str, internet_browser_down_str, 0x17A4AD, WHITE ;light blue
-  mov dword [cursor_line], 5
-  SCREEN_X_SUB eax, COLUMNSZ*101
-  mov dword [cursor_column], eax
-  mov dword [text_input_pointer], internet_browser_url
-  mov dword [text_input_length], 100
-  mov eax, dword [ib_url_cursor]
-  mov dword [text_input_cursor], eax
-  call draw_text_input
-  REDRAW_LINES_SCREEN 5, 10
+  call internet_browser_redraw_url
   IB_MESSAGE 'Searching for IP address of website...', searching_for_ip_address_st
   call redraw_screen
   
@@ -371,6 +334,7 @@ internet_browser:
   jb .wait_for_dns_response
   .dns_response_no_ip:
   IB_MESSAGE 'This website do not exist', this_website_do_not_exist_str
+  mov dword [ib_mouse_halt], 1
   jmp .halt
   
   .dns_response:
@@ -385,6 +349,7 @@ internet_browser:
   cmp dword [ticks], 1000
   jb .wait_for_tcp_handshake
   IB_MESSAGE 'Server is not responding', server_is_not_responding
+  mov dword [ib_mouse_halt], 1
   jmp .halt
   
   .transfer_main_html_file:
@@ -439,18 +404,32 @@ internet_browser:
     call print_var
     REDRAW_LINES_SCREEN 20+LINESZ, LINESZ
     pop eax
+    mov dword [ticks], 0 ;server is not responding if nothing arrived during 3 seconds
    .if_transferred_length_change:
-  cmp dword [ticks], 5000
+  cmp dword [ticks], 3000
   jb .wait_for_tcp_file
   IB_MESSAGE 'File was not transferred', file_was_not_transferred
   call release_memory
+  mov dword [ib_mouse_halt], 1
   jmp .halt
   
   .show_html:
+  mov dword [ib_file_opened], 0
   mov eax, dword [allocated_memory_pointer]
   mov dword [file_memory], eax
   jmp .open_html
  jmp .halt
+ 
+ .close:
+  mov dword [ib_file_opened], 0
+  mov eax, dword [internet_browser_file_pointer]
+  mov dword [allocated_memory_pointer], eax
+  mov eax, dword [internet_browser_file_size]
+  mov dword [allocated_size], eax
+  call release_memory
+  
+  mov dword [internet_browser_file_pointer], 0
+ jmp internet_browser
  
  .open:
   mov dword [fd_file_type_1], 'htm'
@@ -461,6 +440,7 @@ internet_browser:
   cmp dword [fd_return], FD_NO_FILE
   je internet_browser
   
+  mov dword [ib_file_opened], 1
   cmp dword [file_type], 'TXT'
   je .open_html
   cmp dword [file_type], 'txt'
@@ -469,6 +449,7 @@ internet_browser:
   je .open_html
   cmp dword [file_type], 'htm'
   je .open_html
+  mov dword [ib_file_opened], 0
   
   call release_memory
  jmp .halt
@@ -499,6 +480,7 @@ internet_browser:
   mov dword [html_debug], 0
   call transform_html_code
   call draw_html_code
+  call internet_browser_redraw_url
   
   mov eax, dword [ib_mouse_line]
   mov dword [cursor_line], eax
@@ -507,6 +489,8 @@ internet_browser:
   call read_cursor_bg
   call draw_cursor
   call redraw_screen
+  
+  mov dword [ib_mouse_halt], 0
  jmp .redraw_url
  
  .draw_html:
@@ -515,10 +499,15 @@ internet_browser:
   
   DRAW_WINDOW internet_browser_up_str, internet_browser_down_str, 0x17A4AD, WHITE ;light blue
   PRINT 'Rendering loaded HTML...', rendering_html_str, 20+LINESZ*1, COLUMNSZ*1
+  call internet_browser_redraw_url
   call redraw_screen
   
   DRAW_WINDOW internet_browser_up_str, internet_browser_down_str, 0x17A4AD, WHITE ;light blue
   call draw_html_code
+  call internet_browser_redraw_url
+  
+  cmp dword [internet_connection_status], 1
+  jne .draw_html_not_connected_to_internet
   
   mov eax, dword [ib_mouse_line]
   mov dword [cursor_line], eax
@@ -528,12 +517,21 @@ internet_browser:
   call draw_cursor
  
   call redraw_screen
- jmp .redraw_url
+  
+  mov dword [ib_mouse_halt], 0
+ jmp .halt
+ 
+ .draw_html_not_connected_to_internet:
+  call redraw_screen
+  mov dword [ib_mouse_halt], 0
+ jmp .no_connection_halt
  
  .mouse_event:
   cmp dword [internet_browser_file_pointer], 0
   je .halt
- 
+  cmp dword [ib_mouse_halt], 1
+  je .halt
+  
   mov eax, dword [ib_mouse_line]
   mov dword [cursor_line], eax
   mov eax, dword [ib_mouse_column]
@@ -546,9 +544,18 @@ internet_browser:
   
   cmp dword [usb_mouse_dnd], 0x1
   je .mouse_click
+  cmp byte [usb_mouse_data+3], 0xFF
+  je .key_up
+  cmp byte [usb_mouse_data+3], 0x1
+  je .key_down
  jmp .halt
  
  .mouse_click:
+  cmp dword [internet_connection_status], 1
+  jne .no_connection_halt
+  cmp dword [ib_file_opened], 1
+  je .halt
+ 
   call draw_html_code
   cmp dword [html_cursor_on_url], 0
   je .halt
@@ -614,11 +621,13 @@ internet_browser:
   jmp .mouse_click_skip_www_part
   
   .mouse_click_clear_url:
-   push edi
-   mov eax, 0
-   mov ecx, 100
-   rep stosw
-   pop edi
+  cmp edi, internet_browser_url
+  je .halt ;no url
+  push edi
+  mov eax, 0
+  mov ecx, 100
+  rep stosw
+  pop edi
   
   .mouse_click_copy_url:
    cmp byte [esi], 0
@@ -634,14 +643,7 @@ internet_browser:
   mov word [edi], 0
   
   DRAW_WINDOW internet_browser_up_str, internet_browser_down_str, 0x17A4AD, WHITE ;light blue
-  mov dword [cursor_line], 5
-  SCREEN_X_SUB eax, COLUMNSZ*101
-  mov dword [cursor_column], eax
-  mov dword [text_input_pointer], internet_browser_url
-  mov dword [text_input_length], 100
-  mov eax, dword [ib_url_cursor]
-  mov dword [text_input_cursor], eax
-  call draw_text_input
+  call internet_browser_redraw_url
   call redraw_screen
   
   cmp word [internet_browser_url], 0
@@ -665,27 +667,36 @@ internet_browser:
   mov edi, internet_browser_previous_url_2
   mov ecx, 100
   rep movsw
-  
+
   mov esi, internet_browser_url
   mov edi, internet_browser_previous_url_1
   mov ecx, 100
   rep movsw
-  
-  mov dword [ib_url_history_state], 0
+
   call internet_browser_move_url_cursor_to_end
  jmp .transfer_page
  
   .mouse_click_print:
-  mov dword [cursor_line], 5
-  SCREEN_X_SUB eax, COLUMNSZ*101
-  mov dword [cursor_column], eax
-  mov dword [text_input_pointer], internet_browser_url
-  mov dword [text_input_length], 100
-  mov eax, dword [ib_url_cursor]
-  mov dword [text_input_cursor], eax
-  call draw_text_input
+  call internet_browser_redraw_url
   call redraw_screen
  jmp .halt
+ 
+internet_browser_redraw_url:
+ cmp dword [ib_file_opened], 1
+ je .done
+ 
+ mov dword [cursor_line], 5
+ SCREEN_X_SUB eax, COLUMNSZ*101
+ mov dword [cursor_column], eax
+ mov dword [text_input_pointer], internet_browser_url
+ mov dword [text_input_length], 100
+ mov eax, dword [ib_url_cursor]
+ mov dword [text_input_cursor], eax
+ call draw_text_input
+ REDRAW_LINES_SCREEN 5, 10
+ 
+ .done:
+ ret
  
 internet_browser_move_url_cursor_to_end:
  mov eax, internet_browser_url
