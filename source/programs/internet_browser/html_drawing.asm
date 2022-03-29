@@ -564,6 +564,8 @@ draw_html_code:
   .test_cursor:
   cmp dword [html_cursor_on_url], 1
   je .if_mouse_cursor_here
+  cmp byte [html_url], 0
+  je .if_mouse_cursor_here
   mov eax, dword [ib_mouse_line]
   mov ebx, dword [cursor_line]
   dec ebx
@@ -698,7 +700,7 @@ draw_html_code:
    push esi
    mov esi, edi
    mov ecx, 0
-   .tag_a_length_of_url:
+   .tag_a_length_of_url
     cmp word [edi], ' '
     je .tag_a_copy_url
     cmp word [edi], '"'
@@ -738,6 +740,15 @@ draw_html_code:
  
  .end_tag_a:
   mov dword [color], BLACK
+  
+  cmp dword [html_cursor_on_url], 1
+  je .skip_rest_of_tag
+  
+  ;if cursor is not on text with url, erase url
+  mov edi, html_url
+  mov eax, 0
+  mov ecx, 257
+  rep stosb
  jmp .skip_rest_of_tag
  
  .tag_br:
