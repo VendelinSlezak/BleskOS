@@ -7,6 +7,8 @@ window_down_string_ptr dd 0
 window_border_color dd 0
 
 %macro DRAW_WINDOW 4
+ mov dword [size_of_text], 1
+ mov dword [type_of_text], PLAIN
  mov dword [window_up_string_ptr], %1
  mov dword [window_down_string_ptr], %2
  mov dword [window_border_color], %3
@@ -15,6 +17,8 @@ window_border_color dd 0
 %endmacro
 
 %macro DRAW_WINDOW_BORDERS 3
+ mov dword [size_of_text], 1
+ mov dword [type_of_text], PLAIN
  mov dword [window_up_string_ptr], %1
  mov dword [window_down_string_ptr], %2
  mov dword [window_border_color], %3
