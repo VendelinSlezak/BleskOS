@@ -616,7 +616,7 @@ draw_html_code:
    push esi
    mov esi, edi
    mov ecx, 0
-   .tag_a_length_of_url
+   .tag_a_length_of_url:
     cmp word [edi], ' '
     je .tag_a_copy_url
     cmp word [edi], '"'
