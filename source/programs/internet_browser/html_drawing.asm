@@ -270,159 +270,75 @@ draw_html_code:
    je .ending_tag
    
    ;<P>
-   mov edi, html_tag_p
-   call html_compare_strings
-   cmp eax, 1
+   cmp dword [esi], 'p' | ('>' << 16)
+   je .tag_p
+   cmp dword [esi], 'p' | (' ' << 16)
    je .tag_p
    
    ;<A>
-   mov edi, html_tag_a_param
-   call html_compare_strings
-   cmp eax, 1
+   cmp dword [esi], 'a' | (' ' << 16)
    je .tag_a
    
    ;<B>
-   mov edi, html_tag_b
-   call html_compare_strings
-   cmp eax, 1
+   cmp dword [esi], 'b' | ('>' << 16)
    je .tag_b
-   mov edi, html_end_tag_b
-   call html_compare_strings
-   cmp eax, 1
-   je .end_tag_b
    
    ;<BR> <BR/> <BR />
-   mov edi, html_tag_br
-   call html_compare_strings
-   cmp eax, 1
+   cmp dword [esi], 'b' | ('r' << 16)
    je .tag_br
-   mov edi, html_tag_br2
-   call html_compare_strings
-   cmp eax, 1
-   je .tag_br
-   mov edi, html_tag_br3
-   call html_compare_strings
-   cmp eax, 1
-   je .tag_br
+   
+   ;char H
+   cmp word [esi], 'h'
+   jne .if_tag_char_h
    
    ;<HR>
-   mov edi, html_tag_hr
-   call html_compare_strings
-   cmp eax, 1
-   je .tag_hr
-   mov edi, html_tag_hr_param
-   call html_compare_strings
-   cmp eax, 1
-   je .tag_hr
+   cmp dword [esi+2], 'r' | ('>' << 16)
+   je .tag_ul
    
    ;<H1> - <H6>
-   mov edi, html_tag_h1
-   call html_compare_strings
-   cmp eax, 1
+   cmp dword [esi+2], '1' | ('>' << 16)
    je .tag_h1
-   mov edi, html_tag_h1_param
-   call html_compare_strings
-   cmp eax, 1
+   cmp dword [esi+2], '1' | (' ' << 16)
    je .tag_h1
-   mov edi, html_end_tag_h1
-   call html_compare_strings
-   cmp eax, 1
-   je .end_tag_h1_h6
    
-   mov edi, html_tag_h2
-   call html_compare_strings
-   cmp eax, 1
+   cmp dword [esi+2], '2' | ('>' << 16)
    je .tag_h2
-   mov edi, html_tag_h2_param
-   call html_compare_strings
-   cmp eax, 1
+   cmp dword [esi+2], '2' | (' ' << 16)
    je .tag_h2
-   mov edi, html_end_tag_h2
-   call html_compare_strings
-   cmp eax, 1
-   je .end_tag_h1_h6
    
-   mov edi, html_tag_h3
-   call html_compare_strings
-   cmp eax, 1
+   cmp dword [esi+2], '3' | ('>' << 16)
    je .tag_h3
-   mov edi, html_tag_h3_param
-   call html_compare_strings
-   cmp eax, 1
+   cmp dword [esi+2], '3' | (' ' << 16)
    je .tag_h3
-   mov edi, html_end_tag_h3
-   call html_compare_strings
-   cmp eax, 1
-   je .end_tag_h1_h6
    
-   mov edi, html_tag_h4
-   call html_compare_strings
-   cmp eax, 1
+   cmp dword [esi+2], '4' | ('>' << 16)
    je .tag_h4
-   mov edi, html_tag_h4_param
-   call html_compare_strings
-   cmp eax, 1
+   cmp dword [esi+2], '4' | (' ' << 16)
    je .tag_h4
-   mov edi, html_end_tag_h4
-   call html_compare_strings
-   cmp eax, 1
-   je .end_tag_h1_h6
    
-   mov edi, html_tag_h5
-   call html_compare_strings
-   cmp eax, 1
+   cmp dword [esi+2], '5' | ('>' << 16)
    je .tag_h5
-   mov edi, html_tag_h5_param
-   call html_compare_strings
-   cmp eax, 1
+   cmp dword [esi+2], '5' | (' ' << 16)
    je .tag_h5
-   mov edi, html_end_tag_h5
-   call html_compare_strings
-   cmp eax, 1
-   je .end_tag_h1_h6
    
-   mov edi, html_tag_h6
-   call html_compare_strings
-   cmp eax, 1
+   cmp dword [esi+2], '6' | ('>' << 16)
    je .tag_h6
-   mov edi, html_tag_h6_param
-   call html_compare_strings
-   cmp eax, 1
+   cmp dword [esi+2], '6' | (' ' << 16)
    je .tag_h6
-   mov edi, html_end_tag_h6
-   call html_compare_strings
-   cmp eax, 1
-   je .end_tag_h1_h6
+   
+   .if_tag_char_h:
    
    ;<UL>
-   mov edi, html_tag_ul
-   call html_compare_strings
-   cmp eax, 1
+   cmp dword [esi], 'u' | ('l' << 16)
    je .tag_ul
-   mov edi, html_end_tag_ul
-   call html_compare_strings
-   cmp eax, 1
-   je .end_tag_ul
    
    ;<OL>
-   mov edi, html_tag_ol
-   call html_compare_strings
-   cmp eax, 1
+   cmp dword [esi], 'o' | ('l' << 16)
    je .tag_ol
-   mov edi, html_end_tag_ol
-   call html_compare_strings
-   cmp eax, 1
-   je .end_tag_ol
    
    ;<LI>
-   mov edi, html_tag_li
-   call html_compare_strings
-   cmp eax, 1
+   cmp dword [esi], 'l' | ('i' << 16)
    je .tag_li
-   mov edi, html_end_tag_li
-   call html_compare_strings
-   cmp eax, 1
-   je .end_tag_li
    
    jmp .skip_rest_of_tag
    
