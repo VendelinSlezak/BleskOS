@@ -116,6 +116,11 @@ transform_html_code:
  mov edx, 0
  mov esi, dword [html_memory]
  .transform_char:
+  cmp eax, 1
+  jne .if_processing_tag
+   cmp word [esi], ' '
+   je .end_of_tag
+  .if_processing_tag
   cmp word [esi], 0
   je .done
   cmp word [esi], '&'
