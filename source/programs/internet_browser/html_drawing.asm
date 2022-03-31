@@ -120,7 +120,7 @@ transform_html_code:
   jne .if_processing_tag
    cmp word [esi], ' '
    je .end_of_tag
-  .if_processing_tag
+  .if_processing_tag:
   cmp word [esi], 0
   je .done
   cmp word [esi], '&'
