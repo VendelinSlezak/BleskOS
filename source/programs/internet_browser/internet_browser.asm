@@ -25,6 +25,8 @@ ib_mouse_line dd 20
 ib_mouse_column dd 0
 ib_mouse_halt dd 0
 
+ib_number_of_reloading dd 0
+
 internet_browser:
  mov dword [ib_mouse_halt], 1
  DRAW_WINDOW internet_browser_up_str, internet_browser_down_str, 0x17A4AD, WHITE ;light blue
@@ -95,7 +97,7 @@ internet_browser:
   je .key_enter
   
   cmp byte [key_code], KEY_DELETE
-  je .key_backspace
+  je .key_delete
   
   cmp byte [key_code], KEY_BACKSPACE
   je .key_backspace
@@ -285,6 +287,8 @@ internet_browser:
   mov ecx, 100
   rep movsw
 
+  mov dword [ib_number_of_reloading], 0
+  
  .transfer_page:
   cmp word [internet_browser_url], 0
   je .halt
@@ -304,6 +308,23 @@ internet_browser:
   mov ecx, 256
   mov eax, 0
   rep stosb
+  
+  ;WORKAROUND FOR HTTPS PAGES - these pages are accessed through page gate.aspero.pro
+  cmp dword [internet_browser_url], 'h' | ('t' << 16)
+  jne .if_transfer_https_dns
+  cmp dword [internet_browser_url+4], 't' | ('p' << 16)
+  jne .if_transfer_https_dns
+  cmp dword [internet_browser_url+8], 's' | (':' << 16)
+  jne .if_transfer_https_dns
+  cmp dword [internet_browser_url+12], '/' | ('/' << 16)
+  jne .if_transfer_https_dns
+   mov dword [url_for_dns], 'gate'
+   mov dword [url_for_dns+4], '.asp'
+   mov dword [url_for_dns+8], 'ero.'
+   mov word [url_for_dns+12], 'pr'
+   mov byte [url_for_dns+14], 'o'
+   jmp .send_dns
+  .if_transfer_https_dns:
   
   mov ecx, 100
   mov esi, internet_browser_url
@@ -364,6 +385,32 @@ internet_browser:
   mov ecx, 0x100000
   rep stosb
   
+  ;WORKAROUND FOR HTTPS PAGES - these pages are accessed through page gate.aspero.pro
+  cmp dword [internet_browser_url], 'h' | ('t' << 16)
+  jne .if_transfer_https_tcp
+  cmp dword [internet_browser_url+4], 't' | ('p' << 16)
+  jne .if_transfer_https_tcp
+  cmp dword [internet_browser_url+8], 's' | (':' << 16)
+  jne .if_transfer_https_tcp
+  cmp dword [internet_browser_url+12], '/' | ('/' << 16)
+  jne .if_transfer_https_tcp
+   mov dword [tcp_path_to_file], '/?si'
+   mov dword [tcp_path_to_file+4], 'te= '
+
+   mov ecx, 100
+   mov esi, internet_browser_url
+   mov edi, tcp_path_to_file+7
+   .https_create_tcp:
+    cmp word [esi], 0
+    je .transfer_tcp
+    mov al, byte [esi]
+    mov byte [edi], al
+    add esi, 2
+    inc edi
+   loop .https_create_tcp
+   jmp .transfer_tcp
+  .if_transfer_https_tcp:
+  
   mov byte [tcp_path_to_file], '/'
   mov ecx, 100
   mov esi, internet_browser_url
@@ -383,20 +430,20 @@ internet_browser:
    add esi, 2
    inc edi
   loop .create_tcp
-  .transfer_tcp:
   
+  .transfer_tcp:
   mov eax, 0
   call tcp_transfer_file
   mov dword [ticks], 0
   .wait_for_tcp_file:
    cmp dword [tcp_communication_type], TCP_FINALIZED
-   je .show_html   
+   je .process_html   
    hlt
    cmp eax, dword [tcp_file_transferred_length]
    je .if_transferred_length_change
     mov eax, dword [tcp_file_transferred_length]
     push eax
-    DRAW_SQUARE 20+LINESZ, COLUMNSZ*28, COLUMNSZ*4, LINESZ, WHITE
+    DRAW_SQUARE 20+LINESZ, COLUMNSZ*28, COLUMNSZ*10, LINESZ, WHITE
     pop eax
     mov dword [color], BLACK
     mov dword [var_print_value], eax
@@ -411,6 +458,97 @@ internet_browser:
   IB_MESSAGE 'File was not transferred', file_was_not_transferred
   call release_memory
   mov dword [ib_mouse_halt], 1
+  jmp .halt
+  
+  .process_html:
+  cmp dword [http_reported_state], 0
+  je .show_html
+  cmp dword [http_reported_state], HTTP_MOVED_PERMANENTLY
+  je .load_new_location
+  jmp .halt
+  
+  .load_new_location:
+   cmp dword [ib_number_of_reloading], 5
+   ja .too_many_reloading
+   cmp byte [http_moved_permanently_url], '/'
+   je .new_location_add
+   cmp dword [http_moved_permanently_url+1], 'ttp:'
+   je .new_location_http
+   cmp byte [http_moved_permanently_url+1], 'ttps'
+   je .new_location_https
+   
+   IB_MESSAGE 'Server respond was not recognized', server_respond_was_not_recognized
+   mov dword [ib_mouse_halt], 1
+  jmp .halt
+   .new_location_add:
+    mov edi, internet_browser_url+200
+    .new_location_add_move_to_end_of_url
+     cmp edi, internet_browser_url
+     je .halt ;error
+     cmp word [edi], '/'
+     je .new_location_add_copy_url
+     cmp word [edi], 0
+     jne .new_location_add_to_url_with_end_0
+     sub edi, 2
+    jmp .new_location_add_move_to_end_of_url
+    
+    .new_location_add_to_url_with_end_0:
+    add edi, 2
+    mov word [edi], '/'
+    .new_location_add_copy_url:
+    mov esi, http_moved_permanently_url
+    mov ecx, 100
+    .new_location_add_copy_char:
+     mov ax, 0
+     mov al, byte [esi]
+     mov word [edi], ax
+     inc esi
+     add edi, 2
+    loop .new_location_add_copy_char
+   jmp .reload_url
+   
+   .new_location_http:
+    mov edi, internet_browser_url
+    mov eax, 0
+    mov ecx, 100
+    rep stosw
+    mov esi, http_moved_permanently_url+7
+    mov edi, internet_browser_url
+    mov ecx, 100
+    .new_location_http_copy_char:
+     mov ax, 0
+     mov al, byte [esi]
+     mov word [edi], ax
+     inc esi
+     add edi, 2
+    loop .new_location_http_copy_char
+   jmp .reload_url
+   
+   .new_location_https:
+    mov edi, internet_browser_url
+    mov eax, 0
+    mov ecx, 100
+    rep stosw
+    mov esi, http_moved_permanently_url
+    mov edi, internet_browser_url
+    mov ecx, 100
+    .new_location_https_copy_char:
+     mov ax, 0
+     mov al, byte [esi]
+     mov word [edi], ax
+     inc esi
+     add edi, 2
+    loop .new_location_https_copy_char
+   jmp .reload_url
+   
+   .reload_url:
+    call internet_browser_redraw_url
+    inc dword [ib_number_of_reloading]
+   jmp .transfer_page ;reload url
+   
+  .too_many_reloading:
+   IB_MESSAGE 'This page was redirected too many times', this_page_was_redirected_too_many_times
+   mov dword [ib_mouse_halt], 1
   jmp .halt
   
   .show_html:
@@ -591,11 +729,9 @@ internet_browser:
    mov edi, internet_browser_url
      
   cmp dword [esi+4], 's://'
-  je .mouse_click_https
-  add esi, 7
+  je .mouse_click_copy_new_url ;https pages have copied full address
+  add esi, 7 ;http pages have skipped http:// part
   jmp .mouse_click_copy_new_url
-  .mouse_click_https:
-  add esi, 8
   .mouse_click_copy_new_url:
    cmp byte [esi], 0
    je .mouse_click_done
@@ -612,6 +748,18 @@ internet_browser:
   inc esi
   .mouse_click_copy_same_page_url:
   
+  ;skip HTTPS://
+  cmp dword [edi], 'h' | ('t' << 16)
+  jne .mouse_click_skip_https
+  cmp dword [edi+4], 't' | ('p' << 16)
+  jne .mouse_click_skip_https
+  cmp dword [edi+8], 's' | (':' << 16)
+  jne .mouse_click_skip_https
+  cmp dword [edi+12], '/' | ('/' << 16)
+  jne .mouse_click_skip_https
+   add edi, 16
+  .mouse_click_skip_https:
+  
   .mouse_click_skip_www_part:
    cmp word [edi], 0
    je .mouse_click_clear_url
@@ -621,8 +769,16 @@ internet_browser:
   jmp .mouse_click_skip_www_part
   
   .mouse_click_clear_url:
-  cmp edi, internet_browser_url
-  je .halt ;no url
+  cmp word [edi], 0
+  jne .if_end_of_url
+   sub edi, 2
+   cmp word [edi], 0
+   je .halt ;no url
+   cmp word [edi], '/'
+   je .halt ;no url
+   
+   add edi, 2
+  .if_end_of_url:
   push edi
   mov eax, 0
   mov ecx, 100
@@ -674,6 +830,7 @@ internet_browser:
   rep movsw
 
   call internet_browser_move_url_cursor_to_end
+  mov dword [ib_number_of_reloading], 0
  jmp .transfer_page
  
   .mouse_click_print:
