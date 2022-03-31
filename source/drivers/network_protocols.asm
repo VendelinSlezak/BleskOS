@@ -31,6 +31,11 @@ tcp_file_length dd 0
 tcp_file_transferred_length dd 0
 tcp_last_ack_number dd 0
 tcp_expected_ack_number dd 0
+tcp_last_terminated_port dd 0
+
+%define HTTP_MOVED_PERMANENTLY 1
+http_reported_state dd 0
+http_moved_permanently_url times 257 db 0
 
 ;Dynamic Host Control Protocol - DISCOVER message
 dhcp_offer_packet:
@@ -611,6 +616,8 @@ ethernet_card_process_packet:
  jmp .done
  
  .tcp:
+  cmp byte [esi+14+20+13], 0x04
+  je .tcp_reset
   cmp byte [esi+14+20+13], 0x12
   je .tcp_handshake
   cmp byte [esi+14+20+13], 0x18
@@ -621,6 +628,11 @@ ethernet_card_process_packet:
   je .tcp_final
   cmp byte [esi+14+20+13], 0x19
   je .tcp_final
+ jmp .done
+ 
+ .tcp_reset:
+  mov ax, word [esi+14+20+2] ;destination port
+  mov word [tcp_last_terminated_port], ax
  jmp .done
  
  .tcp_handshake:
@@ -705,42 +717,66 @@ ethernet_card_process_packet:
   mov edx, 0
   cmp dword [esi], 'HTTP'
   jne .copy_http_file
+  cmp dword [esi+8], ' 301'
+  je .moved_permanently
+  cmp dword [esi+8], ' 302'
+  jne .if_moved_permanently
+  .moved_permanently:
+   push esi
+   mov edi, http_moved_permanently_url
+   mov eax, 0
+   mov ecx, 257
+   rep stosb
+  
+   .find_actual_location:
+    cmp dword [esi], 0
+    je .moved_permanently_done
+    cmp dword [esi], 0x0A0D0A0D
+    je .moved_permanently_done
+    cmp dword [esi], 'Loca'
+    je .Loca_or_loca
+    cmp dword [esi], 'loca'
+    jne .find_actual_location_next_byte
+    .Loca_or_loca:
+    cmp dword [esi+4], 'tion'
+    jne .find_actual_location_next_byte
+    cmp word [esi+8], ': '
+    jne .find_actual_location_next_byte
+     add esi, 10
+     push esi
+     mov ecx, 0
+     .find_length_of_actual_location:
+      cmp word [esi], 0x0A0D
+      je .copy_actual_location
+      cmp word [esi], 0
+      je .copy_actual_location
+      inc esi
+      inc ecx
+     jmp .find_length_of_actual_location
+     .copy_actual_location:
+     pop esi
+     cmp ecx, 0
+     je .moved_permanently_done
+     and ecx, 0xFF ;max 256 chars
+     mov edi, http_moved_permanently_url
+     rep movsb
+     
+     mov dword [http_reported_state], HTTP_MOVED_PERMANENTLY
+     jmp .moved_permanently_done
+    .find_actual_location_next_byte:
+    inc esi
+   jmp .find_actual_location
+   
+   .moved_permanently_done:
+   pop esi
+   mov dword [tcp_communication_type], TCP_FINALIZED
+   jmp .find_http_file_start
+  .if_moved_permanently:
+  
+  mov dword [http_reported_state], 0
    .find_http_file_start:
     cmp dword [esi], 0
     je .do_not_catch_this_packet
-    
-    cmp dword [esi], 'Cont'
-    jne .if_content_length
-    cmp dword [esi+4], 'ent-'
-    jne .if_content_length
-    cmp dword [esi+8], 'Leng'
-    jne .if_content_length
-    cmp dword [esi+12], 'th: '
-    jne .if_content_length
-     pusha
-     add esi, 16
-     mov ecx, 0
-     .content_length_convert_to_number:
-      cmp word [esi], 0x0A0D
-      je .save_content_length
-      mov eax, ecx
-      mov ebx, 10
-      mul ebx
-      mov ecx, eax
-      mov eax, 0
-      mov al, byte [esi]
-      sub eax, '0'
-      add ecx, eax
-      inc esi
-     jmp .content_length_convert_to_number
-     .save_content_length:
-     cmp ecx, 0
-     jne .if_content_length_zero
-      mov ecx, 0x100000
-     .if_content_length_zero:
-     mov dword [tcp_file_length], ecx
-     popa
-    .if_content_length:
     
     cmp dword [esi], 0x0A0D0A0D
     je .test_if_http_checksum_presented
@@ -810,8 +846,8 @@ ethernet_card_process_packet:
   mov word [tcp_control_packet.tcp_checksum], 0
   mov byte [tcp_control_packet.control], (1 << 4) ;ACK flag
   mov eax, dword [http_file_pointer]
-  sub eax, 4
-  cmp dword [eax], 0x0A0D0A0D ;this is last packet of transferred file
+  sub eax, 2
+  cmp dword [eax], 0x0A0D ;this is last packet of transferred file
   jne .if_close_connection
    mov dword [tcp_communication_type], TCP_FINALIZED
   .if_close_connection:
@@ -841,6 +877,10 @@ ethernet_card_process_packet:
  jmp .done
  
  .tcp_final:
+  mov ax, word [esi+14+20+2]
+  cmp word [tcp_last_terminated_port], ax
+  je .done ;this port was already terminated
+  
   push esi
   mov esi, tcp_control_packet
   mov edi, tcp_second_control_packet
