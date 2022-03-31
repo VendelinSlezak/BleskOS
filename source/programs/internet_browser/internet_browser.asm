@@ -474,7 +474,7 @@ internet_browser:
    je .new_location_add
    cmp dword [http_moved_permanently_url+1], 'ttp:'
    je .new_location_http
-   cmp byte [http_moved_permanently_url+1], 'ttps'
+   cmp dword [http_moved_permanently_url+1], 'ttps'
    je .new_location_https
    
    IB_MESSAGE 'Server respond was not recognized', server_respond_was_not_recognized
@@ -482,7 +482,7 @@ internet_browser:
   jmp .halt
    .new_location_add:
     mov edi, internet_browser_url+200
-    .new_location_add_move_to_end_of_url
+    .new_location_add_move_to_end_of_url:
      cmp edi, internet_browser_url
      je .halt ;error
      cmp word [edi], '/'
