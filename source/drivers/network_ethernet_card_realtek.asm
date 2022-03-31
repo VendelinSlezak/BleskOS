@@ -1,6 +1,6 @@
 ;BleskOS
 
-; realtek 8139 is not done, especially receiving packets
+; not complete, especially RTL8169!
 
 %define RTL_8139 0
 %define RTL_8169 1
@@ -40,7 +40,7 @@ init_nic_realtek:
  BASE_OUTW ethernet_card_io_base, 0x3C, 0xFFFF
  
  ;init receiving packets
- BASE_OUTD ethernet_card_io_base, 0x44, 0xF ;all packets with unlimited size
+ BASE_OUTD ethernet_card_io_base, 0x44, 0x8F | (0x3 << 11) | (0x7 << 13) ;all packets to 64 KB buffer
  BASE_OUTD ethernet_card_io_base, 0x30, MEMORY_NIC+0x1000 ;receiving buffer
  
  ;init transmitting packets
@@ -48,6 +48,11 @@ init_nic_realtek:
  
  ;start card
  BASE_OUTB ethernet_card_io_base, 0x37, 0xC
+ 
+ mov edi, MEMORY_NIC+0x1000
+ mov eax, 0
+ mov ecx, 1024*64
+ rep stosb
  
  ret
  
@@ -146,6 +151,8 @@ nic_realtek_send_packet:
  ret
 
 nic_realtek_irq:
+ mov dword [last_arrived_packet], 0
+ 
  mov eax, 0
  BASE_INW ethernet_card_io_base, 0x3E
  BASE_OUTW ethernet_card_io_base, 0x3E, ax
@@ -173,15 +180,62 @@ nic_realtek_irq:
  jne .realtek_8169
  
  mov eax, dword [realtek_8139_receive_pointer]
+ push eax
  add eax, 4
  mov dword [received_packet_pointer], eax
- call ethernet_card_process_packet 
+ 
  mov eax, dword [realtek_8139_receive_pointer] ;length of packet
  mov ebx, 0
  mov bx, word [eax+2]
+ push ebx
  add ebx, 7
  add dword [realtek_8139_receive_pointer], ebx
  and dword [realtek_8139_receive_pointer], 0xFFFFFFFC
+ cmp dword [realtek_8139_receive_pointer], MEMORY_NIC+0x1000+0x10000
+ jb .above_realtek_8139_buffer
+  push eax
+  mov eax, dword [realtek_8139_receive_pointer]
+  sub eax, MEMORY_NIC+0x1000+0x10000
+  mov ebx, eax
+  add ebx, MEMORY_NIC+0x1000
+  pop eax
+  mov dword [realtek_8139_receive_pointer], ebx
+ .above_realtek_8139_buffer:
+ mov dword [eax], 0 ;delete previous packet header
+ 
+ mov eax, dword [realtek_8139_receive_pointer]
+ cmp dword [eax], 0
+ jne .not_last_packet
+  mov dword [last_arrived_packet], 1
+ .not_last_packet:
+ call ethernet_card_process_packet
+ 
+ mov eax, dword [realtek_8139_receive_pointer]
+ sub eax, MEMORY_NIC+0x1000
+ cmp eax, 0
+ je .write_capr
+ sub eax, 0x10
+ .write_capr:
+ BASE_OUTW ethernet_card_io_base, 0x38, ax ;tell card what we already readed
+ 
+ pop ecx
+ pop edi
+ mov eax, 0
+ rep stosb
+ 
+ cmp dword [last_arrived_packet], 1
+ jne .receive
+
+ cmp dword [realtek_8139_receive_pointer], MEMORY_NIC+0x1000+0x10000
+ jb .done
+  push eax
+  mov eax, dword [realtek_8139_receive_pointer]
+  sub eax, MEMORY_NIC+0x1000+0x10000
+  mov ebx, eax
+  add ebx, MEMORY_NIC+0x1000
+  pop eax
+  mov dword [realtek_8139_receive_pointer], ebx
+ .done:
  ret
  
  .realtek_8169:
