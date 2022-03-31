@@ -35,7 +35,7 @@ USB devices:
 
 Ethernet cards:
 * AMD PC-net II/III
-* Intel e1000
+* Intel e1000(e)
 
 Internet stack:
 * DHCP
@@ -57,7 +57,7 @@ Internet stack:
 * Text editor (TXT files)
 * Graphic editor (BMP files)
 * Media viewer (BMP and WAV files)
-* Internet browser (only HTTP pages)
+* Internet browser
 * Document editor (very simple, TD files only for BleskOS)
 
 ## How to build
