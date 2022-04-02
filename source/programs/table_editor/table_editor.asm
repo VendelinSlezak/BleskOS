@@ -1,7 +1,7 @@
 ;BleskOS
 
 table_editor_up_str db 'Table editor', 0
-table_editor_down_str db '[F4/5] Change column size', 0
+table_editor_down_str db '[F4/5] Change column size [F6/7] Change line size', 0
 be_message_new_file_up db 'Are you sure you want to erase all table?', 0
 be_message_new_file_down db '[enter] Yes [esc] Cancel', 0
 be_message_color_up db 'Please select color:', 0
@@ -10,6 +10,7 @@ be_message_color_down db '[a] Black [r] Red [g] Green [b] Blue [o] Orange [w] Wh
 table_editor_file_pointer dd 0
 
 be_columns_length times 26 db 9
+be_lines_length times 1000 db 1
 be_lines_on_screen dd 0
 be_first_show_line dd 1
 be_first_show_column dd 0
@@ -40,9 +41,12 @@ table_editor:
   
   cmp byte [key_code], KEY_F4
   je .change_column_length_down
-  
   cmp byte [key_code], KEY_F5
   je .change_column_length_up
+  cmp byte [key_code], KEY_F6
+  je .change_line_heigth_down
+  cmp byte [key_code], KEY_F7
+  je .change_line_heigth_up
   
   cmp byte [key_code], KEY_UP
   je .key_up
@@ -87,6 +91,24 @@ table_editor:
   inc byte [esi]
  jmp table_editor
  
+ .change_line_heigth_down:
+  mov esi, be_lines_length
+  add esi, dword [be_selected_cell_line]
+  dec esi
+  cmp byte [esi], 1
+  je .be_halt
+  dec byte [esi]
+ jmp table_editor
+ 
+ .change_line_heigth_up:
+  mov esi, be_lines_length
+  add esi, dword [be_selected_cell_line]
+  dec esi
+  cmp byte [esi], 20
+  je .be_halt
+  inc byte [esi]
+ jmp table_editor
+ 
  .key_up:
   cmp dword [be_selected_cell_line], 1
   je .be_halt
@@ -106,11 +128,57 @@ table_editor:
   inc dword [be_selected_cell_line]
   mov dword [be_cursor_offset], 0
   
-  mov eax, dword [be_first_show_line]
-  add eax, dword [be_lines_on_screen]
-  dec eax
-  cmp eax, dword [be_selected_cell_line]
-  ja table_editor
+  mov esi, be_lines_length
+  add esi, dword [be_first_show_line]
+  dec esi
+  mov dword [cursor_line], 48
+  mov ecx, dword [be_first_show_line]
+  .key_down_test_end_of_screen:
+   mov eax, 0
+   mov al, byte [esi]
+   mov ebx, 13
+   mul ebx
+   add dword [cursor_line], eax
+   inc esi
+   inc ecx
+   
+   cmp ecx, dword [be_selected_cell_line]
+   je .key_down_move_down
+  jmp .key_down_test_end_of_screen
+  
+  .key_down_move_down:
+  mov eax, dword [screen_y]
+  sub eax, 20
+  cmp dword [cursor_line], eax
+  jb table_editor
+
+  mov esi, be_lines_length
+  add esi, dword [be_selected_cell_line]
+  dec esi
+  mov ecx, 48
+  mov eax, dword [be_selected_cell_line]
+  mov dword [be_first_show_line], eax
+  mov eax, 0
+  mov al, byte [esi]
+  mov ebx, 13
+  mul ebx
+  add ecx, eax
+  dec esi
+  .find_first_line_for_show_all_of_last_line:
+   mov eax, 0
+   mov al, byte [esi]
+   mov ebx, 13
+   mul ebx
+   add ecx, eax
+   
+   cmp ecx, dword [screen_y]
+   ja .select_first_line
+   
+   dec esi
+   dec dword [be_first_show_line]
+  jmp .find_first_line_for_show_all_of_last_line
+  
+  .select_first_line:
   inc dword [be_first_show_line]
  jmp table_editor
  
@@ -227,12 +295,7 @@ table_editor:
   
   call be_draw_table
   REDRAW_LINES_SCREEN 21, 13
-  mov eax, dword [be_selected_cell_line]
-  sub eax, dword [be_first_show_line]
-  mov ebx, 13
-  mul ebx
-  add eax, 48
-  REDRAW_LINES_SCREEN eax, 13
+  call be_redraw_cell
  jmp .be_halt
  
  .key_delete:
@@ -250,12 +313,7 @@ table_editor:
   
   call be_draw_table
   REDRAW_LINES_SCREEN 21, 13
-  mov eax, dword [be_selected_cell_line]
-  sub eax, dword [be_first_show_line]
-  mov ebx, 13
-  mul ebx
-  add eax, 48
-  REDRAW_LINES_SCREEN eax, 13
+  call be_redraw_cell
  jmp .be_halt
  
  .draw_char:
@@ -287,12 +345,7 @@ table_editor:
   
   call be_draw_table
   REDRAW_LINES_SCREEN 21, 13
-  mov eax, dword [be_selected_cell_line]
-  sub eax, dword [be_first_show_line]
-  mov ebx, 13
-  mul ebx
-  add eax, 48
-  REDRAW_LINES_SCREEN eax, 13
+  call be_redraw_cell
  jmp .be_halt
  
  ;MOUSE
@@ -399,13 +452,36 @@ table_editor:
   jmp .select_cell_by_mouse_column
   
   .select_cell_by_mouse_line:
-  mov eax, dword [cursor_line]
-  sub eax, 48
-  mov ebx, 13
-  mov edx, 0
-  div ebx
-  add eax, dword [be_first_show_line]
-  mov dword [be_selected_cell_line], eax
+  mov esi, be_lines_length
+  add esi, dword [be_first_show_line]
+  dec esi
+  mov eax, 48
+  mov ecx, dword [be_first_show_line]
+  .select_cell_by_mouse_line_loop:
+   push eax
+   mov eax, 0
+   mov al, byte [esi]
+   mov ebx, 13
+   mul ebx
+   mov ebx, eax
+   pop eax
+   add ebx, eax
+   
+   cmp dword [cursor_line], eax ;eax is first line of this line
+   jb .select_cell_by_mouse_line_next_line
+   cmp dword [cursor_line], ebx ;ebx is last line of this line
+   jb .select_cell_by_mouse_line_founded
+   
+   .select_cell_by_mouse_line_next_line:
+   mov eax, ebx
+   inc esi
+   inc ecx
+   cmp ecx, 999
+   je .select_cell_by_mouse_line_founded
+  jmp .select_cell_by_mouse_line_loop
+  
+  .select_cell_by_mouse_line_founded:
+  mov dword [be_selected_cell_line], ecx
   
   mov dword [be_cursor_offset], 0
  jmp table_editor
@@ -603,24 +679,52 @@ be_draw_table:
  DRAW_LINE 35, 0, eax, BLACK
  mov eax, dword [screen_x]
  DRAW_LINE 48, 0, eax, BLACK
- mov dword [cursor_line], 61
- mov ecx, dword [be_lines_on_screen]
+ mov dword [cursor_line], 48
+ mov esi, be_lines_length
+ add esi, dword [be_first_show_line]
+ dec esi
  .draw_lines:
- push ecx
+  push esi
   mov dword [cursor_column], 0
   mov dword [color], BLACK
   mov dword [line_length], 27
   call draw_line
   mov dword [cursor_column], 27
   mov dword [color], 0x888888
-  mov eax, dword [screen_x]
-  sub eax, 27
+  SCREEN_X_SUB eax, 27
   mov dword [line_length], eax
   call draw_line
+  pop esi
   
-  add dword [cursor_line], 13
- pop ecx
- loop .draw_lines
+  mov eax, 0
+  mov al, byte [esi]
+  mov ebx, 13
+  mul ebx
+  add dword [cursor_line], eax
+  inc esi
+  
+  cmp esi, be_lines_length+1000
+  je .table_lines_erase_place_after
+  
+  mov eax, dword [cursor_line]
+  cmp eax, dword [screen_y]
+  ja .table_lines_drawed
+ jmp .draw_lines
+ 
+ ;erase place after last line
+ .table_lines_erase_place_after:
+  inc dword [cursor_line]
+  mov dword [cursor_column], 0
+  mov dword [color], WHITE
+  mov eax, dword [screen_x]
+  mov dword [square_length], eax
+  mov eax, dword [screen_y]
+  cmp eax, dword [cursor_line]
+  jb .table_lines_drawed
+  je .table_lines_drawed
+  sub eax, dword [cursor_line]
+  call draw_square 
+ .table_lines_drawed:
  
  ;draw table columns
  mov dword [cursor_line], 35
@@ -701,11 +805,20 @@ be_draw_table:
  ;print numbers of lines
  mov eax, dword [be_first_show_line]
  mov dword [var_print_value], eax
- mov dword [cursor_line], 51
+ mov dword [cursor_line], 48
  mov dword [color], BLACK
- mov ecx, dword [be_lines_on_screen]
+ mov esi, be_lines_length
+ add esi, dword [be_first_show_line]
+ dec esi
  .draw_lines_numbers:
- push ecx
+  mov eax, 0
+  mov al, byte [esi]
+  mov ebx, 13
+  mul ebx
+  shr eax, 1 ;div 2
+  sub eax, 2
+  add dword [cursor_line], eax ;middle of line
+ 
   mov dword [cursor_column], 11
   cmp dword [var_print_value], 10
   jb .print_line_number
@@ -714,11 +827,29 @@ be_draw_table:
   jb .print_line_number
   mov dword [cursor_column], 2
   .print_line_number:
+  push eax
+  push esi
   call print_var
-  add dword [cursor_line], 13
+  pop esi
+  pop eax
+  sub dword [cursor_line], eax
+  
+  mov eax, 0
+  mov al, byte [esi]
+  mov ebx, 13
+  mul ebx
+  add dword [cursor_line], eax
+  inc esi
+  
+  cmp esi, be_lines_length+1000
+  je .table_lines_numbers_drawed
+  
+  mov eax, dword [cursor_line]
+  cmp eax, dword [screen_y]
+  ja .table_lines_numbers_drawed
   inc dword [var_print_value]
- pop ecx
- loop .draw_lines_numbers
+ jmp .draw_lines_numbers
+ .table_lines_numbers_drawed:
  
  ;print chars of columns
  mov eax, dword [be_first_show_column]
@@ -740,12 +871,11 @@ be_draw_table:
   mov edi, eax
   mov ebx, edx
   add ebx, eax
-  cmp ebx, dword [screen_x]
-  ja .columns_chars_drawed
   
   add dword [cursor_column], eax
   add edx, eax
   
+  push ebx
   push esi
   push edx
   push ecx
@@ -758,13 +888,30 @@ be_draw_table:
   pop ecx
   pop edx
   pop esi
+  pop ebx
   
   inc esi
   inc dword [char_for_print]
+  
+  cmp ebx, dword [screen_x]
+  ja .columns_chars_drawed
  loop .draw_columns_chars
  .columns_chars_drawed:
  
  ;PRINT CELLS CONTENT
+ 
+ ; byte 0: bit 0 - bold
+ ;         bit 1 - italic
+ ;         bit 2:3 - aligment 0=left 1=middle 2=right
+ ;         bit 4 - right border
+ ;         bit 5 - left border
+ ;         bit 6 - down border
+ ;         bit 7 - up border
+ ; byte 1: bit 0:1 - aligment 0=up 1=middle 2=right
+ ; byte 2-5: color of byckground
+ ; byte 6-8: color of text
+ ; byte 9-208: cell text in unicode
+ 
  mov ebp, dword [table_editor_file_pointer]
  mov eax, dword [be_first_show_line]
  dec eax
@@ -776,9 +923,11 @@ be_draw_table:
  mul ebx
  add ebp, eax ;pointer to first showed cell content
  mov dword [cursor_line], 20+15+14
- mov ecx, dword [be_lines_on_screen]
+ mov esi, be_lines_length
+ add esi, dword [be_first_show_line]
+ dec esi
  .draw_cells_lines_cycle:
- push ecx
+ push esi
   push ebp
   
   mov esi, be_columns_length
@@ -793,8 +942,6 @@ be_draw_table:
    shl ebx, 3 ;mul 8
    add ebx, 3
    add ebx, eax
-   cmp ebx, dword [screen_x]
-   ja .draw_cells_next_line
    
    ;here we have cursor_line and cursor_column on start of cell and ebp points to it's content
    pusha
@@ -976,27 +1123,57 @@ be_draw_table:
     pop dword [cursor_line]
    popa
    
+   cmp ebx, dword [screen_x]
+   ja .draw_cells_next_line
+   
    mov eax, ebx
    inc esi
    add ebp, 208
   jmp .draw_cells_columns_cycle
   
   .draw_cells_next_line:
-  add dword [cursor_line], 13
   pop ebp
   add ebp, 208*26 ;bytes per line
- pop ecx
- dec ecx
- cmp ecx, 0
- jne .draw_cells_lines_cycle
-
- ;highlight selected cell
- mov eax, dword [be_selected_cell_line]
- sub eax, dword [be_first_show_line]
+ pop esi
+ mov eax, 0
+ mov al, byte [esi]
  mov ebx, 13
  mul ebx
- add eax, 48
- mov dword [cursor_line], eax
+ add dword [cursor_line], eax
+ inc esi
+ 
+ cmp esi, be_lines_length+1000
+ je .cell_content_drawed
+ 
+ mov eax, dword [cursor_line]
+ cmp eax, dword [screen_y]
+ jb .draw_cells_lines_cycle
+ .cell_content_drawed:
+
+ ;highlight selected cell
+ mov esi, be_lines_length
+ add esi, dword [be_first_show_line]
+ dec esi
+ mov dword [cursor_line], 48
+ mov ecx, dword [be_first_show_line]
+ .find_selected_cell_line:
+  cmp ecx, dword [be_selected_cell_line]
+  je .selected_cell_line_founded
+  
+  mov eax, 0
+  mov al, byte [esi]
+  mov ebx, 13
+  mul ebx
+  add dword [cursor_line], eax
+  inc ecx
+  inc esi
+ jmp .find_selected_cell_line 
+ .selected_cell_line_founded:
+ mov eax, 0
+ mov al, byte [esi]
+ mov ebx, 13
+ mul ebx
+ mov dword [square_heigth], eax
  
  mov eax, 27 ;column
  mov ebx, dword [be_first_show_column] ;skiped columns
@@ -1019,7 +1196,6 @@ be_draw_table:
  
  .selected_cell_column_founded:
  mov dword [cursor_column], eax
- mov dword [square_heigth], 13
  mov esi, be_columns_length
  add esi, dword [be_selected_cell_column]
  mov eax, 0
@@ -1252,6 +1428,35 @@ be_redraw_input:
  mov dword [column_heigth], 11
  mov dword [color], 0x444444
  call draw_column
+ ret
+ 
+be_redraw_cell:
+ mov esi, be_lines_length
+ add esi, dword [be_first_show_line]
+ dec esi
+ mov dword [first_redraw_line], 48
+ mov ecx, dword [be_first_show_line]
+ .skip_line:
+  cmp ecx, dword [be_selected_cell_line]
+  je .redraw_cell
+ 
+  mov eax, 0
+  mov al, byte [esi]
+  mov ebx, 13
+  mul ebx
+  add dword [first_redraw_line], eax
+  inc esi
+  inc ecx
+ jmp .skip_line
+ 
+ .redraw_cell:
+ mov eax, 0
+ mov al, byte [esi]
+ mov ebx, 13
+ mul ebx
+ mov dword [how_much_lines_redraw], eax
+ call redraw_lines_screen
+ 
  ret
 
 be_selected_cell_pointer: ;return pointer to cell in esi
