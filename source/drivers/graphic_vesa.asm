@@ -929,6 +929,13 @@ draw_empty_ellipse:
  cmp dword [ellipse_y_radius], 3
  jb .done
  
+ mov eax, dword [ellipse_x_radius]
+ cmp eax, dword [ellipse_y_radius]
+ jne .if_draw_circle
+  mov dword [circle_radius], eax
+  jmp draw_empty_circle
+ .if_draw_circle:
+ 
  CALCULATE_CURSOR_POSITION
  mov esi, eax
  mov ebp, dword [color]
@@ -1084,6 +1091,13 @@ draw_ellipse:
  jb .done
  cmp dword [ellipse_y_radius], 3
  jb .done
+ 
+ mov eax, dword [ellipse_x_radius]
+ cmp eax, dword [ellipse_y_radius]
+ jne .if_draw_circle
+  mov dword [circle_radius], eax
+  jmp draw_circle
+ .if_draw_circle:
  
  CALCULATE_CURSOR_POSITION
  mov esi, eax
@@ -1730,6 +1744,16 @@ write_cursor_bg:
  ret
  
 print_char:
+ mov eax, dword [screen_y]
+ cmp dword [cursor_line], eax
+ ja .done
+ mov eax, dword [screen_x]
+ mov ebx, dword [size_of_text]
+ shl ebx, 3 ;mul 8
+ sub eax, ebx
+ cmp dword [cursor_column], eax
+ ja .done
+
  cmp dword [type_of_text], BOLD
  je .bold
  
@@ -1745,6 +1769,7 @@ print_char:
  sub eax, 8 ;this will be added in print method
  add dword [cursor_column], eax 
  
+ .done:
  ret
  
  .bold:
