@@ -99,7 +99,7 @@ table_editor:
   mov ebx, 0x00010000 ;line and column of actual processed cell
   mov edx, 8 ;length of file in bytes
   .convert_table_to_sd_file:
-   cmp word [esi], 0xFFFF0000
+   cmp dword [esi], 0xFFFF0000
    jne .convert_cell_to_sd
    cmp dword [esi+4], 0x000000FF
    jne .convert_cell_to_sd
@@ -1277,7 +1277,7 @@ be_draw_table:
     test byte [ebp], 0x1
     jz .if_bold_text
      mov dword [type_of_text], BOLD
-    .if_bold_text
+    .if_bold_text:
     
     ;set text aligment
     push dword [cursor_line]
@@ -1387,7 +1387,7 @@ be_draw_table:
     test byte [ebp], 0x1
     jz .if_bold_text_2
      dec cl
-    .if_bold_text_2
+    .if_bold_text_2:
     .print_char_from_cell:
      mov ebx, 0
      mov bx, word [eax]
