@@ -59,6 +59,7 @@ Internet stack:
 * Media viewer (BMP and WAV files)
 * Internet browser
 * Document editor (very simple, TD files only for BleskOS)
+* Table editor (very simple, SD files only for BleskOS)
 
 ## How to build
 BleskOS is completly written in assembly language and can be compiled using NASM. You should use the latest version (2.1)
