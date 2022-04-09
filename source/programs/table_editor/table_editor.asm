@@ -1,7 +1,7 @@
 ;BleskOS
 
 table_editor_up_str db 'Table editor', 0
-table_editor_down_str db '[F4/5] Change column size [F6/7] Change line size', 0
+table_editor_down_str db '[F1] Save file [F2] Open file [F3] New file [F4/5] Change column size [F6/7] Change line size', 0
 be_message_new_file_up db 'Are you sure you want to erase all table?', 0
 be_message_new_file_down db '[enter] Yes [esc] Cancel', 0
 be_message_color_up db 'Please select color:', 0
@@ -39,6 +39,13 @@ table_editor:
   cmp byte [key_code], KEY_ESC
   je main_window
   
+  cmp byte [key_code], KEY_F1
+  je .save_file
+  cmp byte [key_code], KEY_F2
+  je .open_file
+  cmp byte [key_code], KEY_F3
+  je .new_file
+  
   cmp byte [key_code], KEY_F4
   je .change_column_length_down
   cmp byte [key_code], KEY_F5
@@ -74,6 +81,157 @@ table_editor:
   cmp dword [usb_mouse_data], 0
   jne .mouse_event
  jmp .be_halt
+ 
+ .save_file:
+  mov dword [allocated_size], 6
+  call allocate_memory
+  cmp dword [allocated_memory_pointer], 0
+  je .be_halt
+  
+  mov edi, dword [allocated_memory_pointer]
+  push edi
+  mov dword [file_memory], edi
+  mov dword [edi], 'Bles'
+  mov dword [edi+4], 'kOS ' ;signature
+  add edi, 8
+  mov esi, dword [table_editor_file_pointer]
+  mov ecx, 26*999
+  mov ebx, 0x00010000 ;line and column of actual processed cell
+  mov edx, 8 ;length of file in bytes
+  .convert_table_to_sd_file:
+   cmp word [esi], 0xFFFF0000
+   jne .convert_cell_to_sd
+   cmp dword [esi+4], 0x000000FF
+   jne .convert_cell_to_sd
+   cmp word [esi+8], 0
+   je .skip_this_cell
+   
+   .convert_cell_to_sd:
+   mov dword [edi], ebx ;save line and column of this cell
+   add edi, 4
+   push ecx
+   mov ecx, 208
+   rep movsb
+   pop ecx
+   add edx, 212
+
+   jmp .next_cell
+   
+   .skip_this_cell:
+   add esi, 208
+  .next_cell:
+  inc ebx ;next column
+  cmp bx, 26
+  jb .next_loop
+  mov bx, 0
+  add ebx, 0x00010000 ;next line
+  .next_loop:
+  loop .convert_table_to_sd_file
+  
+  mov eax, edx
+  mov ebx, 1024
+  mov edx, 0
+  div ebx ;convert from bytes to KB
+  inc eax
+  mov dword [file_size], eax ;in KB
+  mov dword [file_type], 'sd'
+  call file_dialog_save
+  
+  pop edi
+  mov dword [allocated_memory_pointer], edi
+  mov dword [allocated_size], 6
+  call release_memory
+ jmp table_editor
+ 
+ .open_file:
+  mov dword [fd_file_type_1], 'sd'
+  mov dword [fd_file_type_2], 'SD'
+  call file_dialog_open
+  cmp dword [fd_return], FD_NO_FILE
+  je table_editor
+  
+  push dword [allocated_memory_pointer]
+  push dword [allocated_size]
+  mov esi, dword [allocated_memory_pointer]
+  cmp dword [esi], 'Bles'
+  jne .finish_sd_file
+  cmp dword [esi+4], 'kOS '
+  jne .finish_sd_file
+  add esi, 8
+  
+  mov edi, dword [table_editor_file_pointer]
+  mov ecx, 26*999
+  .init_table_editor_cell:
+   mov word [edi], 0x0000
+   mov dword [edi+2], WHITE ;background
+   mov dword [edi+5], BLACK ;text color
+   mov word [edi+8], 0
+   add edi, 208
+  loop .init_table_editor_cell
+  
+  mov edi, dword [table_editor_file_pointer]
+  .convert_cell_from_sd_to_table:
+   cmp dword [esi], 0
+   je .finish_sd_file
+   
+   mov eax, dword [esi]
+   shr eax, 16
+   dec eax
+   mov ebx, 208*26
+   mul ebx
+   mov ecx, eax
+   mov eax, dword [esi]
+   and eax, 0xFFFF
+   mov ebx, 208
+   mul ebx
+   add ecx, eax
+   add ecx, dword [table_editor_file_pointer]
+   
+   add esi, 4
+   mov edi, ecx
+   mov ecx, 208
+   rep movsb
+  jmp .convert_cell_from_sd_to_table
+   
+  .finish_sd_file:
+  pop dword [allocated_size]
+  pop dword [allocated_memory_pointer]
+  call release_memory
+ jmp table_editor
+ 
+ .new_file:
+  mov esi, be_message_new_file_up
+  mov edi, be_message_new_file_down
+  call show_message_window
+  cmp byte [key_code], KEY_ESC
+  je table_editor
+  
+  mov edi, be_columns_length
+  mov eax, 9
+  mov ecx, 26
+  rep stosb
+  
+  mov edi, be_lines_length
+  mov eax, 1
+  mov ecx, 1000
+  rep stosb
+  
+  mov edi, dword [table_editor_file_pointer]
+  mov ecx, 26*999
+  .new_file_init_table_editor_cell:
+   mov word [edi], 0x0000
+   mov dword [edi+2], WHITE ;background
+   mov dword [edi+5], BLACK ;text color
+   mov word [edi+8], 0
+   add edi, 208
+  loop .new_file_init_table_editor_cell
+  
+  mov dword [be_first_show_line], 1
+  mov dword [be_first_show_column], 0
+  mov dword [be_selected_cell_line], 1
+  mov dword [be_selected_cell_column], 0
+  mov dword [be_cursor_offset], 0
+ jmp table_editor
  
  .change_column_length_down:
   mov esi, be_columns_length
@@ -370,19 +528,37 @@ table_editor:
   SCREEN_Y_SUB eax, 20
   mov ebx, dword [screen_x]
   TEST_CLICK_ZONE_WITH_JUMP click_zone_table, be_mouse_line, be_mouse_column, 48, eax, 27, ebx, .select_cell_by_mouse
+  
+  SCREEN_X_SUB eax, 21+(13*18)
+  TEST_CLICK_ZONE_WITH_JUMP click_cell_input, be_mouse_line, be_mouse_column, 21, 21+12, 27, eax, .select_text_cursor_by_mouse
  
-  SCREEN_X_SUB eax, 16+(13*14)
+  SCREEN_X_SUB eax, 20+(13*17)
   mov ebx, eax
   add ebx, 24
   TEST_CLICK_ZONE_WITH_JUMP click_zone_bg_color, be_mouse_line, be_mouse_column, 21, 21+12, eax, ebx, .change_background_color
-  SCREEN_X_SUB eax, 16+(13*12)
+  SCREEN_X_SUB eax, 19+(13*15)
   mov ebx, eax
   add ebx, 24
   TEST_CLICK_ZONE_WITH_JUMP click_zone_tx_color, be_mouse_line, be_mouse_column, 21, 21+12, eax, ebx, .change_text_color
-  SCREEN_X_SUB eax, 14+(13*10)
+  
+  SCREEN_X_SUB eax, 17+(13*13)
   mov ebx, eax
   add ebx, 12
   TEST_CLICK_ZONE_WITH_JUMP click_zone_bold, be_mouse_line, be_mouse_column, 21, 21+12, eax, ebx, .change_bold
+  
+  SCREEN_X_SUB eax, 14+(13*12)
+  mov ebx, eax
+  add ebx, 12
+  TEST_CLICK_ZONE_WITH_JUMP click_zone_line_up_aligment, be_mouse_line, be_mouse_column, 21, 21+12, eax, ebx, .change_line_up_aligment
+  SCREEN_X_SUB eax, 13+(13*11)
+  mov ebx, eax
+  add ebx, 12
+  TEST_CLICK_ZONE_WITH_JUMP click_zone_line_middle_aligment, be_mouse_line, be_mouse_column, 21, 21+12, eax, ebx, .change_line_middle_aligment
+  SCREEN_X_SUB eax, 12+(13*10)
+  mov ebx, eax
+  add ebx, 12
+  TEST_CLICK_ZONE_WITH_JUMP click_zone_line_down_aligment, be_mouse_line, be_mouse_column, 21, 21+12, eax, ebx, .change_line_down_aligment
+  
   SCREEN_X_SUB eax, 11+(13*9)
   mov ebx, eax
   add ebx, 12
@@ -395,6 +571,7 @@ table_editor:
   mov ebx, eax
   add ebx, 12
   TEST_CLICK_ZONE_WITH_JUMP click_zone_right_aligment, be_mouse_line, be_mouse_column, 21, 21+12, eax, ebx, .change_right_aligment
+  
   SCREEN_X_SUB eax, 6+(13*6)
   mov ebx, eax
   add ebx, 12
@@ -484,6 +661,35 @@ table_editor:
   mov dword [be_selected_cell_line], ecx
   
   mov dword [be_cursor_offset], 0
+ jmp table_editor
+ 
+ .select_text_cursor_by_mouse:
+  mov eax, dword [be_mouse_column]
+  sub eax, 25
+  shr eax, 3 ;div 8
+  mov dword [be_cursor_offset], eax
+  
+  push eax
+  call be_selected_cell_pointer
+  add esi, 8
+  pop eax
+  push esi
+  shl eax, 1
+  add esi, eax
+  cmp word [esi], 0
+  pop esi
+  jne table_editor
+  
+  ;move cursor to end of text
+  mov eax, 0
+  .select_text_cursor_by_mouse_find_cursor:
+   cmp word [esi], 0
+   je .select_text_cursor_by_mouse_cursor_founded
+   add esi, 2
+   inc eax
+  jmp .select_text_cursor_by_mouse_find_cursor
+  .select_text_cursor_by_mouse_cursor_founded:
+  mov dword [be_cursor_offset], eax
  jmp table_editor
  
  .change_background_color:
@@ -616,6 +822,23 @@ table_editor:
   or byte [esi], 0b1000
  jmp table_editor
  
+ .change_line_up_aligment:
+  call be_selected_cell_pointer
+  and byte [esi+1], 0xFC
+ jmp table_editor
+ 
+ .change_line_middle_aligment:
+  call be_selected_cell_pointer
+  and byte [esi+1], 0xFC
+  or byte [esi+1], 0b01
+ jmp table_editor
+ 
+ .change_line_down_aligment:
+  call be_selected_cell_pointer
+  and byte [esi+1], 0xFC
+  or byte [esi+1], 0b10
+ jmp table_editor
+ 
  .change_border_no:
   call be_selected_cell_pointer
   and byte [esi], 0x0F
@@ -690,7 +913,7 @@ be_draw_table:
   mov dword [line_length], 27
   call draw_line
   mov dword [cursor_column], 27
-  mov dword [color], 0x888888
+  mov dword [color], 0xBBBBBB
   SCREEN_X_SUB eax, 27
   mov dword [line_length], eax
   call draw_line
@@ -736,7 +959,7 @@ be_draw_table:
  call draw_column
  add dword [cursor_column], 27
  call draw_column
- mov dword [color], 0x888888
+ mov dword [color], 0xBBBBBB
  mov edx, 27 ;drawed columns
  mov esi, be_columns_length
  add esi, dword [be_first_show_column]
@@ -766,7 +989,7 @@ be_draw_table:
   mov eax, dword [screen_y]
   sub eax, 44
   mov dword [column_heigth], eax
-  mov dword [color], 0x888888
+  mov dword [color], 0xBBBBBB
   call draw_column
   pop ecx
   pop edx
@@ -925,13 +1148,16 @@ be_draw_table:
  mov dword [cursor_line], 20+15+14
  mov esi, be_lines_length
  add esi, dword [be_first_show_line]
- dec esi
+ dec esi ;pointer to length of cell
+ mov edi, be_lines_length
+ add edi, dword [be_first_show_line]
+ dec edi ;pointer to heigth of cell
  .draw_cells_lines_cycle:
  push esi
   push ebp
   
   mov esi, be_columns_length
-  add esi, dword [be_first_show_column]
+  add esi, dword [be_first_show_column] ;pointer to length of cell
   mov eax, 27
   .draw_cells_columns_cycle:
    mov dword [cursor_column], eax
@@ -957,7 +1183,12 @@ be_draw_table:
     add eax, 3
     mov dword [square_length], eax
     dec dword [square_length]
-    mov dword [square_heigth], 12
+    mov eax, 0
+    mov al, byte [edi]
+    mov ebx, 13
+    mul ebx
+    dec eax
+    mov dword [square_heigth], eax
     call draw_square
     .skip_drawing_background:
     
@@ -973,27 +1204,45 @@ be_draw_table:
      add eax, 3
      mov dword [line_length], eax
      mov dword [color], BLACK
+     push edi
      call draw_line
+     pop edi
     .if_up_border:
     
     mov al, byte [ebp+0]
     test al, 0x40 ;down border
     jz .if_down_border
-     add dword [cursor_line], 13
+     mov eax, 0
+     mov al, byte [edi]
+     mov ebx, 13
+     mul ebx
+     add dword [cursor_line], eax
      mov eax, 0
      mov al, byte [esi]
      shl eax, 3 ;mul 8
      add eax, 3
      mov dword [line_length], eax
      mov dword [color], BLACK
+     push edi
      call draw_line
-     sub dword [cursor_line], 13
+     pop edi
+     
+     mov eax, 0
+     mov al, byte [edi]
+     mov ebx, 13
+     mul ebx
+     sub dword [cursor_line], eax
     .if_down_border:
     
     mov al, byte [ebp+0]
     test al, 0x20 ;left border
     jz .if_left_border
-     mov dword [column_heigth], 14
+     mov eax, 0
+     mov al, byte [edi]
+     mov ebx, 13
+     mul ebx
+     inc eax
+     mov dword [column_heigth], eax
      mov dword [color], BLACK
      call draw_column
     .if_left_border:
@@ -1007,7 +1256,12 @@ be_draw_table:
      shl eax, 3 ;mul 8
      add eax, 3
      add dword [cursor_column], eax
-     mov dword [column_heigth], 14
+     mov eax, 0
+     mov al, byte [edi]
+     mov ebx, 13
+     mul ebx
+     inc eax
+     mov dword [column_heigth], eax
      mov dword [color], BLACK
      call draw_column
      pop dword [cursor_column]
@@ -1030,6 +1284,37 @@ be_draw_table:
     push dword [cursor_column]
     
     add dword [cursor_line], 2
+    
+    mov al, byte [ebp+1]
+    and al, 0x03
+    cmp al, 0
+    je .if_aligment_line_up
+     cmp byte [edi], 1
+     je .if_aligment_line_up
+     
+     cmp al, 0x1
+     jne .if_aligment_line_middle
+      mov eax, 0
+      mov al, byte [edi]
+      mov ebx, 13
+      mul ebx
+      shr eax, 1
+      sub eax, 6
+      add dword [cursor_line], eax
+      jmp .if_aligment_line_up
+     .if_aligment_line_middle:
+     
+     cmp al, 0x2
+     jne .if_aligment_line_down
+      mov eax, 0
+      mov al, byte [edi]
+      mov ebx, 13
+      mul ebx
+      sub eax, 13
+      add dword [cursor_line], eax
+      jmp .if_aligment_line_up
+     .if_aligment_line_down:
+    .if_aligment_line_up:
     
     mov al, byte [ebp+0]
     and al, 0x0C
@@ -1134,6 +1419,7 @@ be_draw_table:
   .draw_cells_next_line:
   pop ebp
   add ebp, 208*26 ;bytes per line
+  inc edi
  pop esi
  mov eax, 0
  mov al, byte [esi]
@@ -1339,15 +1625,51 @@ be_draw_table:
  SCREEN_X_SUB eax, 11+(13*9)-2
  PRINT_CHAR 'L', 24, eax
  
+ mov al, byte [esi+1]
+ and al, 0x03
+ cmp al, 0x02
+ jne .if_show_line_down_aligment
+  SCREEN_X_SUB eax, 12+(13*10)
+  DRAW_SQUARE 21, eax, 12, 12, 0xFF0000
+ .if_show_line_down_aligment:
+ SCREEN_X_SUB eax, 12+(13*10)
+ DRAW_EMPTY_SQUARE 21, eax, 12, 12, BLACK
+ SCREEN_X_SUB eax, 12+(13*10)-2
+ DRAW_SQUARE 30, eax, 9, 2, BLACK
+ 
+ mov al, byte [esi+1]
+ and al, 0x03
+ cmp al, 0x01
+ jne .if_show_line_middle_aligment
+  SCREEN_X_SUB eax, 13+(13*11)
+  DRAW_SQUARE 21, eax, 12, 12, 0xFF0000
+ .if_show_line_middle_aligment:
+ SCREEN_X_SUB eax, 13+(13*11)
+ DRAW_EMPTY_SQUARE 21, eax, 12, 12, BLACK
+ SCREEN_X_SUB eax, 13+(13*11)-2
+ DRAW_SQUARE 27, eax, 9, 2, BLACK
+ 
+ mov al, byte [esi+1]
+ and al, 0x03
+ cmp al, 0x00
+ jne .if_show_line_up_aligment
+  SCREEN_X_SUB eax, 14+(13*12)
+  DRAW_SQUARE 21, eax, 12, 12, 0xFF0000
+ .if_show_line_up_aligment:
+ SCREEN_X_SUB eax, 14+(13*12)
+ DRAW_EMPTY_SQUARE 21, eax, 12, 12, BLACK
+ SCREEN_X_SUB eax, 14+(13*12)-2
+ DRAW_SQUARE 23, eax, 9, 2, BLACK
+ 
  ;show type of text
  test byte [esi], 0x1
  jz .if_show_bold
-  SCREEN_X_SUB eax, 14+(13*10)
+  SCREEN_X_SUB eax, 17+(13*13)
   DRAW_SQUARE 21, eax, 12, 12, 0x0088FF
  .if_show_bold:
- SCREEN_X_SUB eax, 14+(13*10)
+ SCREEN_X_SUB eax, 17+(13*13)
  DRAW_EMPTY_SQUARE 21, eax, 12, 12, BLACK
- SCREEN_X_SUB eax, 14+(13*10)-2
+ SCREEN_X_SUB eax, 17+(13*13)-2
  PRINT_CHAR 'B', 24, eax
  
  ;color of text
@@ -1355,7 +1677,7 @@ be_draw_table:
  mov eax, dword [esi+5]
  and eax, 0x00FFFFFF
  mov dword [color], eax
- SCREEN_X_SUB eax, 16+(13*12)-2
+ SCREEN_X_SUB eax, 19+(13*15)-2
  push eax
  push eax
  PRINT_CHAR 'A', 24, eax
@@ -1371,11 +1693,11 @@ be_draw_table:
  mov ebx, dword [esi+2]
  and ebx, 0x00FFFFFF
  mov dword [color], ebx
- SCREEN_X_SUB eax, 16+(13*14)
+ SCREEN_X_SUB eax, 20+(13*17)
  DRAW_SQUARE 21, eax, 24, 12, ebx
- SCREEN_X_SUB eax, 16+(13*14)
+ SCREEN_X_SUB eax, 20+(13*17)
  DRAW_EMPTY_SQUARE 21, eax, 24, 12, BLACK
- SCREEN_X_SUB eax, 16+(13*14)-1
+ SCREEN_X_SUB eax, 20+(13*17)-1
  DRAW_EMPTY_SQUARE 22, eax, 22, 10, BLACK
  
  mov dword [type_of_text], PLAIN
@@ -1390,9 +1712,9 @@ be_draw_table:
  ret
  
 be_redraw_input:
- SCREEN_X_SUB eax, 27+18+(13*14)
+ SCREEN_X_SUB eax, 27+21+(13*18)
  DRAW_SQUARE 21, 27, eax, 13, WHITE
- SCREEN_X_SUB eax, 27+18+(13*14)
+ SCREEN_X_SUB eax, 27+21+(13*18)
  DRAW_EMPTY_SQUARE 21, 27, eax, 12, BLACK
  call be_selected_cell_pointer
  add esi, 8 ;text offset
