@@ -78,6 +78,7 @@ start:
  %include "source/programs/internet_browser/html_drawing.asm"
  %include "source/programs/internet_browser/internet_browser.asm"
  %include "source/programs/document_editor/document_editor.asm"
+ %include "source/programs/table_editor/table_editor.asm"
 
 %macro START_SCREEN_DRAW_SQUARE 1
  mov eax, dword [screen_x_center]
