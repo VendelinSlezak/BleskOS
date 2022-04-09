@@ -94,5 +94,30 @@ init_memory_of_programs:
  sub eax, 600
  shr eax, 1 ;div 2
  mov dword [de_left_border_start], eax
+ 
+ ;TABLE EDITOR
+ mov dword [allocated_size], 6
+ call allocate_memory
+ mov eax, dword [allocated_memory_pointer]
+ mov dword [table_editor_file_pointer], eax
+ 
+ ;init memory of table editor
+ mov edi, eax
+ mov ecx, 26*999
+ .init_table_editor_cell:
+  mov word [edi], 0x0000
+  mov dword [edi+2], WHITE ;background
+  mov dword [edi+5], BLACK ;text color
+  mov word [edi+8], 0
+  add edi, 208
+ loop .init_table_editor_cell
+ 
+ mov eax, dword [screen_y]
+ sub eax, 40+15+13
+ mov ebx, 13
+ mov edx, 0
+ div ebx
+ inc eax
+ mov dword [be_lines_on_screen], eax
 
  ret
