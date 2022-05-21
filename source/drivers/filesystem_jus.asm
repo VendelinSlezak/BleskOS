@@ -1,7 +1,7 @@
 ;BleskOS
 
 %define JUS_BN_PART 2000
-%define JUS_DATA 4000
+%define JUS_DATA 5000
 
 %define JUS_NOT_ENOUGH_MEMORY 0
 %define JUS_WRITING_SUCCESFUL 1
@@ -104,7 +104,7 @@ jus_write_file:
  ;find enough free space for file
  mov eax, dword [jus_bn_mem]
  mov esi, eax
- mov eax, JUS_DATA+256 ;sector of block
+ mov eax, JUS_DATA+512 ;sector of block
  mov ecx, 200*512
  .find_free_block:
   cmp byte [esi], 1
@@ -190,7 +190,7 @@ jus_delete_file:
  mov ecx, eax
  
  mov eax, 0
- rep stosd ;clear all blocks of file
+ rep stosb ;clear all blocks of file
  
  ;save block numbers
  call jus_save_bn_part
@@ -230,7 +230,7 @@ jus_rewrite_folder:
  
 jus_write_folder:
  mov dword [jus_memory], MEMORY_FOLDER
- mov dword [jus_file_size], 128
+ mov dword [jus_file_size], 127
  call jus_write_file
  
  ret
