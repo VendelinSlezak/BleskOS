@@ -27,8 +27,9 @@ main_window:
  PRINT '[d] Document editor', main_document_editor_str, LINE(12), COLUMN(2)
  PRINT '[e] Table editor', main_table_editor_str, LINE(14), COLUMN(2)
  PRINT '[f] Internet browser', main_internet_browser_str, LINE(16), COLUMN(2)
- PRINT '[F1] Hardware centrum', main_hardware_centrum_str, LINE(18), COLUMN(2)
- PRINT '[F2] Developer zone', main_te_str, LINE(20), COLUMN(2)
+ PRINT '[g] File manager', main_file_manager_str, LINE(18), COLUMN(2)
+ PRINT '[F1] Hardware centrum', main_hardware_centrum_str, LINE(20), COLUMN(2)
+ PRINT '[F2] Developer zone', main_te_str, LINE(22), COLUMN(2)
 
  call redraw_screen
 
@@ -52,6 +53,9 @@ main_window:
   
   cmp byte [key_code], KEY_F
   je internet_browser
+  
+  cmp byte [key_code], KEY_G
+  je file_manager
 
   cmp byte [key_code], KEY_F1
   je hardware_centrum
