@@ -9,7 +9,7 @@ file_manager_delete_message_down db '[enter] Yes [esc] No', 0
 file_manager_not_empty_folder_message_up db 'You can delete only empty folder in this version of File manager', 0
 file_manager_impossible_message_up db 'This is not possible in this version of File manager', 0
 file_manager_impossible_message_down db '[enter] Ok', 0
-file_manager_paste_message_up db 'Do you want to copy file?'
+file_manager_paste_message_up db 'Do you want to copy file?', 0
 file_manager_paste_message_down db '[enter] Yes [esc] No', 0
 
 fm_mouse_line dd 20
@@ -991,9 +991,6 @@ fm_redraw:
  cmp dword [edi], 0
  je .done
  push ecx
- 
-  mov eax, dword [edi]
-  PVAR eax
  
   ;print name
   mov dword [cursor_column], 158
