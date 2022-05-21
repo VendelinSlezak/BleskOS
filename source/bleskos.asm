@@ -79,6 +79,7 @@ start:
  %include "source/programs/internet_browser/internet_browser.asm"
  %include "source/programs/document_editor/document_editor.asm"
  %include "source/programs/table_editor/table_editor.asm"
+ %include "source/programs/file_manager/file_manager.asm"
 
 %macro START_SCREEN_DRAW_SQUARE 1
  mov eax, dword [screen_x_center]
