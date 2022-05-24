@@ -32,28 +32,7 @@ dp_mouse:
 
   cmp byte [key_code], KEY_ESC
   je developer_zone
-  
-  cmp byte [key_code], KEY_A
-  je .normal_mode
-  
-  cmp byte [key_code], KEY_B
-  je .slow_mode
-  
-  cmp byte [key_code], KEY_C
-  je .double_slow_mode
 
   cmp dword [usb_mouse_data], 0
   je .mouse_halt
  jmp .draw
- 
- .normal_mode:
-  mov dword [usb_mouse_mode], USB_MOUSE_NORMAL_MODE
- jmp .mouse_halt
- 
- .slow_mode:
-  mov dword [usb_mouse_mode], USB_MOUSE_SLOW_MODE
- jmp .mouse_halt
- 
- .double_slow_mode:
-  mov dword [usb_mouse_mode], USB_MOUSE_DOUBLE_SLOW_MODE
- jmp .mouse_halt
