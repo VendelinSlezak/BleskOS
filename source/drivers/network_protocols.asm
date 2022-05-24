@@ -314,6 +314,13 @@ times 256 db 0
 dns_ip_address dd 0
 
 init_network_stack:
+ LOG ' ', 0xA, 'Ethernet card MAC address: '
+ mov eax, dword [ethernet_card_mac]
+ LOG_HEX eax
+ mov eax, 0
+ mov ax, word [ethernet_card_mac+4]
+ LOG_HEX eax
+
  mov al, byte [ethernet_card_mac+5]
  mov byte [dhcp_offer_packet.ethernet_mac+0], al
  mov byte [dhcp_offer_packet.dhcp_mac+0], al
@@ -533,7 +540,7 @@ read_checksum_udp:
  
  ret
  
-ethernet_card_process_packet: 
+ethernet_card_process_packet:
  mov esi, dword [received_packet_pointer]
 
  cmp dword [esi], 0xFFFFFFFF
@@ -687,6 +694,11 @@ ethernet_card_process_packet:
   mov dword [packet_pointer], tcp_control_packet
   mov dword [packet_length], tcp_control_packet_end-tcp_control_packet
   call nic_send_packet
+  
+  cmp dword [network_ft_state], NFT_ESTABILISHING_CONNECTION
+  jne .if_network_file_transfer_estabilishing_connection
+   call network_file_transfer_connection_estabilished
+  .if_network_file_transfer_estabilishing_connection
  jmp .done
  
  .http_response:
@@ -866,6 +878,11 @@ ethernet_card_process_packet:
    call nic_send_packet ;send ACK packet
   .if_last_packet:
   
+  cmp dword [network_ft_state], NFT_TRANSFERRING_FILE
+  jne .if_network_file_transfer_file_packet
+   call network_file_transfer_packet
+  .if_network_file_transfer_file_packet
+  
   cmp dword [tcp_communication_type], TCP_FINALIZED
   je .done
   mov dword [tcp_communication_type], TCP_FILE_TRANSFERRING
@@ -938,6 +955,11 @@ ethernet_card_process_packet:
   cmp ax, word [tcp_second_control_packet+14+20]
   jne .done
   mov dword [tcp_communication_type], TCP_FINALIZED
+  
+  cmp dword [network_ft_state], NFT_TRANSFERRING_FILE
+  jne .if_network_file_transfer_end
+   call network_file_transfer_explore_file
+  .if_network_file_transfer_end
  jmp .done
  
  .udp:
@@ -1067,10 +1089,18 @@ ethernet_card_process_packet:
   mov eax, dword [esi]
   mov dword [dns_ip_address], eax
   mov dword [dns_report], 1
+  cmp dword [network_ft_state], NFT_SEARCHING_FOR_DNS
+  jne .if_network_file_transfer_dns_report
+   call network_file_transfer_dns_report
+  .if_network_file_transfer_dns_report
  jmp .done
  
  .dns_no_ip:
   mov dword [dns_report], 2
+  cmp dword [network_ft_state], NFT_SEARCHING_FOR_DNS
+  jne .if_network_file_transfer_no_dns_report
+   call network_file_transfer_dns_report
+  .if_network_file_transfer_no_dns_report
  jmp .done
  
  .done:
@@ -1231,17 +1261,6 @@ create_tcp_connection:
  call nic_send_packet
  
  mov dword [tcp_communication_type], TCP_WAITING_FOR_HANDSHAKE
- 
- mov dword [ticks], 0
- .wait_for_tcp_handshake:
-  cmp dword [tcp_communication_type], TCP_HANDSHAKE_RECEIVED
-  je .tcp_ack_handshake
-  hlt
- cmp dword [ticks], 1000
- jb .wait_for_tcp_handshake
- jmp .done
- 
- .tcp_ack_handshake:
  
  .done:
  ret
