@@ -152,7 +152,7 @@ init_sound_card:
  cmp dword [hda_base], 0
  je .done
 
- PSTR 'Sound card: HD Audio', exist_str
+ LOG ' ', 0xA, 'Sound card Intel HD Audio'
  
  ;SET OPERATIONAL STATE
  HDA_GCTL_WRITE 0x1
@@ -162,13 +162,15 @@ init_sound_card:
  cmp eax, 0x0 ;still in reset, something is wrong
  je .done
 
- PSTR 'Card is in operational state', oper_state_str
+ LOG ' is in operational state', 0xA
 
- ;get nubmer of output and input ports
+ ;get number of output and input ports
  mov eax, dword [hda_base]
  add eax, 0x80
  mov dword [hda_input_stream_port], eax ;port of first input stream
  HDA_CAPABILITES_READ
+ LOG 'Stream capability: '
+ LOG_HEX eax
  and ax, 0x0F00
  shr ax, 8 ;number of input streams is in ax
  mov bx, 0x20
@@ -227,6 +229,7 @@ init_sound_card:
 
   mov eax, dword [hda_response]
   mov dword [hda_codec_id], eax
+  LOG 0xA, 'PIO interface', 0xA
   jmp .codec
  .next_codec:
  pop ecx
@@ -252,6 +255,7 @@ init_sound_card:
 
   mov eax, dword [hda_response]
   mov dword [hda_codec_id], eax
+  LOG 0xA, 'CORB/RIRB interface', 0xA
   jmp .codec
  .next_codec_2:
  pop ecx
@@ -259,6 +263,7 @@ init_sound_card:
  loop .find_codec_2
 
  .done:
+ LOG 'Error: no codec was founded', 0xA
  ret ;no codec founded
 
  .codec:
@@ -294,6 +299,11 @@ codec_find_widgets:
   shr dword [hda_response], 20
 
   ;write it to list
+  LOG 'Node '
+  mov eax, 0
+  mov al, byte [verb_node]
+  LOG_HEX eax
+  
   mov al, byte [verb_node]
   mov byte [esi], al
   mov al, byte [hda_response]
@@ -311,6 +321,19 @@ codec_find_widgets:
 
    mov byte [esi+1], al
   ENDIF if_pin
+  
+  LOG 'type '
+  mov eax, 0
+  mov al, byte [esi+1]
+  LOG_HEX eax
+  ;get connection info
+  mov dword [verb_verb], 0xF02
+  mov dword [verb_command], 0x00
+  call hda_send_verb
+  mov eax, dword [hda_response]
+  LOG 'connected to '
+  LOG_HEX eax
+  LOG 0xA
 
   ;turn widget on
   mov dword [verb_verb], 0x705
@@ -365,8 +388,13 @@ codec_find_widgets:
   .line_out:
   cmp dword [hda_line_out_node], 0
   jne .next_loop
-  mov eax, dword [verb_node]
+  mov eax, 0
+  mov al, byte [esi]
+  mov dword [verb_node], eax
   mov dword [hda_line_out_node], eax 
+  LOG 'Line Out node '
+  LOG_HEX eax
+  LOG 0xA
   jmp .next_loop
  .next_loop:
  add esi, 2
@@ -380,11 +408,12 @@ codec_find_widgets:
  .speaker_founded:
  mov eax, dword [hda_speaker_node]
  mov dword [verb_node], eax
- PSTR 'speaker', speaker_str
- PVAR eax
- ;call hda_enable_pin_output
+ LOG 'speaker node '
+ LOG_HEX eax
+ call hda_enable_pin_output
  
  ;found path - NOT COMPLETE!
+ LOG 'PATH: '
  mov dword [verb_verb], 0xF02
  mov dword [verb_command], 0x00
  call hda_send_verb
@@ -398,17 +427,18 @@ codec_find_widgets:
  mov eax, dword [hda_response]
  shr eax, 20
  and eax, 0xF ;parse type of node
- PHEX eax
+ 
  cmp eax, 0x0
  je .enable_output_converter ;speaker is directly connected to output converter
  cmp eax, 0x2
  je .path_node_mixer
+ 
  jmp .done ;TODO another types of nodes
  
  .path_node_mixer:
   mov eax, dword [verb_node]
-  PSTR 'Mixer', mixer_str
-  PHEX eax
+  LOG 'Mixer '
+  LOG_HEX eax
  
   mov dword [verb_command], 0
   mov ecx, 10 ;scan 10 nodes connected to mixer
@@ -444,9 +474,11 @@ codec_find_widgets:
   loop .scan_mixer_node
  
  .enable_output_converter:
- PSTR 'audio output', audio_output_str
- PHEX eax
- ;call hda_enable_audio_output
+ LOG 'Audio output '
+ mov eax, dword [verb_node]
+ LOG_HEX eax
+ call hda_enable_audio_output
+ LOG 0xA
  jmp .done
 
 hda_send_verb:
@@ -621,7 +653,7 @@ hda_enable_audio_output:
  ;set data format
  mov dword [verb_verb], 0x200
  mov eax, dword [hda_data_format]
- mov dword [verb_command], eax
+ mov dword [verb_command], 0x0011 ;16 bit and 2 channels
  call hda_send_verb
 
  ret
