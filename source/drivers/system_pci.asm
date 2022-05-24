@@ -136,12 +136,8 @@ pci_read_device:
   LOG 'Graphic card '
  
   PCI_READ_DEVICE_ID
-  mov dword [graphic_card_id], eax
   LOG_HEX eax
   LOG 0xA
-  
-  PCI_READ_MMIO_BAR BAR0
-  mov dword [graphic_card_base], eax
   
   ret
  ENDIF pci_graphic_card_if
@@ -240,7 +236,6 @@ pci_read_device:
    PCI_IO_ENABLE_BUSMASTERING
    PCI_READ_IO_BAR BAR0
    mov word [ethernet_card_io_base], ax
-   mov dword [nic_realtek_type], 0
    jmp .nic_founded
   .if_realtek_nic_8139:
   
@@ -313,7 +308,6 @@ pci_read_device:
   PCI_IO_ENABLE_BUSMASTERING
   PCI_READ_IO_BAR BAR0
   mov dword [ethernet_card_io_base], eax
-  mov dword [nic_realtek_type], 1
    
   .nic_founded:
   PCI_READ 0x3C
