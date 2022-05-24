@@ -31,6 +31,27 @@ timer_irq:
   inc dword [ticks3]
  .if_enable_ticks3:
  
+ cmp dword [network_ft_timer], 0
+ je .if_network_ft_error
+  dec dword [network_ft_timer]
+  jmp .network_no_error
+ .if_network_ft_error:
+ cmp dword [network_ft_state], 0 ;NFT_NO_FILE
+ je .network_no_error
+  mov dword [network_ft_state], 0xFF ;NFT_ERROR
+  
+  cmp dword [network_file_transfer_pointer], 0
+  je .if_release_network_file_memory
+   pusha
+   mov eax, dword [network_file_transfer_pointer]
+   mov dword [allocated_memory_pointer], eax
+   mov dword [allocated_size], 1
+   call release_memory
+   mov dword [network_file_transfer_pointer], 0
+   popa
+  .if_release_network_file_memory:
+ .network_no_error:
+ 
  mov byte [al_save_state], al
  mov al, 0x20
  out 0x20, al
