@@ -265,19 +265,28 @@ dse_val dd 0
 ;;;;; END OF DEFINITIONS OF MACROS ;;;;;
 
 init_graphic:
+ LOG 'VESA graphic card driver', 0xA
+
  ;read linear frame buffer
  mov eax, dword [0x70028]
  mov dword [screen_lfb], eax
+ LOG 'Linear frame buffer: '
+ LOG_HEX eax
+ 
+ LOG 0xA, 'Screen resolution: '
 
  ;read number of columns
+ mov eax, 0
  mov ax, word [0x70012]
  mov dword [screen_x], 0
  mov word [screen_x], ax
+ LOG_VAR eax
 
  ;read number of lines
  mov ax, word [0x70014]
  mov dword [screen_y], 0
  mov word [screen_y], ax
+ LOG_VAR eax
 
  ;calculate center
  mov eax, dword [screen_x]
@@ -292,7 +301,10 @@ init_graphic:
  mov dword [screen_y_center], eax
 
  ;calculate bytes per pixel
+ mov eax, 0
  mov al, byte [0x70019]
+ LOG_VAR eax
+ LOG 0xA
  mov dword [screen_bites_per_pixel], 0
  mov byte [screen_bites_per_pixel], al
  mov eax, dword [screen_bites_per_pixel]
