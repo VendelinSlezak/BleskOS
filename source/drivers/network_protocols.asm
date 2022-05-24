@@ -698,7 +698,7 @@ ethernet_card_process_packet:
   cmp dword [network_ft_state], NFT_ESTABILISHING_CONNECTION
   jne .if_network_file_transfer_estabilishing_connection
    call network_file_transfer_connection_estabilished
-  .if_network_file_transfer_estabilishing_connection
+  .if_network_file_transfer_estabilishing_connection:
  jmp .done
  
  .http_response:
@@ -881,7 +881,7 @@ ethernet_card_process_packet:
   cmp dword [network_ft_state], NFT_TRANSFERRING_FILE
   jne .if_network_file_transfer_file_packet
    call network_file_transfer_packet
-  .if_network_file_transfer_file_packet
+  .if_network_file_transfer_file_packet:
   
   cmp dword [tcp_communication_type], TCP_FINALIZED
   je .done
@@ -959,7 +959,7 @@ ethernet_card_process_packet:
   cmp dword [network_ft_state], NFT_TRANSFERRING_FILE
   jne .if_network_file_transfer_end
    call network_file_transfer_explore_file
-  .if_network_file_transfer_end
+  .if_network_file_transfer_end:
  jmp .done
  
  .udp:
@@ -1092,7 +1092,7 @@ ethernet_card_process_packet:
   cmp dword [network_ft_state], NFT_SEARCHING_FOR_DNS
   jne .if_network_file_transfer_dns_report
    call network_file_transfer_dns_report
-  .if_network_file_transfer_dns_report
+  .if_network_file_transfer_dns_report:
  jmp .done
  
  .dns_no_ip:
@@ -1100,7 +1100,7 @@ ethernet_card_process_packet:
   cmp dword [network_ft_state], NFT_SEARCHING_FOR_DNS
   jne .if_network_file_transfer_no_dns_report
    call network_file_transfer_dns_report
-  .if_network_file_transfer_no_dns_report
+  .if_network_file_transfer_no_dns_report:
  jmp .done
  
  .done:
