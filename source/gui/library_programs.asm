@@ -1,6 +1,8 @@
 ;BleskOS
 
 init_memory_of_programs:
+ LOG ' ', 0xA
+ 
  ;FILE DIALOG
  mov eax, dword [screen_y]
  sub eax, LINESZ*6
