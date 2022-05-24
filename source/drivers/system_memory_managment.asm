@@ -7,6 +7,7 @@ allocated_size dd 0 ;in MB
 allocated_memory_pointer dd 0
 
 read_memory_size:
+ LOG ' ', 0xA, 'Memory table', 0xA
  mov dword [memory_size], 0
  
  ;deallocate all memory
@@ -18,11 +19,26 @@ read_memory_size:
  mov esi, 0x80000 ;here bootloader load info about memory
  mov ecx, 20
  .find_entry:
+  ;print entry to log
+  mov eax, dword [esi+4]
+  LOG_HEX eax
+  mov eax, dword [esi+0]
+  LOG_HEX eax
+  mov eax, dword [esi+12]
+  LOG_HEX eax
+  mov eax, dword [esi+8]
+  LOG_HEX eax
+  mov eax, dword [esi+20]
+  LOG_HEX eax
+  mov eax, dword [esi+16]
+  LOG_HEX eax
+  LOG 0xA
+ 
   cmp dword [esi+16], 1 ;free memory
   jne .next_loop
   cmp dword [esi+12], 0
   jne .64_bit
-  cmp dword [esi+8], 1024*1024*31 ;system need min first 32 MB of RAM (1 MB is low memory)
+  cmp dword [esi+8], 1024*1024*63 ;system need min first 64 MB of RAM (1 MB is low memory)
   jg .32_bit
   
  .next_loop:
@@ -44,6 +60,10 @@ read_memory_size:
  mov edx, 0
  div ebx ;convert to MB
  mov dword [memory_size], eax
+ 
+ LOG 'Free memory size in MB: '
+ LOG_VAR eax
+ LOG 0xA
  
  mov edi, memory
  mov ecx, eax
@@ -80,6 +100,8 @@ allocate_memory:
  add edi, 0x100000 ;next MB
  loop .search_for_free_memory
 
+ LOG 'ERROR: NO FREE MEMORY', 0xA
+
  ret ;memory is not free
 
  .free_memory_found:
@@ -89,6 +111,14 @@ allocate_memory:
   mov byte [esi], 0x1
   inc esi
  loop .mark_blocks
+ 
+ LOG 'allocated memory on '
+ mov eax, dword [allocated_memory_pointer]
+ LOG_HEX eax
+ LOG 'with size '
+ mov eax, dword [allocated_size]
+ LOG_VAR eax
+ LOG 'MB', 0xA
 
  ret
 
@@ -107,6 +137,14 @@ release_memory:
   mov byte [eax], 0
   inc eax
  loop .mark_blocks
+ 
+ LOG 'released memory on '
+ mov eax, dword [allocated_memory_pointer]
+ LOG_HEX eax
+ LOG 'with size '
+ mov eax, dword [allocated_size]
+ LOG_VAR eax
+ LOG 'MB', 0xA
 
  .done:
  ret
