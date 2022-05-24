@@ -8,6 +8,7 @@ start:
  jmp start_bleskos
 
  %include "source/macros.asm"
+ %include "source/gui/library_log.asm"
 
  %include "source/drivers/graphic_vesa.asm"
  %include "source/drivers/graphic_font.asm"
@@ -65,11 +66,8 @@ start:
  %include "source/gui/library_convert_graphic_files.asm"
  %include "source/gui/library_copy.asm"
 
- %include "source/programs/dp_hardware_info.asm"
- %include "source/programs/dp_intel_hd_audio.asm"
- %include "source/programs/dp_ide.asm"
- %include "source/programs/dp_mouse.asm"
- %include "source/programs/dp_acpi.asm"
+ %include "source/programs/developer_programs/dp_log_viewer.asm"
+ %include "source/programs/developer_programs/dp_mouse.asm"
 
  %include "source/programs/text_editor/text_editor.asm"
  %include "source/programs/graphic_editor/graphic_editor.asm"
@@ -175,6 +173,10 @@ start_bleskos:
  call init_memory_of_programs
  START_SCREEN_DRAW_SQUARE 335
  
+ LOG ' ', 0xA
+ 
  call main_window
 
  HALT
+
+string_data:
