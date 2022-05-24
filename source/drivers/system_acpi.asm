@@ -14,6 +14,7 @@ shutdown_value dw 0
 shutdown_value_2 dw 0
 
 read_acpi:
+ LOG ' ', 0xA
  mov byte [ps2_exist], 1
 
  ;search for RSDP
@@ -25,6 +26,8 @@ read_acpi:
   .next_loop:
   inc esi
  loop .search_rsdp
+ 
+ LOG 'RSDP table was not founded', 0xA
 
  ret
 
@@ -42,9 +45,15 @@ read_acpi:
  jne .next_loop
 
  .rsdp_found:
+ LOG 'RSDP table founded on '
+ LOG_HEX esi
+ LOG 0xA
  mov dword [rsdp_base], esi
  mov eax, dword [esi+16]
  mov dword [rsdt_base], eax
+ LOG 'RSDT table founded on '
+ LOG_HEX eax
+ LOG 0xA
 
  ;search for FACP
  mov esi, dword [rsdt_base]
@@ -59,7 +68,11 @@ read_acpi:
  add esi, 36 ;data pointers
  .search_facp:
   mov edi, dword [esi]
-  cmp dword [edi], 0x50434146
+  LOG 'table '
+  mov eax, dword [edi]
+  LOG_HEX eax
+  LOG 0xA
+  cmp eax, 0x50434146
   je .facp_found
   add esi, 4
  loop .search_facp
@@ -69,6 +82,9 @@ read_acpi:
 
  .facp_found:
  mov dword [facp_base], edi
+ LOG 'FACP table founded on '
+ LOG_HEX edi
+ LOG 0xA
 
  mov ax, word [edi+48]
  mov word [acpi_command], ax
@@ -90,6 +106,12 @@ read_acpi:
  and ax, 0x2
  mov byte [ps2_exist], al
  .ps2_exist:
+ 
+ LOG 'PS2 controller presence '
+ mov eax, 0
+ mov al, byte [ps2_exist]
+ LOG_VAR eax
+ LOG 0xA
 
  ;turn on ACPI
  cmp word [acpi_command], 0
@@ -114,6 +136,8 @@ read_acpi:
   je .parse_sc5
   inc esi
  loop .find_sc5
+ 
+ LOG '_S5_ was not founded', 0xA
 
  ret
 
@@ -122,11 +146,22 @@ read_acpi:
  mov al, byte [esi+8]
  shl ax, 10
  or word [shutdown_value], ax
+ 
+ LOG '_S5_ shutdown value 1: '
+ mov eax, 0
+ mov ax, word [shutdown_value]
+ LOG_HEX eax
 
  mov ax, 0
  mov al, byte [esi+10]
  shl ax, 10
  or word [shutdown_value_2], ax
+ 
+ LOG 0xA, '_S5_ shutdown value 2: '
+ mov eax, 0
+ mov ax, word [shutdown_value_2]
+ LOG_HEX eax
+ LOG 0xA
 
  ret
 
