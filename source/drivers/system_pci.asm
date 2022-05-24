@@ -117,11 +117,38 @@ pci_read_device:
  PCI_READ_DEVICE_ID
  cmp dword [pci_return], 0xFFFFFFFF ;no device
  je .done
+ 
+ LOG 'bus '
+ mov eax, dword [pci_bus]
+ LOG_VAR eax
+ LOG 'device '
+ mov eax, dword [pci_dev]
+ LOG_VAR eax
+ LOG 'func '
+ mov eax, dword [pci_func]
+ LOG_VAR eax
+ LOG 'PCI device: '
 
  PCI_READ 0x08
  and eax, 0xFFFFFF00 ;class, subclass, progif
+ 
+ IF_E eax, 0x03000000, pci_graphic_card_if
+  LOG 'Graphic card '
+ 
+  PCI_READ_DEVICE_ID
+  mov dword [graphic_card_id], eax
+  LOG_HEX eax
+  LOG 0xA
+  
+  PCI_READ_MMIO_BAR BAR0
+  mov dword [graphic_card_base], eax
+  
+  ret
+ ENDIF pci_graphic_card_if
 
  IF_E eax, 0x04010000, pci_ac97_if ;AC97
+  LOG 'Sound card AC97', 0xA
+  
   PCI_IO_ENABLE_BUSMASTERING
   PCI_READ_IO_BAR BAR0
   mov word [ac97_nam_base], ax
@@ -131,6 +158,8 @@ pci_read_device:
  ENDIF pci_ac97_if
 
  IF_E eax, 0x04030000, pci_hda_if ;HD Audio
+  LOG 'Sound card Intel HD Audio', 0xA
+ 
   PCI_MMIO_ENABLE_BUSMASTERING
   PCI_READ_MMIO_BAR BAR0
   mov dword [hda_base], eax
@@ -139,6 +168,7 @@ pci_read_device:
  ENDIF pci_hda_if
 
  IF_E eax, 0x0C031000, pci_ohci_if ;OHCI
+  LOG 'OHCI controller', 0xA
   inc dword [ohci_num_of_controllers]
 
   PCI_READ_MMIO_BAR BAR0
@@ -150,6 +180,7 @@ pci_read_device:
  ENDIF pci_ohci_if
 
  IF_E eax, 0x0C030000, pci_uhci_if ;UHCI
+  LOG 'UHCI controller', 0xA
   inc dword [uhci_num_of_controllers]
 
   PCI_WRITE 0xC0, 0x8F00 ;disable legacy support
@@ -162,6 +193,7 @@ pci_read_device:
  ENDIF pci_uhci_if
 
  IF_E eax, 0x0C032000, pci_ehci_if ;EHCI
+  LOG 'EHCI controller', 0xA
   inc dword [ehci_num_of_controllers]
 
   PCI_READ_MMIO_BAR BAR0
@@ -184,6 +216,7 @@ pci_read_device:
  ENDIF pci_ehci_if
 
  IF_E eax, 0x0C033000, pci_xhci_if ;xHCI
+  LOG 'xHCI controller', 0xA
   inc dword [xhci_num_of_controllers]
   
   PCI_READ_MMIO_BAR BAR0
@@ -195,11 +228,43 @@ pci_read_device:
  ENDIF pci_xhci_if
 
  IF_E eax, 0x02000000, pci_nic_if ;Network card
+  LOG 'Network card '
+  
   PCI_READ_DEVICE_ID
   mov dword [ethernet_card_id], eax
   
+  cmp eax, 0x813910EC ;realtek 8139
+  jne .if_realtek_nic_8139
+   LOG 'Realtek 8139', 0xA
+   
+   PCI_IO_ENABLE_BUSMASTERING
+   PCI_READ_IO_BAR BAR0
+   mov word [ethernet_card_io_base], ax
+   mov dword [nic_realtek_type], 0
+   jmp .nic_founded
+  .if_realtek_nic_8139:
+  
+  ;realtek 8169
+  cmp eax, 0x816110EC
+  je .if_realtek_nic_8169
+  cmp eax, 0x816810EC
+  je .if_realtek_nic_8169
+  cmp eax, 0x816910EC
+  je .if_realtek_nic_8169
+  cmp eax, 0xC1071259
+  je .if_realtek_nic_8169
+  cmp eax, 0x10321737
+  je .if_realtek_nic_8169
+  cmp eax, 0x011616EC
+  je .if_realtek_nic_8169
+  
   cmp ax, 0x8086 ;intel
   jne .if_intel_nic
+   LOG 'Intel '
+   mov eax, dword [ethernet_card_id]
+   LOG_HEX eax
+   LOG 0xA
+   
    PCI_MMIO_ENABLE_BUSMASTERING
    PCI_READ_IO_BAR BAR0
    mov word [ethernet_card_io_base], ax
@@ -212,6 +277,8 @@ pci_read_device:
   
   cmp ax, 0x1022 ;AMD
   jne .if_amd_nic
+   LOG 'AMD PC-net III', 0xA
+   
    PCI_IO_ENABLE_BUSMASTERING
    PCI_READ_IO_BAR BAR0
    mov word [ethernet_card_io_base], ax
@@ -220,13 +287,33 @@ pci_read_device:
   
   cmp ax, 0x14E4 ;broadcom
   jne .if_broadcom_nic
+   LOG 'Broadcom ', 0xA
+   mov eax, dword [ethernet_card_id]
+   LOG_HEX eax
+   LOG 0xA
+   
    PCI_MMIO_ENABLE_BUSMASTERING
    PCI_READ_MMIO_BAR BAR0
    mov dword [ethernet_card_mmio_base], eax
    jmp .nic_founded
   .if_broadcom_nic:
   
+  mov eax, dword [ethernet_card_id]
+  LOG_HEX eax
+  LOG 0xA
+  
   ret
+  
+  .if_realtek_nic_8169:
+  LOG 'Realtek 8169 compatibile '
+  mov eax, dword [ethernet_card_id]
+  LOG_HEX eax
+  LOG 0xA
+  
+  PCI_IO_ENABLE_BUSMASTERING
+  PCI_READ_IO_BAR BAR0
+  mov dword [ethernet_card_io_base], eax
+  mov dword [nic_realtek_type], 1
    
   .nic_founded:
   PCI_READ 0x3C
@@ -242,10 +329,18 @@ pci_read_device:
   mov word [eax+2], 0x0008
   mov word [eax+4], 0x8E00
   mov word [eax+6], (ethernet_card_irq - $$ + 0x10000) >> 16
+  
+  mov eax, 0
+  mov al, byte [ethernet_card_irq_num]
+  LOG 'Network card IRQ: '
+  LOG_VAR eax
+  LOG 0xA
   ret
  ENDIF pci_nic_if
  
  IF_E eax, 0x01060100, pci_serial_ata_if ;Serial ATA
+  LOG 'Serial ATA controller', 0xA
+ 
   PCI_READ_MMIO_BAR BAR5
   cmp dword [eax+0x10], 0x00010200
   jl .detect_sata_type
@@ -291,6 +386,7 @@ pci_read_device:
  mov ebx, eax
  and ebx, 0xFFFF0000 ;remove progif
  IF_E ebx, 0x01010000, pci_ide_if ;IDE controller
+  LOG 'IDE controller', 0xA
   .ide_interface:
   mov edi, dword [ide_pointer]
 
@@ -322,12 +418,17 @@ pci_read_device:
   ret
  ENDIF pci_ide_if
 
+ LOG_HEX eax ;class/subclass/progif
+ LOG 0xA
+
  PCI_SET_IRQ 5 ;for all other devices
 
  .done:
  ret
 
 scan_pci:
+ LOG ' ', 0xA, 'PCI devices:', 0xA
+
  ;clear
  mov esi, native_ide_controllers
  mov ecx, 160
