@@ -290,270 +290,60 @@ internet_browser:
   mov dword [ib_number_of_reloading], 0
   
  .transfer_page:
-  cmp word [internet_browser_url], 0
-  je .halt
-  cmp word [internet_browser_url], '/'
-  je .halt
- 
+  mov esi, internet_browser_url
+  mov edi, network_ft_url_of_file
+  mov ecx, 200
+  rep movsw
+  call download_file_from_network
+  
   DRAW_WINDOW internet_browser_up_str, internet_browser_down_str, 0x17A4AD, WHITE ;light blue
-  call internet_browser_redraw_url
-  IB_MESSAGE 'Searching for IP address of website...', searching_for_ip_address_st
+  IB_MESSAGE 'Transferring page...', transferring_page_str
   call redraw_screen
   
-  mov edi, url_for_dns
-  mov ecx, 256
   mov eax, 0
-  rep stosb
-  mov edi, tcp_path_to_file
-  mov ecx, 256
-  mov eax, 0
-  rep stosb
-  
-  ;WORKAROUND FOR HTTPS PAGES - these pages are accessed through page gate.aspero.pro
-  cmp dword [internet_browser_url], 'h' | ('t' << 16)
-  jne .if_transfer_https_dns
-  cmp dword [internet_browser_url+4], 't' | ('p' << 16)
-  jne .if_transfer_https_dns
-  cmp dword [internet_browser_url+8], 's' | (':' << 16)
-  jne .if_transfer_https_dns
-  cmp dword [internet_browser_url+12], '/' | ('/' << 16)
-  jne .if_transfer_https_dns
-   mov dword [url_for_dns], 'gate'
-   mov dword [url_for_dns+4], '.asp'
-   mov dword [url_for_dns+8], 'ero.'
-   mov word [url_for_dns+12], 'pr'
-   mov byte [url_for_dns+14], 'o'
-   jmp .send_dns
-  .if_transfer_https_dns:
-  
-  mov ecx, 100
-  mov esi, internet_browser_url
-  mov edi, url_for_dns
-  .create_dns:
-   cmp word [esi], 0
-   je .send_dns
-   cmp word [esi], '/'
-   je .send_dns
-   mov al, byte [esi]
-   mov byte [edi], al
-   add esi, 2
-   inc edi
-  loop .create_dns
-  .send_dns:
-  mov dword [type_of_received_packet], 0
-  mov dword [dns_report], 0
-  call get_ip_address_of_url
-  
-  mov dword [ticks], 0
-  .wait_for_dns_response:
-   cmp dword [dns_report], 1
-   je .dns_response
-   cmp dword [dns_report], 2
-   je .dns_response_no_ip
+  .wait_for_page:
    hlt
-  cmp dword [ticks], 1000
-  jb .wait_for_dns_response
-  .dns_response_no_ip:
-  IB_MESSAGE 'This website do not exist', this_website_do_not_exist_str
-  mov dword [ib_mouse_halt], 1
-  jmp .halt
-  
-  .dns_response:
-  IB_MESSAGE 'Estabilishing connection with website...', estabilishing_connection_with_website_str
-  mov dword [tcp_communication_type], NO_TCP
-  call create_tcp_connection
-  mov dword [ticks], 0
-  .wait_for_tcp_handshake:
-   cmp dword [tcp_communication_type], TCP_HANDSHAKE_RECEIVED
-   je .transfer_main_html_file
-   hlt
-  cmp dword [ticks], 1000
-  jb .wait_for_tcp_handshake
-  IB_MESSAGE 'Server is not responding', server_is_not_responding
-  mov dword [ib_mouse_halt], 1
-  jmp .halt
-  
-  .transfer_main_html_file:
-  IB_MESSAGE 'Transferring HTML file...', transferring_html_file_str
-  mov dword [allocated_size], 1
-  call allocate_memory
-  mov eax, dword [allocated_memory_pointer]
-  mov dword [http_file_pointer], eax
-  
-  mov edi, eax
-  mov eax, 0
-  mov ecx, 0x100000
-  rep stosb
-  
-  ;WORKAROUND FOR HTTPS PAGES - these pages are accessed through page gate.aspero.pro
-  cmp dword [internet_browser_url], 'h' | ('t' << 16)
-  jne .if_transfer_https_tcp
-  cmp dword [internet_browser_url+4], 't' | ('p' << 16)
-  jne .if_transfer_https_tcp
-  cmp dword [internet_browser_url+8], 's' | (':' << 16)
-  jne .if_transfer_https_tcp
-  cmp dword [internet_browser_url+12], '/' | ('/' << 16)
-  jne .if_transfer_https_tcp
-   mov dword [tcp_path_to_file], '/?si'
-   mov dword [tcp_path_to_file+4], 'te= '
+   cmp dword [network_file_transfer_state], NFT_FILE_TRANSFERRED
+   je .page_transferred
+   cmp dword [network_file_transfer_state], NFT_FILE_UNKNOWN_STATE
+   je .page_not_transferred
+   cmp dword [network_ft_state], NFT_ERROR
+   je .page_not_transferred
+   
+   inc eax
+   cmp eax, 50
+   jb .wait_for_page
 
-   mov ecx, 100
-   mov esi, internet_browser_url
-   mov edi, tcp_path_to_file+7
-   .https_create_tcp:
-    cmp word [esi], 0
-    je .transfer_tcp
-    mov al, byte [esi]
-    mov byte [edi], al
-    add esi, 2
-    inc edi
-   loop .https_create_tcp
-   jmp .transfer_tcp
-  .if_transfer_https_tcp:
+   ;draw how many KB are transferred
+   DRAW_SQUARE 20+LINESZ, 22*COLUMNSZ, 12*COLUMNSZ, LINESZ, WHITE
+   mov dword [color], BLACK
+   mov dword [cursor_line], 20+LINESZ
+   mov dword [cursor_column], 22*COLUMNSZ
+   mov eax, dword [network_file_transfer_length]
+   shr eax, 10 ;convert to KB
+   mov dword [var_print_value], eax
+   call print_var
+   
+   add dword [cursor_column], COLUMNSZ
+   mov dword [char_for_print], 'K'
+   call print_char
+   add dword [cursor_column], COLUMNSZ
+   mov dword [char_for_print], 'B'
+   call print_char
+   
+   REDRAW_LINES_SCREEN 20+LINESZ, LINESZ
+   mov eax, 0
+  jmp .wait_for_page
   
-  mov byte [tcp_path_to_file], '/'
-  mov ecx, 100
-  mov esi, internet_browser_url
-  mov edi, tcp_path_to_file
-  .skip_to_tcp:
-   cmp word [esi], 0
-   je .transfer_tcp
-   cmp word [esi], '/'
-   je .create_tcp
-   add esi, 2
-  jmp .skip_to_tcp
-  .create_tcp:
-   cmp word [esi], 0
-   je .transfer_tcp
-   mov al, byte [esi]
-   mov byte [edi], al
-   add esi, 2
-   inc edi
-  loop .create_tcp
-  
-  .transfer_tcp:
-  mov eax, 0
-  call tcp_transfer_file
-  mov dword [ticks], 0
-  .wait_for_tcp_file:
-   cmp dword [tcp_communication_type], TCP_FINALIZED
-   je .process_html   
-   hlt
-   cmp eax, dword [tcp_file_transferred_length]
-   je .if_transferred_length_change
-    mov eax, dword [tcp_file_transferred_length]
-    push eax
-    DRAW_SQUARE 20+LINESZ, COLUMNSZ*28, COLUMNSZ*10, LINESZ, WHITE
-    pop eax
-    mov dword [color], BLACK
-    mov dword [var_print_value], eax
-    push eax
-    call print_var
-    REDRAW_LINES_SCREEN 20+LINESZ, LINESZ
-    pop eax
-    mov dword [ticks], 0 ;server is not responding if nothing arrived during 3 seconds
-   .if_transferred_length_change:
-  cmp dword [ticks], 3000
-  jb .wait_for_tcp_file
-  IB_MESSAGE 'File was not transferred', file_was_not_transferred
-  call release_memory
-  mov dword [ib_mouse_halt], 1
+  .page_not_transferred:
+  IB_MESSAGE 'Error during transferring page', transferring_page_error_str
+  call redraw_screen
+  mov dword [ib_mouse_halt], 0
   jmp .halt
-  
-  .process_html:
-  cmp dword [http_reported_state], 0
-  je .show_html
-  cmp dword [http_reported_state], HTTP_MOVED_PERMANENTLY
-  je .load_new_location
-  jmp .halt
-  
-  .load_new_location:
-   cmp dword [ib_number_of_reloading], 5
-   ja .too_many_reloading
-   cmp byte [http_moved_permanently_url], '/'
-   je .new_location_add
-   cmp dword [http_moved_permanently_url+1], 'ttp:'
-   je .new_location_http
-   cmp dword [http_moved_permanently_url+1], 'ttps'
-   je .new_location_https
-   
-   IB_MESSAGE 'Server respond was not recognized', server_respond_was_not_recognized
-   mov dword [ib_mouse_halt], 1
-  jmp .halt
-   .new_location_add:
-    mov edi, internet_browser_url+200
-    .new_location_add_move_to_end_of_url:
-     cmp edi, internet_browser_url
-     je .halt ;error
-     cmp word [edi], '/'
-     je .new_location_add_copy_url
-     cmp word [edi], 0
-     jne .new_location_add_to_url_with_end_0
-     sub edi, 2
-    jmp .new_location_add_move_to_end_of_url
-    
-    .new_location_add_to_url_with_end_0:
-    add edi, 2
-    mov word [edi], '/'
-    .new_location_add_copy_url:
-    mov esi, http_moved_permanently_url
-    mov ecx, 100
-    .new_location_add_copy_char:
-     mov ax, 0
-     mov al, byte [esi]
-     mov word [edi], ax
-     inc esi
-     add edi, 2
-    loop .new_location_add_copy_char
-   jmp .reload_url
-   
-   .new_location_http:
-    mov edi, internet_browser_url
-    mov eax, 0
-    mov ecx, 100
-    rep stosw
-    mov esi, http_moved_permanently_url+7
-    mov edi, internet_browser_url
-    mov ecx, 100
-    .new_location_http_copy_char:
-     mov ax, 0
-     mov al, byte [esi]
-     mov word [edi], ax
-     inc esi
-     add edi, 2
-    loop .new_location_http_copy_char
-   jmp .reload_url
-   
-   .new_location_https:
-    mov edi, internet_browser_url
-    mov eax, 0
-    mov ecx, 100
-    rep stosw
-    mov esi, http_moved_permanently_url
-    mov edi, internet_browser_url
-    mov ecx, 100
-    .new_location_https_copy_char:
-     mov ax, 0
-     mov al, byte [esi]
-     mov word [edi], ax
-     inc esi
-     add edi, 2
-    loop .new_location_https_copy_char
-   jmp .reload_url
-   
-   .reload_url:
-    call internet_browser_redraw_url
-    inc dword [ib_number_of_reloading]
-   jmp .transfer_page ;reload url
-   
-  .too_many_reloading:
-   IB_MESSAGE 'This page was redirected too many times', this_page_was_redirected_too_many_times
-   mov dword [ib_mouse_halt], 1
-  jmp .halt
-  
-  .show_html:
+ 
+  .page_transferred:
   mov dword [ib_file_opened], 0
-  mov eax, dword [allocated_memory_pointer]
+  mov eax, dword [network_file_transfer_state]
   mov dword [file_memory], eax
   jmp .open_html
  jmp .halt
