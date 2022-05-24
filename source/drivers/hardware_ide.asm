@@ -10,6 +10,8 @@ native_ide_controllers:
 times 8 dd 0, 0, 0, 0, 0
 
 init_ide:
+ LOG ' ', 0xA
+
  mov edi, ide_controllers
  mov ecx, 10
  .scan_controller:
@@ -22,6 +24,8 @@ init_ide:
   in al, dx
   cmp al, 0xFF
   je .next_cycle ;no controller
+  
+  LOG 'IDE controller on port '
 
   mov dx, word [edi+2]
   add dx, 2 ;command port
@@ -29,10 +33,13 @@ init_ide:
   or al, 0x2
   out dx, al ;disable interrupts
 
+  mov eax, 0
   mov ax, word [edi]
   mov word [pata_base], ax ;read base
+  LOG_HEX eax
 
   ;scan master drive
+  LOG 'MASTER: '
   call pata_select_master
   call pata_detect_drive
   mov eax, dword [pata_size]
@@ -44,8 +51,15 @@ init_ide:
   BASE_INB pata_base, 5
   mov bh, al
   mov dword [edi+4], ebx
+  
+  LOG 'type '
+  LOG_HEX ebx
+  LOG 'size in sectors '
+  mov eax, dword [pata_size]
+  LOG_VAR eax
 
   ;scan slave drive
+  LOG 'SLAVE: '
   call pata_select_slave
   call pata_detect_drive
   mov eax, dword [pata_size]
@@ -57,8 +71,15 @@ init_ide:
   BASE_INB pata_base, 5
   mov bh, al
   mov dword [edi+12], ebx
+  
+  LOG 'type '
+  LOG_HEX ebx
+  LOG 'size in sectors '
+  mov eax, dword [pata_size]
+  LOG_VAR eax
 
   ;next item
+  LOG 0xA
   add edi, 20
  .next_cycle:
  pop ecx
