@@ -51,6 +51,7 @@ start:
  %include "source/drivers/filesystem_iso9660.asm"
 
  %include "source/drivers/network_center.asm"
+ %include "source/drivers/network_file_transfer.asm"
  %include "source/drivers/network_protocols.asm"
  %include "source/drivers/network_ethernet_nic_intel.asm"
  %include "source/drivers/network_ethernet_nic_amd.asm"
