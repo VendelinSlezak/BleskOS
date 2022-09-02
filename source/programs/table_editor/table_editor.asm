@@ -533,7 +533,7 @@ table_editor:
    cmp ax, 5
    je .function_with_cell_area
    jmp .function_if_cell_area
-   .function_with_cell_area
+   .function_with_cell_area:
     mov bx, word [esi+12]
     mov word [be_function_c1_line], bx
     mov bx, word [esi+14]
@@ -981,7 +981,7 @@ table_editor:
      mov dword [be_function_rule_number], eax
      jmp .function
     .if_func_sumif_key_d:
-   .if_not_function_sumif_countif_keyboard
+   .if_not_function_sumif_countif_keyboard:
    
    cmp dword [be_function_list_pointer], 5
    jne .if_function_average_keyboard
@@ -1211,7 +1211,7 @@ table_editor:
      push esi
      call be_recalculate_cell
      pop esi
-    .if_cell_function
+    .if_cell_function:
     add esi, 208
     inc dword [be_selected_cell_column]
    pop ecx
