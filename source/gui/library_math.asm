@@ -118,5 +118,5 @@ divide_with_comma:
  call convert_string_to_number
  mov eax, dword [converted_value]
  mov dword [divide_number_after_comma], eax
- .return
+ .return:
  ret
