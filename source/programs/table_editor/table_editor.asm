@@ -1,11 +1,19 @@
 ;BleskOS
 
 table_editor_up_str db 'Table editor', 0
-table_editor_down_str db '[F1] Save file [F2] Open file [F3] New file [F4/5] Change column size [F6/7] Change line size', 0
+table_editor_down_str db '[F1] Save [F2] Open [F3] New [F4/5] Column size [F6/7] Line size [F11] Function [F12] Recalculate functions', 0
 be_message_new_file_up db 'Are you sure you want to erase all table?', 0
 be_message_new_file_down db '[enter] Yes [esc] Cancel', 0
 be_message_color_up db 'Please select color:', 0
 be_message_color_down db '[a] Black [r] Red [g] Green [b] Blue [o] Orange [w] White', 0
+be_message_recalculating db 'Recalculating cell functions...', 0
+be_message_invalid_cell_range db 'Please enter valid cell range', 0
+
+be_sum_str db 'SUM(', 0
+be_sumif_str db 'SUMIF(', 0
+be_count_str db 'COUNT(', 0
+be_countif_str db 'COUNTIF(', 0
+be_average_str db 'AVERAGE(', 0
 
 table_editor_file_pointer dd 0
 
@@ -21,6 +29,25 @@ be_cursor_offset dd 0
 
 be_mouse_line dd 20
 be_mouse_column dd 0
+
+be_function_cell_list_pointer dd 0
+be_function_list_pointer dd 0
+be_function_string times 100 dw 0
+
+be_function_c1_line dd 1
+be_function_c1_column dd 0
+be_function_c2_line dd 1
+be_function_c2_column dd 0
+be_function_rule dd '='
+be_function_rule_number dd 0
+be_function_num_after_comma dd 0
+
+be_function_c1_str dw 'A', '1', 0, 0, 0
+be_function_c2_str dw 'A', '1', 0, 0, 0
+be_function_cell_input_string times 5 dw 0
+be_function_cell_number_input times 10 dw 0
+be_function_cell_input_line dd 0
+be_function_cell_input_column dd 0
  
 table_editor: 
  call be_draw_table
@@ -74,6 +101,12 @@ table_editor:
   
   cmp byte [key_code], KEY_DELETE
   je .key_delete
+  
+  cmp byte [key_code], KEY_F11
+  je .function_dialog
+  
+  cmp byte [key_code], KEY_F12
+  je .recalculate_functions
   
   cmp word [key_unicode], 0
   jne .draw_char
@@ -366,6 +399,8 @@ table_editor:
   add esi, eax
   cmp word [esi], 0
   je .key_right_move_cell
+  cmp word [esi], 0xFFFF ;function
+  je .key_right_move_cell
   inc dword [be_cursor_offset]
   call be_redraw_input
   REDRAW_LINES_SCREEN 21, 13
@@ -459,6 +494,8 @@ table_editor:
  .key_delete:
   call be_selected_cell_pointer
   add esi, 8
+  cmp word [esi], 0xFFFF ;function
+  je .be_halt
   mov eax, dword [be_cursor_offset]
   shl eax, 1 ;mul 2
   add esi, eax
@@ -474,10 +511,726 @@ table_editor:
   call be_redraw_cell
  jmp .be_halt
  
+ .function_dialog:
+  ;load actual cell function
+  mov dword [be_function_list_pointer], 0
+  call be_selected_cell_pointer
+  cmp word [esi+8], 0xFFFF
+  jne .function_if_cell_with_function
+   mov ax, word [esi+10]
+   and ax, 0xF
+   mov word [be_function_list_pointer], ax
+   
+   ;load values from function
+   cmp ax, 1
+   je .function_with_cell_area
+   cmp ax, 2
+   je .function_with_cell_area
+   cmp ax, 3
+   je .function_with_cell_area
+   cmp ax, 4
+   je .function_with_cell_area
+   cmp ax, 5
+   je .function_with_cell_area
+   jmp .function_if_cell_area
+   .function_with_cell_area
+    mov bx, word [esi+12]
+    mov word [be_function_c1_line], bx
+    mov bx, word [esi+14]
+    mov word [be_function_c1_column], bx
+    mov bx, word [esi+16]
+    mov word [be_function_c2_line], bx
+    mov bx, word [esi+18]
+    mov word [be_function_c2_column], bx
+   .function_if_cell_area:
+   
+   cmp ax, 2
+   je .function_with_cell_rule
+   cmp ax, 4
+   je .function_with_cell_rule
+   jmp .function_if_cell_rule
+   .function_with_cell_rule:
+    mov bx, word [esi+20]
+    mov word [be_function_rule], bx
+    mov ebx, dword [esi+22]
+    mov dword [be_function_rule_number], ebx
+   .function_if_cell_rule:
+   
+   cmp ax, 5
+   jne .function_if_average
+    mov bx, word [esi+20]
+    mov word [be_function_num_after_comma], bx
+   .function_if_average:
+  .function_if_cell_with_function:
+ 
+ .function: 
+  ;draw background
+  mov dword [message_window_length], 404
+  mov dword [message_window_heigth], 204
+  call show_empty_message_window
+  
+  ;draw list
+  mov eax, dword [screen_y_center]
+  sub eax, 100
+  mov dword [cursor_line], eax
+  push eax
+  mov eax, dword [screen_x_center]
+  sub eax, 200
+  mov dword [cursor_column], eax
+  push eax
+  mov dword [square_length], 200
+  mov dword [square_heigth], 201
+  mov dword [color], WHITE
+  call draw_square
+  
+  mov eax, dword [be_function_list_pointer]
+  mov ebx, 10
+  mul ebx
+  add eax, dword [screen_y_center]
+  sub eax, 100
+  mov dword [cursor_line], eax
+  mov eax, dword [screen_x_center]
+  sub eax, 200
+  mov dword [cursor_column], eax
+  mov dword [square_length], 200
+  mov dword [square_heigth], 10
+  mov dword [color], 0xFF0000
+  call draw_square
+  
+  mov dword [color], BLACK
+  pop ebx
+  pop eax
+  inc eax
+  push eax
+  push ebx
+  PRINT 'No function', no_func_str, eax, ebx
+  pop ebx
+  pop eax
+  
+  add eax, LINESZ
+  push eax
+  push ebx
+  PRINT 'SUM', sum_function_str, eax, ebx
+  pop ebx
+  pop eax
+  
+  add eax, LINESZ
+  push eax
+  push ebx
+  PRINT 'SUMIF', sumif_function_str, eax, ebx
+  pop ebx
+  pop eax
+  
+  add eax, LINESZ
+  push eax
+  push ebx
+  PRINT 'COUNT', count_function_str, eax, ebx
+  pop ebx
+  pop eax
+  
+  add eax, LINESZ
+  push eax
+  push ebx
+  PRINT 'COUNTIF', countif_function_str, eax, ebx
+  pop ebx
+  pop eax
+  
+  add eax, LINESZ
+  push eax
+  push ebx
+  PRINT 'AVERAGE', average_function_str, eax, ebx
+  pop ebx
+  pop eax
+  
+  mov eax, dword [screen_y_center]
+  add eax, 80
+  mov ebx, dword [screen_x_center]
+  add ebx, 10
+  PRINT '[enter] Select function', enter_select_function_str, eax, ebx
+  
+  ;draw other stuff acording to function
+  cmp dword [be_function_list_pointer], 0
+  je .function_redraw
+  
+  cmp dword [be_function_list_pointer], 1 ;SUM
+  je .function_draw_sum_count
+  cmp dword [be_function_list_pointer], 3 ;COUNT
+  je .function_draw_sum_count
+  jmp .function_if_draw_sum
+  .function_draw_sum_count:
+   mov eax, dword [screen_y_center]
+   sub eax, 90
+   mov dword [cursor_line], eax
+   mov eax, dword [screen_x_center]
+   add eax, 10
+   mov dword [cursor_column], eax
+   mov dword [color], BLACK
+   
+   mov eax, dword [be_function_c1_column]
+   add eax, 'A'
+   mov dword [char_for_print], eax
+   call print_char
+   add dword [cursor_column], COLUMNSZ
+   mov eax, dword [be_function_c1_line]
+   mov dword [var_print_value], eax
+   call print_var
+   mov dword [char_for_print], ':'
+   call print_char
+   add dword [cursor_column], COLUMNSZ
+   mov eax, dword [be_function_c2_column]
+   add eax, 'A'
+   mov dword [char_for_print], eax
+   call print_char
+   add dword [cursor_column], COLUMNSZ
+   mov eax, dword [be_function_c2_line]
+   mov dword [var_print_value], eax
+   call print_var
+   
+   mov eax, dword [screen_y_center]
+   sub eax, 80
+   mov ebx, dword [screen_x_center]
+   add ebx, 10
+   PRINT '[a] Change first cell', first_cell_str, eax, ebx
+   
+   mov eax, dword [screen_y_center]
+   sub eax, 70
+   mov ebx, dword [screen_x_center]
+   add ebx, 10
+   PRINT '[b] Change second cell', second_cell_str, eax, ebx
+  .function_if_draw_sum:
+  
+  cmp dword [be_function_list_pointer], 2 ;SUMIF
+  je .function_draw_sumif_countif
+  cmp dword [be_function_list_pointer], 4 ;COUNTIF
+  je .function_draw_sumif_countif
+  jmp .function_if_draw_sumif
+  .function_draw_sumif_countif:
+   mov eax, dword [screen_y_center]
+   sub eax, 90
+   mov dword [cursor_line], eax
+   mov eax, dword [screen_x_center]
+   add eax, 10
+   mov dword [cursor_column], eax
+   mov dword [color], BLACK
+   
+   mov eax, dword [be_function_c1_column]
+   add eax, 'A'
+   mov dword [char_for_print], eax
+   call print_char
+   add dword [cursor_column], COLUMNSZ
+   mov eax, dword [be_function_c1_line]
+   mov dword [var_print_value], eax
+   call print_var
+   mov dword [char_for_print], ':'
+   call print_char
+   add dword [cursor_column], COLUMNSZ
+   mov eax, dword [be_function_c2_column]
+   add eax, 'A'
+   mov dword [char_for_print], eax
+   call print_char
+   add dword [cursor_column], COLUMNSZ
+   mov eax, dword [be_function_c2_line]
+   mov dword [var_print_value], eax
+   call print_var
+   
+   mov eax, dword [screen_y_center]
+   sub eax, 80
+   mov ebx, dword [screen_x_center]
+   add ebx, 10
+   push eax
+   push ebx
+   PRINT 'Rule:', cell_rule_str, eax, ebx
+   mov eax, dword [be_function_rule]
+   mov dword [char_for_print], eax
+   call print_char
+   add dword [cursor_column], COLUMNSZ
+   mov eax, dword [be_function_rule_number]
+   mov dword [var_print_value], eax
+   call print_var
+   pop ebx
+   pop eax
+   
+   add eax, LINESZ
+   push eax
+   push ebx
+   PRINT '[a] Change first cell', first_cell_sumif_str, eax, ebx
+   pop ebx
+   pop eax
+   
+   add eax, LINESZ
+   push eax
+   push ebx
+   PRINT '[b] Change second cell', second_cell_sumif_str, eax, ebx
+   pop ebx
+   pop eax
+   
+   add eax, LINESZ
+   push eax
+   push ebx
+   PRINT '[c] Change rule', cell_rule_sumif_str, eax, ebx
+   pop ebx
+   pop eax
+   
+   add eax, LINESZ
+   push eax
+   push ebx
+   PRINT '[d] Change rule number', cell_rule_number_sumif_str, eax, ebx
+   pop ebx
+   pop eax
+  .function_if_draw_sumif:
+  
+  cmp dword [be_function_list_pointer], 5 ;AVERAGE
+  jne .function_if_draw_average
+   mov eax, dword [screen_y_center]
+   sub eax, 90
+   mov dword [cursor_line], eax
+   mov eax, dword [screen_x_center]
+   add eax, 10
+   mov dword [cursor_column], eax
+   mov dword [color], BLACK
+   
+   mov eax, dword [be_function_c1_column]
+   add eax, 'A'
+   mov dword [char_for_print], eax
+   call print_char
+   add dword [cursor_column], COLUMNSZ
+   mov eax, dword [be_function_c1_line]
+   mov dword [var_print_value], eax
+   call print_var
+   mov dword [char_for_print], ':'
+   call print_char
+   add dword [cursor_column], COLUMNSZ
+   mov eax, dword [be_function_c2_column]
+   add eax, 'A'
+   mov dword [char_for_print], eax
+   call print_char
+   add dword [cursor_column], COLUMNSZ
+   mov eax, dword [be_function_c2_line]
+   mov dword [var_print_value], eax
+   call print_var
+   
+   mov eax, dword [screen_y_center]
+   sub eax, 80
+   mov ebx, dword [screen_x_center]
+   add ebx, 10
+   push eax
+   push ebx
+   PRINT 'Numbers after comma: ', numbers_after_comma_str, eax, ebx
+   mov eax, dword [be_function_num_after_comma]
+   mov dword [var_print_value], eax
+   call print_var
+   pop ebx
+   pop eax
+   
+   add eax, LINESZ
+   push eax
+   push ebx
+   PRINT '[a] Change first cell', first_cell_average_str, eax, ebx
+   pop ebx
+   pop eax
+   
+   add eax, LINESZ
+   push eax
+   push ebx
+   PRINT '[b] Change second cell', second_cell_average_str, eax, ebx
+   pop ebx
+   pop eax
+   
+   add eax, LINESZ
+   push eax
+   push ebx
+   PRINT '[c] Change numbers', num_after_comma_average_str, eax, ebx
+   pop ebx
+   pop eax
+  .function_if_draw_average:
+  
+  .function_redraw:
+  call redraw_screen
+  
+  .function_halt:
+   call wait_for_keyboard
+   
+   cmp byte [key_code], KEY_ESC
+   je table_editor
+   
+   cmp byte [key_code], KEY_UP
+   jne .function_if_key_up
+    cmp dword [be_function_list_pointer], 0
+    je .function_halt
+    
+    dec dword [be_function_list_pointer]
+    
+    jmp .function
+   .function_if_key_up:
+   
+   cmp byte [key_code], KEY_DOWN
+   jne .function_if_key_down
+    cmp dword [be_function_list_pointer], 5
+    je .function_halt
+    
+    inc dword [be_function_list_pointer]
+    
+    jmp .function
+   .function_if_key_down:
+   
+   ;these keys are for all functions with area
+   cmp dword [be_function_list_pointer], 1
+   jb .if_function_sum
+   cmp dword [be_function_list_pointer], 5
+   ja .if_function_sum
+    cmp byte [key_code], KEY_A
+    jne .if_func_sum_key_a
+     mov esi, be_function_c1_str
+     mov edi, be_function_cell_input_string
+     mov ecx, 5
+     rep movsw
+    
+     call be_function_input_cell
+     cmp byte [key_code], KEY_ESC
+     je .function
+     
+     mov eax, dword [be_function_cell_input_line]
+     mov dword [be_function_c1_line], eax
+     mov eax, dword [be_function_cell_input_column]
+     mov dword [be_function_c1_column], eax
+     
+     mov esi, be_function_cell_input_string
+     mov edi, be_function_c1_str
+     mov ecx, 5
+     rep movsw
+     jmp .function
+    .if_func_sum_key_a:
+    
+    cmp byte [key_code], KEY_B
+    jne .if_func_sum_key_b
+     mov esi, be_function_c2_str
+     mov edi, be_function_cell_input_string
+     mov ecx, 5
+     rep movsw
+    
+     call be_function_input_cell
+     cmp byte [key_code], KEY_ESC
+     je .function
+     
+     mov eax, dword [be_function_cell_input_line]
+     mov dword [be_function_c2_line], eax
+     mov eax, dword [be_function_cell_input_column]
+     mov dword [be_function_c2_column], eax
+     
+     mov esi, be_function_cell_input_string
+     mov edi, be_function_c2_str
+     mov ecx, 5
+     rep movsw
+     jmp .function
+    .if_func_sum_key_b:
+   .if_function_sum:
+   
+   cmp dword [be_function_list_pointer], 2
+   je .if_function_sumif_countif_keyboard
+   cmp dword [be_function_list_pointer], 4
+   je .if_function_sumif_countif_keyboard
+   jmp .if_not_function_sumif_countif_keyboard
+   .if_function_sumif_countif_keyboard:
+    cmp byte [key_code], KEY_C
+    jne .if_func_sumif_key_c
+     .text_input_for_rule_sumif:
+     mov dword [be_function_cell_input_string], 0
+     
+     mov eax, dword [screen_y_center]
+     sub eax, 93
+     mov dword [cursor_line], eax
+     mov eax, dword [screen_x_center]
+     add eax, 180
+     mov dword [cursor_column], eax
+     mov dword [text_input_pointer], be_function_cell_input_string
+     mov dword [text_input_length], 1
+     call text_input
+     cmp byte [key_code], KEY_ESC
+     je .function
+     cmp word [be_function_cell_input_string], '='
+     je .change_rule_sumif
+     cmp word [be_function_cell_input_string], '<'
+     je .change_rule_sumif
+     cmp word [be_function_cell_input_string], '>'
+     je .change_rule_sumif
+     jmp .text_input_for_rule_sumif
+     .change_rule_sumif:
+     mov eax, 0
+     mov ax, word [be_function_cell_input_string]
+     mov dword [be_function_rule], eax
+     jmp .function
+    .if_func_sumif_key_c:
+    
+    cmp byte [key_code], KEY_D
+    jne .if_func_sumif_key_d
+     mov edi, be_function_cell_number_input
+     mov eax, 0
+     mov ecx, 10
+     rep stosw
+    
+     mov eax, dword [screen_y_center]
+     sub eax, 93
+     mov dword [cursor_line], eax
+     mov eax, dword [screen_x_center]
+     add eax, 120
+     mov dword [cursor_column], eax
+     mov dword [text_input_pointer], be_function_cell_number_input
+     mov dword [text_input_length], 9
+     call number_input
+     mov eax, dword [number_input_return]
+     mov dword [be_function_rule_number], eax
+     jmp .function
+    .if_func_sumif_key_d:
+   .if_not_function_sumif_countif_keyboard
+   
+   cmp dword [be_function_list_pointer], 5
+   jne .if_function_average_keyboard
+    cmp byte [key_code], KEY_C
+    jne .if_func_average_key_c
+     mov dword [be_function_cell_number_input], 0
+     
+     mov eax, dword [screen_y_center]
+     sub eax, 93
+     mov dword [cursor_line], eax
+     mov eax, dword [screen_x_center]
+     add eax, 180
+     mov dword [cursor_column], eax
+     mov dword [text_input_pointer], be_function_cell_number_input
+     mov dword [text_input_length], 1
+     call number_input
+     cmp byte [key_code], KEY_ESC
+     je .function
+     mov eax, dword [number_input_return]
+     mov dword [be_function_num_after_comma], eax
+     jmp .function
+    .if_func_average_key_c:
+   .if_function_average_keyboard:
+   
+   cmp byte [key_code], KEY_ENTER
+   jne .function_if_key_enter
+    cmp dword [be_function_list_pointer], 0 ;no function - delete everything from cell
+    jne .function_if_no_function
+     call be_selected_cell_pointer
+     
+     mov edi, esi
+     add edi, 8
+     mov eax, 0
+     mov ecx, 200
+     rep stosb
+     jmp table_editor
+    .function_if_no_function:
+    
+    mov edi, be_function_string
+    mov eax, 0
+    mov ecx, 100
+    rep stosw
+    
+    cmp dword [be_function_list_pointer], 1 ;SUM function
+    jne .function_if_sum_function
+     ;test if cell range is valid
+     mov ax, word [be_function_c1_line]
+     cmp ax, word [be_function_c2_line]
+     ja .invalid_cell_range
+     mov ax, word [be_function_c1_column]
+     cmp ax, word [be_function_c2_column]
+     ja .invalid_cell_range
+
+     mov word [be_function_string], 0xFFFF
+     mov word [be_function_string+2], 1
+     mov eax, dword [be_function_c1_line]
+     mov word [be_function_string+4], ax
+     mov eax, dword [be_function_c1_column]
+     mov word [be_function_string+6], ax
+     mov eax, dword [be_function_c2_line]
+     mov word [be_function_string+8], ax
+     mov eax, dword [be_function_c2_column]
+     mov word [be_function_string+10], ax
+    .function_if_sum_function:
+    
+    cmp dword [be_function_list_pointer], 2 ;SUMIF function
+    jne .function_if_sumif_function
+     ;test if cell range is valid
+     mov ax, word [be_function_c1_line]
+     cmp ax, word [be_function_c2_line]
+     ja .invalid_cell_range
+     mov ax, word [be_function_c1_column]
+     cmp ax, word [be_function_c2_column]
+     ja .invalid_cell_range
+
+     mov word [be_function_string], 0xFFFF
+     mov word [be_function_string+2], 2
+     mov eax, dword [be_function_c1_line]
+     mov word [be_function_string+4], ax
+     mov eax, dword [be_function_c1_column]
+     mov word [be_function_string+6], ax
+     mov eax, dword [be_function_c2_line]
+     mov word [be_function_string+8], ax
+     mov eax, dword [be_function_c2_column]
+     mov word [be_function_string+10], ax
+     mov eax, dword [be_function_rule]
+     mov word [be_function_string+12], ax
+     mov eax, dword [be_function_rule_number]
+     mov dword [be_function_string+14], eax
+    .function_if_sumif_function:
+    
+    cmp dword [be_function_list_pointer], 3 ;COUNT function
+    jne .function_if_count_function
+     ;test if cell range is valid
+     mov ax, word [be_function_c1_line]
+     cmp ax, word [be_function_c2_line]
+     ja .invalid_cell_range
+     mov ax, word [be_function_c1_column]
+     cmp ax, word [be_function_c2_column]
+     ja .invalid_cell_range
+
+     mov word [be_function_string], 0xFFFF
+     mov word [be_function_string+2], 3
+     mov eax, dword [be_function_c1_line]
+     mov word [be_function_string+4], ax
+     mov eax, dword [be_function_c1_column]
+     mov word [be_function_string+6], ax
+     mov eax, dword [be_function_c2_line]
+     mov word [be_function_string+8], ax
+     mov eax, dword [be_function_c2_column]
+     mov word [be_function_string+10], ax
+    .function_if_count_function:
+    
+    cmp dword [be_function_list_pointer], 4 ;COUNTIF function
+    jne .function_if_countif_function
+     ;test if cell range is valid
+     mov ax, word [be_function_c1_line]
+     cmp ax, word [be_function_c2_line]
+     ja .invalid_cell_range
+     mov ax, word [be_function_c1_column]
+     cmp ax, word [be_function_c2_column]
+     ja .invalid_cell_range
+
+     mov word [be_function_string], 0xFFFF
+     mov word [be_function_string+2], 4
+     mov eax, dword [be_function_c1_line]
+     mov word [be_function_string+4], ax
+     mov eax, dword [be_function_c1_column]
+     mov word [be_function_string+6], ax
+     mov eax, dword [be_function_c2_line]
+     mov word [be_function_string+8], ax
+     mov eax, dword [be_function_c2_column]
+     mov word [be_function_string+10], ax
+     mov eax, dword [be_function_rule]
+     mov word [be_function_string+12], ax
+     mov eax, dword [be_function_rule_number]
+     mov dword [be_function_string+14], eax
+    .function_if_countif_function:
+    
+    cmp dword [be_function_list_pointer], 5 ;AVERAGE function
+    jne .function_if_average_function
+     ;test if cell range is valid
+     mov ax, word [be_function_c1_line]
+     cmp ax, word [be_function_c2_line]
+     ja .invalid_cell_range
+     mov ax, word [be_function_c1_column]
+     cmp ax, word [be_function_c2_column]
+     ja .invalid_cell_range
+
+     mov word [be_function_string], 0xFFFF
+     mov word [be_function_string+2], 5
+     mov eax, dword [be_function_c1_line]
+     mov word [be_function_string+4], ax
+     mov eax, dword [be_function_c1_column]
+     mov word [be_function_string+6], ax
+     mov eax, dword [be_function_c2_line]
+     mov word [be_function_string+8], ax
+     mov eax, dword [be_function_c2_column]
+     mov word [be_function_string+10], ax
+     mov eax, dword [be_function_num_after_comma]
+     mov word [be_function_string+12], ax
+    .function_if_average_function:
+    
+    ;copy function and recalculate its value
+    call be_selected_cell_pointer
+    mov edi, esi
+    add edi, 8
+    push edi
+    mov eax, 0
+    mov ecx, 200 ;clear cell content
+    rep stosb
+    pop edi
+    mov esi, be_function_string
+    mov ecx, 100
+    rep movsw ;copy function
+    
+    push dword [be_selected_cell_line]
+    push dword [be_selected_cell_column]
+    call be_recalculate_cell
+    pop dword [be_selected_cell_column]
+    pop dword [be_selected_cell_line]
+    
+    jmp table_editor
+   .function_if_key_enter:
+  jmp .function_halt
+  
+  .invalid_cell_range:
+   mov dword [message_window_length], 250
+   mov dword [message_window_heigth], COLUMNSZ*3+2
+   call show_empty_message_window
+   mov esi, be_message_invalid_cell_range
+   mov eax, dword [screen_y_center]
+   sub eax, 4
+   mov dword [cursor_line], eax
+   call print_to_message_window
+   call redraw_screen
+   WAIT 1000
+  jmp .function
+ 
+ .recalculate_functions:
+  mov dword [message_window_length], 266
+  mov dword [message_window_heigth], COLUMNSZ*3+2
+  call show_empty_message_window
+  mov esi, be_message_recalculating
+  mov eax, dword [screen_y_center]
+  sub eax, 4
+  mov dword [cursor_line], eax
+  call print_to_message_window
+  call redraw_screen
+ 
+  push dword [be_selected_cell_line]
+  push dword [be_selected_cell_column]
+  
+  mov dword [be_selected_cell_line], 1
+  mov dword [be_selected_cell_column], 0
+  call be_selected_cell_pointer
+  mov ecx, 999
+  .recalculate_line:
+  push ecx
+   mov dword [be_selected_cell_column], 0
+  
+   mov ecx, 26
+   .recalculate_column:
+   push ecx
+    cmp word [esi+8], 0xFFFF
+    jne .if_cell_function
+     push esi
+     call be_recalculate_cell
+     pop esi
+    .if_cell_function
+    add esi, 208
+    inc dword [be_selected_cell_column]
+   pop ecx
+   loop .recalculate_column
+   
+   inc dword [be_selected_cell_line]
+  pop ecx
+  loop .recalculate_line
+  
+  pop dword [be_selected_cell_column]
+  pop dword [be_selected_cell_line]
+ jmp table_editor
+ 
  .draw_char:
   cmp byte [be_cursor_offset], 40
   je .be_halt
   call be_selected_cell_pointer
+  cmp word [esi+8], 0xFFFF ;function
+  je .be_halt
   
   ;move all chars in cell
   push esi
@@ -885,902 +1638,6 @@ table_editor:
   or byte [esi], 0xF0
  jmp table_editor
 
-be_draw_table:
- DRAW_WINDOW table_editor_up_str, table_editor_down_str, 0x00FF00, WHITE
- mov dword [size_of_text], 1
- 
- mov eax, dword [screen_x]
- DRAW_SQUARE 20, 0, eax, 15, 0xAAAAAA
- mov eax, dword [screen_y]
- sub eax, 40
- DRAW_SQUARE 35, 0, 27, eax, 0xFF8000
- mov eax, dword [screen_x]
- DRAW_SQUARE 35, 0, eax, 13, 0xFF8000
- 
- ;draw table lines
- mov eax, dword [screen_x]
- DRAW_LINE 35, 0, eax, BLACK
- mov eax, dword [screen_x]
- DRAW_LINE 48, 0, eax, BLACK
- mov dword [cursor_line], 48
- mov esi, be_lines_length
- add esi, dword [be_first_show_line]
- dec esi
- .draw_lines:
-  push esi
-  mov dword [cursor_column], 0
-  mov dword [color], BLACK
-  mov dword [line_length], 27
-  call draw_line
-  mov dword [cursor_column], 27
-  mov dword [color], 0xBBBBBB
-  SCREEN_X_SUB eax, 27
-  mov dword [line_length], eax
-  call draw_line
-  pop esi
-  
-  mov eax, 0
-  mov al, byte [esi]
-  mov ebx, 13
-  mul ebx
-  add dword [cursor_line], eax
-  inc esi
-  
-  cmp esi, be_lines_length+1000
-  je .table_lines_erase_place_after
-  
-  mov eax, dword [cursor_line]
-  cmp eax, dword [screen_y]
-  ja .table_lines_drawed
- jmp .draw_lines
- 
- ;erase place after last line
- .table_lines_erase_place_after:
-  inc dword [cursor_line]
-  mov dword [cursor_column], 0
-  mov dword [color], WHITE
-  mov eax, dword [screen_x]
-  mov dword [square_length], eax
-  mov eax, dword [screen_y]
-  cmp eax, dword [cursor_line]
-  jb .table_lines_drawed
-  je .table_lines_drawed
-  sub eax, dword [cursor_line]
-  call draw_square 
- .table_lines_drawed:
- 
- ;draw table columns
- mov dword [cursor_line], 35
- mov dword [cursor_column], 0
- mov dword [color], BLACK
- mov eax, dword [screen_y]
- sub eax, 40
- mov dword [column_heigth], eax
- call draw_column
- add dword [cursor_column], 27
- call draw_column
- mov dword [color], 0xBBBBBB
- mov edx, 27 ;drawed columns
- mov esi, be_columns_length
- add esi, dword [be_first_show_column]
- mov ecx, 26
- sub ecx, dword [be_first_show_column]
- .draw_columns:
-  mov eax, 0
-  mov al, byte [esi]
-  shl eax, 3 ;mul 8
-  add eax, 3 ;number of columns to next drawed column
-  mov ebx, edx
-  add ebx, eax
-  cmp ebx, dword [screen_x]
-  ja .columns_drawed
-  
-  add dword [cursor_column], eax
-  add edx, eax
-  
-  push esi
-  push edx
-  push ecx
-  mov dword [cursor_line], 35
-  mov dword [column_heigth], 13
-  mov dword [color], BLACK
-  call draw_column
-  mov dword [cursor_line], 49
-  mov eax, dword [screen_y]
-  sub eax, 44
-  mov dword [column_heigth], eax
-  mov dword [color], 0xBBBBBB
-  call draw_column
-  pop ecx
-  pop edx
-  pop esi
-  
-  inc esi
- loop .draw_columns
- 
- ;all columns are on screen, so this will erase place after them
- mov eax, 0
- mov esi, be_columns_length
- add esi, dword [be_first_show_column]
- mov ecx, 26
- sub ecx, dword [be_first_show_column]
- .count_columns:
-  mov ebx, 0
-  mov bl, byte [esi]
-  shl ebx, 3 ;mul 8
-  add ebx, 3
-  add eax, ebx
-  inc esi
- loop .count_columns
- add eax, 28
- mov dword [cursor_column], eax
- mov dword [cursor_line], 35
- mov ebx, dword [screen_x]
- sub ebx, eax
- mov dword [square_length], ebx
- SCREEN_Y_SUB eax, 40
- mov dword [square_heigth], eax
- mov dword [color], WHITE
- call draw_square
- 
- .columns_drawed:
- 
- ;print numbers of lines
- mov eax, dword [be_first_show_line]
- mov dword [var_print_value], eax
- mov dword [cursor_line], 48
- mov dword [color], BLACK
- mov esi, be_lines_length
- add esi, dword [be_first_show_line]
- dec esi
- .draw_lines_numbers:
-  mov eax, 0
-  mov al, byte [esi]
-  mov ebx, 13
-  mul ebx
-  shr eax, 1 ;div 2
-  sub eax, 2
-  add dword [cursor_line], eax ;middle of line
- 
-  mov dword [cursor_column], 11
-  cmp dword [var_print_value], 10
-  jb .print_line_number
-  mov dword [cursor_column], 6
-  cmp dword [var_print_value], 100
-  jb .print_line_number
-  mov dword [cursor_column], 2
-  .print_line_number:
-  push eax
-  push esi
-  call print_var
-  pop esi
-  pop eax
-  sub dword [cursor_line], eax
-  
-  mov eax, 0
-  mov al, byte [esi]
-  mov ebx, 13
-  mul ebx
-  add dword [cursor_line], eax
-  inc esi
-  
-  cmp esi, be_lines_length+1000
-  je .table_lines_numbers_drawed
-  
-  mov eax, dword [cursor_line]
-  cmp eax, dword [screen_y]
-  ja .table_lines_numbers_drawed
-  inc dword [var_print_value]
- jmp .draw_lines_numbers
- .table_lines_numbers_drawed:
- 
- ;print chars of columns
- mov eax, dword [be_first_show_column]
- add eax, 'A'
- mov dword [char_for_print], eax
- mov dword [cursor_line], 39
- mov dword [cursor_column], 27
- mov dword [color], BLACK
- mov edx, 27 ;drawed columns
- mov esi, be_columns_length
- add esi, dword [be_first_show_column]
- mov ecx, 26
- sub ecx, dword [be_first_show_column]
- .draw_columns_chars:
-  mov eax, 0
-  mov al, byte [esi]
-  shl eax, 3 ;mul 8
-  add eax, 3 ;number of columns to next drawed column
-  mov edi, eax
-  mov ebx, edx
-  add ebx, eax
-  
-  add dword [cursor_column], eax
-  add edx, eax
-  
-  push ebx
-  push esi
-  push edx
-  push ecx
-  push dword [cursor_column]
-  shr edi, 1 ;div 2
-  add edi, 4
-  sub dword [cursor_column], edi
-  call print_char
-  pop dword [cursor_column]
-  pop ecx
-  pop edx
-  pop esi
-  pop ebx
-  
-  inc esi
-  inc dword [char_for_print]
-  
-  cmp ebx, dword [screen_x]
-  ja .columns_chars_drawed
- loop .draw_columns_chars
- .columns_chars_drawed:
- 
- ;PRINT CELLS CONTENT
- 
- ; byte 0: bit 0 - bold
- ;         bit 1 - italic
- ;         bit 2:3 - aligment 0=left 1=middle 2=right
- ;         bit 4 - right border
- ;         bit 5 - left border
- ;         bit 6 - down border
- ;         bit 7 - up border
- ; byte 1: bit 0:1 - aligment 0=up 1=middle 2=right
- ; byte 2-5: color of byckground
- ; byte 6-8: color of text
- ; byte 9-208: cell text in unicode
- 
- mov ebp, dword [table_editor_file_pointer]
- mov eax, dword [be_first_show_line]
- dec eax
- mov ebx, 208*26 ;bytes per line
- mul ebx
- add ebp, eax
- mov eax, dword [be_first_show_column]
- mov ebx, 208
- mul ebx
- add ebp, eax ;pointer to first showed cell content
- mov dword [cursor_line], 20+15+14
- mov esi, be_lines_length
- add esi, dword [be_first_show_line]
- dec esi ;pointer to length of cell
- mov edi, be_lines_length
- add edi, dword [be_first_show_line]
- dec edi ;pointer to heigth of cell
- .draw_cells_lines_cycle:
- push esi
-  push ebp
-  
-  mov esi, be_columns_length
-  add esi, dword [be_first_show_column] ;pointer to length of cell
-  mov eax, 27
-  .draw_cells_columns_cycle:
-   mov dword [cursor_column], eax
-   inc dword [cursor_column]
-   
-   mov ebx, 0
-   mov bl, byte [esi]
-   shl ebx, 3 ;mul 8
-   add ebx, 3
-   add ebx, eax
-   
-   ;here we have cursor_line and cursor_column on start of cell and ebp points to it's content
-   pusha
-    ;draw background
-    mov eax, dword [ebp+2]
-    and eax, 0x00FFFFFF
-    cmp eax, WHITE
-    je .skip_drawing_background
-    mov dword [color], eax
-    mov eax, 0
-    mov al, byte [esi]
-    shl eax, 3 ;mul 8
-    add eax, 3
-    mov dword [square_length], eax
-    dec dword [square_length]
-    mov eax, 0
-    mov al, byte [edi]
-    mov ebx, 13
-    mul ebx
-    dec eax
-    mov dword [square_heigth], eax
-    call draw_square
-    .skip_drawing_background:
-    
-    ;draw border
-    dec dword [cursor_line]
-    dec dword [cursor_column]
-    mov al, byte [ebp+0]
-    test al, 0x80 ;up border
-    jz .if_up_border
-     mov eax, 0
-     mov al, byte [esi]
-     shl eax, 3 ;mul 8
-     add eax, 3
-     mov dword [line_length], eax
-     mov dword [color], BLACK
-     push edi
-     call draw_line
-     pop edi
-    .if_up_border:
-    
-    mov al, byte [ebp+0]
-    test al, 0x40 ;down border
-    jz .if_down_border
-     mov eax, 0
-     mov al, byte [edi]
-     mov ebx, 13
-     mul ebx
-     add dword [cursor_line], eax
-     mov eax, 0
-     mov al, byte [esi]
-     shl eax, 3 ;mul 8
-     add eax, 3
-     mov dword [line_length], eax
-     mov dword [color], BLACK
-     push edi
-     call draw_line
-     pop edi
-     
-     mov eax, 0
-     mov al, byte [edi]
-     mov ebx, 13
-     mul ebx
-     sub dword [cursor_line], eax
-    .if_down_border:
-    
-    mov al, byte [ebp+0]
-    test al, 0x20 ;left border
-    jz .if_left_border
-     mov eax, 0
-     mov al, byte [edi]
-     mov ebx, 13
-     mul ebx
-     inc eax
-     mov dword [column_heigth], eax
-     mov dword [color], BLACK
-     call draw_column
-    .if_left_border:
-    
-    mov al, byte [ebp+0]
-    test al, 0x10 ;right border
-    jz .if_right_border
-     push dword [cursor_column]
-     mov eax, 0
-     mov al, byte [esi]
-     shl eax, 3 ;mul 8
-     add eax, 3
-     add dword [cursor_column], eax
-     mov eax, 0
-     mov al, byte [edi]
-     mov ebx, 13
-     mul ebx
-     inc eax
-     mov dword [column_heigth], eax
-     mov dword [color], BLACK
-     call draw_column
-     pop dword [cursor_column]
-    .if_right_border:
-    inc dword [cursor_line]
-    inc dword [cursor_column]
-    
-    ;set text setting
-    mov eax, dword [ebp+5]
-    and eax, 0x00FFFFFF
-    mov dword [color], eax
-    mov dword [type_of_text], PLAIN
-    test byte [ebp], 0x1
-    jz .if_bold_text
-     mov dword [type_of_text], BOLD
-    .if_bold_text:
-    
-    ;set text aligment
-    push dword [cursor_line]
-    push dword [cursor_column]
-    
-    add dword [cursor_line], 2
-    
-    mov al, byte [ebp+1]
-    and al, 0x03
-    cmp al, 0
-    je .if_aligment_line_up
-     cmp byte [edi], 1
-     je .if_aligment_line_up
-     
-     cmp al, 0x1
-     jne .if_aligment_line_middle
-      mov eax, 0
-      mov al, byte [edi]
-      mov ebx, 13
-      mul ebx
-      shr eax, 1
-      sub eax, 6
-      add dword [cursor_line], eax
-      jmp .if_aligment_line_up
-     .if_aligment_line_middle:
-     
-     cmp al, 0x2
-     jne .if_aligment_line_down
-      mov eax, 0
-      mov al, byte [edi]
-      mov ebx, 13
-      mul ebx
-      sub eax, 13
-      add dword [cursor_line], eax
-      jmp .if_aligment_line_up
-     .if_aligment_line_down:
-    .if_aligment_line_up:
-    
-    mov al, byte [ebp+0]
-    and al, 0x0C
-    cmp al, 0x00
-    jne .if_aligment_left
-     inc dword [cursor_column]
-     jmp .print_cell_string
-    .if_aligment_left:
-    
-    cmp al, 0x04
-    jne .if_aligment_middle
-     mov edi, ebp
-     add edi, 8
-     mov eax, 0 ;number of chars in string
-     mov bl, byte [esi] ;number of showed chars in column
-     .aligment_middle_count_chars:
-      cmp word [edi], 0
-      je .aligment_middle_calculate
-      cmp al, bl
-      je .aligment_middle_calculate
-      inc eax
-      add edi, 2
-     jmp .aligment_middle_count_chars
-     
-     .aligment_middle_calculate:
-     shl eax, 2 ;mul 4 ;this is half of length of string
-     mov ebx, 0
-     mov bl, byte [esi]
-     shl ebx, 3 ;mul 8
-     add ebx, 3 ;this is length of column
-     shr ebx, 1 ;div 2 
-     sub ebx, eax ;this is first draw column for aligmented string
-     add dword [cursor_column], ebx
-     jmp .print_cell_string
-    .if_aligment_middle:
-    
-    cmp al, 0x08
-    jne .if_aligment_right
-     mov edi, ebp
-     add edi, 8
-     mov eax, 0 ;number of chars in string
-     mov bl, byte [esi] ;number of showed chars in column
-     .aligment_right_count_chars:
-      cmp word [edi], 0
-      je .aligment_right_calculate
-      cmp al, bl
-      je .aligment_right_calculate
-      inc eax
-      add edi, 2
-     jmp .aligment_right_count_chars
-     
-     .aligment_right_calculate:
-     shl eax, 3 ;mul 8 
-     inc eax ;this is length of string
-     mov ebx, 0
-     mov bl, byte [esi]
-     shl ebx, 3 ;mul 8
-     add ebx, 3 ;this is length of column
-     sub ebx, eax ;this is first draw column for aligmented string
-     add dword [cursor_column], ebx
-     jmp .print_cell_string
-    .if_aligment_right:
-    
-    ;print string  
-    .print_cell_string:  
-    mov eax, ebp
-    add eax, 8 ;text offset
-    mov ecx, 0
-    mov cl, byte [esi] ;number of showed chars
-    test byte [ebp], 0x1
-    jz .if_bold_text_2
-     dec cl
-    .if_bold_text_2:
-    .print_char_from_cell:
-     mov ebx, 0
-     mov bx, word [eax]
-     cmp bx, 0
-     je .end_of_printing_cell
-     mov dword [char_for_print], ebx
-     push ecx
-     push eax
-     call print_char
-     pop eax
-     pop ecx
-     add eax, 2
-     add dword [cursor_column], COLUMNSZ
-    loop .print_char_from_cell
-    .end_of_printing_cell:
-    
-    pop dword [cursor_column]
-    pop dword [cursor_line]
-   popa
-   
-   cmp ebx, dword [screen_x]
-   ja .draw_cells_next_line
-   
-   mov eax, ebx
-   inc esi
-   add ebp, 208
-  jmp .draw_cells_columns_cycle
-  
-  .draw_cells_next_line:
-  pop ebp
-  add ebp, 208*26 ;bytes per line
-  inc edi
- pop esi
- mov eax, 0
- mov al, byte [esi]
- mov ebx, 13
- mul ebx
- add dword [cursor_line], eax
- inc esi
- 
- cmp esi, be_lines_length+1000
- je .cell_content_drawed
- 
- mov eax, dword [cursor_line]
- cmp eax, dword [screen_y]
- jb .draw_cells_lines_cycle
- .cell_content_drawed:
-
- ;highlight selected cell
- mov esi, be_lines_length
- add esi, dword [be_first_show_line]
- dec esi
- mov dword [cursor_line], 48
- mov ecx, dword [be_first_show_line]
- .find_selected_cell_line:
-  cmp ecx, dword [be_selected_cell_line]
-  je .selected_cell_line_founded
-  
-  mov eax, 0
-  mov al, byte [esi]
-  mov ebx, 13
-  mul ebx
-  add dword [cursor_line], eax
-  inc ecx
-  inc esi
- jmp .find_selected_cell_line 
- .selected_cell_line_founded:
- mov eax, 0
- mov al, byte [esi]
- mov ebx, 13
- mul ebx
- mov dword [square_heigth], eax
- 
- mov eax, 27 ;column
- mov ebx, dword [be_first_show_column] ;skiped columns
- mov esi, be_columns_length
- add esi, dword [be_first_show_column]
- mov ecx, 26
- sub ecx, dword [be_first_show_column]
- .find_selected_cell_column:
-  cmp ebx, dword [be_selected_cell_column]
-  je .selected_cell_column_founded
-  
-  mov ecx, 0
-  mov cl, byte [esi]
-  shl ecx, 3 ;mul 8
-  add ecx, 3
-  add eax, ecx
-  inc ebx
-  inc esi
- loop .find_selected_cell_column
- 
- .selected_cell_column_founded:
- mov dword [cursor_column], eax
- mov esi, be_columns_length
- add esi, dword [be_selected_cell_column]
- mov eax, 0
- mov al, byte [esi]
- shl eax, 3 ;mul 8
- add eax, 3
- mov dword [square_length], eax
- mov dword [color], BLACK
- call draw_empty_square
- dec dword [cursor_line]
- dec dword [cursor_column]
- add dword [square_length], 2
- add dword [square_heigth], 2
- call draw_empty_square
- 
- ;DRAW TOOLS
- call be_redraw_input
- 
- call be_selected_cell_pointer
- push esi
- push esi
- push esi
- push esi
- 
- ;full border
- mov al, byte [esi]
- and al, 0xF0
- cmp al, 0xF0
- jne .if_show_full_border
-  SCREEN_X_SUB eax, 1+13
-  DRAW_SQUARE 21, eax, 12, 12, 0x00FF00
- .if_show_full_border:
- SCREEN_X_SUB eax, 1+13
- DRAW_EMPTY_SQUARE 21, eax, 12, 12, BLACK
- SCREEN_X_SUB eax, 1+13-2
- DRAW_EMPTY_SQUARE 23, eax, 8, 8, BLACK
- 
- ;down border
- pop esi
- test byte [esi], 0x40
- jz .if_show_down_border
-  SCREEN_X_SUB eax, 2+(13*2)
-  DRAW_SQUARE 21, eax, 12, 12, 0x00FF00
- .if_show_down_border:
- SCREEN_X_SUB eax, 2+(13*2)
- DRAW_EMPTY_SQUARE 21, eax, 12, 12, BLACK
- SCREEN_X_SUB eax, 2+(13*2)-2
- DRAW_EMPTY_SQUARE 23, eax, 8, 8, 0x888888
- SCREEN_X_SUB eax, 2+(13*2)-2
- DRAW_LINE 23+8, eax, 9, BLACK
- 
- ;right border
- pop esi
- test byte [esi], 0x10
- jz .if_show_right_border
-  SCREEN_X_SUB eax, 3+(13*3)
-  DRAW_SQUARE 21, eax, 12, 12, 0x00FF00
- .if_show_right_border:
- SCREEN_X_SUB eax, 3+(13*3)
- DRAW_EMPTY_SQUARE 21, eax, 12, 12, BLACK
- SCREEN_X_SUB eax, 3+(13*3)-2
- DRAW_EMPTY_SQUARE 23, eax, 8, 8, 0x888888
- SCREEN_X_SUB eax, 3+(13*3)-10
- DRAW_COLUMN 23, eax, 9, BLACK
- 
- ;up border
- pop esi
- test byte [esi], 0x80
- jz .if_show_up_border
-  SCREEN_X_SUB eax, 4+(13*4)
-  DRAW_SQUARE 21, eax, 12, 12, 0x00FF00
- .if_show_up_border:
- SCREEN_X_SUB eax, 4+(13*4)
- DRAW_EMPTY_SQUARE 21, eax, 12, 12, BLACK
- SCREEN_X_SUB eax, 4+(13*4)-2
- DRAW_EMPTY_SQUARE 23, eax, 8, 8, 0x888888
- SCREEN_X_SUB eax, 4+(13*4)-2
- DRAW_LINE 23, eax, 9, BLACK
- 
- ;left border
- pop esi
- test byte [esi], 0x20
- jz .if_show_left_border
-  SCREEN_X_SUB eax, 5+(13*5)
-  DRAW_SQUARE 21, eax, 12, 12, 0x00FF00
- .if_show_left_border:
- SCREEN_X_SUB eax, 5+(13*5)
- DRAW_EMPTY_SQUARE 21, eax, 12, 12, BLACK
- SCREEN_X_SUB eax, 5+(13*5)-2
- DRAW_EMPTY_SQUARE 23, eax, 8, 8, 0x888888
- SCREEN_X_SUB eax, 5+(13*5)-2
- DRAW_COLUMN 23, eax, 9, BLACK
- 
- ;no border
- mov al, byte [esi]
- and al, 0xF0
- cmp al, 0x00
- jne .if_show_no_border
-  SCREEN_X_SUB eax, 6+(13*6)
-  DRAW_SQUARE 21, eax, 12, 12, 0x00FF00
- .if_show_no_border:
- SCREEN_X_SUB eax, 6+(13*6)
- DRAW_EMPTY_SQUARE 21, eax, 12, 12, BLACK
- SCREEN_X_SUB eax, 6+(13*6)-2
- DRAW_EMPTY_SQUARE 23, eax, 8, 8, 0x888888
- 
- ;show aligment
- mov al, byte [esi]
- and al, 0x0C
- cmp al, 0x08
- jne .if_show_right_aligment
-  SCREEN_X_SUB eax, 9+(13*7)
-  DRAW_SQUARE 21, eax, 12, 12, 0xFF0000
- .if_show_right_aligment:
- SCREEN_X_SUB eax, 9+(13*7)
- DRAW_EMPTY_SQUARE 21, eax, 12, 12, BLACK
- SCREEN_X_SUB eax, 9+(13*7)-2
- PRINT_CHAR 'R', 24, eax
- 
- mov al, byte [esi]
- and al, 0x0C
- cmp al, 0x04
- jne .if_show_middle_aligment
-  SCREEN_X_SUB eax, 10+(13*8)
-  DRAW_SQUARE 21, eax, 12, 12, 0xFF0000
- .if_show_middle_aligment:
- SCREEN_X_SUB eax, 10+(13*8)
- DRAW_EMPTY_SQUARE 21, eax, 12, 12, BLACK
- SCREEN_X_SUB eax, 10+(13*8)-2
- PRINT_CHAR 'M', 24, eax
- 
- mov al, byte [esi]
- and al, 0x0C
- cmp al, 0x00
- jne .if_show_left_aligment
-  SCREEN_X_SUB eax, 11+(13*9)
-  DRAW_SQUARE 21, eax, 12, 12, 0xFF0000
- .if_show_left_aligment:
- SCREEN_X_SUB eax, 11+(13*9)
- DRAW_EMPTY_SQUARE 21, eax, 12, 12, BLACK
- SCREEN_X_SUB eax, 11+(13*9)-2
- PRINT_CHAR 'L', 24, eax
- 
- mov al, byte [esi+1]
- and al, 0x03
- cmp al, 0x02
- jne .if_show_line_down_aligment
-  SCREEN_X_SUB eax, 12+(13*10)
-  DRAW_SQUARE 21, eax, 12, 12, 0xFF0000
- .if_show_line_down_aligment:
- SCREEN_X_SUB eax, 12+(13*10)
- DRAW_EMPTY_SQUARE 21, eax, 12, 12, BLACK
- SCREEN_X_SUB eax, 12+(13*10)-2
- DRAW_SQUARE 30, eax, 9, 2, BLACK
- 
- mov al, byte [esi+1]
- and al, 0x03
- cmp al, 0x01
- jne .if_show_line_middle_aligment
-  SCREEN_X_SUB eax, 13+(13*11)
-  DRAW_SQUARE 21, eax, 12, 12, 0xFF0000
- .if_show_line_middle_aligment:
- SCREEN_X_SUB eax, 13+(13*11)
- DRAW_EMPTY_SQUARE 21, eax, 12, 12, BLACK
- SCREEN_X_SUB eax, 13+(13*11)-2
- DRAW_SQUARE 27, eax, 9, 2, BLACK
- 
- mov al, byte [esi+1]
- and al, 0x03
- cmp al, 0x00
- jne .if_show_line_up_aligment
-  SCREEN_X_SUB eax, 14+(13*12)
-  DRAW_SQUARE 21, eax, 12, 12, 0xFF0000
- .if_show_line_up_aligment:
- SCREEN_X_SUB eax, 14+(13*12)
- DRAW_EMPTY_SQUARE 21, eax, 12, 12, BLACK
- SCREEN_X_SUB eax, 14+(13*12)-2
- DRAW_SQUARE 23, eax, 9, 2, BLACK
- 
- ;show type of text
- test byte [esi], 0x1
- jz .if_show_bold
-  SCREEN_X_SUB eax, 17+(13*13)
-  DRAW_SQUARE 21, eax, 12, 12, 0x0088FF
- .if_show_bold:
- SCREEN_X_SUB eax, 17+(13*13)
- DRAW_EMPTY_SQUARE 21, eax, 12, 12, BLACK
- SCREEN_X_SUB eax, 17+(13*13)-2
- PRINT_CHAR 'B', 24, eax
- 
- ;color of text
- call be_selected_cell_pointer
- mov eax, dword [esi+5]
- and eax, 0x00FFFFFF
- mov dword [color], eax
- SCREEN_X_SUB eax, 19+(13*15)-2
- push eax
- push eax
- PRINT_CHAR 'A', 24, eax
- pop eax
- add eax, COLUMNSZ
- PRINT_CHAR 'B', 24, eax
- pop eax
- add eax, COLUMNSZ*2
- PRINT_CHAR 'C', 24, eax
- 
- ;color of background
- call be_selected_cell_pointer
- mov ebx, dword [esi+2]
- and ebx, 0x00FFFFFF
- mov dword [color], ebx
- SCREEN_X_SUB eax, 20+(13*17)
- DRAW_SQUARE 21, eax, 24, 12, ebx
- SCREEN_X_SUB eax, 20+(13*17)
- DRAW_EMPTY_SQUARE 21, eax, 24, 12, BLACK
- SCREEN_X_SUB eax, 20+(13*17)-1
- DRAW_EMPTY_SQUARE 22, eax, 22, 10, BLACK
- 
- mov dword [type_of_text], PLAIN
- DRAW_WINDOW_BORDERS table_editor_up_str, table_editor_down_str, 0x00FF00
- 
- mov eax, dword [be_mouse_line]
- mov dword [cursor_line], eax
- mov eax, dword [be_mouse_column]
- mov dword [cursor_column], eax
- call read_cursor_bg
- call draw_cursor
- ret
- 
-be_redraw_input:
- SCREEN_X_SUB eax, 27+21+(13*18)
- DRAW_SQUARE 21, 27, eax, 13, WHITE
- SCREEN_X_SUB eax, 27+21+(13*18)
- DRAW_EMPTY_SQUARE 21, 27, eax, 12, BLACK
- call be_selected_cell_pointer
- add esi, 8 ;text offset
- 
- mov dword [cursor_line], 23
- mov dword [cursor_column], 29
- mov ecx, 60 ;show max 60 chars
- .draw_char:
-  mov eax, 0
-  mov ax, word [esi]
-  cmp ax, 0
-  je .draw_cursor
-  mov dword [char_for_print], eax
-  push esi
-  push ecx
-  call print_char
-  pop ecx
-  pop esi
-  add dword [cursor_column], COLUMNSZ
-  add esi, 2
- loop .draw_char
- 
- .draw_cursor:
- mov eax, dword [be_cursor_offset]
- shl eax, 3 ;mul 8
- add eax, 29
- cmp dword [be_cursor_offset], 0
- jne .if_zero
-  dec eax
- .if_zero:
- mov dword [cursor_column], eax
- mov dword [cursor_line], 22
- mov dword [column_heigth], 11
- mov dword [color], 0x444444
- call draw_column
- ret
- 
-be_redraw_cell:
- mov esi, be_lines_length
- add esi, dword [be_first_show_line]
- dec esi
- mov dword [first_redraw_line], 48
- mov ecx, dword [be_first_show_line]
- .skip_line:
-  cmp ecx, dword [be_selected_cell_line]
-  je .redraw_cell
- 
-  mov eax, 0
-  mov al, byte [esi]
-  mov ebx, 13
-  mul ebx
-  add dword [first_redraw_line], eax
-  inc esi
-  inc ecx
- jmp .skip_line
- 
- .redraw_cell:
- mov eax, 0
- mov al, byte [esi]
- mov ebx, 13
- mul ebx
- mov dword [how_much_lines_redraw], eax
- call redraw_lines_screen
- 
- ret
-
 be_selected_cell_pointer: ;return pointer to cell in esi
  mov eax, dword [be_selected_cell_line]
  dec eax
@@ -1795,3 +1652,7 @@ be_selected_cell_pointer: ;return pointer to cell in esi
  add esi, dword [table_editor_file_pointer]
  
  ret
+
+%include "source/programs/table_editor/draw_methods.asm"
+
+%include "source/programs/table_editor/methods_of_functions.asm"
