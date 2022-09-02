@@ -98,6 +98,11 @@ init_memory_of_programs:
  mov dword [de_left_border_start], eax
  
  ;TABLE EDITOR
+ mov dword [allocated_size], 1
+ call allocate_memory
+ mov eax, dword [allocated_memory_pointer]
+ mov dword [be_function_cell_list_pointer], eax
+ 
  mov dword [allocated_size], 6
  call allocate_memory
  mov eax, dword [allocated_memory_pointer]
