@@ -83,6 +83,355 @@ draw_window_borders:
 
  ret
  
+;;;;; Window for choosing color ;;;;;
+
+color_window_color dd 0x000000
+color_window_mc_line dd 0
+color_window_mc_column dd 0
+
+draw_color_window:
+ mov dword [message_window_length], 0xFF*2+60
+ mov dword [message_window_heigth], 0xFF+60
+ call show_empty_message_window
+ 
+ mov eax, dword [screen_x_center]
+ sub eax, 0xFF
+ mov ebx, dword [screen_y_center]
+ add ebx, 128+11
+ mov dword [color], BLACK
+ PRINT '[esc] Back [enter] Choose color', text_string, ebx, eax
+ 
+ mov eax, dword [screen_x_center]
+ sub eax, 0xFF
+ mov dword [cursor_column], eax
+ mov eax, dword [screen_y_center]
+ sub eax, 128
+ mov dword [cursor_line], eax
+ 
+ CALCULATE_CURSOR_POSITION
+ 
+ ;draw square with colors
+ mov ebx, dword [color_window_color]
+ and ebx, 0xFF0000
+ mov ecx, 256
+ .draw_lines:
+ push ecx
+ 
+  mov ecx, 256
+  .draw_columns:
+   mov dword [eax], ebx
+   inc ebx
+   add eax, 4
+  loop .draw_columns
+
+ pop ecx
+ add eax, dword [screen_pixels_per_line]
+ sub eax, 256*4
+ dec ecx
+ cmp ecx, 0
+ jne .draw_lines
+ 
+ ;draw scrollbars
+ mov dword [line_length], 20
+ mov eax, dword [color_window_color]
+ and eax, 0x00FFFF
+ mov dword [color], eax
+
+ mov eax, dword [screen_x_center]
+ add eax, 20
+ mov dword [cursor_column], eax
+ mov eax, dword [screen_y_center]
+ sub eax, 128
+ mov dword [cursor_line], eax
+ mov ecx, 256
+ .draw_red_scrollbar:
+  push ecx
+  call draw_line
+  pop ecx
+  inc dword [cursor_line]
+  add dword [color], 0x010000
+ loop .draw_red_scrollbar
+ 
+ mov dword [square_length], 20
+ mov dword [square_heigth], 0xFF+1
+ mov dword [color], 0xBBBBBB
+ 
+ mov eax, dword [screen_x_center]
+ sub eax, 0xFF+20
+ mov dword [cursor_column], eax
+ mov eax, dword [screen_y_center]
+ sub eax, 128
+ mov dword [cursor_line], eax
+ call draw_square
+ 
+ mov dword [square_length], 0xFF+1
+ mov dword [square_heigth], 20
+ mov eax, dword [screen_x_center]
+ sub eax, 0xFF
+ mov dword [cursor_column], eax
+ mov eax, dword [screen_y_center]
+ sub eax, 128+20
+ mov dword [cursor_line], eax
+ call draw_square
+ 
+ ;draw color position on scrollbars
+ mov dword [line_length], 20
+ mov dword [color], BLACK
+ 
+ mov eax, dword [screen_x_center]
+ add eax, 20
+ mov dword [cursor_column], eax
+ mov eax, dword [screen_y_center]
+ sub eax, 128
+ mov ebx, dword [color_window_color]
+ shr ebx, 16
+ add eax, ebx
+ mov dword [cursor_line], eax
+ call draw_line
+ 
+ mov eax, dword [screen_x_center]
+ sub eax, 0xFF+20
+ mov dword [cursor_column], eax
+ mov eax, dword [screen_y_center]
+ sub eax, 128
+ mov ebx, dword [color_window_color]
+ shr ebx, 8
+ and ebx, 0xFF
+ add eax, ebx
+ mov dword [cursor_line], eax
+ call draw_line
+ 
+ mov dword [column_heigth], 20
+ mov eax, dword [screen_x_center]
+ sub eax, 0xFF
+ mov ebx, dword [color_window_color]
+ and ebx, 0xFF
+ add eax, ebx
+ mov dword [cursor_column], eax
+ mov eax, dword [screen_y_center]
+ sub eax, 128+20
+ mov dword [cursor_line], eax
+ call draw_column
+ 
+ ;draw actual color
+ mov eax, dword [color_window_color]
+ mov dword [color], eax
+ mov dword [hex_print_value], eax
+ 
+ mov dword [square_length], 50
+ mov dword [square_heigth], 25
+ mov eax, dword [screen_x_center]
+ add eax, 60
+ mov dword [cursor_column], eax
+ mov eax, dword [screen_y_center]
+ sub eax, 128
+ mov dword [cursor_line], eax
+ call draw_square
+ 
+ mov dword [color], BLACK
+ add dword [cursor_column], 60
+ add dword [cursor_line], 9
+ call print_hex
+ 
+ ret
+ 
+color_window:
+ call draw_color_window
+ 
+ mov eax, dword [screen_x_center]
+ mov dword [color_window_mc_column], eax
+ mov dword [cursor_column], eax
+ mov eax, dword [screen_y_center]
+ mov dword [color_window_mc_line], eax
+ mov dword [cursor_line], eax
+ call read_cursor_bg
+ call draw_cursor
+ call redraw_screen
+ 
+ mov eax, dword [screen_y_center]
+ sub eax, 128+30
+ mov dword [mcursor_up_side], eax
+ add eax, 256+60
+ mov dword [mcursor_down_side], eax
+ mov eax, dword [screen_x_center]
+ sub eax, 256+30
+ mov dword [mcursor_left_side], eax
+ add eax, 512+60
+ mov dword [mcursor_right_side], eax
+ 
+ .halt:
+  call wait_for_usb_mouse
+  
+  cmp dword [key_code], KEY_ESC
+  je .exit
+  cmp dword [key_code], KEY_ENTER
+  je .choose_color
+  
+  cmp byte [usb_mouse_data], 0
+  je .halt
+  
+  ;move mouse cursor
+  mov eax, dword [color_window_mc_line]
+  mov dword [cursor_line], eax
+  mov eax, dword [color_window_mc_column]
+  mov dword [cursor_column], eax
+  call move_mouse_cursor
+  mov eax, dword [cursor_line]
+  mov dword [color_window_mc_line], eax
+  mov eax, dword [cursor_column]
+  mov dword [color_window_mc_column], eax
+  
+  ;test mouse_click
+  cmp dword [usb_mouse_dnd], 0x1
+  je .click
+  cmp dword [usb_mouse_dnd], 0x2
+  je .click
+  jmp .halt
+  
+  .click:  
+  mov eax, dword [screen_y_center]
+  sub eax, 128
+  mov ebx, dword [screen_y_center]
+  add ebx, 128
+  mov ecx, dword [screen_x_center]
+  sub ecx, 0xFF
+  mov edx, dword [screen_x_center]
+  TEST_CLICK_ZONE_WITH_JUMP click_on_color_square, color_window_mc_line, color_window_mc_column, eax, ebx, ecx, edx, .click_color_square
+  
+  mov eax, dword [screen_y_center]
+  sub eax, 127
+  mov ebx, dword [screen_y_center]
+  add ebx, 128
+  mov ecx, dword [screen_x_center]
+  add ecx, 20
+  mov edx, dword [screen_x_center]
+  add edx, 40
+  TEST_CLICK_ZONE_WITH_JUMP click_on_red, color_window_mc_line, color_window_mc_column, eax, ebx, ecx, edx, .click_color_red
+  sub eax, 20
+  sub ebx, 0xFF
+  TEST_CLICK_ZONE_WITH_JUMP click_on_red_0, color_window_mc_line, color_window_mc_column, eax, ebx, ecx, edx, .click_color_red_0
+  add eax, 0xFF+20
+  add ebx, 0xFF+20
+  TEST_CLICK_ZONE_WITH_JUMP click_on_red_256, color_window_mc_line, color_window_mc_column, eax, ebx, ecx, edx, .click_color_red_256
+  
+  mov eax, dword [screen_y_center]
+  sub eax, 127
+  mov ebx, dword [screen_y_center]
+  add ebx, 128
+  mov ecx, dword [screen_x_center]
+  sub ecx, 0xFF+20
+  mov edx, dword [screen_x_center]
+  sub edx, 0xFF
+  TEST_CLICK_ZONE_WITH_JUMP click_on_green, color_window_mc_line, color_window_mc_column, eax, ebx, ecx, edx, .click_color_green
+  sub eax, 10
+  sub ebx, 0xFF
+  sub edx, 10
+  TEST_CLICK_ZONE_WITH_JUMP click_on_green_0, color_window_mc_line, color_window_mc_column, eax, ebx, ecx, edx, .click_color_green_0
+  add eax, 0xFF+10
+  add ebx, 0xFF+20
+  add edx, 10
+  TEST_CLICK_ZONE_WITH_JUMP click_on_green_256, color_window_mc_line, color_window_mc_column, eax, ebx, ecx, edx, .click_color_green_256
+  
+  mov eax, dword [screen_y_center]
+  sub eax, 128+20
+  mov ebx, dword [screen_y_center]
+  sub ebx, 128
+  mov ecx, dword [screen_x_center]
+  sub ecx, 0xFF
+  mov edx, dword [screen_x_center]
+  TEST_CLICK_ZONE_WITH_JUMP click_on_blue, color_window_mc_line, color_window_mc_column, eax, ebx, ecx, edx, .click_color_blue
+  sub ecx, 10
+  sub edx, 0xFF
+  sub ebx, 10
+  TEST_CLICK_ZONE_WITH_JUMP click_on_blue_0, color_window_mc_line, color_window_mc_column, eax, ebx, ecx, edx, .click_color_blue_0
+  add ecx, 0xFF+10
+  add edx, 0xFF+20
+  add ebx, 10
+  TEST_CLICK_ZONE_WITH_JUMP click_on_blue_256, color_window_mc_line, color_window_mc_column, eax, ebx, ecx, edx, .click_color_blue_256
+ jmp .halt
+ 
+ .click_color_square:
+  mov eax, dword [color_window_mc_column]
+  sub eax, dword [screen_y_center]
+  add eax, 127
+  and eax, 0xFF
+  and dword [color_window_color], 0xFFFF00
+  or dword [color_window_color], eax
+  
+  mov eax, dword [color_window_mc_line]
+  sub eax, dword [screen_x_center]
+  add eax, 255
+  and eax, 0xFF
+  shl eax, 8
+  and dword [color_window_color], 0xFF00FF
+  or dword [color_window_color], eax
+ jmp .redraw
+ 
+ .click_color_red:
+  mov eax, dword [color_window_mc_line]
+  sub eax, dword [screen_x_center]
+  add eax, 255
+  and eax, 0xFF
+  shl eax, 16
+  and dword [color_window_color], 0x00FFFF
+  or dword [color_window_color], eax
+ jmp .redraw
+ .click_color_red_0:
+  and dword [color_window_color], 0x00FFFF
+ jmp .redraw
+ .click_color_red_256:
+  or dword [color_window_color], 0xFF0000
+ jmp .redraw
+ 
+ .click_color_green:
+  mov eax, dword [color_window_mc_line]
+  sub eax, dword [screen_x_center]
+  add eax, 255
+  and eax, 0xFF
+  shl eax, 8
+  and dword [color_window_color], 0xFF00FF
+  or dword [color_window_color], eax
+ jmp .redraw
+ .click_color_green_0:
+  and dword [color_window_color], 0xFF00FF
+ jmp .redraw
+ .click_color_green_256:
+  or dword [color_window_color], 0x00FF00
+ jmp .redraw
+ 
+ .click_color_blue:
+  mov eax, dword [color_window_mc_column]
+  sub eax, dword [screen_x_center]
+  add eax, 255
+  and eax, 0xFF
+  and dword [color_window_color], 0xFFFF00
+  or dword [color_window_color], eax
+ jmp .redraw
+ .click_color_blue_0:
+  and dword [color_window_color], 0xFFFF00
+ jmp .redraw
+ .click_color_blue_256:
+  or dword [color_window_color], 0x0000FF
+ jmp .redraw
+ 
+ .redraw:
+  call draw_color_window
+  mov eax, dword [color_window_mc_column]
+  mov dword [cursor_column], eax
+  mov eax, dword [color_window_mc_line]
+  mov dword [cursor_line], eax
+  call read_cursor_bg
+  call draw_cursor
+  call redraw_screen
+ jmp .halt
+ 
+ .exit:
+  mov dword [color_window_color], 0xFFFFFFFF
+ ret
+ 
+ .choose_color:
+ ret
+ 
 ;;;;; Message window ;;;;;
 
 message_window_key0 dd 0
@@ -327,6 +676,9 @@ text_input:
 
  .text_input_halt:
   call wait_for_keyboard
+  
+  cmp byte [key_code], KEY_ESC
+  je .done
 
   cmp byte [key_code], KEY_ENTER
   je .done
@@ -384,8 +736,7 @@ text_input:
  je .text_input_halt
 
  mov eax, dword [text_input_cursor]
- mov ebx, 2
- mul ebx
+ shl eax, 1 ;mul 2
  add eax, dword [text_input_pointer]
  mov edi, eax
  add eax, 2
@@ -405,8 +756,7 @@ text_input:
  dec dword [text_input_cursor]
 
  mov eax, dword [text_input_cursor]
- mov ebx, 2
- mul ebx
+ shl eax, 1 ;mul 2
  add eax, dword [text_input_pointer]
  mov edi, eax
  add eax, 2
@@ -414,6 +764,12 @@ text_input:
  mov ecx, dword [text_input_length]
  sub ecx, dword [text_input_cursor]
  rep movsw
+ 
+ mov eax, dword [text_input_length]
+ shl eax, 1 ;mul 2
+ sub eax, 2
+ add eax, dword [text_input_pointer]
+ mov word [eax], 0
 
  call draw_text_input
  call redraw_screen
