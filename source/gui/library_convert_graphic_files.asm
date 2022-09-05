@@ -1,10 +1,33 @@
 ;BleskOS
 
-; BMP FILE
-
 lc_image_width dd 0
 lc_image_heigth dd 0
 lc_image_bpp dd 0
+
+; BI FILE - BleskOS Image file
+
+convert_bi_file:
+ push dword [allocated_memory_pointer]
+ push dword [allocated_size]
+ 
+ mov eax, dword [allocated_memory_pointer]
+ mov dword [sic_comprimed_image_pointer], eax
+ mov ebx, 0
+ mov bx, word [eax+4]
+ mov dword [lc_image_width], ebx
+ mov bx, word [eax+6]
+ mov dword [lc_image_heigth], ebx
+ call sic_decomprime_image
+ mov eax, dword [sic_image_pointer]
+ mov dword [file_memory], eax
+ 
+ pop dword [allocated_size]
+ pop dword [allocated_memory_pointer]
+ call release_memory
+ 
+ ret
+ 
+; BMP FILE
 
 convert_bmp_file:
  push dword [allocated_memory_pointer]
