@@ -67,6 +67,7 @@ start:
  %include "source/gui/library_convert_graphic_files.asm"
  %include "source/gui/library_copy.asm"
  %include "source/gui/library_math.asm"
+ %include "source/gui/library_simple_image_compression.asm"
 
  %include "source/programs/developer_programs/dp_log_viewer.asm"
  %include "source/programs/developer_programs/dp_mouse.asm"
