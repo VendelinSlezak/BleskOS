@@ -1,7 +1,7 @@
 ;BleskOS
 
 graphic_editor_up_str db 'Graphic editor', 0
-graphic_editor_down_str db '[F1] Save file [F2] Open file [F3] New file [F4/5] Step +/- [q] Mouse on image [arrows] Move image', 0
+graphic_editor_down_str db '[F1] Save [F2] Open [F3] New [F4/5] Step +/- [F6] Color [F12] Export as BMP [q] Mouse on image', 0
 ge_new_file_up_str db 'Please select size of new image:', 0
 ge_new_file_down_str db '[a] 100x100 [b] 640x480 [c] 800x600 [d] 1024x768', 0
 
@@ -81,6 +81,12 @@ graphic_editor:
   cmp byte [key_code], KEY_F5
   je .step_forward
   
+  cmp byte [key_code], KEY_F6
+  je .color
+  
+  cmp byte [key_code], KEY_F12
+  je .export_file
+  
   cmp byte [key_code], KEY_UP
   je .key_up
   
@@ -131,6 +137,27 @@ graphic_editor:
  
  .save_file:
   mov eax, dword [ge_image_pointer]
+  mov dword [sic_image_pointer], eax
+  mov eax, dword [ge_image_width]
+  mov dword [sic_image_width], eax
+  mov eax, dword [ge_image_heigth]
+  mov dword [sic_image_heigth], eax
+  call sic_comprime_image
+  
+  mov eax, dword [sic_comprimed_image_pointer]
+  mov dword [file_memory], eax
+  mov eax, dword [sic_comprimed_image_length] ;copy length of file in BMP
+  shr eax, 10 ;div 1024
+  inc eax
+  mov dword [file_size], eax ;in KB
+  mov dword [file_type], 'bi'
+  call file_dialog_save
+  
+  call release_memory ;delete created BI file from memory
+ jmp graphic_editor
+ 
+ .export_file:
+  mov eax, dword [ge_image_pointer]
   mov dword [file_memory], eax
   mov eax, dword [ge_image_width]
   mov dword [lc_image_width], eax
@@ -155,6 +182,8 @@ graphic_editor:
  .open_file:
   mov dword [fd_file_type_1], 'bmp'
   mov dword [fd_file_type_2], 'BMP'
+  mov dword [fd_file_type_3], 'bi'
+  mov dword [fd_file_type_4], 'BI'
   call file_dialog_open
   cmp dword [fd_return], FD_NO_FILE
   je graphic_editor
@@ -163,12 +192,23 @@ graphic_editor:
   je .convert_bmp_file
   cmp dword [file_type], 'BMP'
   je .convert_bmp_file
+  cmp dword [file_type], 'bi'
+  je .convert_bi_file
+  cmp dword [file_type], 'BI'
+  je .convert_bi_file
   
   call release_memory ;this is not supported type of file
   jmp graphic_editor
   
+  ;BMP
   .convert_bmp_file:
   call convert_bmp_file
+  jmp .set_new_image_variabiles
+  
+  ;BI
+  .convert_bi_file:
+  call convert_bi_file
+  jmp .set_new_image_variabiles
   
   ;set variabiles
   .set_new_image_variabiles:
@@ -349,6 +389,16 @@ graphic_editor:
   mov ebx, dword [ge_image_step_back_pointer]
   mov dword [ge_image_pointer], ebx
   mov dword [ge_image_step_back_pointer], eax
+ jmp graphic_editor
+ 
+ .color:
+  call write_cursor_bg
+  call color_window
+  cmp dword [color_window_color], 0xFFFFFFFF
+  je graphic_editor
+  
+  mov eax, dword [color_window_color]
+  mov dword [ge_selected_color], eax
  jmp graphic_editor
   
  .key_up:
@@ -982,6 +1032,9 @@ ge_select_color:
   cmp byte [key_code], KEY_ESC
   je main_window
   
+  cmp byte [key_code], KEY_F6
+  je .color
+  
   cmp byte [key_code], KEY_Q
   je graphic_editor
   
@@ -1079,6 +1132,16 @@ ge_select_color:
   pop dword [cursor_line]
   call redraw_screen
  jmp .ge_select_color_halt
+ 
+ .color:
+  call write_cursor_bg
+  call color_window
+  cmp dword [color_window_color], 0xFFFFFFFF
+  je graphic_editor
+  
+  mov eax, dword [color_window_color]
+  mov dword [ge_selected_color], eax
+ jmp ge_select_color
  
  .move_mouse:
   mov eax, dword [ge_mouse_line]
