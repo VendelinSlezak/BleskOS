@@ -1,5 +1,5 @@
 # BleskOS
-Operation system working in protected mode with legacy boot. Main goal is develop operation system whose will be usable for normal user. Every version of BleskOS is tested on real computers.
+**IMPORTANT NOTE** I am currently rewriting BleskOS into C. Along way I am adding many new features. I will release only final version when I will rewrite everything. So there will be probably no updates few next months, but I promise it will be worth waiting.
 
 ![VirtualBox_BleskOS_01_03_2022_18_35_56](https://user-images.githubusercontent.com/43180618/158466244-77a4047c-7ae9-487b-895a-b49a4ebbcb99.png)
 
@@ -43,15 +43,6 @@ Internet stack:
 * DNS
 * IPv4
 * TCP
-
-### Drivers in developing
-- [x] Ethernet card Realtek 8139
-- [x] Ethernet card Realtek 8169
-- [x] Intel HD Audio
-- [ ] USB controller xHCI
-- [ ] AHCI cdrom
-- [ ] Filesystems UDF and CDDA
-- [ ] USB printer
 
 ### Programs
 * Text editor (TXT files)
