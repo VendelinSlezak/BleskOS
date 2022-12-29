@@ -1,5 +1,5 @@
 # BleskOS
-**IMPORTANT NOTE** I am currently rewriting BleskOS into C. Along way I am adding many new features. I will release only final version when I will rewrite everything. So there will be probably no updates few next months, but I promise it will be worth waiting.
+**IMPORTANT NOTE** I am currently rewriting BleskOS into C. Along way I am adding many new features. I will release only final version when I will rewrite everything. So there will be probably no updates few next months, but I promise it will be worth waiting. You can see actual state of rewriting in thread https://github.com/Klaykap/BleskOS/discussions/16
 
 ![VirtualBox_BleskOS_01_03_2022_18_35_56](https://user-images.githubusercontent.com/43180618/158466244-77a4047c-7ae9-487b-895a-b49a4ebbcb99.png)
 
