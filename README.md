@@ -42,7 +42,7 @@ Drivers
 
 - Graphic: VBE
 - Sound: AC97, Intel HD Audio(works in QEMU)
-- Inbuilt graphic: PS/2 keyboard, PS/2 mouse, PATA hard disk, PATAPI optical disk drive, AHCI hard disk, AHCI optical disk drive
+- Inbuilt hardware: PS/2 keyboard, PS/2 mouse, PATA hard disk, PATAPI optical disk drive, AHCI hard disk, AHCI optical disk drive
 - Filesystems: FAT12/16/32, ISO9660(read-only)
 - USB controllers: UHCI, OHCI, EHCI
 - USB devices: USB mouse, USB keyboard, USB mass storage device
