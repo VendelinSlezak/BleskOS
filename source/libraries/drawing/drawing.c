@@ -118,7 +118,7 @@ void draw_pixel(dword_t x, dword_t y) {
  for(int i=0; i<pen_width; i++) {
   screen = (dword_t *) first_line_pixel_pointer;
   for(int j=0; j<pen_width; j++) {
-   if(*pen_img!=TRANSPARENT_COLOR && x<graphic_screen_x-1 && y<graphic_screen_y-1) {
+   if(*pen_img!=TRANSPARENT_COLOR && x<graphic_screen_x && y<graphic_screen_y) {
     *screen = global_color;
    }
    screen++;
