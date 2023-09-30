@@ -23,12 +23,12 @@ void developer_program_log(void) {
 
  redraw:
  show_log();
- redraw_screen();
 
  while(1) {
-  wait_for_usb_keyboard();
+  wait_for_usb_mouse();
+  move_mouse_cursor();
   
-  if(keyboard_value==KEY_ESC) {
+  if(keyboard_value==KEY_ESC || mouse_drag_and_drop==MOUSE_CLICK) {
    return;
   }
   else if(keyboard_value==KEY_HOME) {
@@ -46,7 +46,7 @@ void developer_program_log(void) {
 
    goto redraw;
   }
-  else if(keyboard_value==KEY_UP) {
+  else if(keyboard_value==KEY_UP || (mouse_wheel!=0 && mouse_wheel<0x80000000)) {
    if((dword_t)log==logging_mem) {
     continue; //we are at start of logging memory
    }
@@ -80,7 +80,7 @@ void developer_program_log(void) {
    
    goto redraw;
   }
-  else if(keyboard_value==KEY_DOWN) {
+  else if(keyboard_value==KEY_DOWN || mouse_wheel>0x80000000) {
    //skip all characters in line
    while(*log!=0xA && *log!=0) {
     log++;
@@ -129,6 +129,9 @@ void show_log(void) {
   }
  }
  
+ //redraw
+ mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
+ draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
  redraw_screen();
 }
 
