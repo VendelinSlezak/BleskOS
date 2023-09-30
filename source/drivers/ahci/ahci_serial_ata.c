@@ -110,9 +110,9 @@ byte_t sata_read_drive_info(dword_t base_port, dword_t commands_memory, dword_t 
 }
 
 byte_t sata_read(dword_t base_port, dword_t commands_memory, dword_t fis_memory, dword_t sector, byte_t number_of_sectors, dword_t memory) {
- return sata_send_command(base_port, commands_memory, fis_memory, 0x25, (sector+1), number_of_sectors, ((number_of_sectors*512)-1), memory);
+ return sata_send_command(base_port, commands_memory, fis_memory, 0x25, sector, number_of_sectors, ((number_of_sectors*512)-1), memory);
 }
 
 byte_t sata_write(dword_t base_port, dword_t commands_memory, dword_t fis_memory, dword_t sector, byte_t number_of_sectors, dword_t memory) {
- return sata_send_command(base_port, commands_memory, fis_memory, 0x35, (sector+1), number_of_sectors, ((number_of_sectors*512)-1), memory);
+ return sata_send_command(base_port, commands_memory, fis_memory, 0x35, sector, number_of_sectors, ((number_of_sectors*512)-1), memory);
 }
