@@ -4,6 +4,19 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 ![VirtualBox_BleskOS_28_09_2023_16_46_49](https://github.com/VendelinSlezak/BleskOS/assets/43180618/7a25508d-fbed-4af2-addc-0f79a15a9f7d)
 
+## What is new
+
+Here is info about most important improvements in several last updates.
+
+**Update 2**
+- ext2 read-only driver
+- Support for Extended Boot Record and Global Partition Table
+- Graphic Editor shows dimensions of image
+- System board and System log can be partially controlled by mouse
+
+**Update 1**
+- First version of BleskOS rewritten from assembly to C
+
 ## How to try BleskOS
 
 You can download image of last version here on github. Then you have two options:
@@ -43,7 +56,7 @@ Drivers
 - Graphic: VBE
 - Sound: AC97, Intel HD Audio(works in QEMU)
 - Inbuilt hardware: PS/2 keyboard, PS/2 mouse, PATA hard disk, PATAPI optical disk drive, AHCI hard disk, AHCI optical disk drive
-- Filesystems: FAT12/16/32, ISO9660(read-only)
+- Filesystems: FAT12/16/32, ext2 (read-only) ISO9660 (read-only)
 - USB controllers: UHCI, OHCI, EHCI
 - USB devices: USB mouse, USB keyboard, USB mass storage device
 - Ethernet cards: Realtek 8139/8169, Intel e1000(e), AMD PC-net
