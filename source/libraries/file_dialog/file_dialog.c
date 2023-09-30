@@ -29,7 +29,7 @@ void initalize_file_dialog(void) {
   select_storage_medium(MEDIUM_HDD, DEFAULT_MEDIUM);
   read_partition_info();
   
-  for(int i=0; i<4; i++) {
+  for(int i=0; i<8; i++) {
    if(partitions[i].type!=STORAGE_NO_PARTITION && partitions[i].type!=STORAGE_FREE_SPACE) {
     select_partition(i);
     devices_mem[FD_DEVICE_ENTRY_OFFSET_MEDIUM]=FD_HARD_DISK;
@@ -75,12 +75,14 @@ void initalize_file_dialog(void) {
  
  //select first medium
  file_dialog_selected_device = 0;
- devices_mem = (byte_t *) file_dialog_devices_mem;
+ devices_mem = (byte_t *) (file_dialog_devices_mem);
  if(devices_mem[FD_DEVICE_ENTRY_OFFSET_MEDIUM]!=FD_NO_DEVICE) {
   select_storage_medium(devices_mem[FD_DEVICE_ENTRY_OFFSET_MEDIUM], devices_mem[FD_DEVICE_ENTRY_OFFSET_MEDIUM_NUMBER]);
   partitions[0].type=devices_mem[FD_DEVICE_ENTRY_OFFSET_PARTITION_TYPE];
-  partitions[0].first_sector=devices_mem[FD_DEVICE_ENTRY_OFFSET_PARTITION_FIRST_SECTOR];
-  partitions[0].num_of_sectors=devices_mem[FD_DEVICE_ENTRY_OFFSET_PARTITION_NUM_OF_SECTORS];
+  dword_t *devices_mem32 = (dword_t *) (file_dialog_devices_mem+FD_DEVICE_ENTRY_OFFSET_PARTITION_FIRST_SECTOR);
+  partitions[0].first_sector=*devices_mem32;
+  devices_mem32 = (dword_t *) (file_dialog_devices_mem+FD_DEVICE_ENTRY_OFFSET_PARTITION_NUM_OF_SECTORS);
+  partitions[0].num_of_sectors=*devices_mem32;
   select_partition(0);
  }
  

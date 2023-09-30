@@ -233,7 +233,7 @@ void draw_file_dialog(void) {
   print("Save file", 8, 8, BLACK);
   draw_button("[S] Save as", graphic_screen_x-120, graphic_screen_y-24, 120, 24);
  }
- print("[F12] Refresh devices", 8, graphic_screen_y-16, BLACK);
+ print("[F12] Refresh devices [Page up/down] Select another device up/down", 8, graphic_screen_y-16, BLACK);
  
  if(file_dialog_state==FD_STATE_NO_DEVICE) {
   print("No storage device detected", 8, 32, BLACK);
@@ -247,7 +247,7 @@ void draw_file_dialog(void) {
   //if we are not in root folder, add button for go back
   dword_t *devices_mem32 = (dword_t *) (file_dialog_devices_mem+file_dialog_selected_device*FD_DEVICE_ENTRY_LENGTH);
   if(devices_mem32[3]!=0) {
-   draw_button("B Go back", 0, graphic_screen_y-24-32, 150, 24);
+   draw_button("[b] Go back", 0, graphic_screen_y-24-32, 150, 24);
   }
  }
  else if(file_dialog_state==FD_STATE_FOLDER_LOADED && file_dialog_folder_num_of_files==0) {
@@ -256,8 +256,7 @@ void draw_file_dialog(void) {
   //if we are not in root folder, add button for go back
   dword_t *devices_mem32 = (dword_t *) (file_dialog_devices_mem+file_dialog_selected_device*FD_DEVICE_ENTRY_LENGTH);
   if(devices_mem32[3]!=0) {
-   draw_button("B Go back", 0, graphic_screen_y-24-32, 150, 24);
-   print("F12 Refresh devices", 8, graphic_screen_y-16, BLACK);
+   draw_button("[b] Go back", 0, graphic_screen_y-24-32, 150, 24);
   }
  }
  else if(file_dialog_state==FD_STATE_FOLDER_LOADING) {
