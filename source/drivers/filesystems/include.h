@@ -9,5 +9,6 @@
 */
 
 #include "fat.h"
+#include "ext.h"
 #include "iso9660.h"
 #include "main.h"

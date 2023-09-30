@@ -413,7 +413,7 @@ dword_t read_fat_file(dword_t cluster, dword_t size_in_bytes) {
  }
  while(*file_cluster_list!=0) {
   //update information about progress
-  if((size_in_bytes-remaining_bytes)!=0 && (size_in_bytes!=0)) {
+  if((size_in_bytes-remaining_bytes)!=0 && size_in_bytes>=1024) {
    file_work_done_percents = (10+90*((size_in_bytes-remaining_bytes)/1024)/(size_in_bytes/1024));
    if(file_show_file_work_progress==1 && old_file_work_done_percents!=file_work_done_percents) {
     file_dialog_show_progress();
