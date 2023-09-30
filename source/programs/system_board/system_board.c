@@ -17,7 +17,8 @@ void system_board_redraw(void) {
  clear_screen(0xA04000);
 
  print("Hardware", 10, 10, BLACK);
- print("[L] Open system log", 10, graphic_screen_y-20, BLACK);
+ print("[L] Open system log", graphic_screen_x-20*8, graphic_screen_y-20, BLACK);
+ print("[Esc] Back to Main window", 10, graphic_screen_y-20, BLACK);
 
  //draw background of selected device
  draw_full_square(10, 30+system_board_selected_item*30, 200, 20, WHITE);
@@ -394,12 +395,15 @@ void system_board(void) {
 
  redraw:
  system_board_redraw();
+ mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
+ draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
  redraw_screen();
 
  while(1) {
-  wait_for_usb_keyboard();
+  wait_for_usb_mouse();
+  move_mouse_cursor();
 
-  if(keyboard_value==KEY_ESC) {
+  if(keyboard_value==KEY_ESC || (mouse_drag_and_drop==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y-20, graphic_screen_y-10, 10, 10+26*8)==STATUS_TRUE)) {
    return;
   }
 
@@ -421,6 +425,20 @@ void system_board(void) {
     system_board_selected_item++;
     system_item_variabile = 0;
     goto redraw;
+   }
+  }
+
+  if(mouse_drag_and_drop==MOUSE_CLICK) {
+   if(is_mouse_in_zone(graphic_screen_y-20, graphic_screen_y-10, graphic_screen_x-20*8, graphic_screen_x-8)==STATUS_TRUE) {
+    developer_program_log();
+    goto redraw;
+   }
+   else if(is_mouse_in_zone(30, graphic_screen_y-30, 10, 210)==STATUS_TRUE) {
+    if(((mouse_cursor_y-30)/30)<system_board_num_of_items) {
+     system_board_selected_item = ((mouse_cursor_y-30)/30);
+     system_item_variabile = 0;
+     goto redraw;
+    }
    }
   }
 
