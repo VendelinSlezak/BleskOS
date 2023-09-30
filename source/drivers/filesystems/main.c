@@ -217,7 +217,7 @@ void eject_optical_disk(void) {
 
 void read_partition_info(void) {
  //clear partition table
- for(int i=0; i<32; i++) {
+ for(int i=0; i<8; i++) {
   partitions[i].type = STORAGE_NO_PARTITION;
   partitions[i].first_sector = 0;
   partitions[i].num_of_sectors = 0;
@@ -243,40 +243,14 @@ void read_partition_info(void) {
   goto log;
  }
  
- //read partitions from Master Boot Record
+ //read sector with Master Boot Record
  if(read_storage_medium(0, 1, (dword_t)mbr_sector)==STATUS_ERROR) {
   return;
  }
- dword_t *sector = (dword_t *) ((dword_t)mbr_sector);
+
+ //Master Boot Record
  dword_t *mbr_ptr = (dword_t *) (((dword_t)mbr_sector)+0x1BE);
-
- //Global Partition Table
- if(sector[0]==0x20494645 && sector[1]==0x54524150) {
-  for(dword_t i=0; i<31; i++) {
-   //read partition info
-   clear_memory((dword_t)mbr_sector, 512);
-   if(read_storage_medium(1+i, 1, (dword_t)mbr_sector)==STATUS_ERROR) {
-    continue;
-   }
-
-   //parse partition info - we do not support drives bigger than 2 TB
-   if(sector[0]!=0 || sector[1]!=0 || sector[2]!=0 || sector[3]!=0 && (sector[9]==0 && sector[11]==0)) {
-    partitions[0].type = STORAGE_UNKNOWN_FILESYSTEM;
-    partitions[0].first_sector = sector[8];
-    partitions[0].num_of_sectors = (sector[10]-sector[8]);
-   }
-  }
-
-  goto find_type_of_filesystem;
- }
- 
- //no info about partitions
- if(mbr_ptr[3]==0 && mbr_ptr[7]==0 && mbr_ptr[11]==0 && mbr_ptr[15]==0) {
-  partitions[0].type = STORAGE_UNKNOWN_FILESYSTEM;
-  partitions[0].first_sector = 0;
-  partitions[0].num_of_sectors = 0; //TODO
- }
- else { //some info about partitions
+ if(mbr_ptr[3]!=0 || mbr_ptr[7]!=0 || mbr_ptr[11]!=0 || mbr_ptr[15]!=0) { //some info about partitions
   for(int i=0, partition_ptr=0; i<4; i++, mbr_ptr += 4) {
    if((mbr_ptr[1] & 0xFF)==0) { //free space
     if(mbr_ptr[3]==0) {
@@ -288,33 +262,75 @@ void read_partition_info(void) {
     partition_ptr++;
    }
    else if((mbr_ptr[1] & 0xFF)==0x05 || (mbr_ptr[1] & 0xFF)==0x0F) {
-    //read partition from Extended Boot Record
+    //read sector with Extended Boot Record
     if(read_storage_medium(mbr_ptr[2], 1, (dword_t)ebr_sector)==STATUS_ERROR) {
      continue;
     }
-    dword_t *ebr_ptr = (dword_t *) (((dword_t)ebr_sector)+0x1BE);
-    if((ebr_ptr[1] & 0xFF)==0) { //free space
-     if(ebr_ptr[3]==0) {
-      continue; //free or invalid entry
-     }
-     partitions[partition_ptr].type = STORAGE_FREE_SPACE;
-     partitions[partition_ptr].first_sector = (mbr_ptr[2]+ebr_ptr[2]);
-     partitions[partition_ptr].num_of_sectors = ebr_ptr[3];
-     partition_ptr++;
-    }
-    else {
-     //here is some filesystem
-     partitions[partition_ptr].type = STORAGE_UNKNOWN_FILESYSTEM;
-     partitions[partition_ptr].first_sector = (mbr_ptr[2]+ebr_ptr[2]);
-     partitions[partition_ptr].num_of_sectors = ebr_ptr[3];
-     partition_ptr++;
-    }
 
-    //TODO: more partitions
+    //read partitions
+    dword_t *ebr_ptr = (dword_t *) (((dword_t)ebr_sector)+0x1BE);
+    for(dword_t j=0; j<2; j++, ebr_ptr += 4) {
+     if((ebr_ptr[1] & 0xFF)==0) { //free space
+      if(ebr_ptr[3]==0) {
+       continue; //free or invalid entry
+      }
+      partitions[partition_ptr].type = STORAGE_FREE_SPACE;
+      partitions[partition_ptr].first_sector = (mbr_ptr[2]+ebr_ptr[2]);
+      partitions[partition_ptr].num_of_sectors = ebr_ptr[3];
+      partition_ptr++;
+     }
+     else {
+      //here is some filesystem
+      partitions[partition_ptr].type = STORAGE_UNKNOWN_FILESYSTEM;
+      partitions[partition_ptr].first_sector = (mbr_ptr[2]+ebr_ptr[2]);
+      partitions[partition_ptr].num_of_sectors = ebr_ptr[3];
+      partition_ptr++;
+     }
+    }
    }
    else if((mbr_ptr[1] & 0xFF)==0xEE) { //Global Partition Table
-    break;
-    //TODO:
+    dword_t gpt_memory = malloc(512*32);
+    if(read_storage_medium(mbr_ptr[2], 32, gpt_memory)==STATUS_ERROR) { //read all Global Partition Table data
+     free(gpt_memory);
+     goto find_type_of_filesystem;
+    }
+
+    //read basic info
+    dword_t *gpt_pointer = (dword_t *) (gpt_memory);
+    dword_t sector_with_partition_table = gpt_pointer[18];
+    dword_t number_of_partitions = gpt_pointer[20];
+    dword_t size_of_partition_entry = gpt_pointer[21];
+    if(gpt_pointer[19]!=0 || sector_with_partition_table==0 || sector_with_partition_table>2 || size_of_partition_entry<128 || (size_of_partition_entry%128)!=0) { //parition info is above 2 TB/invalid partition entry size
+     goto find_type_of_filesystem;;
+    }
+    if(number_of_partitions>8) { //now we support max 8 partitions
+     number_of_partitions = 8;
+    }
+
+    //read partition info
+    if(sector_with_partition_table==1) {
+     gpt_pointer = (dword_t *) (gpt_memory+0x5C);
+    }
+    else if(sector_with_partition_table==2) {
+     gpt_pointer = (dword_t *) (gpt_memory+512);
+    }
+    for(dword_t j=0; j<number_of_partitions; j++, gpt_pointer=(dword_t *) (((dword_t)gpt_pointer)+size_of_partition_entry)) {
+     //no partition
+     if(gpt_pointer[0]==0 && gpt_pointer[1]==0 && gpt_pointer[2]==0 && gpt_pointer[3]==0) {
+      break;
+     }
+
+     //parse partition info
+     if(gpt_pointer[0]!=0 || gpt_pointer[1]!=0 || gpt_pointer[2]!=0 || gpt_pointer[3]!=0 && (gpt_pointer[9]==0 && gpt_pointer[11]==0)) { //we do not support partitions bigger than 2 TB
+      partitions[partition_ptr].type = STORAGE_UNKNOWN_FILESYSTEM;
+      partitions[partition_ptr].first_sector = gpt_pointer[8];
+      partitions[partition_ptr].num_of_sectors = (gpt_pointer[10]-gpt_pointer[8]);
+      partition_ptr++;
+     }
+    }
+
+    free(gpt_memory);
+    goto find_type_of_filesystem;
    }
    else {
     //here is some filesystem
@@ -325,25 +341,36 @@ void read_partition_info(void) {
    }
   }
  }
+ else { //no MBR
+  partitions[0].type = STORAGE_UNKNOWN_FILESYSTEM;
+  partitions[0].first_sector = 0;
+  partitions[0].num_of_sectors = 0; //TODO:
+ }
  
  //find type of filesystem
  find_type_of_filesystem:
- for(int i=0; i<32; i++) {
+ for(int i=0; i<8; i++) {
   if(partitions[i].type==STORAGE_UNKNOWN_FILESYSTEM) {
    if(is_partition_fat(partitions[i].first_sector)==STATUS_TRUE) {
     partitions[i].type = STORAGE_FAT;
+   }
+   else if(is_partition_ext(partitions[i].first_sector)==STATUS_TRUE) {
+    partitions[i].type = STORAGE_EXT;
    }
   }
  }
  
  log:
  log("\npartitions founded:\n");
- for(int i=0; i<32; i++) {
+ for(int i=0; i<8; i++) {
   if(partitions[i].type!=STORAGE_NO_PARTITION) {
    log_hex_with_space(partitions[i].first_sector);
    log_var_with_space(partitions[i].num_of_sectors);
    if(partitions[i].type==STORAGE_FAT) {
     log("FAT\n");
+   }
+   else if(partitions[i].type==STORAGE_EXT) {
+    log("Ext\n");
    }
    else if(partitions[i].type==STORAGE_ISO9660) {
     log("ISO9660\n");
@@ -365,6 +392,9 @@ void select_partition(byte_t partition_number) {
 
  if(partitions[partition_number].type==STORAGE_FAT) {
   select_fat_partition(partitions[partition_number].first_sector);
+ }
+ else if(partitions[partition_number].type==STORAGE_EXT) {
+  select_ext_partition(partitions[partition_number].first_sector);
  }
  else if(partitions[partition_number].type==STORAGE_ISO9660) {
   select_iso9660_partition(partitions[partition_number].first_sector);
@@ -458,6 +488,9 @@ dword_t read_file(dword_t file_starting_entry, dword_t file_size) {
  if(partitions[selected_partition_number].type==STORAGE_FAT) {
   return read_fat_file(file_starting_entry, file_size);
  }
+ else if(partitions[selected_partition_number].type==STORAGE_EXT) {
+  return ext_read_file(file_starting_entry, file_size);
+ }
  else if(partitions[selected_partition_number].type==STORAGE_ISO9660) {
   return iso9660_read_file(file_starting_entry, file_size);
  }
@@ -495,6 +528,9 @@ dword_t delete_file(dword_t file_starting_entry) {
 dword_t read_folder(dword_t file_starting_entry, dword_t file_size) {
  if(partitions[selected_partition_number].type==STORAGE_FAT) {
   return read_fat_folder(file_starting_entry, file_size);
+ }
+ else if(partitions[selected_partition_number].type==STORAGE_EXT) {
+  return ext_read_folder(file_starting_entry, file_size);
  }
  else if(partitions[selected_partition_number].type==STORAGE_ISO9660) {
   return read_iso9660_folder(file_starting_entry, file_size);

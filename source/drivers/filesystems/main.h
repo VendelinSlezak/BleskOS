@@ -27,7 +27,7 @@ struct partition {
  dword_t first_sector;
  dword_t num_of_sectors;
 };
-struct partition partitions[32];
+struct partition partitions[8];
 
 byte_t storage_medium, storage_medium_number, save_value_storage_medium, save_value_storage_medium_number, selected_partition_number;
 byte_t one_sector[2048];
@@ -45,6 +45,7 @@ byte_t write_storage_medium(dword_t sector, byte_t num_of_sectors, dword_t memor
 byte_t detect_optical_disk(void);
 void eject_optical_disk(void);
 void read_partition_info(void);
+void read_global_partition_table(dword_t sector);
 void select_partition(byte_t partition_number);
 dword_t compare_file_extension(dword_t folder_mem, dword_t entry_number, dword_t extension_memory, dword_t extension_length);
 void get_file_extension(dword_t folder_mem, dword_t entry_number);
