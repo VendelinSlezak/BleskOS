@@ -14,6 +14,7 @@ int abs(int i);
 float fabs(float i);
 int floor(float i);
 dword_t power(dword_t value, dword_t exponent);
+dword_t get_number_of_digits_in_number(dword_t number);
 dword_t convert_byte_string_to_number(dword_t mem);
 dword_t convert_word_string_to_number(dword_t mem);
 float convert_word_string_to_float_number(dword_t mem);
