@@ -330,8 +330,14 @@ void draw_graphic_editor(void) {
   add_zone_to_click_board(GRAPHIC_EDITOR_SIDE_PANEL_WIDTH+40+40+48+48, graphic_screen_y-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH, 48, 20, GRAPHIC_EDITOR_CLICK_ZONE_IMAGE_ZOOM_300);
   add_zone_to_click_board(GRAPHIC_EDITOR_SIDE_PANEL_WIDTH+40+40+48+48+48, graphic_screen_y-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH, 48, 20, GRAPHIC_EDITOR_CLICK_ZONE_IMAGE_ZOOM_400);
   
-  //draw image
+  //print image dimensions
   dword_t *image_info = (dword_t *) (get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
+  dword_t size_of_digits_of_width = (get_number_of_digits_in_number(image_info[IMAGE_INFO_REAL_WIDTH])*8), size_of_digits_of_heigth = (get_number_of_digits_in_number(image_info[IMAGE_INFO_REAL_HEIGTH])*8);
+  print_var(image_info[IMAGE_INFO_REAL_WIDTH], graphic_screen_x-8-size_of_digits_of_heigth-8-size_of_digits_of_width, graphic_screen_y-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH+6, BLACK);
+  print("x", graphic_screen_x-8-size_of_digits_of_heigth-8, graphic_screen_y-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH+6, BLACK);
+  print_var(image_info[IMAGE_INFO_REAL_HEIGTH], graphic_screen_x-8-size_of_digits_of_heigth, graphic_screen_y-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH+6, BLACK);
+
+  //draw image
   add_zone_to_click_board(GRAPHIC_EDITOR_SIDE_PANEL_WIDTH, 20, graphic_editor_image_area_width, graphic_editor_image_area_heigth, NO_CLICK); //clear click board
   draw_resized_image(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
   add_zone_to_click_board(image_info[IMAGE_INFO_SCREEN_X], image_info[IMAGE_INFO_SCREEN_Y], image_info[IMAGE_INFO_DRAW_WIDTH], image_info[IMAGE_INFO_DRAW_HEIGTH], GRAPHIC_EDITOR_CLICK_ZONE_IMAGE); //add image click zone
