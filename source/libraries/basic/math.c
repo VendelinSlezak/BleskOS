@@ -51,6 +51,20 @@ dword_t power(dword_t value, dword_t exponent) {
  }
 }
 
+dword_t get_number_of_digits_in_number(dword_t number) {
+ if(number==0) {
+  return 1;
+ }
+ else {
+  dword_t digits = 0;
+  while(number>0) {
+   number /= 10;
+   digits++;
+  }
+  return digits;
+ }
+}
+
 dword_t convert_byte_string_to_number(dword_t mem) {
  byte_t *string = (byte_t *) mem;
  dword_t number = 0;
