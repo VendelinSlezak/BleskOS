@@ -100,6 +100,10 @@ void ohci_controller_detect_devices(byte_t controller_number) {
    //enable device
    mmio_outd(usb_controllers[controller_number].base+port_number, 0x2);
    wait(30);
+   if((mmio_ind(usb_controllers[controller_number].base+port_number) & 0x2)==0x0) {
+    log("\nOHCI: device was not enabled");
+    continue; //device was not enabled
+   }
    
    //find if this is low speed or full speed device
    if((mmio_ind(usb_controllers[controller_number].base+port_number) & 0x200)==0x200) {
@@ -134,10 +138,16 @@ void ohci_controller_detect_devices(byte_t controller_number) {
    }
    
    //set address of device
-   ohci_set_address(controller_number, i);
+   if(ohci_set_address(controller_number, i)==STATUS_ERROR) {
+    log("\nOHCI: error during setting addres");
+    return;
+   }
    
-   //read descriptor
-   ohci_read_configuration_descriptor(controller_number, i, usb_control_endpoint_length);
+   //read configuration descriptor
+   if(ohci_read_configuration_descriptor(controller_number, i, usb_control_endpoint_length)==STATUS_ERROR) {
+    log("\nOHCI: error during reading configuration descriptor");
+    return;
+   }
    
    //initalizing succesfull
    usb_controllers[controller_number].ports_state[i]=PORT_INITALIZED_DEVICE;
@@ -219,7 +229,7 @@ byte_t ohci_control_transfer(byte_t controller_number, dword_t last_td) {
  mmio_outd(usb_controllers[controller_number].base+0x08, 0x02);
  
  ticks=0;
- while(ticks<500) {
+ while(ticks<200) {
   asm("hlt");
   
   if((mem[0] & 0xE0000000)!=0xE0000000) { //active bits
@@ -243,6 +253,13 @@ byte_t ohci_control_transfer(byte_t controller_number, dword_t last_td) {
  mmio_outd(usb_controllers[controller_number].base+0x08, 0x00);
  
  log("\nOHCI transfer timeout ");
+ mem = (dword_t *) (usb_controllers[controller_number].mem3);
+ for(dword_t i=0; i<last_td; i++) {
+  log("\n");
+  log_hex(*mem);
+  mem+=4;
+ }
+ log("\n");
  return STATUS_ERROR;
 }
 
@@ -283,7 +300,7 @@ byte_t ohci_bulk_transfer(byte_t controller_number, dword_t last_td, dword_t tim
  mmio_outd(usb_controllers[controller_number].base+0x04, (0x80 | (mmio_ind(usb_controllers[controller_number].base+0x04) & 0x04)));
  mmio_outd(usb_controllers[controller_number].base+0x08, 0x00);
  
- log("\nOHCI transfer timeout ");
+ log("\nOHCI bulk transfer timeout ");
  return STATUS_ERROR;
 }
 
@@ -332,7 +349,7 @@ void ohci_transfer_set_setup(byte_t controller_number, byte_t port) {
  ohci_control_transfer(controller_number, 1); //TODO: error transaction
 }
 
-void ohci_set_address(byte_t controller_number, byte_t port) {
+byte_t ohci_set_address(byte_t controller_number, byte_t port) {
  dword_t *buffer = (dword_t *) usb_controllers[controller_number].setup_mem;
 
  //set address SETUP packet
@@ -342,7 +359,7 @@ void ohci_set_address(byte_t controller_number, byte_t port) {
  ohci_create_ed(controller_number, port, 0, 0, ENDPOINT_0, 0, 2);
  ohci_create_td(controller_number, 0, 1, OHCI_SETUP, TOGGLE_0, usb_controllers[controller_number].setup_mem, 8);
  ohci_create_td(controller_number, 1, 0, OHCI_IN, TOGGLE_1, 0, 0);
- ohci_control_transfer(controller_number, 1); //TODO: error transaction
+ return ohci_control_transfer(controller_number, 1);
 }
 
 void ohci_set_configuration(byte_t controller_number, byte_t port, dword_t configuration_num) {
@@ -523,9 +540,9 @@ dword_t ohci_read_descriptor(byte_t controller_number, byte_t port, byte_t type_
  return (data[1] & 0x00FFFFFF);
 }
 
-void ohci_read_configuration_descriptor(byte_t controller_number, byte_t port, byte_t control_endpoint_length) {
+byte_t ohci_read_configuration_descriptor(byte_t controller_number, byte_t port, byte_t control_endpoint_length) {
  dword_t *buffer = (dword_t *) usb_controllers[controller_number].setup_mem;
- dword_t data_mem = malloc(8);
+ dword_t data_mem = calloc(8);
  dword_t *data = (dword_t *) data_mem;
  dword_t data_length = 0;
 
@@ -537,12 +554,18 @@ void ohci_read_configuration_descriptor(byte_t controller_number, byte_t port, b
  ohci_create_td(controller_number, 0, 1, OHCI_SETUP, TOGGLE_0, usb_controllers[controller_number].setup_mem, 8);
  ohci_create_td(controller_number, 1, 2, OHCI_IN, TOGGLE_1, data_mem, 8);
  ohci_create_td(controller_number, 2, 0, OHCI_OUT, TOGGLE_1, 0, 0);
- ohci_control_transfer(controller_number, 2);
+ byte_t status = ohci_control_transfer(controller_number, 2);
+
+ if(status==STATUS_ERROR) {
+  free(data_mem);
+  return STATUS_ERROR;
+ }
   
  data_length = (data[0]>>16);
  if(data_length==0) {
   log("\nerror size of configuration descriptor");
-  return;
+  free(data_mem);
+  return STATUS_ERROR;
  }
   
  //read CONFIGURATION DESCRIPTOR
@@ -574,7 +597,7 @@ void ohci_read_configuration_descriptor(byte_t controller_number, byte_t port, b
   if(usb_keyboard_state!=0) {
    free(data_mem);
    log("duplicated");
-   return;
+   return STATUS_GOOD;
   }
   
   ohci_set_configuration(controller_number, port, usb_descriptor_devices[0].configuration);
@@ -606,7 +629,7 @@ void ohci_read_configuration_descriptor(byte_t controller_number, byte_t port, b
   if(usb_mouse_state!=0) {
    free(data_mem);
    log("duplicated");
-   return;
+   return STATUS_GOOD;
   }
   
   ohci_set_configuration(controller_number, port, usb_descriptor_devices[0].configuration);
@@ -653,7 +676,7 @@ void ohci_read_configuration_descriptor(byte_t controller_number, byte_t port, b
     usb_mass_storage_initalize(i);
     
     free(data_mem);
-    return;
+    return STATUS_GOOD;
    }
   }
   
@@ -661,6 +684,7 @@ void ohci_read_configuration_descriptor(byte_t controller_number, byte_t port, b
  }
 
  free(data_mem);
+ return STATUS_GOOD;
 }
 
 void ohci_read_hid_descriptor(byte_t controller_number, byte_t port, byte_t interface, word_t length, byte_t control_endpoint_length) {
