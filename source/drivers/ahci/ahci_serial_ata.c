@@ -28,6 +28,10 @@ byte_t sata_send_command(dword_t base_port, dword_t commands_memory, dword_t fis
  commands_mem[1]=0;
  commands_mem[2]=fis_memory;
  commands_mem[3]=0;
+ commands_mem[4]=0;
+ commands_mem[5]=0;
+ commands_mem[6]=0;
+ commands_mem[7]=0;
  
  //set fis command
  mmio_outb(fis_memory + 0x00, 0x27); //host to device
@@ -73,22 +77,18 @@ byte_t sata_send_command(dword_t base_port, dword_t commands_memory, dword_t fis
  
  //wait
  ticks = 0;
- status = STATUS_ERROR;
  while(ticks<500) {
   if((mmio_ind(base_port + 0x38) & 0x1)==0x0) {
-   status = STATUS_GOOD;
-   break;
+   return STATUS_GOOD;
   }
   if((mmio_ind(base_port + 0x10) & 0x40000000)==0x40000000) {
-   //some error occured
-   break;
+   log("\nAHCI error: ");
+   log_hex_with_space(mmio_ind(base_port + 0x20));
+   log_var(commands_mem[1]);
+   return STATUS_ERROR; //some error occured
   }
  }
- if(status==STATUS_ERROR) {
-  return STATUS_ERROR; //command was not processed
- }
-
- return STATUS_GOOD;
+ return STATUS_ERROR;
 }
 
 byte_t sata_read_drive_info(dword_t base_port, dword_t commands_memory, dword_t fis_memory) {
