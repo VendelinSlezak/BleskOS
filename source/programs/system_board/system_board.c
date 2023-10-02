@@ -17,8 +17,10 @@ void system_board_redraw(void) {
  clear_screen(0xA04000);
 
  print("Hardware", 10, 10, BLACK);
- print("[L] Open system log", graphic_screen_x-20*8, graphic_screen_y-20, BLACK);
- print("[Esc] Back to Main window", 10, graphic_screen_y-20, BLACK);
+ draw_empty_square(graphic_screen_x-22*8, graphic_screen_y-10-5-8-5, 21*8, 18, BLACK);
+ print("[L] Open system log", graphic_screen_x-21*8, graphic_screen_y-10-5-8, BLACK);
+ draw_empty_square(10, graphic_screen_y-10-5-8-5, 27*8, 18, BLACK);
+ print("[Esc] Back to Main window", 18, graphic_screen_y-10-5-8, BLACK);
 
  //draw background of selected device
  draw_full_square(10, 30+system_board_selected_item*30, 200, 20, WHITE);
@@ -403,7 +405,7 @@ void system_board(void) {
   wait_for_usb_mouse();
   move_mouse_cursor();
 
-  if(keyboard_value==KEY_ESC || (mouse_drag_and_drop==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y-20, graphic_screen_y-10, 10, 10+26*8)==STATUS_TRUE)) {
+  if(keyboard_value==KEY_ESC || (mouse_drag_and_drop==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y-10-5-8-5, graphic_screen_y-10, 10, 10+27*8)==STATUS_TRUE)) {
    return;
   }
 
@@ -429,7 +431,7 @@ void system_board(void) {
   }
 
   if(mouse_drag_and_drop==MOUSE_CLICK) {
-   if(is_mouse_in_zone(graphic_screen_y-20, graphic_screen_y-10, graphic_screen_x-20*8, graphic_screen_x-8)==STATUS_TRUE) {
+   if(is_mouse_in_zone(graphic_screen_y-10-5-8-5, graphic_screen_y-10, graphic_screen_x-22*8, graphic_screen_x-8)==STATUS_TRUE) {
     developer_program_log();
     goto redraw;
    }
