@@ -77,9 +77,9 @@ void uhci_controller_detect_devices(byte_t controller_number) {
    uhci_remove_device_if_connected(controller_number, i);
    
    //reset device
-   outw(usb_controllers[controller_number].base+port_number, 0x0200);
+   outw(usb_controllers[controller_number].base+port_number, 0x0201);
    wait(100);
-   outw(usb_controllers[controller_number].base+port_number, 0x0000);
+   outw(usb_controllers[controller_number].base+port_number, 0x0001);
    wait(50);
    
    //find if this is low speed or full speed device
@@ -90,11 +90,14 @@ void uhci_controller_detect_devices(byte_t controller_number) {
     usb_controllers[controller_number].ports_device_speed[i]=USB_FULL_SPEED;
    }
    
-   //enable device and clear status change
-   outw(usb_controllers[controller_number].base+port_number, 0x6);
+   //clear status change and enable device, this must not be done in one write
+   outw(usb_controllers[controller_number].base+port_number, 0x3);
+   wait(1);
+   outw(usb_controllers[controller_number].base+port_number, 0x5);
    wait(100);
    if((inw(usb_controllers[controller_number].base+port_number) & 0x4)==0x0) {
-    continue; //device was not enabled
+    log("\nUHCI: device was not enabled");
+    continue;
    }
    
    //get descriptor
@@ -119,11 +122,17 @@ void uhci_controller_detect_devices(byte_t controller_number) {
    }
     
    //set address of device
-   uhci_set_address(controller_number, i);
+   if(uhci_set_address(controller_number, i)==STATUS_ERROR) {
+    log("\nUHCI: error during setting addres");
+    return;
+   }
    
    //read configuration descriptor
-   uhci_read_configuration_descriptor(controller_number, i, usb_control_endpoint_length);
-    
+   if(uhci_read_configuration_descriptor(controller_number, i, usb_control_endpoint_length)==STATUS_ERROR) {
+    log("\nUHCI: error during reading configuration descriptor");
+    return;
+   }
+   
    //initalizing succesfull
    usb_controllers[controller_number].ports_state[i]=PORT_INITALIZED_DEVICE;
   }
@@ -236,6 +245,13 @@ byte_t uhci_wait_for_transfer(dword_t controller_number, dword_t descriptor, dwo
  }
  
  log("\nUHCI transfer timeout");
+ transfer_descriptor = (dword_t *) (usb_controllers[controller_number].mem3+4);
+ for(dword_t i=0; i<descriptor; i++) {
+  log("\n");
+  log_hex(*transfer_descriptor);
+  transfer_descriptor+=8;
+ }
+ log("\n");
  return STATUS_ERROR;
 }
 
@@ -244,11 +260,11 @@ void uhci_transfer_set_setup(byte_t controller_number, byte_t port) {
  uhci_set_transfer_descriptor(controller_number, port, 0, 1, 8, TOGGLE_0, ENDPOINT_0, (port+1), UHCI_SETUP, usb_controllers[controller_number].setup_mem);
  uhci_set_transfer_descriptor(controller_number, port, 1, UHCI_NO_DESCRIPTOR, 0, TOGGLE_1, ENDPOINT_0, (port+1), UHCI_IN, 0x0);
  uhci_set_frame_list(controller_number, 0, (usb_controllers[controller_number].mem2 | 0x2), 4);
- uhci_wait_for_transfer(controller_number, 1, 100); //TODO: error transaction
+ uhci_wait_for_transfer(controller_number, 1, 200); //TODO: error transaction
  uhci_set_frame_list(controller_number, 0, UHCI_NO_POINTER, 4);
 }
 
-void uhci_set_address(byte_t controller_number, byte_t port) {
+byte_t uhci_set_address(byte_t controller_number, byte_t port) {
  dword_t *buffer = (dword_t *) usb_controllers[controller_number].setup_mem;
 
  //set address SETUP packet
@@ -259,8 +275,10 @@ void uhci_set_address(byte_t controller_number, byte_t port) {
  uhci_set_transfer_descriptor(controller_number, port, 0, 1, 8, TOGGLE_0, ENDPOINT_0, 0, UHCI_SETUP, usb_controllers[controller_number].setup_mem);
  uhci_set_transfer_descriptor(controller_number, port, 1, UHCI_NO_DESCRIPTOR, 0, TOGGLE_1, ENDPOINT_0, 0, UHCI_IN, 0x0);
  uhci_set_frame_list(controller_number, 0, (usb_controllers[controller_number].mem2 | 0x2), 4);
- uhci_wait_for_transfer(controller_number, 1, 100); //TODO: error transaction
+ byte_t status = uhci_wait_for_transfer(controller_number, 1, 200); //TODO: error transaction
  uhci_set_frame_list(controller_number, 0, UHCI_NO_POINTER, 4);
+
+ return status;
 }
 
 void uhci_set_configuration(byte_t controller_number, byte_t port, dword_t configuration_num) {
@@ -319,7 +337,7 @@ void uhci_set_keyboard_led(byte_t controller_number, byte_t port, dword_t interf
  uhci_set_transfer_descriptor(controller_number, port, 1, 2, 1, TOGGLE_1, endpoint, (port+1), UHCI_OUT, usb_controllers[controller_number].setup_mem+8);
  uhci_set_transfer_descriptor(controller_number, port, 2, UHCI_NO_DESCRIPTOR, 0, TOGGLE_1, endpoint, (port+1), UHCI_IN, 0x0);
  uhci_set_frame_list(controller_number, 0, (usb_controllers[controller_number].mem2 | 0x2), 4);
- uhci_wait_for_transfer(controller_number, 2, 100); //TODO: error transaction
+ uhci_wait_for_transfer(controller_number, 2, 200); //TODO: error transaction
  uhci_set_frame_list(controller_number, 0, UHCI_NO_POINTER, 4);
 }
 
@@ -355,7 +373,7 @@ void uhci_send_setup_to_device(byte_t controller_number, byte_t port, word_t max
     uhci_set_transfer_descriptor(controller_number, port, i, (i+1), max_length, toggle, ENDPOINT_0, (port+1), UHCI_IN, memory);
     uhci_set_transfer_descriptor(controller_number, port, (i+1), UHCI_NO_DESCRIPTOR, 0, TOGGLE_1, ENDPOINT_0, (port+1), UHCI_OUT, 0x0);
     uhci_set_frame_list(controller_number, 0, (usb_controllers[controller_number].mem2 | 0x2), 4);
-    uhci_wait_for_transfer(controller_number, (i+1), 100); //TODO: error transaction
+    uhci_wait_for_transfer(controller_number, (i+1), 200); //TODO: error transaction
     uhci_set_frame_list(controller_number, 0, UHCI_NO_POINTER, 4);     
     break;
    }
@@ -374,7 +392,7 @@ void uhci_send_setup_to_device(byte_t controller_number, byte_t port, word_t max
     uhci_set_transfer_descriptor(controller_number, port, i, (i+1), max_length, toggle, ENDPOINT_0, (port+1), UHCI_IN, memory);
     uhci_set_transfer_descriptor(controller_number, port, (i+1), UHCI_NO_DESCRIPTOR, 0, TOGGLE_1, ENDPOINT_0, (port+1), UHCI_OUT, 0x0);
     uhci_set_frame_list(controller_number, 0, (usb_controllers[controller_number].mem2 | 0x2), 4);
-    uhci_wait_for_transfer(controller_number, (i+1), 100); //TODO: error transaction
+    uhci_wait_for_transfer(controller_number, (i+1), 200); //TODO: error transaction
     uhci_set_frame_list(controller_number, 0, UHCI_NO_POINTER, 4);     
     break;
    }
@@ -398,7 +416,7 @@ dword_t uhci_read_descriptor(byte_t controller_number, byte_t port, byte_t type_
   uhci_set_transfer_descriptor(controller_number, port, 1, 2, 8, TOGGLE_1, ENDPOINT_0, 0, UHCI_IN, data_mem);
   uhci_set_transfer_descriptor(controller_number, port, 2, UHCI_NO_DESCRIPTOR, 0, TOGGLE_1, ENDPOINT_0, 0, UHCI_OUT, 0x0);
   uhci_set_frame_list(controller_number, 0, (usb_controllers[controller_number].mem2 | 0x2), 4);
-  status = uhci_wait_for_transfer(controller_number, 2, 100);
+  status = uhci_wait_for_transfer(controller_number, 2, 200);
   uhci_set_frame_list(controller_number, 0, UHCI_NO_POINTER, 4);
  }
  else if(type_of_transfer==18) {
@@ -412,7 +430,7 @@ dword_t uhci_read_descriptor(byte_t controller_number, byte_t port, byte_t type_
    uhci_set_transfer_descriptor(controller_number, port, 3, 4, 2, TOGGLE_1, ENDPOINT_0, 0, UHCI_IN, data_mem+8+8);
    uhci_set_transfer_descriptor(controller_number, port, 4, UHCI_NO_DESCRIPTOR, 0, TOGGLE_1, ENDPOINT_0, 0, UHCI_OUT, 0x0);
    uhci_set_frame_list(controller_number, 0, (usb_controllers[controller_number].mem2 | 0x2), 4);
-   status = uhci_wait_for_transfer(controller_number, 2, 100);
+   status = uhci_wait_for_transfer(controller_number, 2, 200);
    uhci_set_frame_list(controller_number, 0, UHCI_NO_POINTER, 4);
   }
   else if(control_endpoint_length==64) {
@@ -421,7 +439,7 @@ dword_t uhci_read_descriptor(byte_t controller_number, byte_t port, byte_t type_
    uhci_set_transfer_descriptor(controller_number, port, 1, 2, 64, TOGGLE_1, ENDPOINT_0, 0, UHCI_IN, data_mem);
    uhci_set_transfer_descriptor(controller_number, port, 2, UHCI_NO_DESCRIPTOR, 0, TOGGLE_1, ENDPOINT_0, 0, UHCI_OUT, 0x0);
    uhci_set_frame_list(controller_number, 0, (usb_controllers[controller_number].mem2 | 0x2), 4);
-   status = uhci_wait_for_transfer(controller_number, 2, 100);
+   status = uhci_wait_for_transfer(controller_number, 2, 200);
    uhci_set_frame_list(controller_number, 0, UHCI_NO_POINTER, 4);
   }
  }
@@ -440,9 +458,9 @@ dword_t uhci_read_descriptor(byte_t controller_number, byte_t port, byte_t type_
  return (data[1] & 0x00FFFFFF);
 }
 
-void uhci_read_configuration_descriptor(byte_t controller_number, byte_t port, byte_t control_endpoint_length) {
+byte_t uhci_read_configuration_descriptor(byte_t controller_number, byte_t port, byte_t control_endpoint_length) {
  dword_t *buffer = (dword_t *) usb_controllers[controller_number].setup_mem;
- dword_t data_mem = malloc(8);
+ dword_t data_mem = calloc(8);
  dword_t *data = (dword_t *) data_mem;
  dword_t data_length = 0;
  
@@ -455,13 +473,19 @@ void uhci_read_configuration_descriptor(byte_t controller_number, byte_t port, b
  uhci_set_transfer_descriptor(controller_number, port, 1, 2, 8, TOGGLE_1, ENDPOINT_0, (port+1), UHCI_IN, data_mem);
  uhci_set_transfer_descriptor(controller_number, port, 2, UHCI_NO_DESCRIPTOR, 0, TOGGLE_1, ENDPOINT_0, (port+1), UHCI_OUT, 0x0);
  uhci_set_frame_list(controller_number, 0, (usb_controllers[controller_number].mem2 | 0x2), 4);
- uhci_wait_for_transfer(controller_number, 2, 100); //TODO: error transaction
+ byte_t status = uhci_wait_for_transfer(controller_number, 2, 200);
  uhci_set_frame_list(controller_number, 0, UHCI_NO_POINTER, 4);
  
+ if(status==STATUS_ERROR) {
+  free(data_mem);
+  return STATUS_ERROR;
+ }
+
  data_length = (data[0]>>16);
  if(data_length==0) {
   log("\nerror size of configuration descriptor");
-  return;
+  free(data_mem);
+  return STATUS_ERROR;
  }
  
  //read CONFIGURATION DESCRIPTOR
@@ -493,7 +517,7 @@ void uhci_read_configuration_descriptor(byte_t controller_number, byte_t port, b
   if(usb_keyboard_state!=0) {
    free(data_mem);
    log("duplicated");
-   return;
+   return STATUS_GOOD;
   }
   
   uhci_set_configuration(controller_number, port, usb_descriptor_devices[0].configuration);
@@ -523,7 +547,7 @@ void uhci_read_configuration_descriptor(byte_t controller_number, byte_t port, b
   if(usb_mouse_state!=0) {
    free(data_mem);
    log("duplicated");
-   return;
+   return STATUS_GOOD;
   }
   
   uhci_set_configuration(controller_number, port, usb_descriptor_devices[0].configuration);
@@ -568,7 +592,7 @@ void uhci_read_configuration_descriptor(byte_t controller_number, byte_t port, b
     usb_mass_storage_initalize(i);
     
     free(data_mem);
-    return;
+    return STATUS_GOOD;
    }
   }
   
@@ -576,6 +600,7 @@ void uhci_read_configuration_descriptor(byte_t controller_number, byte_t port, b
  }
 
  free(data_mem);
+ return STATUS_GOOD;
 }
 
 void uhci_read_hid_descriptor(byte_t controller_number, byte_t port, byte_t interface, word_t length, byte_t control_endpoint_length) {

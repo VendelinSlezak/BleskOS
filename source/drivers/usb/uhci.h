@@ -25,7 +25,7 @@ void uhci_set_queue_head(byte_t controller_number, dword_t offset, dword_t first
 void uhci_set_transfer_descriptor(byte_t controller_number, byte_t port, dword_t descriptor, dword_t next_descriptor, dword_t length, dword_t toggle, dword_t endpoint, dword_t device_address, dword_t packet_type, dword_t buffer);
 byte_t uhci_wait_for_transfer(dword_t controller_number, dword_t descriptor, dword_t time);
 void uhci_transfer_set_setup(byte_t controller_number, byte_t port);
-void uhci_set_address(byte_t controller_number, byte_t port);
+byte_t uhci_set_address(byte_t controller_number, byte_t port);
 void uhci_set_configuration(byte_t controller_number, byte_t port, dword_t configuration_num);
 void uhci_set_interface(byte_t controller_number, byte_t port, dword_t interface_num, dword_t alt_interface_num);
 void uhci_set_idle(byte_t controller_number, byte_t port, dword_t interface_num, byte_t idle_value);
@@ -34,7 +34,7 @@ void uhci_set_keyboard_led(byte_t controller_number, byte_t port, dword_t interf
 void uhci_set_interrupt_transfer(byte_t controller_number, byte_t port, byte_t frame_offset, byte_t transfer_offset, byte_t endpoint, byte_t transfer_length, byte_t transfer_time, dword_t memory);
 void uhci_send_setup_to_device(byte_t controller_number, byte_t port, word_t max_length, dword_t memory, byte_t control_endpoint_length);
 dword_t uhci_read_descriptor(byte_t controller_number, byte_t port, byte_t type_of_transfer, byte_t control_endpoint_length);
-void uhci_read_configuration_descriptor(byte_t controller_number, byte_t port, byte_t control_endpoint_length);
+byte_t uhci_read_configuration_descriptor(byte_t controller_number, byte_t port, byte_t control_endpoint_length);
 void uhci_read_hid_descriptor(byte_t controller_number, byte_t port, byte_t interface, word_t length, byte_t control_endpoint_length);
 byte_t uhci_bulk_out(byte_t controller_number, byte_t port, byte_t endpoint, byte_t toggle, dword_t memory, dword_t max_length, dword_t time_to_wait);
 byte_t uhci_bulk_in(byte_t controller_number, byte_t port, byte_t endpoint, byte_t toggle, dword_t memory, dword_t max_length, dword_t time_to_wait);
