@@ -30,6 +30,7 @@ void log_starting_memory(void);
 dword_t malloc(dword_t mem_length);
 dword_t aligned_malloc(dword_t mem_length, dword_t mem_alignment);
 dword_t calloc(dword_t mem_length);
+dword_t aligned_calloc(dword_t mem_length, dword_t mem_alignment);
 dword_t realloc(dword_t mem_pointer, dword_t mem_length);
 void free(dword_t mem_pointer);
 void memory_error_debug(dword_t color);

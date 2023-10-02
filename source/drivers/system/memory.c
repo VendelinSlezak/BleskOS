@@ -338,6 +338,19 @@ dword_t calloc(dword_t mem_length) {
  return mem_pointer;
 }
 
+dword_t aligned_calloc(dword_t mem_length, dword_t mem_alignment) {
+ //allocate memory
+ dword_t mem_pointer = aligned_malloc(mem_length, mem_alignment);
+ if(mem_pointer==0) {
+  return 0; //some error
+ }
+ 
+ //clear memory
+ clear_memory(mem_pointer, mem_length);
+ 
+ return mem_pointer;
+}
+
 dword_t realloc(dword_t mem_pointer, dword_t mem_length) {
  dword_t *memory_entries = (dword_t *) mem_memory_entries;
  dword_t *pointed_memory_entry = (dword_t *) 0;
