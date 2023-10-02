@@ -167,19 +167,6 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
   if(ahci_controllers_pointer<10) {
    ahci_controllers[ahci_controllers_pointer]=ahci_base;
    ahci_controllers_pointer++;
-   
-   //scan ports and save signatures
-   for(int port_num=0, mask=1; port_num<32; port_num++, mask<<=1) {
-    if(ahci_ports_pointer>=32) {
-     return;
-    }
-    //test if port exist
-    if((mmio_ind(ahci_base + 0x0C) & mask)==mask) {
-     ahci_ports[ahci_ports_pointer][0]=(ahci_base + 0x100 + (port_num*0x80)); //port base
-     ahci_ports[ahci_ports_pointer][1]=mmio_ind(ahci_base + 0x100 + (port_num*0x80) + 0x24); //port signature
-     ahci_ports_pointer++;
-    }
-   }
   }
   return;
  }
