@@ -677,8 +677,8 @@ dword_t read_fat_folder(dword_t cluster, dword_t size_in_bytes) {
  for(dword_t i=0; i<size_in_bytes; i+=32) {
   if(fat_folder_ptr[i+11]==0xF) {
    //move actual name, because LFN entries have name from backward
-   for(int i=256, j=256-26; i>32; i--, j--) {
-    folder_mem_ptr[i]=folder_mem_ptr[j];
+   for(int j=256, k=256-26; j>32; j--, k--) {
+    folder_mem_ptr[j]=folder_mem_ptr[k];
    }
    
    //copy entry name
@@ -700,18 +700,24 @@ dword_t read_fat_folder(dword_t cluster, dword_t size_in_bytes) {
    
    //short file name
    if(folder_mem_ptr[32]==0 && folder_mem_ptr[33]==0) {
-    folder_mem_ptr[32+0]=fat_folder_ptr[i+0];
-    folder_mem_ptr[32+2]=fat_folder_ptr[i+1];
-    folder_mem_ptr[32+4]=fat_folder_ptr[i+2];
-    folder_mem_ptr[32+6]=fat_folder_ptr[i+3];
-    folder_mem_ptr[32+8]=fat_folder_ptr[i+4];
-    folder_mem_ptr[32+10]=fat_folder_ptr[i+5];
-    folder_mem_ptr[32+12]=fat_folder_ptr[i+6];
-    folder_mem_ptr[32+14]=fat_folder_ptr[i+7];
-    folder_mem_ptr[32+16]='.';
-    folder_mem_ptr[32+18]=fat_folder_ptr[i+8];
-    folder_mem_ptr[32+20]=fat_folder_ptr[i+9];
-    folder_mem_ptr[32+22]=fat_folder_ptr[i+10];
+    dword_t folder_name_ptr = 0;
+
+    for(dword_t j=0; j<8; j++) {
+     if(fat_folder_ptr[i+j]!=' ') {
+      folder_mem_ptr[32+folder_name_ptr]=fat_folder_ptr[i+j];
+     }
+     else {
+      break;
+     }
+
+     folder_name_ptr+=2;
+    }
+    if(fat_folder_ptr[i+8]!=' ') { //add extension
+     folder_mem_ptr[32+folder_name_ptr]='.';
+     folder_mem_ptr[32+folder_name_ptr+2]=fat_folder_ptr[i+8];
+     folder_mem_ptr[32+folder_name_ptr+4]=fat_folder_ptr[i+9];
+     folder_mem_ptr[32+folder_name_ptr+6]=fat_folder_ptr[i+10];
+    }
    }
 
    folder_mem_ptr += 256;
