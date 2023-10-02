@@ -8,6 +8,10 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 3**
+- Several improvements on UHCI, OHCI and AHCI drivers
+- Fixed showing of FAT entry with only short name
+
 **Update 2**
 - ext2 read-only driver
 - Support for Extended Boot Record and Global Partition Table
@@ -56,7 +60,7 @@ Drivers
 - Graphic: VBE
 - Sound: AC97, Intel HD Audio(works in QEMU)
 - Inbuilt hardware: PS/2 keyboard, PS/2 mouse, PATA hard disk, PATAPI optical disk drive, AHCI hard disk, AHCI optical disk drive
-- Filesystems: FAT12/16/32, ext2 (read-only) ISO9660 (read-only)
+- Filesystems: FAT12/16/32, ext2 (read-only), ISO9660 (read-only)
 - USB controllers: UHCI, OHCI, EHCI
 - USB devices: USB mouse, USB keyboard, USB mass storage device
 - Ethernet cards: Realtek 8139/8169, Intel e1000(e), AMD PC-net
