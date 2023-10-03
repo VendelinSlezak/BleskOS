@@ -9,7 +9,7 @@
 */
 
 dword_t create_text_area(dword_t type, dword_t length_in_chars, dword_t x, dword_t y, dword_t width, dword_t heigth) {
- dword_t text_area_memory = malloc(25*4);
+ dword_t text_area_memory = malloc(28*4);
  dword_t *text_area_info = (dword_t *) text_area_memory;
 
  text_area_info[TEXT_AREA_INFO_TYPE] = type;
@@ -37,6 +37,9 @@ dword_t create_text_area(dword_t type, dword_t length_in_chars, dword_t x, dword
  text_area_info[TEXT_AREA_INFO_REDRAW_Y] = 0;
  text_area_info[TEXT_AREA_INFO_REDRAW_WIDTH] = 0;
  text_area_info[TEXT_AREA_INFO_REDRAW_HEIGTH] = 0;
+ text_area_info[TEXT_AREA_INFO_CHANGES_LIST] = malloc(TEXT_AREA_MAX_NUMBER_OF_CHANGES_IN_LIST*8);
+ text_area_info[TEXT_AREA_INFO_CHANGES_LIST_POINTER] = 0;
+ text_area_info[TEXT_AREA_INFO_CHANGES_LIST_LAST_ENTRY_POINTER] = 0;
  
  return text_area_memory;
 }
@@ -44,6 +47,7 @@ dword_t create_text_area(dword_t type, dword_t length_in_chars, dword_t x, dword
 void delete_text_area(dword_t text_area_info_mem) {
  dword_t *text_area_info = (dword_t *) text_area_info_mem;
  free(text_area_info[TEXT_AREA_INFO_MEMORY]);
+ free(text_area_info[TEXT_AREA_INFO_CHANGES_LIST]);
  free(text_area_info_mem);
 }
 
@@ -65,7 +69,7 @@ void draw_text_area(dword_t text_area_info_mem) {
   chars_color = BLACK;
  }
  else if(type==TEXT_AREA_NORMAL_DARK) {
-  background_color = 0;
+  background_color = BLACK;
   chars_color = WHITE;
  }
  text_area_info[TEXT_AREA_INFO_WIDTH] = text_area_info[TEXT_AREA_INFO_REAL_WIDTH];
@@ -397,21 +401,51 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
   }
   else if(keyboard_value==KEY_V) { //insert text
    //TODO: do not insert if is text area full of text
+
+   //number of copied chars
+   dword_t text_area_length_of_copied_chars = text_area_copy_memory_length;
+   if(text_area_info[TEXT_AREA_INFO_TYPE]==TEXT_AREA_NUMBER_INPUT) {
+    text_area_length_of_copied_chars = 0;
+
+    //count how many numbers are in copied text
+    word_t *copy_memory = (word_t *) (text_area_copy_memory);
+    while(*copy_memory>='0' && *copy_memory<='9' && text_area_length_of_copied_chars<text_area_copy_memory_length) {
+     text_area_length_of_copied_chars+=2;
+     copy_memory++;
+    }
+   }
    
-   if(text_area_copy_memory!=0 && text_area_copy_memory_length!=0 && (text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]<=(text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-text_area_copy_memory_length))) {
+   if(text_area_copy_memory!=0 && text_area_length_of_copied_chars!=0 && (text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]<=(text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-text_area_length_of_copied_chars))) {
     //shift chars
-    copy_memory_back((text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-text_area_copy_memory_length-2), (text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-2), (text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]-text_area_copy_memory_length));
+    copy_memory_back((text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-text_area_length_of_copied_chars-2), (text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-2), (text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]-text_area_length_of_copied_chars));
    
     //add chars
-    copy_memory(((dword_t)text_area_copy_memory), ((dword_t)text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]), text_area_copy_memory_length);
+    copy_memory(((dword_t)text_area_copy_memory), ((dword_t)text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]), text_area_length_of_copied_chars);
+
+    //add chars to change list
+    text_area_change_command = TEXT_AREA_CHANGE_ADD_GROUP_OF_CHARS_TOGGLE_0;
+    if((text_area_info[TEXT_AREA_INFO_FLAGS] & TEXT_AREA_COPY_TOGGLE_FLAG)==TEXT_AREA_COPY_TOGGLE_FLAG) {
+     text_area_change_command = TEXT_AREA_CHANGE_ADD_GROUP_OF_CHARS_TOGGLE_1;
+     text_area_info[TEXT_AREA_INFO_FLAGS] &= ~TEXT_AREA_COPY_TOGGLE_FLAG;
+    }
+    else {
+     text_area_info[TEXT_AREA_INFO_FLAGS] |= TEXT_AREA_COPY_TOGGLE_FLAG;
+    }
+    word_t *text_area_copy_memory_data = (word_t *) (text_area_copy_memory);
+    for(dword_t i=0, cursor_position = text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]; i<(text_area_length_of_copied_chars/2); i++) {
+     text_area_add_change_to_list(text_area_info_mem, text_area_change_command, *text_area_copy_memory_data, cursor_position);
+     text_area_copy_memory_data++;
+     cursor_position+=2;
+    }
+
   
     //move cursor
-    text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]+=text_area_copy_memory_length;
+    text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]+=text_area_length_of_copied_chars;
     text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]=0xFFFFFFFF;
   
     //set change
     text_area_change_type = TEXT_AREA_TEXT_CHANGE;
-    text_area_info[TEXT_AREA_INFO_FLAGS] = TEXT_AREA_TEXT_CHANGE;
+    text_area_info[TEXT_AREA_INFO_FLAGS] |= TEXT_AREA_TEXT_CHANGE_FLAG;
 
     //calculate actual number of lines and columns
     text_area_calculate_number_of_lines_and_columns(text_area_info_mem);
@@ -428,6 +462,22 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
     text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]+=2;
     text_area_data++;
    }
+  }
+  else if(keyboard_value==KEY_Z) {
+   //perform undo
+   text_area_undo(text_area_info_mem);
+
+   //set change
+   text_area_change_type = TEXT_AREA_TEXT_CHANGE;
+   text_area_info[TEXT_AREA_INFO_FLAGS] |= TEXT_AREA_TEXT_CHANGE_FLAG;
+  }
+  else if(keyboard_value==KEY_Y) {
+   //perform undo
+   text_area_redo(text_area_info_mem);
+
+   //set change
+   text_area_change_type = TEXT_AREA_TEXT_CHANGE;
+   text_area_info[TEXT_AREA_INFO_FLAGS] |= TEXT_AREA_TEXT_CHANGE_FLAG;
   }
  }
  else if(keyboard_value==KEY_LEFT) {
@@ -601,6 +651,9 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
    if(text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]>text_area_info[TEXT_AREA_INFO_MEMORY]) {
     //move cursor
     text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]-=2;
+
+    //add change
+    text_area_add_change_to_list(text_area_info_mem, TEXT_AREA_CHANGE_REMOVE_CHAR_BY_BACKSPACE, text_area_data[-1], text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]);
    
     //delete one char
     copy_memory((text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]+2), (text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]), (text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]));
@@ -608,7 +661,7 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
     
     //set change
     text_area_change_type = TEXT_AREA_TEXT_CHANGE;
-    text_area_info[TEXT_AREA_INFO_FLAGS] = TEXT_AREA_TEXT_CHANGE;
+    text_area_info[TEXT_AREA_INFO_FLAGS] |= TEXT_AREA_TEXT_CHANGE_FLAG;
 
     //calculate actual number of lines and columns
     text_area_calculate_number_of_lines_and_columns(text_area_info_mem);
@@ -617,7 +670,7 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
   else {
    //set change
    text_area_change_type = TEXT_AREA_TEXT_CHANGE;
-   text_area_info[TEXT_AREA_INFO_FLAGS] = TEXT_AREA_TEXT_CHANGE;
+   text_area_info[TEXT_AREA_INFO_FLAGS] |= TEXT_AREA_TEXT_CHANGE_FLAG;
   
    goto key_delete_whole_selected_area;
   }
@@ -628,9 +681,12 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
  else if(keyboard_value==KEY_DELETE) {
   //set change
   text_area_change_type = TEXT_AREA_TEXT_CHANGE;
-  text_area_info[TEXT_AREA_INFO_FLAGS] = TEXT_AREA_TEXT_CHANGE;
+  text_area_info[TEXT_AREA_INFO_FLAGS] |= TEXT_AREA_TEXT_CHANGE_FLAG;
   
   if(text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]==0xFFFFFFFF || text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]==text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]) {
+   //add change
+   text_area_add_change_to_list(text_area_info_mem, TEXT_AREA_CHANGE_REMOVE_CHAR_BY_DELETE, text_area_data[0], text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]);
+   
    //delete one char
    copy_memory((text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]+2), (text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]), (text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]));
    clear_memory((text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-2), 2);
@@ -640,6 +696,32 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
   }
   else {
    key_delete_whole_selected_area:
+   //add deleted area data to change list
+   text_area_change_command = TEXT_AREA_CHANGE_REMOVE_GROUP_OF_CHARS_TOGGLE_0;
+   if((text_area_info[TEXT_AREA_INFO_FLAGS] & TEXT_AREA_COPY_TOGGLE_FLAG)==TEXT_AREA_COPY_TOGGLE_FLAG) {
+    text_area_change_command = TEXT_AREA_CHANGE_REMOVE_GROUP_OF_CHARS_TOGGLE_1;
+    text_area_info[TEXT_AREA_INFO_FLAGS] &= ~TEXT_AREA_COPY_TOGGLE_FLAG;
+   }
+   else {
+    text_area_info[TEXT_AREA_INFO_FLAGS] |= TEXT_AREA_COPY_TOGGLE_FLAG;
+   }
+   if(text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]>text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]) {
+    text_area_data = (word_t *) (text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]-2);
+    for(dword_t i=0, cursor_position = (text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]-2); i<((text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]-text_area_info[TEXT_AREA_INFO_CURSOR_POSITION])/2); i++) {
+     text_area_add_change_to_list(text_area_info_mem, text_area_change_command, *text_area_data, cursor_position);
+     text_area_data--;
+     cursor_position-=2;
+    }
+   }
+   else {
+    text_area_data = (word_t *) (text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]-2);
+    for(dword_t i=0, cursor_position = (text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]-2); i<((text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]-text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER])/2); i++) {
+     text_area_add_change_to_list(text_area_info_mem, text_area_change_command, *text_area_data, cursor_position);
+     text_area_data--;
+     cursor_position-=2;
+    }
+   }
+
    //delete whole selected area
    if(text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]>text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]) {
     copy_memory((text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]), (text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]), (text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]+2));
@@ -670,6 +752,34 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
   
   //delete selected area
   if(text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]!=0xFFFFFFFF && text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]!=text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]) {
+   //add deleted area data to change list
+   text_area_change_command = TEXT_AREA_CHANGE_REMOVE_GROUP_OF_CHARS_TOGGLE_0;
+   if((text_area_info[TEXT_AREA_INFO_FLAGS] & TEXT_AREA_COPY_TOGGLE_FLAG)==TEXT_AREA_COPY_TOGGLE_FLAG) {
+    text_area_change_command = TEXT_AREA_CHANGE_REMOVE_GROUP_OF_CHARS_TOGGLE_1;
+    text_area_info[TEXT_AREA_INFO_FLAGS] &= ~TEXT_AREA_COPY_TOGGLE_FLAG;
+   }
+   else {
+    text_area_info[TEXT_AREA_INFO_FLAGS] |= TEXT_AREA_COPY_TOGGLE_FLAG;
+   }
+   if(text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]>text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]) {
+    text_area_data = (word_t *) (text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]-2);
+    for(dword_t i=0, cursor_position = (text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]-2); i<((text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]-text_area_info[TEXT_AREA_INFO_CURSOR_POSITION])/2); i++) {
+     text_area_add_change_to_list(text_area_info_mem, text_area_change_command, *text_area_data, cursor_position);
+     text_area_data--;
+     cursor_position-=2;
+    }
+   }
+   else {
+    text_area_data = (word_t *) (text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]-2);
+    for(dword_t i=0, cursor_position = (text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]-2); i<((text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]-text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER])/2); i++) {
+     text_area_add_change_to_list(text_area_info_mem, text_area_change_command, *text_area_data, cursor_position);
+     text_area_data--;
+     cursor_position-=2;
+    }
+   }
+   text_area_data = (word_t *) (text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]);
+   
+   //delete chars from text area
    if(text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]>text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]) {
     copy_memory((text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]), (text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]), (text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]+2));
     clear_memory((text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-(text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]-text_area_info[TEXT_AREA_INFO_CURSOR_POSITION])), (text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]-text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]));
@@ -719,13 +829,16 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
   else {
    text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]++; //new line was inserted
   }
+
+  //add change
+  text_area_add_change_to_list(text_area_info_mem, TEXT_AREA_CHANGE_ADD_CHAR, keyboard_unicode_save, text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]);
   
   //move cursor
   text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]+=2;
   
   //set change
   text_area_change_type = TEXT_AREA_TEXT_CHANGE;
-  text_area_info[TEXT_AREA_INFO_FLAGS] = TEXT_AREA_TEXT_CHANGE;
+  text_area_info[TEXT_AREA_INFO_FLAGS] |= TEXT_AREA_TEXT_CHANGE_FLAG;
   
   //hide any selected area
   text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]=0xFFFFFFFF;
@@ -741,7 +854,23 @@ void text_area_mouse_event(dword_t text_area_info_mem) {
  //change cursor position
  if(mouse_drag_and_drop==MOUSE_CLICK) {
   draw_text_area(text_area_info_mem); //get mouse cursor position
-  if(text_area_mouse_cursor_char_memory!=0xFFFFFFFF) {
+  if(text_area_mouse_cursor_char_memory==text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]) { //double click on word
+   word_t *text_area_data = (word_t *) (text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]);
+   while((dword_t)text_area_data>text_area_info[TEXT_AREA_INFO_MEMORY] && text_area_data[-1]!=' ') {
+    text_area_data--;
+   }
+   text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER] = ((dword_t)text_area_data);
+
+   text_area_data = (word_t *) (text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]);
+   while((dword_t)text_area_data<text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE] && text_area_data[1]!=' ' && text_area_data[1]!=0) {
+    text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]+=2;
+    text_area_data++;
+   }
+   if(text_area_data[1]==' ') {
+    text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]+=2;
+   }
+  }
+  else if(text_area_mouse_cursor_char_memory!=0xFFFFFFFF) {
    text_area_info[TEXT_AREA_INFO_CURSOR_POSITION] = text_area_mouse_cursor_char_memory; 
    text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER] = text_area_mouse_cursor_char_memory;
   }
@@ -783,4 +912,173 @@ void text_area_disable_cursor(dword_t text_area_info_mem) {
 
  text_area_info[TEXT_AREA_INFO_CURSOR_POSITION] = 0xFFFFFFFF;
  text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER] = 0xFFFFFFFF;
+}
+
+void text_area_add_change_to_list(dword_t text_area_info_mem, dword_t change_type, dword_t unicode_char, dword_t cursor_position) {
+ dword_t *text_area_info = (dword_t *) text_area_info_mem;
+ dword_t *text_area_change_list = (dword_t *) (text_area_info[TEXT_AREA_INFO_CHANGES_LIST]+text_area_info[TEXT_AREA_INFO_CHANGES_LIST_POINTER]*8);
+
+ if(text_area_info[TEXT_AREA_INFO_CHANGES_LIST_POINTER]<TEXT_AREA_MAX_NUMBER_OF_CHANGES_IN_LIST) {
+  text_area_change_list[0] = (change_type | (unicode_char<<16));
+  text_area_change_list[1] = cursor_position;
+  text_area_info[TEXT_AREA_INFO_CHANGES_LIST_POINTER]++;
+ }
+ else {
+  copy_memory(text_area_info[TEXT_AREA_INFO_CHANGES_LIST]+8, text_area_info[TEXT_AREA_INFO_CHANGES_LIST], (TEXT_AREA_MAX_NUMBER_OF_CHANGES_IN_LIST-1)*8);
+  text_area_change_list[-2] = (change_type | (unicode_char<<16));
+  text_area_change_list[-1] = cursor_position;
+ }
+
+ text_area_info[TEXT_AREA_INFO_CHANGES_LIST_LAST_ENTRY_POINTER]=text_area_info[TEXT_AREA_INFO_CHANGES_LIST_POINTER];
+}
+
+void text_area_undo(dword_t text_area_info_mem) {
+ dword_t *text_area_info = (dword_t *) text_area_info_mem;
+ if(text_area_info[TEXT_AREA_INFO_CHANGES_LIST_POINTER]>0) {
+  dword_t *text_area_change_list = (dword_t *) (text_area_info[TEXT_AREA_INFO_CHANGES_LIST]+(text_area_info[TEXT_AREA_INFO_CHANGES_LIST_POINTER]-1)*8);
+  dword_t change_type = (text_area_change_list[0] & 0xFFFF), cursor_position = text_area_change_list[1], how_many_entries = 0;
+
+  //count how many chars should we insert/remove at one request
+  if(change_type==TEXT_AREA_CHANGE_ADD_GROUP_OF_CHARS_TOGGLE_0 || change_type==TEXT_AREA_CHANGE_ADD_GROUP_OF_CHARS_TOGGLE_1 || change_type==TEXT_AREA_CHANGE_REMOVE_GROUP_OF_CHARS_TOGGLE_0 || change_type==TEXT_AREA_CHANGE_REMOVE_GROUP_OF_CHARS_TOGGLE_1) {
+   while((text_area_change_list[0] & 0xFFFF)==change_type) {
+    how_many_entries++; //count entry
+    if((dword_t)text_area_change_list==text_area_info[TEXT_AREA_INFO_CHANGES_LIST]) {
+     break; //we are at start
+    }
+    text_area_change_list-=2; //previous entry
+   }
+  }
+  else if((text_area_change_list[0]>>16)==' ') {
+   how_many_entries++; //one entry with space
+  }
+  else {
+   while((text_area_change_list[0] & 0xFFFF)==change_type && (text_area_change_list[1]==cursor_position) && (text_area_change_list[0]>>16)!=' ') {
+    how_many_entries++; //count entry
+    if((dword_t)text_area_change_list==text_area_info[TEXT_AREA_INFO_CHANGES_LIST]) {
+     break; //we are at start
+    }
+    text_area_change_list-=2; //previous entry
+    if(change_type==TEXT_AREA_CHANGE_ADD_CHAR) {
+     cursor_position-=2;
+    }
+    else {
+     cursor_position+=2;
+    }
+   }
+  }
+
+  //perform undo
+  if(change_type==TEXT_AREA_CHANGE_ADD_CHAR || change_type==TEXT_AREA_CHANGE_ADD_GROUP_OF_CHARS_TOGGLE_0 || change_type==TEXT_AREA_CHANGE_ADD_GROUP_OF_CHARS_TOGGLE_1) {
+   //move cursor
+   text_area_change_list = (dword_t *) (text_area_info[TEXT_AREA_INFO_CHANGES_LIST]+(text_area_info[TEXT_AREA_INFO_CHANGES_LIST_POINTER]-how_many_entries)*8);
+   text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]=text_area_change_list[1];
+
+   //remove chars
+   copy_memory((text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]+how_many_entries*2), (text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]), (text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]));
+   clear_memory((text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-how_many_entries*2), how_many_entries*2);
+   text_area_info[TEXT_AREA_INFO_CHANGES_LIST_POINTER]-=how_many_entries;
+  }
+  else if(change_type==TEXT_AREA_CHANGE_REMOVE_CHAR_BY_BACKSPACE || change_type==TEXT_AREA_CHANGE_REMOVE_CHAR_BY_DELETE || change_type==TEXT_AREA_CHANGE_REMOVE_GROUP_OF_CHARS_TOGGLE_0 || change_type==TEXT_AREA_CHANGE_REMOVE_GROUP_OF_CHARS_TOGGLE_1) {
+   //move cursor
+   text_area_change_list = (dword_t *) (text_area_info[TEXT_AREA_INFO_CHANGES_LIST]+(text_area_info[TEXT_AREA_INFO_CHANGES_LIST_POINTER]-1)*8);
+   text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]=text_area_change_list[1];
+   
+   //shift memory
+   copy_memory_back((text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-how_many_entries*2-2), (text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-2), (text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]-how_many_entries*2));
+
+   //add chars
+   word_t *text_area_data = (word_t *) (text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]);
+   for(dword_t i=0; i<how_many_entries; i++) {
+    *text_area_data = (text_area_change_list[0]>>16);
+    text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]+=2;
+    text_area_data++;
+    text_area_change_list-=2;
+   }
+   text_area_info[TEXT_AREA_INFO_CHANGES_LIST_POINTER]-=how_many_entries;
+
+   //move cursor
+   if(change_type==TEXT_AREA_CHANGE_REMOVE_CHAR_BY_DELETE) {
+    text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]-=2;
+   }
+  }
+
+  //calculate actual number of lines and columns
+  text_area_calculate_number_of_lines_and_columns(text_area_info_mem);
+
+  //redraw whole area
+  text_area_info[TEXT_AREA_INFO_REDRAW_X] = 0xFFFFFFFF;
+ }
+}
+
+void text_area_redo(dword_t text_area_info_mem) {
+ dword_t *text_area_info = (dword_t *) text_area_info_mem;
+ if(text_area_info[TEXT_AREA_INFO_CHANGES_LIST_POINTER]<text_area_info[TEXT_AREA_INFO_CHANGES_LIST_LAST_ENTRY_POINTER]) {
+  dword_t *text_area_change_list = (dword_t *) (text_area_info[TEXT_AREA_INFO_CHANGES_LIST]+text_area_info[TEXT_AREA_INFO_CHANGES_LIST_POINTER]*8);
+  dword_t change_type = (text_area_change_list[0] & 0xFFFF), cursor_position = text_area_change_list[1], how_many_entries = 0;
+
+  //count how many chars should we insert/remove at one request
+  if(change_type==TEXT_AREA_CHANGE_ADD_GROUP_OF_CHARS_TOGGLE_0 || change_type==TEXT_AREA_CHANGE_ADD_GROUP_OF_CHARS_TOGGLE_1 || change_type==TEXT_AREA_CHANGE_REMOVE_GROUP_OF_CHARS_TOGGLE_0 || change_type==TEXT_AREA_CHANGE_REMOVE_GROUP_OF_CHARS_TOGGLE_1) {
+   while((text_area_change_list[0] & 0xFFFF)==change_type) {
+    how_many_entries++; //count entry
+    text_area_change_list+=2; //next entry
+    if((dword_t)text_area_change_list==(text_area_info[TEXT_AREA_INFO_CHANGES_LIST]+text_area_info[TEXT_AREA_INFO_CHANGES_LIST_LAST_ENTRY_POINTER]*8)) {
+     break; //we are at end
+    }
+   }
+  }
+  else if((text_area_change_list[0]>>16)==' ') {
+   how_many_entries++; //one entry with space
+  }
+  else {
+   while((text_area_change_list[0] & 0xFFFF)==change_type && (text_area_change_list[1]==cursor_position) && (text_area_change_list[0]>>16)!=' ') {
+    how_many_entries++; //count entry
+    text_area_change_list+=2; //next entry
+    if(change_type==TEXT_AREA_CHANGE_ADD_CHAR) {
+     cursor_position+=2;
+    }
+    else {
+     cursor_position-=2;
+    }
+    if((dword_t)text_area_change_list==(text_area_info[TEXT_AREA_INFO_CHANGES_LIST]+text_area_info[TEXT_AREA_INFO_CHANGES_LIST_LAST_ENTRY_POINTER]*8)) {
+     break; //we are at end
+    }
+   }
+  }
+
+  //perform redo
+  if(change_type==TEXT_AREA_CHANGE_ADD_CHAR || change_type==TEXT_AREA_CHANGE_ADD_GROUP_OF_CHARS_TOGGLE_0 || change_type==TEXT_AREA_CHANGE_ADD_GROUP_OF_CHARS_TOGGLE_1) {
+   //move cursor
+   text_area_change_list = (dword_t *) (text_area_info[TEXT_AREA_INFO_CHANGES_LIST]+text_area_info[TEXT_AREA_INFO_CHANGES_LIST_POINTER]*8);
+   text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]=text_area_change_list[1];
+   
+   //shift memory
+   copy_memory_back((text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-how_many_entries*2-2), (text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-2), (text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]-how_many_entries*2));
+
+   //add chars
+   word_t *text_area_data = (word_t *) (text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]);
+   for(dword_t i=0; i<how_many_entries; i++) {
+    *text_area_data = (text_area_change_list[0]>>16);
+    text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]+=2;
+    text_area_data++;
+    text_area_change_list+=2;
+   }
+   text_area_info[TEXT_AREA_INFO_CHANGES_LIST_POINTER]+=how_many_entries;
+  }
+  else if(change_type==TEXT_AREA_CHANGE_REMOVE_CHAR_BY_BACKSPACE || change_type==TEXT_AREA_CHANGE_REMOVE_CHAR_BY_DELETE || change_type==TEXT_AREA_CHANGE_REMOVE_GROUP_OF_CHARS_TOGGLE_0 || change_type==TEXT_AREA_CHANGE_REMOVE_GROUP_OF_CHARS_TOGGLE_1) {
+   //move cursor
+   text_area_change_list = (dword_t *) (text_area_info[TEXT_AREA_INFO_CHANGES_LIST]+(text_area_info[TEXT_AREA_INFO_CHANGES_LIST_POINTER]+(how_many_entries-1))*8);
+   text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]=text_area_change_list[1];
+
+   //remove chars
+   copy_memory((text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]+how_many_entries*2), (text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]), (text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]));
+   clear_memory((text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-how_many_entries*2), how_many_entries*2);
+   text_area_info[TEXT_AREA_INFO_CHANGES_LIST_POINTER]+=how_many_entries;
+  }
+
+  //calculate actual number of lines and columns
+  text_area_calculate_number_of_lines_and_columns(text_area_info_mem);
+
+  //redraw whole area
+  text_area_info[TEXT_AREA_INFO_REDRAW_X] = 0xFFFFFFFF;
+ }
 }

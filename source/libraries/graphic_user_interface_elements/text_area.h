@@ -38,12 +38,27 @@
 #define TEXT_AREA_INFO_REDRAW_Y 22
 #define TEXT_AREA_INFO_REDRAW_WIDTH 23
 #define TEXT_AREA_INFO_REDRAW_HEIGTH 24
+#define TEXT_AREA_INFO_CHANGES_LIST 25
+#define TEXT_AREA_INFO_CHANGES_LIST_POINTER 26
+#define TEXT_AREA_INFO_CHANGES_LIST_LAST_ENTRY_POINTER 27
+
+#define TEXT_AREA_TEXT_CHANGE_FLAG 0x1
+#define TEXT_AREA_COPY_TOGGLE_FLAG 0x2
 
 #define TEXT_AREA_NO_CHANGE 0
 #define TEXT_AREA_TEXT_CHANGE 1
 
+#define TEXT_AREA_MAX_NUMBER_OF_CHANGES_IN_LIST 10000
+#define TEXT_AREA_CHANGE_ADD_CHAR 1
+#define TEXT_AREA_CHANGE_REMOVE_CHAR_BY_DELETE 2
+#define TEXT_AREA_CHANGE_REMOVE_CHAR_BY_BACKSPACE 3
+#define TEXT_AREA_CHANGE_ADD_GROUP_OF_CHARS_TOGGLE_0 4
+#define TEXT_AREA_CHANGE_ADD_GROUP_OF_CHARS_TOGGLE_1 5
+#define TEXT_AREA_CHANGE_REMOVE_GROUP_OF_CHARS_TOGGLE_0 6
+#define TEXT_AREA_CHANGE_REMOVE_GROUP_OF_CHARS_TOGGLE_1 7
+
 dword_t text_area_absoulte_cursor_line = 0, text_area_absoulte_cursor_column = 0, text_area_change_type = 0, text_area_mouse_cursor_char_memory = 0;
-dword_t text_area_copy_memory = 0, text_area_copy_memory_length = 0;
+dword_t text_area_copy_memory = 0, text_area_copy_memory_length = 0, text_area_change_command = 0;
 
 dword_t create_text_area(dword_t type, dword_t length_in_chars, dword_t x, dword_t y, dword_t width, dword_t heigth);
 void delete_text_area(dword_t text_area_info_mem);
@@ -55,3 +70,6 @@ void text_area_calculate_number_of_lines_and_columns(dword_t text_area_info_mem)
 void text_area_keyboard_event(dword_t text_area_info_mem);
 void text_area_mouse_event(dword_t text_area_info_mem);
 void text_area_disable_cursor(dword_t text_area_info_mem);
+void text_area_add_change_to_list(dword_t text_area_info_mem, dword_t change_type, dword_t unicode_char, dword_t cursor_position);
+void text_area_undo(dword_t text_area_info_mem);
+void text_area_redo(dword_t text_area_info_mem);
