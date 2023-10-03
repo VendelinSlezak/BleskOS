@@ -8,6 +8,10 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 4**
+- Added function Undo and Redo for Text editor and text areas
+- Text editor support light/dark mode
+
 **Update 3**
 - Several improvements on UHCI, OHCI and AHCI drivers
 - Fixed showing of FAT entry with only short name
@@ -38,7 +42,7 @@ On real computers you should select first option. However, in emulators is best 
 
 After booting screen, you will see Main window. When you see Main window, BleskOS is fully booted and ready to be used. You do not need to wait, as in classic operating systems, where even if you see desktop, you need to wait for all processes to be started. From Main window you can go to programs by clicking on their button, or by appropriate key.
 
-![VirtualBox_BleskOS_28_09_2023_17_21_19](https://github.com/VendelinSlezak/BleskOS/assets/43180618/5b4e6915-1ab7-408b-8cb4-7802a61ef56d)
+![VirtualBox_BleskOS_03_10_2023_19_07_11](https://github.com/VendelinSlezak/BleskOS/assets/43180618/4cc598df-61e3-42fd-beb2-a8f62d96206b)
 
 In all programs you can use these keyboard shortcuts:
 
