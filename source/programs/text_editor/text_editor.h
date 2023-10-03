@@ -13,8 +13,11 @@
 #define TEXT_EDITOR_CLICK_ZONE_TEXT_AREA 100
 #define TEXT_EDITOR_CLICK_ZONE_VERTICAL_SCROLLBAR 101
 #define TEXT_EDITOR_CLICK_ZONE_HORIZONTAL_SCROLLBAR 102
+#define TEXT_EDITOR_CLICK_ZONE_UNDO 103
+#define TEXT_EDITOR_CLICK_ZONE_REDO 104
+#define TEXT_EDITOR_CLICK_ZONE_SWITCH_COLOR_MODE 105
 
-dword_t text_editor_program_interface_memory = 0;
+dword_t text_editor_program_interface_memory = 0, text_editor_button_undo_on_screen = 0, text_editor_button_redo_on_screen = 0;
 
 void initalize_text_editor(void);
 void text_editor(void);
@@ -23,3 +26,6 @@ void text_editor_open_file(void);
 void text_editor_save_file(void);
 void text_editor_new_file(void);
 void text_editor_close_file(void);
+void text_editor_key_F7_event(void);
+void text_editor_click_zone_undo_event(void);
+void text_editor_click_zone_redo_event(void);
