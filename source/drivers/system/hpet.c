@@ -52,7 +52,7 @@ void initalize_hpet(void) {
 
  //log info
  log("\nHPET: ");
- log_var(hpet_one_tick_how_many_nanoseconds);
+ log_var_with_space(hpet_one_tick_how_many_nanoseconds);
  log("nanoseconds per tick\n");
 }
 
