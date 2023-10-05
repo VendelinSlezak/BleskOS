@@ -60,10 +60,11 @@ void play_new_sound(dword_t sound_memory, dword_t channels, dword_t bits_per_sam
  if(ac97_present==DEVICE_PRESENT) {
   ac97_stop_sound();
   ac97_set_sample_rate(sample_rate);
-  ac97_play_memory(sound_memory, number_of_samples);
+  ac97_play_memory(sound_memory, (number_of_samples/channels));
  }
  else if(hda_present==DEVICE_PRESENT) {
-  hda_play_memory(sound_memory, number_of_samples*2*2);
+  //TODO: set sample rate
+  hda_play_memory(sound_memory, sample_rate, channels, bits_per_sample, (number_of_samples/channels));
  }
 }
 

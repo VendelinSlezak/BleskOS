@@ -166,34 +166,53 @@ void hda_initalize_codec(dword_t codec) {
    hda_send_verb(codec, node, 0x705, 0x00);
    
    //LOG node
-   log_hex(node);
+   log_var_with_space(node);
    if(nodes_mem[node]==0) {
-    log("Audio Output ");
+    log("Audio Output");
    }
    else if(nodes_mem[node]==1) {
-    log("Audio Input ");
+    log("Audio Input");
    }
    else if(nodes_mem[node]==2) {
-    log("Audio Mixer ");
+    log("Audio Mixer");
    }
    else if(nodes_mem[node]==3) {
-    log("Audio Selector ");
+    log("Audio Selector");
    }
    else if(nodes_mem[node]==0x10) {
-    log("Pin Line Out ");
+    log("Pin Line Out");
    }
    else if(nodes_mem[node]==0x11) {
-    log("Pin Speaker ");
+    log("Pin Speaker");
    }
    else if(nodes_mem[node]==0x12) {
-    log("Pin HP Out ");
+    log("Pin HP Out");
+   }
+   else if(nodes_mem[node]==0x13) {
+    log("Pin CD");
+   }
+   else if(nodes_mem[node]==0x14) {
+    log("Pin SPDIF Out");
+   }
+   else if(nodes_mem[node]==0x15) {
+    log("Pin Digital Other Out");
    }
    else if(nodes_mem[node]==0x18) {
-    log("Pin Line In ");
+    log("Pin Line In");
+   }
+   else if(nodes_mem[node]==0x19) {
+    log("Pin AUX");
+   }
+   else if(nodes_mem[node]==0x1A) {
+    log("Pin Mic In");
+   }
+   else if(nodes_mem[node]==0x1D) {
+    log("Pin Digital Other In");
    }
    else {
-    log_hex(nodes_mem[node]);
+    log_hex_specific_size(nodes_mem[node], 2);
    }
+   log(" ");
    log_hex(nodes_connection_mem[node]);
    log("\n");
   }
@@ -232,8 +251,30 @@ void hda_initalize_codec(dword_t codec) {
    }
   }
  }
+
+ //if there is no line out, found headphone out
  if(hda_output_pin_node==0xFF) {
-  return; //ERROR: no output pin was founded
+  for(int node=0; node<256; node++) {
+   if(nodes_mem[node]==HDA_PIN_HEADPHONE && nodes_connection_mem[node]!=0) {
+    hda_output_pin_node = node;
+    break;
+   }
+  }
+ }
+
+ //if there is no line out, found digital other out
+ if(hda_output_pin_node==0xFF) {
+  for(int node=0; node<256; node++) {
+   if(nodes_mem[node]==HDA_PIN_DIGITAL_OTHER_OUT && nodes_connection_mem[node]!=0) {
+    hda_output_pin_node = node;
+    break;
+   }
+  }
+ }
+
+ //ERROR: no output pin was founded
+ if(hda_output_pin_node==0xFF) {
+  return;
  }
 
  //enable pin
@@ -291,13 +332,13 @@ void hda_initalize_codec(dword_t codec) {
  //LOG
  if(nodes_mem[hda_node_in_path]==HDA_NODE_OUTPUT) {
   log("output->pin ");
-  log_var(hda_output_audio_node);
+  log_var_with_space(hda_output_audio_node);
   log_var(hda_output_pin_node);
  }
  if(nodes_mem[hda_node_in_path]==HDA_NODE_MIXER) {
   log("output->mixer->pin ");
-  log_var(hda_output_audio_node);
-  log_var(hda_node_in_path);
+  log_var_with_space(hda_output_audio_node);
+  log_var_with_space(hda_node_in_path);
   log_var(hda_output_pin_node);
   
   log("\n");
@@ -326,6 +367,8 @@ void hda_node_set_volume(dword_t codec, dword_t node, dword_t volume) {
  hda_send_verb(codec, node, 0x300, (0xF000 | (volume_scale-((100-volume)*volume_scale/100))));
 }
 
+//TODO: set sample rate
+
 byte_t hda_is_supported_channel_size(byte_t size) {
  byte_t channel_sizes[5] = {8, 16, 20, 24, 32};
  dword_t mask=0x00010000;
@@ -346,10 +389,10 @@ byte_t hda_is_supported_channel_size(byte_t size) {
 }
 
 byte_t hda_is_supported_sample_rate(dword_t sample_rate) {
- dword_t sample_rates[12] = {8000, 11025, 16000, 22050, 32000, 44100, 48000, 88200, 96000, 176400, 192000, 384000};
+ dword_t sample_rates[11] = {8000, 11025, 16000, 22050, 32000, 44100, 48000, 88200, 96000, 176400, 192000};
  word_t mask=1;
  
- for(int i=0; i<12; i++) {
+ for(int i=0; i<11; i++) {
   if(sample_rates[i]==sample_rate) {
    break;
   }
@@ -385,30 +428,88 @@ dword_t hda_send_verb(dword_t codec, dword_t node, dword_t verb, dword_t command
   
   return 0;
  }
- 
- //CORB/RIRB interface
- //write verb
- corb[hda_corb_pointer] = value;
- 
- //move write pointer
- mmio_outw(hda_base + 0x48, hda_corb_pointer);
- 
- //wait for response
- ticks = 0;
- while(ticks<5) {
-  if(mmio_inw(hda_base + 0x58)==hda_corb_pointer) {
-   break;
+ else { //CORB/RIRB interface
+  //write verb
+  corb[hda_corb_pointer] = value;
+  
+  //move write pointer
+  mmio_outw(hda_base + 0x48, hda_corb_pointer);
+  
+  //wait for response
+  ticks = 0;
+  while(ticks<5) {
+   if(mmio_inw(hda_base + 0x58)==hda_corb_pointer) {
+    break;
+   }
   }
+  
+  //read response
+  value = rirb[hda_rirb_pointer*2];
+  hda_corb_pointer = ((hda_corb_pointer+1) & 0xFF);
+  hda_rirb_pointer = ((hda_rirb_pointer+1) & 0xFF);
+  return value;
  }
- 
- //read response
- value = rirb[hda_rirb_pointer*2];
- hda_corb_pointer = ((hda_corb_pointer+1) & 0xFF);
- hda_rirb_pointer = ((hda_rirb_pointer+1) & 0xFF);
- return value;
 }
 
-void hda_play_memory(dword_t memory, dword_t length) {
+word_t hda_return_sound_data_format(dword_t sample_rate, dword_t channels, dword_t bits_per_sample) {
+ word_t data_format = 0;
+
+ //channels
+ data_format = (channels-1);
+
+ //bits per sample
+ if(bits_per_sample==16) {
+  data_format |= ((0b001)<<4);
+ }
+ else if(bits_per_sample==20) {
+  data_format |= ((0b010)<<4);
+ }
+ else if(bits_per_sample==24) {
+  data_format |= ((0b011)<<4);
+ }
+ else if(bits_per_sample==32) {
+  data_format |= ((0b100)<<4);
+ }
+
+ //sample rate TODO: more
+ if(sample_rate==48000) {
+  data_format |= ((0b0000000)<<8);
+ }
+ else if(sample_rate==44100) {
+  data_format |= ((0b1000000)<<8);
+ }
+ else if(sample_rate==32000) {
+  data_format |= ((0b0001010)<<8);
+ }
+ else if(sample_rate==22050) {
+  data_format |= ((0b1000001)<<8);
+ }
+ else if(sample_rate==16000) {
+  data_format |= ((0b0000010)<<8);
+ }
+ else if(sample_rate==11025) {
+  data_format |= ((0b1000011)<<8);
+ }
+ else if(sample_rate==8000) {
+  data_format |= ((0b0000101)<<8);
+ }
+ else if(sample_rate==88200) {
+  data_format |= ((0b1001000)<<8);
+ }
+ else if(sample_rate==96000) {
+  data_format |= ((0b0001000)<<8);
+ }
+ else if(sample_rate==176400) {
+  data_format |= ((0b1011000)<<8);
+ }
+ else if(sample_rate==192000) {
+  data_format |= ((0b0011000)<<8);
+ }
+
+ return data_format;
+}
+
+void hda_play_memory(dword_t memory, dword_t sample_rate, dword_t channels, dword_t bits_per_sample, dword_t number_of_samples_in_one_channel) {
  dword_t *buffer = (dword_t *) hda_output_buffer_list;
  
  //stop stream
@@ -416,45 +517,45 @@ void hda_play_memory(dword_t memory, dword_t length) {
  
  //reset stream
  mmio_outd(hda_output_stream_base + 0x00, 0x00100001);
- wait(10);
+ wait(5);
  mmio_outd(hda_output_stream_base + 0x00, 0x00100000);
- wait(10);
+ wait(5);
  
  //buffer memory
  mmio_outd(hda_output_stream_base + 0x18, hda_output_buffer_list);
  mmio_outd(hda_output_stream_base + 0x1C, 0);
  
  //length of data
- mmio_outd(hda_output_stream_base + 0x08, length*2);
- hda_sound_length = length;
+ dword_t bytes_per_sample = (bits_per_sample/8); //8 bits/16 bits
+ if(bits_per_sample>16) { //20 bits/24 bits/32 bits
+  bytes_per_sample = 4;
+ }
+ hda_sound_length = number_of_samples_in_one_channel*bytes_per_sample*channels;
+ mmio_outd(hda_output_stream_base + 0x08, hda_sound_length*2); //we need at least two buffer descriptors
  
  //last valid buffer entry
  mmio_outw(hda_output_stream_base + 0x0C, 1); //two entries
  
- //data format TODO: any type
- mmio_outw(hda_output_stream_base + 0x12, 0x0011); //16 bit samples in 2 channels
- 
+ //set stream data format
+ mmio_outw(hda_output_stream_base + 0x12, hda_return_sound_data_format(sample_rate, channels, bits_per_sample));
+
+ //set audio output node data format
+ hda_send_verb(hda_codec_number, hda_output_audio_node, 0x200, hda_return_sound_data_format(sample_rate, channels, bits_per_sample));
+
  //buffer entries
  buffer[0]=memory;
  buffer[1]=0;
- buffer[2]=length;
+ buffer[2]=hda_sound_length;
  buffer[3]=0;
  
  buffer[4+0]=memory;
  buffer[4+1]=0;
- buffer[4+2]=length;
+ buffer[4+2]=hda_sound_length;
  buffer[4+3]=0;
  
  //start streaming to stream 1
  mmio_outd(hda_output_stream_base + 0x00, 0x00100002);
  hda_playing_state = 1;
-
- //DEBUG
- /*pstr("play");
- for(int i=0; i<40; i++) {
-  wait(5);
-  phex(mmio_ind(hda_output_stream_base + 0x04));
- }*/
 }
 
 void hda_stop_sound(void) {
