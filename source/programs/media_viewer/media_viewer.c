@@ -46,6 +46,9 @@ void media_viewer(void) {
   //close program
   if(keyboard_value==KEY_ESC || (mouse_drag_and_drop==MOUSE_CLICK && get_mouse_cursor_click_board_value()==CLICK_ZONE_BACK)) {
    media_viewer_pause_sound();
+   if(get_file_value(MEDIA_VIEWER_FILE_TYPE)==MEDIA_VIEWER_FILE_SOUND) {
+    media_viewer_sound_state = MEDIA_VIEWER_SOUND_STATE_STOPPED;
+   }
    return;
   }
 
