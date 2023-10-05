@@ -118,7 +118,10 @@ void uhci_controller_detect_devices(byte_t controller_number) {
 
    //get full descriptor from low speed devices
    if(usb_controllers[controller_number].ports_device_speed[i]==USB_LOW_SPEED) {
-    uhci_read_descriptor(controller_number, i, 18, usb_control_endpoint_length);
+    if(uhci_read_descriptor(controller_number, i, 18, usb_control_endpoint_length)==0xFFFFFFFF) {
+     log("\nerror during reading low-speed USB descriptor");
+     return;
+    }
    }
     
    //set address of device
@@ -246,7 +249,7 @@ byte_t uhci_wait_for_transfer(dword_t controller_number, dword_t descriptor, dwo
  
  log("\nUHCI transfer timeout");
  transfer_descriptor = (dword_t *) (usb_controllers[controller_number].mem3+4);
- for(dword_t i=0; i<descriptor; i++) {
+ for(dword_t i=0; i<(descriptor+1); i++) {
   log("\n");
   log_hex(*transfer_descriptor);
   transfer_descriptor+=8;
@@ -430,7 +433,7 @@ dword_t uhci_read_descriptor(byte_t controller_number, byte_t port, byte_t type_
    uhci_set_transfer_descriptor(controller_number, port, 3, 4, 2, TOGGLE_1, ENDPOINT_0, 0, UHCI_IN, data_mem+8+8);
    uhci_set_transfer_descriptor(controller_number, port, 4, UHCI_NO_DESCRIPTOR, 0, TOGGLE_1, ENDPOINT_0, 0, UHCI_OUT, 0x0);
    uhci_set_frame_list(controller_number, 0, (usb_controllers[controller_number].mem2 | 0x2), 4);
-   status = uhci_wait_for_transfer(controller_number, 2, 200);
+   status = uhci_wait_for_transfer(controller_number, 4, 200);
    uhci_set_frame_list(controller_number, 0, UHCI_NO_POINTER, 4);
   }
   else if(control_endpoint_length==64) {
@@ -526,12 +529,12 @@ byte_t uhci_read_configuration_descriptor(byte_t controller_number, byte_t port,
   uhci_set_protocol(controller_number, port, usb_descriptor_devices[0].interface, USB_BOOT_PROTOCOL);
   
   usb_keyboard_controller = controller_number;
-  log_var(usb_keyboard_controller);
+  log_var_with_space(usb_keyboard_controller);
   usb_keyboard_port = port;
-  log_var(usb_keyboard_port);
+  log_var_with_space(usb_keyboard_port);
   usb_keyboard_interface = usb_descriptor_devices[0].interface;
   usb_keyboard_endpoint = usb_descriptor_devices[0].endpoint_interrupt;
-  log_var(usb_keyboard_endpoint);
+  log_var_with_space(usb_keyboard_endpoint);
   usb_keyboard_endpoint_out = usb_descriptor_devices[0].endpoint_interrupt_out; //if INTERRUPT OUT is not present, this will be zero - CONTROL endpoint
   log_var(usb_keyboard_endpoint_out);
   log("\n");
@@ -555,9 +558,9 @@ byte_t uhci_read_configuration_descriptor(byte_t controller_number, byte_t port,
   uhci_set_idle(controller_number, port, usb_descriptor_devices[0].interface, 0);
   
   usb_mouse_controller = controller_number;
-  log_var(usb_mouse_controller);
+  log_var_with_space(usb_mouse_controller);
   usb_mouse_port = port;
-  log_var(usb_mouse_port);
+  log_var_with_space(usb_mouse_port);
   usb_mouse_endpoint = usb_descriptor_devices[0].endpoint_interrupt;
   log_var(usb_mouse_endpoint);
   log("\n");
@@ -583,10 +586,10 @@ byte_t uhci_read_configuration_descriptor(byte_t controller_number, byte_t port,
     usb_mass_storage_devices[i].controller_number = controller_number;
     usb_mass_storage_devices[i].port = port;
     usb_mass_storage_devices[i].endpoint_in = usb_descriptor_devices[0].endpoint_bulk_in;
-    log_var(usb_mass_storage_devices[i].endpoint_in);
+    log_var_with_space(usb_mass_storage_devices[i].endpoint_in);
     usb_mass_storage_devices[i].toggle_in = 0;
     usb_mass_storage_devices[i].endpoint_out = usb_descriptor_devices[0].endpoint_bulk_out;
-    log_var(usb_mass_storage_devices[i].endpoint_out);
+    log_var_with_space(usb_mass_storage_devices[i].endpoint_out);
     usb_mass_storage_devices[i].toggle_out = 0;
     
     usb_mass_storage_initalize(i);
