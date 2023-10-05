@@ -16,7 +16,7 @@ void draw_list_background(dword_t x, dword_t y, dword_t item_width, dword_t num_
  }
 }
 
-void draw_list_item(byte_t *item_string, dword_t x) {
- print(item_string, x+8, list_item_line+6, BLACK);
+void draw_list_item(byte_t *item_string) {
+ print(item_string, list_item_column+8, list_item_line+6, BLACK);
  list_item_line += 20;
 }
