@@ -202,8 +202,8 @@ void parse_usb_configuration_descriptor(dword_t descriptor_mem) {
    usb_descriptor_devices[device_pointer].interface=descriptor8[2];
    usb_descriptor_devices[device_pointer].alternative_interface=descriptor8[3];
    usb_descriptor_devices[device_pointer].type = ((descriptor8[5]<<16) | (descriptor8[6]<<8) | (descriptor8[7]));
-   log_var(usb_descriptor_devices[device_pointer].interface);
-   log_var(usb_descriptor_devices[device_pointer].alternative_interface);
+   log_var_with_space(usb_descriptor_devices[device_pointer].interface);
+   log_var_with_space(usb_descriptor_devices[device_pointer].alternative_interface);
    log_hex(usb_descriptor_devices[device_pointer].type);
   }
   else if(descriptor8[1]==0x05 && device_pointer>=0) { //endpoint
@@ -220,16 +220,16 @@ void parse_usb_configuration_descriptor(dword_t descriptor_mem) {
    }
    else if(endpoint_type==0x7) {
     log("INTERRUPT IN ");
-    log_hex(descriptor8[4]);
-    log_hex(descriptor8[6]);
+    log_hex_with_space(descriptor8[4]);
+    log_hex_with_space(descriptor8[6]);
     usb_descriptor_devices[device_pointer].endpoint_interrupt_length=descriptor8[4];
     usb_descriptor_devices[device_pointer].endpoint_interrupt_time=descriptor8[6];
     usb_descriptor_devices[device_pointer].endpoint_interrupt=endpoint;
    }
    else if(endpoint_type==0x6) {
     log("INTERRUPT OUT ");
-    log_hex(descriptor8[4]);
-    log_hex(descriptor8[6]);
+    log_hex_with_space(descriptor8[4]);
+    log_hex_with_space(descriptor8[6]);
     usb_descriptor_devices[device_pointer].endpoint_interrupt_out=endpoint;
    }
    else if(endpoint_type==0x0) {
@@ -251,8 +251,8 @@ void parse_usb_configuration_descriptor(dword_t descriptor_mem) {
    //TODO:
    log("\nHID descriptor: ");
    for(int j=0; j<descriptor8[5]; j++) {
-    log_hex(descriptor8[6+j*2]);
-    log_hex(descriptor8[7+j*2]);
+    log_hex_with_space(descriptor8[6+j*2]);
+    log_hex_with_space(descriptor8[7+j*2]);
     
     if(descriptor8[6+j*2]==0x22) {
      usb_descriptor_devices[device_pointer].hid_descriptor_length=descriptor8[7+j*2];

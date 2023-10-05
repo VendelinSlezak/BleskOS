@@ -134,7 +134,10 @@ void ohci_controller_detect_devices(byte_t controller_number) {
 
    //get full descriptor from low speed devices
    if(usb_controllers[controller_number].ports_device_speed[i]==USB_LOW_SPEED) {
-    ohci_read_descriptor(controller_number, i, 18, usb_control_endpoint_length);
+    if(ohci_read_descriptor(controller_number, i, 18, usb_control_endpoint_length)==0xFFFFFFFF) {
+     log("\nerror during reading full low-level USB descriptor");
+     return;
+    }
    }
    
    //set address of device
@@ -254,7 +257,7 @@ byte_t ohci_control_transfer(byte_t controller_number, dword_t last_td) {
  
  log("\nOHCI transfer timeout ");
  mem = (dword_t *) (usb_controllers[controller_number].mem3);
- for(dword_t i=0; i<last_td; i++) {
+ for(dword_t i=0; i<(last_td+1); i++) {
   log("\n");
   log_hex(*mem);
   mem+=4;
