@@ -8,6 +8,12 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 5**
+- Functions to edit image that were in Media viewer are now also in Graphic editor
+- Fixed bug about reading USB descriptor from low-speed devices on UHCI
+- Improvement of HDA driver
+- Better logging
+
 **Update 4**
 - Added function Undo and Redo for Text editor and text areas
 - Text editor support light/dark mode
