@@ -34,6 +34,7 @@ void graphic_editor(void) {
  program_interface_add_keyboard_event(KEY_F2, (dword_t)graphic_editor_save_file);
  program_interface_add_keyboard_event(KEY_F3, (dword_t)graphic_editor_new_file);
  program_interface_add_keyboard_event(KEY_F4, (dword_t)graphic_editor_close_file);
+ program_interface_add_keyboard_event(KEY_F7, (dword_t)graphic_editor_key_f7_event);
  program_interface_add_keyboard_event(KEY_UP, (dword_t)graphic_editor_key_up_event);
  program_interface_add_keyboard_event(KEY_DOWN, (dword_t)graphic_editor_key_down_event);
  program_interface_add_keyboard_event(KEY_LEFT, (dword_t)graphic_editor_key_left_event);
@@ -52,6 +53,7 @@ void graphic_editor(void) {
  program_interface_add_keyboard_event(KEY_5, (dword_t)graphic_editor_key_5_event);
  program_interface_add_keyboard_event(KEY_0, (dword_t)graphic_editor_key_0_event);
  program_interface_add_keyboard_event(KEY_ENTER, (dword_t)graphic_editor_key_enter_event);
+ program_interface_add_click_zone_event(GRAPHIC_EDITOR_CLICK_ZONE_EDIT_IMAGE, (dword_t)graphic_editor_key_f7_event);
  program_interface_add_click_zone_event(GRAPHIC_EDITOR_CLICK_ZONE_BUTTON_TAKE_COLOR, (dword_t)graphic_editor_key_t_event);
  program_interface_add_click_zone_event(GRAPHIC_EDITOR_CLICK_ZONE_COLOR_PALETTE, (dword_t)graphic_editor_click_zone_event_palette);
  program_interface_add_click_zone_event(GRAPHIC_EDITOR_CLICK_ZONE_TOOL_PEN, (dword_t)graphic_editor_key_a_event);
@@ -351,6 +353,10 @@ void draw_graphic_editor(void) {
    program_interface_add_horizontal_scrollbar(GRAPHIC_EDITOR_CLICK_ZONE_HORIZONTAL_SCROLLBAR, ((dword_t)image_info)+IMAGE_INFO_DRAW_WIDTH*4, ((dword_t)image_info)+IMAGE_INFO_HORIZONTAL_SCROLLBAR_RIDER_POSITION*4, ((dword_t)image_info)+IMAGE_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE*4, ((dword_t)&graphic_editor_image_horizontal_scrollbar_event));
    add_zone_to_click_board(image_info[IMAGE_INFO_SCREEN_X], image_info[IMAGE_INFO_SCREEN_Y]+image_info[IMAGE_INFO_DRAW_HEIGTH], image_info[IMAGE_INFO_DRAW_WIDTH], 10, GRAPHIC_EDITOR_CLICK_ZONE_HORIZONTAL_SCROLLBAR);
   }
+
+  //draw bottom buttons
+  set_program_value(PROGRAM_INTERFACE_BOTTOM_LINE_DRAW_COLUMN, 0);
+  draw_bottom_line_button("[F7] Edit image", GRAPHIC_EDITOR_CLICK_ZONE_EDIT_IMAGE);
  }
 }
 
@@ -363,7 +369,7 @@ void graphic_editor_redraw_image(void) {
 
  //redraw image
  dword_t *image_info = (dword_t *) (get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
- redraw_part_of_screen(image_info[IMAGE_INFO_SCREEN_X], image_info[IMAGE_INFO_SCREEN_Y], image_info[IMAGE_INFO_WIDTH], image_info[IMAGE_INFO_HEIGTH]);
+ redraw_part_of_screen(image_info[IMAGE_INFO_SCREEN_X], image_info[IMAGE_INFO_SCREEN_Y], image_info[IMAGE_INFO_WIDTH]+10, image_info[IMAGE_INFO_HEIGTH]+10); //+10 include scrollbars
  redraw_mouse_cursor();
 }
 
@@ -506,6 +512,64 @@ void graphic_editor_new_file(void) {
 void graphic_editor_close_file(void) {
  delete_image(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
  free(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_PREVIEW_MEMORY));
+}
+
+void graphic_editor_key_f7_event(void) {
+ if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0) {
+  mouse_cursor_restore_background(mouse_cursor_x, mouse_cursor_y);
+  list_item_line = graphic_screen_y-20-4*20;
+  list_item_column = 8+10*8+8;
+  draw_list_background(list_item_column, list_item_line, 200, 4);
+  draw_list_item("Turn left");
+  draw_list_item("Turn right");
+  draw_list_item("Reverse left-right");
+  draw_list_item("Reverse up-down");
+  mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
+  draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
+  redraw_mouse_cursor();
+  redraw_part_of_screen(8+10*8+8, graphic_screen_y-20-4*20, 200, 4*20);
+
+  while(1) {
+   wait_for_usb_mouse();
+   move_mouse_cursor();
+
+   //close menu
+   if(keyboard_value==KEY_F7) {
+    program_interface_redraw();
+    return;
+   }
+
+   if(mouse_drag_and_drop==MOUSE_CLICK) {
+    if(is_mouse_in_zone(graphic_screen_y-20-4*20, graphic_screen_y-20, 8+10*8+8, 8+10*8+8+200)==STATUS_TRUE) {
+     dword_t selected_item = ((mouse_cursor_y-(graphic_screen_y-20-4*20))/20);
+
+     if(selected_item==0) {
+      image_turn_left(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
+      graphic_editor_copy_image_to_preview();
+      graphic_editor_image_recalculate_zoom();
+     }
+     else if(selected_item==1) {
+      image_turn_right(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
+      graphic_editor_copy_image_to_preview();
+      graphic_editor_image_recalculate_zoom();
+     }
+     else if(selected_item==2) {
+      image_reverse_horizontally(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
+      graphic_editor_copy_image_to_preview();
+      graphic_editor_image_recalculate_zoom();
+     }
+     else if(selected_item==3) {
+      image_reverse_vertically(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
+      graphic_editor_copy_image_to_preview();
+      graphic_editor_image_recalculate_zoom();
+     }
+    }
+
+    program_interface_redraw();
+    return;
+   }
+  }
+ }
 }
 
 void graphic_editor_key_up_event(void) {
