@@ -150,7 +150,7 @@ void ac97_fill_buffer_entry(void) {
  ac97_free_entry = ((ac97_free_entry+1) & 0x1F);
 }
 
-void ac97_play_memory(dword_t sound_memory, dword_t number_of_samples) {  
+void ac97_play_memory(dword_t sound_memory, dword_t number_of_samples_in_one_channel) {  
  //reset stream
  outb(ac97_nabm_base + 0x1B, 0x2);
  ticks = 0;
@@ -165,7 +165,7 @@ void ac97_play_memory(dword_t sound_memory, dword_t number_of_samples) {
  
  ac97_clear_buffer();
  ac97_sound_memory = sound_memory;
- ac97_sound_num_of_samples = number_of_samples;
+ ac97_sound_num_of_samples = (number_of_samples_in_one_channel*2);
  ac97_play_sound(); 
 }
 

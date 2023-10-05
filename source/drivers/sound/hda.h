@@ -19,6 +19,8 @@
 
 #define HDA_PIN_LINE_OUT 0x10
 #define HDA_PIN_SPEAKER 0x11
+#define HDA_PIN_HEADPHONE 0x12
+#define HDA_PIN_DIGITAL_OTHER_OUT 0x15
 
 byte_t hda_present = 0, hda_verb_interface, hda_playing_state=0;
 dword_t hda_base = 0;
@@ -36,6 +38,7 @@ void hda_node_set_volume(dword_t codec, dword_t node, dword_t volume);
 byte_t hda_is_supported_channel_size(byte_t size);
 byte_t hda_is_supported_sample_rate(dword_t sample_rate);
 dword_t hda_send_verb(dword_t codec, dword_t node, dword_t verb, dword_t command);
-void hda_play_memory(dword_t memory, dword_t length);
+word_t hda_return_sound_data_format(dword_t sample_rate, dword_t channels, dword_t bits_per_sample);
+void hda_play_memory(dword_t memory, dword_t sample_rate, dword_t channels, dword_t bits_per_sample, dword_t number_of_samples_in_one_channel);
 void hda_stop_sound(void);
 void hda_resume_sound(void);
