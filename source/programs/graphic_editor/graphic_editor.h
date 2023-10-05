@@ -45,6 +45,7 @@
 #define GRAPHIC_EDITOR_CLICK_ZONE_HORIZONTAL_SCROLLBAR 1002
 #define GRAPHIC_EDITOR_CLICK_ZONE_TEXT_AREA_WIDTH 1003
 #define GRAPHIC_EDITOR_CLICK_ZONE_TEXT_AREA_HEIGTH 1004
+#define GRAPHIC_EDITOR_CLICK_ZONE_EDIT_IMAGE 1005
 
 #define GRAPHIC_EDITOR_TOOL_PEN 0
 #define GRAPHIC_EDITOR_TOOL_LINE 1
@@ -79,6 +80,7 @@ void graphic_editor_open_file(void);
 void graphic_editor_save_file(void);
 void graphic_editor_new_file(void);
 void graphic_editor_close_file(void);
+void graphic_editor_key_f7_event(void);
 void graphic_editor_key_up_event(void);
 void graphic_editor_key_down_event(void);
 void graphic_editor_key_left_event(void);
