@@ -8,6 +8,9 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 6**
+- Find/Find and replace/Go to line functions added to Text editor - from user perspective is now Text editor comparable to classic text editors such as Notepad
+
 **Update 5**
 - Functions to edit image that were in Media viewer are now also in Graphic editor
 - Fixed bug about reading USB descriptor from low-speed devices on UHCI
@@ -27,9 +30,6 @@ Here is info about most important improvements in several last updates.
 - Support for Extended Boot Record and Global Partition Table
 - Graphic Editor shows dimensions of image
 - System board and System log can be partially controlled by mouse
-
-**Update 1**
-- First version of BleskOS rewritten from assembly to C
 
 ## How to try BleskOS
 
