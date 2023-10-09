@@ -167,3 +167,56 @@ void draw_bottom_line_button(byte_t *string, dword_t click_zone) {
  add_zone_to_click_board(x, graphic_screen_y-20, 8+number_of_chars*8+8, 20, click_zone);
  set_program_value(PROGRAM_INTERFACE_BOTTOM_LINE_DRAW_COLUMN, get_program_value(PROGRAM_INTERFACE_BOTTOM_LINE_DRAW_COLUMN)+8+number_of_chars*8+8);
 }
+
+void draw_menu_list(byte_t *items_string, dword_t x, dword_t click_zone) {
+ byte_t string[100];
+
+ //count number of items
+ dword_t number_of_items = 1, length_of_actual_item = 0, longest_item = 0, pointer = 0;
+ while(items_string[pointer]!=0) {
+  if(items_string[pointer]=='\n') {
+   length_of_actual_item = 0;
+   number_of_items++;
+   pointer++;
+   continue;
+  }
+  else {
+   pointer++;
+   length_of_actual_item+=8;
+   if(length_of_actual_item>longest_item) {
+    longest_item = length_of_actual_item;
+   }
+  }
+ }
+ if(length_of_actual_item>longest_item) {
+  longest_item = length_of_actual_item;
+ }
+ longest_item += 16;
+
+ //draw menu list
+ mouse_cursor_restore_background(mouse_cursor_x, mouse_cursor_y);
+ list_item_line = (graphic_screen_y-20-number_of_items*20);
+ list_item_column = x;
+ draw_list_background(list_item_column, list_item_line, longest_item, number_of_items);
+ for(dword_t i=0; i<number_of_items; i++) {
+  for(dword_t j=0; j<100; j++) {
+   string[j] = items_string[j];
+   if(string[j]==0) {
+    draw_list_item(string);
+
+    add_zone_to_click_board(x, graphic_screen_y-20-number_of_items*20, longest_item, number_of_items*20, click_zone);
+    mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
+    draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
+    redraw_mouse_cursor();
+    redraw_part_of_screen(x, graphic_screen_y-20-number_of_items*20, longest_item, number_of_items*20);
+    return;
+   }
+   else if(string[j]=='\n') {
+    string[j]=0;
+    draw_list_item(string);
+    items_string+=(j+1);
+    break;
+   }
+  }
+ }
+}

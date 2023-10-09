@@ -114,7 +114,7 @@ void program_interface_process_keyboard_event(void) {
  if(program_interface_element_with_focus!=0xFFFFFFFF) {
   dword_t *element = (dword_t *) (program_interface_elements_list_mem+program_interface_element_with_focus*32);
 
-  if(element[0]==ELEMENT_TEXT_AREA && (keyboard_value & 0xFF)<RELEASED_KEY(0)) { //we do not process released keys
+  if(element[0]==ELEMENT_TEXT_AREA && (keyboard_value & 0xFF)<RELEASED_KEY(0) && (keyboard_value<KEY_F1 || keyboard_value>KEY_F10) && keyboard_value!=KEY_F11 && keyboard_value!=KEY_F12) { //we do not process released keys or F keys
    //do not process enter if INPUT line
    dword_t *text_area_info = (dword_t *) (element[2]);
    if((text_area_info[TEXT_AREA_INFO_TYPE]!=TEXT_AREA_INPUT_LINE && text_area_info[TEXT_AREA_INFO_TYPE]!=TEXT_AREA_NUMBER_INPUT) || keyboard_value!=KEY_ENTER) {
@@ -518,4 +518,8 @@ void error_window(byte_t *string) {
    return;
   }
  }
+}
+
+dword_t get_number_of_clicked_item_from_menu_list(dword_t number_of_items) {
+ return ((mouse_cursor_y-(graphic_screen_y-20-number_of_items*20))/20);
 }
