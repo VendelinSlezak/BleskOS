@@ -85,7 +85,7 @@ Programs
 
 Supported file formats
 
-- TXT and all UTF-8 encoded files text files
+- TXT and all UTF-8 encoded text files
 - PNG, GIF, BMP
 - WAV
 - HTML
