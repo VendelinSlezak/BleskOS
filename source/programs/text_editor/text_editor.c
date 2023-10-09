@@ -229,7 +229,13 @@ void text_editor_key_f7_event(void) {
   }
 
   //draw list on screen
-  draw_menu_list("[F8] Find\n[F9] Find and replace\n[F10] Go to line\n[F11] Dark mode", COLUMN_OF_FIRST_BUTTON_ON_BOTTOM_LINE, TEXT_EDITOR_CLICK_ZONE_MORE_LIST);
+  dword_t *text_area_info = (dword_t *) (get_file_value(TEXT_EDITOR_FILE_TEXT_AREA_MEMORY));
+  if(text_area_info[TEXT_AREA_INFO_TYPE]==TEXT_AREA_NORMAL_DARK) {
+   draw_menu_list("[F8] Find\n[F9] Find and replace\n[F10] Go to line\n[F11] Light mode", COLUMN_OF_FIRST_BUTTON_ON_BOTTOM_LINE, TEXT_EDITOR_CLICK_ZONE_MORE_LIST);
+  }
+  else {
+   draw_menu_list("[F8] Find\n[F9] Find and replace\n[F10] Go to line\n[F11] Dark mode", COLUMN_OF_FIRST_BUTTON_ON_BOTTOM_LINE, TEXT_EDITOR_CLICK_ZONE_MORE_LIST);
+  }
   text_editor_more_list_on_screen = STATUS_TRUE;
  }
 }
