@@ -234,7 +234,7 @@ void draw_text_area(dword_t text_area_info_mem) {
  }
  
  //check if mouse cursor position is on last char
- if(mouse_cursor_y>(char_line+10) || (mouse_cursor_y>char_line && mouse_cursor_x>char_column)) {
+ if((mouse_cursor_y>(char_line+10) || (mouse_cursor_y>char_line && mouse_cursor_x>char_column)) && text_area_data[0]==0) {
   text_area_mouse_cursor_char_memory = (dword_t)text_area_data;
  }
 
@@ -437,7 +437,6 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
      text_area_copy_memory_data++;
      cursor_position+=2;
     }
-
   
     //move cursor
     text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]+=text_area_length_of_copied_chars;
@@ -854,20 +853,17 @@ void text_area_mouse_event(dword_t text_area_info_mem) {
  //change cursor position
  if(mouse_drag_and_drop==MOUSE_CLICK) {
   draw_text_area(text_area_info_mem); //get mouse cursor position
-  if(text_area_mouse_cursor_char_memory==text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]) { //double click on word
-   word_t *text_area_data = (word_t *) (text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]);
+  word_t *text_area_data = (word_t *) (text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]);
+  if(text_area_mouse_cursor_char_memory==text_area_info[TEXT_AREA_INFO_CURSOR_POSITION] && text_area_data[0]!=0) { //double click on word
    while((dword_t)text_area_data>text_area_info[TEXT_AREA_INFO_MEMORY] && text_area_data[-1]!=' ') {
     text_area_data--;
    }
    text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER] = ((dword_t)text_area_data);
 
    text_area_data = (word_t *) (text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]);
-   while((dword_t)text_area_data<text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE] && text_area_data[1]!=' ' && text_area_data[1]!=0) {
+   while((dword_t)text_area_data<text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE] && text_area_data[0]!=' ' && text_area_data[0]!=0) {
     text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]+=2;
     text_area_data++;
-   }
-   if(text_area_data[1]==' ') {
-    text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]+=2;
    }
   }
   else if(text_area_mouse_cursor_char_memory!=0xFFFFFFFF) {
@@ -1007,6 +1003,7 @@ void text_area_undo(dword_t text_area_info_mem) {
 
   //redraw whole area
   text_area_info[TEXT_AREA_INFO_REDRAW_X] = 0xFFFFFFFF;
+  text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER] = 0xFFFFFFFF;
  }
 }
 
@@ -1080,5 +1077,6 @@ void text_area_redo(dword_t text_area_info_mem) {
 
   //redraw whole area
   text_area_info[TEXT_AREA_INFO_REDRAW_X] = 0xFFFFFFFF;
+  text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER] = 0xFFFFFFFF;
  }
 }
