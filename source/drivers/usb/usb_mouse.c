@@ -79,6 +79,8 @@ void wait_for_usb_mouse(void) {
   else {
    if(mouse_drag_and_drop==MOUSE_NO_DRAG) {
     mouse_drag_and_drop = MOUSE_CLICK;
+    mouse_cursor_x_click = mouse_cursor_x;
+    mouse_cursor_y_click = mouse_cursor_y;
    }
    else {
     mouse_drag_and_drop = MOUSE_DRAG;
@@ -100,6 +102,8 @@ void wait_for_usb_mouse(void) {
   else {
    if(mouse_drag_and_drop==MOUSE_NO_DRAG) {
     mouse_drag_and_drop = MOUSE_CLICK;
+    mouse_cursor_x_click = mouse_cursor_x;
+    mouse_cursor_y_click = mouse_cursor_y;
    }
    else {
     mouse_drag_and_drop = MOUSE_DRAG;
