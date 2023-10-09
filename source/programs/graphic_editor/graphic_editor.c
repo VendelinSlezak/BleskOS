@@ -516,55 +516,57 @@ void graphic_editor_close_file(void) {
 
 void graphic_editor_key_f7_event(void) {
  if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0) {
-  mouse_cursor_restore_background(mouse_cursor_x, mouse_cursor_y);
-  list_item_line = graphic_screen_y-20-4*20;
-  list_item_column = 8+10*8+8;
-  draw_list_background(list_item_column, list_item_line, 200, 4);
-  draw_list_item("Turn left");
-  draw_list_item("Turn right");
-  draw_list_item("Reverse left-right");
-  draw_list_item("Reverse up-down");
-  mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
-  draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
-  redraw_mouse_cursor();
-  redraw_part_of_screen(8+10*8+8, graphic_screen_y-20-4*20, 200, 4*20);
+  draw_menu_list("[l] Turn left\n[r] Turn right\n[h] Reverse left-right\n[v] Reverse up-down", COLUMN_OF_FIRST_BUTTON_ON_BOTTOM_LINE, 0);
 
   while(1) {
    wait_for_usb_mouse();
    move_mouse_cursor();
 
    //close menu
-   if(keyboard_value==KEY_F7) {
+   if(keyboard_value==KEY_ESC || keyboard_value==KEY_F7) {
     program_interface_redraw();
     return;
    }
 
+   //perform action
+   if(keyboard_value==KEY_L) {
+    image_turn_left(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
+    goto finalize_image_action;
+   }
+   else if(keyboard_value==KEY_R) {
+    image_turn_right(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
+    goto finalize_image_action;
+   }
+   else if(keyboard_value==KEY_H) {
+    image_reverse_horizontally(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
+    goto finalize_image_action;
+   }
+   else if(keyboard_value==KEY_V) {
+    image_reverse_vertically(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
+    goto finalize_image_action;
+   }
+
    if(mouse_drag_and_drop==MOUSE_CLICK) {
     if(is_mouse_in_zone(graphic_screen_y-20-4*20, graphic_screen_y-20, 8+10*8+8, 8+10*8+8+200)==STATUS_TRUE) {
-     dword_t selected_item = ((mouse_cursor_y-(graphic_screen_y-20-4*20))/20);
+     dword_t selected_item = get_number_of_clicked_item_from_menu_list(4);
 
      if(selected_item==0) {
       image_turn_left(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
-      graphic_editor_copy_image_to_preview();
-      graphic_editor_image_recalculate_zoom();
      }
      else if(selected_item==1) {
       image_turn_right(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
-      graphic_editor_copy_image_to_preview();
-      graphic_editor_image_recalculate_zoom();
      }
      else if(selected_item==2) {
       image_reverse_horizontally(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
-      graphic_editor_copy_image_to_preview();
-      graphic_editor_image_recalculate_zoom();
      }
      else if(selected_item==3) {
       image_reverse_vertically(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
-      graphic_editor_copy_image_to_preview();
-      graphic_editor_image_recalculate_zoom();
      }
     }
 
+    finalize_image_action:
+    graphic_editor_copy_image_to_preview();
+    graphic_editor_image_recalculate_zoom();
     program_interface_redraw();
     return;
    }
