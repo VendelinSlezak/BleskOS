@@ -57,13 +57,8 @@ void draw_text_area(dword_t text_area_info_mem) {
  dword_t char_drawing_line_up, char_drawing_line_down, char_drawing_column_left, char_drawing_column_right, background_color, chars_color;
  dword_t char_column, char_line, first_char_column, last_char_column, first_char_line, last_char_line;
  dword_t type = text_area_info[TEXT_AREA_INFO_TYPE];
- 
- //set variabiles
- text_area_mouse_cursor_char_memory = text_area_info[TEXT_AREA_INFO_CURSOR_POSITION];
- char_drawing_line_up = 0;
- char_drawing_line_down = 10;
- char_drawing_column_left = 0;
- char_drawing_column_right = 8;
+
+ //draw background
  if(type==TEXT_AREA_NORMAL || type==TEXT_AREA_INPUT_LINE || type==TEXT_AREA_NUMBER_INPUT) {
   background_color = WHITE;
   chars_color = BLACK;
@@ -72,16 +67,6 @@ void draw_text_area(dword_t text_area_info_mem) {
   background_color = BLACK;
   chars_color = WHITE;
  }
- text_area_info[TEXT_AREA_INFO_WIDTH] = text_area_info[TEXT_AREA_INFO_REAL_WIDTH];
- text_area_info[TEXT_AREA_INFO_HEIGTH] = text_area_info[TEXT_AREA_INFO_REAL_HEIGTH];
- if(text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10>text_area_info[TEXT_AREA_INFO_REAL_HEIGTH]) { //vertical scrollbar is present
-  text_area_info[TEXT_AREA_INFO_WIDTH] = (text_area_info[TEXT_AREA_INFO_REAL_WIDTH]-10);
- }
- if(text_area_info[TEXT_AREA_INFO_NUMBER_OF_COLUMNS]*8>text_area_info[TEXT_AREA_INFO_REAL_WIDTH]) { //horizontal scrollbar is present
-  text_area_info[TEXT_AREA_INFO_HEIGTH] = (text_area_info[TEXT_AREA_INFO_REAL_HEIGTH]-10);
- }
- 
- //draw background
  if(type==TEXT_AREA_NORMAL || type==TEXT_AREA_NORMAL_DARK) {
   draw_full_square(text_area_info[TEXT_AREA_INFO_X], text_area_info[TEXT_AREA_INFO_Y], text_area_info[TEXT_AREA_INFO_WIDTH], text_area_info[TEXT_AREA_INFO_HEIGTH], background_color);
  }
@@ -90,6 +75,23 @@ void draw_text_area(dword_t text_area_info_mem) {
   draw_empty_square(text_area_info[TEXT_AREA_INFO_X], text_area_info[TEXT_AREA_INFO_Y], text_area_info[TEXT_AREA_INFO_WIDTH]+2, text_area_info[TEXT_AREA_INFO_HEIGTH]+2, chars_color);
   text_area_info[TEXT_AREA_INFO_X]++;
   text_area_info[TEXT_AREA_INFO_Y]++;
+ }
+ 
+ //set variabiles
+ text_area_mouse_cursor_char_memory = text_area_info[TEXT_AREA_INFO_CURSOR_POSITION];
+ char_drawing_line_up = 0;
+ char_drawing_line_down = 10;
+ char_drawing_column_left = 0;
+ char_drawing_column_right = 8;
+ char_line = text_area_info[TEXT_AREA_INFO_Y];
+ char_column = text_area_info[TEXT_AREA_INFO_X];
+ text_area_info[TEXT_AREA_INFO_WIDTH] = text_area_info[TEXT_AREA_INFO_REAL_WIDTH];
+ text_area_info[TEXT_AREA_INFO_HEIGTH] = text_area_info[TEXT_AREA_INFO_REAL_HEIGTH];
+ if(text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10>text_area_info[TEXT_AREA_INFO_REAL_HEIGTH]) { //vertical scrollbar is present
+  text_area_info[TEXT_AREA_INFO_WIDTH] = (text_area_info[TEXT_AREA_INFO_REAL_WIDTH]-10);
+ }
+ if(text_area_info[TEXT_AREA_INFO_NUMBER_OF_COLUMNS]*8>text_area_info[TEXT_AREA_INFO_REAL_WIDTH]) { //horizontal scrollbar is present
+  text_area_info[TEXT_AREA_INFO_HEIGTH] = (text_area_info[TEXT_AREA_INFO_REAL_HEIGTH]-10);
  }
  
  //draw text
@@ -234,7 +236,7 @@ void draw_text_area(dword_t text_area_info_mem) {
  }
  
  //check if mouse cursor position is on last char
- if((mouse_cursor_y>(char_line+10) || (mouse_cursor_y>char_line && mouse_cursor_x>char_column)) && text_area_data[0]==0) {
+ if((mouse_cursor_y>(char_line+10) || (mouse_cursor_y>char_line && mouse_cursor_x>char_column))) {
   text_area_mouse_cursor_char_memory = (dword_t)text_area_data;
  }
 
@@ -371,6 +373,10 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
  word_t *text_area_data = (word_t *) ((dword_t)text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]);
  dword_t count_chars=0;
  dword_t type = text_area_info[TEXT_AREA_INFO_TYPE];
+
+ if(text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]==0xFFFFFFFF) {
+  return; //this area is not selected
+ }
  
  text_area_change_type = TEXT_AREA_NO_CHANGE;
  text_area_info[TEXT_AREA_INFO_REDRAW_X] = 0xFFFFFFFF; //redraw whole text area
