@@ -46,7 +46,7 @@ On real computers you should select first option. However, in emulators is best 
 
 After booting screen, you will see Main window. When you see Main window, BleskOS is fully booted and ready to be used. You do not need to wait, as in classic operating systems, where even if you see desktop, you need to wait for all processes to be started. From Main window you can go to programs by clicking on their button, or by appropriate key.
 
-![VirtualBox_BleskOS_03_10_2023_19_07_11](https://github.com/VendelinSlezak/BleskOS/assets/43180618/4cc598df-61e3-42fd-beb2-a8f62d96206b)
+![VirtualBox_BleskOS_12_10_2023_18_38_32](https://github.com/VendelinSlezak/BleskOS/assets/43180618/8fb9b3c6-6b7d-44ed-9324-eff1e2bb0448)
 
 In all programs you can use these keyboard shortcuts:
 
