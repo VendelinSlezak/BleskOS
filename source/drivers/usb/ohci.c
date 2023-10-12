@@ -119,11 +119,11 @@ void ohci_controller_detect_devices(byte_t controller_number) {
    //get descriptor
    if(usb_controllers[controller_number].ports_device_speed[i]==USB_LOW_SPEED) {
     usb_control_endpoint_length = 8;
-    usb_device_type = ohci_read_descriptor(controller_number, i, 8, 8);
+    usb_device_type = ohci_read_descriptor(controller_number, usb_controllers[controller_number].ports_device_speed[i], 8, 8);
    }
    else if(usb_controllers[controller_number].ports_device_speed[i]==USB_FULL_SPEED) {
     usb_control_endpoint_length = 64;
-    usb_device_type = ohci_read_descriptor(controller_number, i, 18, 64);
+    usb_device_type = ohci_read_descriptor(controller_number, usb_controllers[controller_number].ports_device_speed[i], 18, 64);
    }
    
    //return if there was reading error
@@ -134,20 +134,20 @@ void ohci_controller_detect_devices(byte_t controller_number) {
 
    //get full descriptor from low speed devices
    if(usb_controllers[controller_number].ports_device_speed[i]==USB_LOW_SPEED) {
-    if(ohci_read_descriptor(controller_number, i, 18, usb_control_endpoint_length)==0xFFFFFFFF) {
+    if(ohci_read_descriptor(controller_number, usb_controllers[controller_number].ports_device_speed[i], 18, usb_control_endpoint_length)==0xFFFFFFFF) {
      log("\nerror during reading full low-level USB descriptor");
      return;
     }
    }
    
    //set address of device
-   if(ohci_set_address(controller_number, i)==STATUS_ERROR) {
+   if(ohci_set_address(controller_number, usb_controllers[controller_number].ports_device_speed[i])==STATUS_ERROR) {
     log("\nOHCI: error during setting addres");
     return;
    }
    
    //read configuration descriptor
-   if(ohci_read_configuration_descriptor(controller_number, i, usb_control_endpoint_length)==STATUS_ERROR) {
+   if(ohci_read_configuration_descriptor(controller_number, i, usb_controllers[controller_number].ports_device_speed[i], usb_control_endpoint_length)==STATUS_ERROR) {
     log("\nOHCI: error during reading configuration descriptor");
     return;
    }
@@ -182,18 +182,24 @@ void ohci_remove_device_if_connected(byte_t controller_number, byte_t port) {
   for(int i=1; i<32; i+=4) {
    hcca[i]=0;
   }
+  release_usb_address(usb_mouse_address);
   usb_mouse_state=0;
   usb_mouse_controller=0;
   usb_mouse_port=0;
+  usb_mouse_address=0;
+  usb_mouse_device_speed=0;
   usb_mouse_endpoint=0;
  }
  if(usb_keyboard_state==USB_KEYBOARD_OHCI_PORT && usb_keyboard_controller==controller_number && usb_keyboard_port==port) {
   for(int i=2; i<32; i+=4) {
    hcca[i]=0;
   }
+  release_usb_address(usb_keyboard_address);
   usb_keyboard_state=0;
   usb_keyboard_controller=0;
   usb_keyboard_port=0;
+  usb_keyboard_address=0;
+  usb_keyboard_device_speed=0;
   usb_keyboard_endpoint=0;
  }
  for(int i=0; i<10; i++) {
@@ -202,6 +208,8 @@ void ohci_remove_device_if_connected(byte_t controller_number, byte_t port) {
    usb_mass_storage_devices[i].controller_number=0;
    usb_mass_storage_devices[i].controller_type=0;
    usb_mass_storage_devices[i].port=0;
+   usb_mass_storage_devices[i].device_speed=0;
+   release_usb_address(usb_mass_storage_devices[i].address);
    usb_mass_storage_devices[i].endpoint_in=0;
    usb_mass_storage_devices[i].toggle_in=0;
    usb_mass_storage_devices[i].endpoint_out=0;
@@ -245,7 +253,7 @@ byte_t ohci_control_transfer(byte_t controller_number, dword_t last_td) {
    }
    else {
     log("\nOHCI bad transfer ");
-    log_hex(mem[0]);
+    log_hex_with_space(mem[0]);
     return STATUS_ERROR;
    }
   }
@@ -293,7 +301,7 @@ byte_t ohci_bulk_transfer(byte_t controller_number, dword_t last_td, dword_t tim
    }
    else {
     log("\nOHCI bad transfer ");
-    log_hex(mem[0]);
+    log_hex_with_space(mem[0]);
     return STATUS_ERROR;
    }
   }
@@ -307,12 +315,12 @@ byte_t ohci_bulk_transfer(byte_t controller_number, dword_t last_td, dword_t tim
  return STATUS_ERROR;
 }
 
-void ohci_create_ed(byte_t controller_number, byte_t port, dword_t ed_number, dword_t address, dword_t endpoint, dword_t first_td, dword_t num_of_td) {
+void ohci_create_ed(byte_t controller_number, byte_t device_speed, dword_t ed_number, dword_t address, dword_t endpoint, dword_t first_td, dword_t num_of_td) {
  dword_t *ed = (dword_t *) (usb_controllers[controller_number].mem2+ed_number*16);
  dword_t attributes = ((address) | (endpoint<<7));
  first_td = (usb_controllers[controller_number].mem3+first_td*16);
  
- if(usb_controllers[controller_number].ports_device_speed[port]==USB_LOW_SPEED) {
+ if(device_speed==USB_LOW_SPEED) {
   attributes |= ((8<<16) | (1 << 13));
  }
  else {
@@ -345,67 +353,72 @@ void ohci_create_td(byte_t controller_number, dword_t td_number, dword_t next_td
  }
 }
 
-void ohci_transfer_set_setup(byte_t controller_number, byte_t port) {
- ohci_create_ed(controller_number, port, 0, (port+1), ENDPOINT_0, 0, 2);
+void ohci_transfer_set_setup(byte_t controller_number, byte_t device_speed) {
+ ohci_create_ed(controller_number, device_speed, 0, usb_device_address, ENDPOINT_0, 0, 2);
  ohci_create_td(controller_number, 0, 1, OHCI_SETUP, TOGGLE_0, usb_controllers[controller_number].setup_mem, 8);
  ohci_create_td(controller_number, 1, 0, OHCI_IN, TOGGLE_1, 0, 0);
  ohci_control_transfer(controller_number, 1); //TODO: error transaction
 }
 
-byte_t ohci_set_address(byte_t controller_number, byte_t port) {
+byte_t ohci_set_address(byte_t controller_number, byte_t device_speed) {
  dword_t *buffer = (dword_t *) usb_controllers[controller_number].setup_mem;
 
+ //get address for device
+ if(get_free_usb_address()==STATUS_ERROR) {
+  return STATUS_ERROR;
+ }
+
  //set address SETUP packet
- buffer[0]=(0x00000500 | ((port+1)<<16)); //address will be always port number
+ buffer[0]=(0x00000500 | (usb_device_address<<16));
  buffer[1]=0x00000000;
  
- ohci_create_ed(controller_number, port, 0, 0, ENDPOINT_0, 0, 2);
+ ohci_create_ed(controller_number, device_speed, 0, 0, ENDPOINT_0, 0, 2);
  ohci_create_td(controller_number, 0, 1, OHCI_SETUP, TOGGLE_0, usb_controllers[controller_number].setup_mem, 8);
  ohci_create_td(controller_number, 1, 0, OHCI_IN, TOGGLE_1, 0, 0);
  return ohci_control_transfer(controller_number, 1);
 }
 
-void ohci_set_configuration(byte_t controller_number, byte_t port, dword_t configuration_num) {
+void ohci_set_configuration(byte_t controller_number, byte_t device_speed, dword_t configuration_num) {
  dword_t *buffer = (dword_t *) usb_controllers[controller_number].setup_mem;
 
  //set configuration SETUP packet
  buffer[0]=(0x00000900 | (configuration_num<<16));
  buffer[1]=0x00000000;
 
- ohci_transfer_set_setup(controller_number, port);
+ ohci_transfer_set_setup(controller_number, device_speed);
 }
 
-void ohci_set_interface(byte_t controller_number, byte_t port, dword_t interface_num, dword_t alt_interface_num) {
+void ohci_set_interface(byte_t controller_number, byte_t device_speed, dword_t interface_num, dword_t alt_interface_num) {
  dword_t *buffer = (dword_t *) usb_controllers[controller_number].setup_mem;
 
  //set interface SETUP packet
  buffer[0]=(0x00000B01 | (alt_interface_num<<16));
  buffer[1]=interface_num;
 
- ohci_transfer_set_setup(controller_number, port);
+ ohci_transfer_set_setup(controller_number, device_speed);
 }
 
-void ohci_set_idle(byte_t controller_number, byte_t port, dword_t interface_num, byte_t idle_value) {
+void ohci_set_idle(byte_t controller_number, byte_t device_speed, dword_t interface_num, byte_t idle_value) {
  dword_t *buffer = (dword_t *) usb_controllers[controller_number].setup_mem;
 
  //set idle SETUP packet
  buffer[0]=(0x00000A21 | (idle_value<<24));
  buffer[1]=interface_num;
 
- ohci_transfer_set_setup(controller_number, port);
+ ohci_transfer_set_setup(controller_number, device_speed);
 }
 
-void ohci_set_protocol(byte_t controller_number, byte_t port, dword_t interface_num, dword_t protocol_type) {
+void ohci_set_protocol(byte_t controller_number, byte_t device_speed, dword_t interface_num, dword_t protocol_type) {
  dword_t *buffer = (dword_t *) usb_controllers[controller_number].setup_mem;
 
  //set protocol SETUP packet
  buffer[0]=(0x00000B21 | (protocol_type<<16));
  buffer[1]=interface_num;
 
- ohci_transfer_set_setup(controller_number, port);
+ ohci_transfer_set_setup(controller_number, device_speed);
 }
 
-void ohci_set_keyboard_led(byte_t controller_number, byte_t port, dword_t interface_num, byte_t endpoint, byte_t led_state) {
+void ohci_set_keyboard_led(byte_t controller_number, byte_t device_speed, dword_t interface_num, byte_t endpoint, byte_t led_state) {
  dword_t *buffer = (dword_t *) usb_controllers[controller_number].setup_mem;
 
  //set report SETUP packet
@@ -416,14 +429,14 @@ void ohci_set_keyboard_led(byte_t controller_number, byte_t port, dword_t interf
  buffer[2]=led_state;
  
  //transfer
- ohci_create_ed(controller_number, port, 0, 0, ENDPOINT_0, 0, 3);
+ ohci_create_ed(controller_number, device_speed, 0, usb_device_address, ENDPOINT_0, 0, 3);
  ohci_create_td(controller_number, 0, 1, OHCI_SETUP, TOGGLE_0, usb_controllers[controller_number].setup_mem, 8);
  ohci_create_td(controller_number, 1, 2, OHCI_OUT, TOGGLE_1, usb_controllers[controller_number].setup_mem+8, 1);
  ohci_create_td(controller_number, 2, 0, OHCI_IN, TOGGLE_1, 0, 0);
  ohci_control_transfer(controller_number, 2); //TODO: error transaction
 }
 
-void ohci_set_interrupt_transfer(byte_t controller_number, byte_t port, byte_t ed_offset, byte_t td_offset, byte_t endpoint, byte_t transfer_length, byte_t transfer_time, dword_t memory) {
+void ohci_set_interrupt_transfer(byte_t controller_number, byte_t device_speed, byte_t ed_offset, byte_t td_offset, byte_t endpoint, byte_t transfer_length, byte_t transfer_time, dword_t memory) {
  dword_t *hcca = (dword_t *) usb_controllers[controller_number].mem1;
  
  if(transfer_time<8) {
@@ -442,7 +455,7 @@ void ohci_set_interrupt_transfer(byte_t controller_number, byte_t port, byte_t e
  //stop interrupt transfer
  mmio_outd(usb_controllers[controller_number].base+0x04, (mmio_ind(usb_controllers[controller_number].base+0x04) & 0xFFFFFFFB));
  
- ohci_create_ed(controller_number, port, ed_offset, (port+1), endpoint, td_offset, 1);
+ ohci_create_ed(controller_number, device_speed, ed_offset, usb_device_address, endpoint, td_offset, 1);
  ohci_create_td(controller_number, td_offset, 0, OHCI_IN, TOGGLE_0, memory, transfer_length);
  
  //set pointers
@@ -454,7 +467,7 @@ void ohci_set_interrupt_transfer(byte_t controller_number, byte_t port, byte_t e
  mmio_outd(usb_controllers[controller_number].base+0x04, 0x84);
 }
 
-void ohci_send_setup_to_device(byte_t controller_number, byte_t port, word_t max_length, dword_t memory, byte_t control_endpoint_length) {
+void ohci_send_setup_to_device(byte_t controller_number, byte_t device_speed, word_t max_length, dword_t memory, byte_t control_endpoint_length) {
  if(control_endpoint_length==8) {
   ohci_create_td(controller_number, 0, 1, OHCI_SETUP, TOGGLE_0, usb_controllers[controller_number].setup_mem, 8);
   for(int i=1, toggle=1; i<128; i++, toggle=((toggle+=1) & 0x1)) {
@@ -466,7 +479,7 @@ void ohci_send_setup_to_device(byte_t controller_number, byte_t port, word_t max
    else {
     ohci_create_td(controller_number, i, (i+1), OHCI_IN, toggle, memory, max_length);
     ohci_create_td(controller_number, (i+1), 0, OHCI_OUT, TOGGLE_1, 0, 0);
-    ohci_create_ed(controller_number, port, 0, (port+1), ENDPOINT_0, 0, (i+2));
+    ohci_create_ed(controller_number, device_speed, 0, usb_device_address, ENDPOINT_0, 0, (i+2));
     ohci_control_transfer(controller_number, (i+1));     
     break;
    }
@@ -483,7 +496,7 @@ void ohci_send_setup_to_device(byte_t controller_number, byte_t port, word_t max
    else {
     ohci_create_td(controller_number, i, (i+1), OHCI_IN, toggle, memory, max_length);
     ohci_create_td(controller_number, (i+1), 0, OHCI_OUT, TOGGLE_1, 0, 0);
-    ohci_create_ed(controller_number, port, 0, (port+1), ENDPOINT_0, 0, (i+2));
+    ohci_create_ed(controller_number, device_speed, 0, usb_device_address, ENDPOINT_0, 0, (i+2));
     ohci_control_transfer(controller_number, (i+1));     
     break;
    }
@@ -491,7 +504,7 @@ void ohci_send_setup_to_device(byte_t controller_number, byte_t port, word_t max
  }
 }
 
-dword_t ohci_read_descriptor(byte_t controller_number, byte_t port, byte_t type_of_transfer, byte_t control_endpoint_length) {
+dword_t ohci_read_descriptor(byte_t controller_number, byte_t device_speed, byte_t type_of_transfer, byte_t control_endpoint_length) {
  dword_t *buffer = (dword_t *) usb_controllers[controller_number].setup_mem;
  dword_t data_mem = calloc(256);
  dword_t *data = (dword_t *) data_mem;
@@ -502,7 +515,7 @@ dword_t ohci_read_descriptor(byte_t controller_number, byte_t port, byte_t type_
  if(type_of_transfer==8) {
   buffer[1]=0x00080000;
   
-  ohci_create_ed(controller_number, port, 0, 0, ENDPOINT_0, 0, 3);
+  ohci_create_ed(controller_number, device_speed, 0, 0, ENDPOINT_0, 0, 3);
   ohci_create_td(controller_number, 0, 1, OHCI_SETUP, TOGGLE_0, usb_controllers[controller_number].setup_mem, 8);
   ohci_create_td(controller_number, 1, 2, OHCI_IN, TOGGLE_1, data_mem, 8);
   ohci_create_td(controller_number, 2, 0, OHCI_OUT, TOGGLE_1, 0, 0);
@@ -512,7 +525,7 @@ dword_t ohci_read_descriptor(byte_t controller_number, byte_t port, byte_t type_
   buffer[1]=0x00120000;
   
   if(control_endpoint_length==8) {
-   ohci_create_ed(controller_number, port, 0, 0, ENDPOINT_0, 0, 5);
+   ohci_create_ed(controller_number, device_speed, 0, 0, ENDPOINT_0, 0, 5);
    ohci_create_td(controller_number, 0, 1, OHCI_SETUP, TOGGLE_0, usb_controllers[controller_number].setup_mem, 8);
    ohci_create_td(controller_number, 1, 2, OHCI_IN, TOGGLE_1, data_mem, 8);
    ohci_create_td(controller_number, 2, 3, OHCI_IN, TOGGLE_0, data_mem+8, 8);
@@ -521,7 +534,7 @@ dword_t ohci_read_descriptor(byte_t controller_number, byte_t port, byte_t type_
    status = ohci_control_transfer(controller_number, 4);
   }
   else if(control_endpoint_length==64) {
-   ohci_create_ed(controller_number, port, 0, 0, ENDPOINT_0, 0, 3);
+   ohci_create_ed(controller_number, device_speed, 0, 0, ENDPOINT_0, 0, 3);
    ohci_create_td(controller_number, 0, 1, OHCI_SETUP, TOGGLE_0, usb_controllers[controller_number].setup_mem, 8);
    ohci_create_td(controller_number, 1, 2, OHCI_IN, TOGGLE_1, data_mem, 18);
    ohci_create_td(controller_number, 2, 0, OHCI_OUT, TOGGLE_1, 0, 0);
@@ -543,7 +556,7 @@ dword_t ohci_read_descriptor(byte_t controller_number, byte_t port, byte_t type_
  return (data[1] & 0x00FFFFFF);
 }
 
-byte_t ohci_read_configuration_descriptor(byte_t controller_number, byte_t port, byte_t control_endpoint_length) {
+byte_t ohci_read_configuration_descriptor(byte_t controller_number, byte_t port, byte_t device_speed, byte_t control_endpoint_length) {
  dword_t *buffer = (dword_t *) usb_controllers[controller_number].setup_mem;
  dword_t data_mem = calloc(8);
  dword_t *data = (dword_t *) data_mem;
@@ -553,7 +566,7 @@ byte_t ohci_read_configuration_descriptor(byte_t controller_number, byte_t port,
  buffer[0]=0x02000680; 
  buffer[1]=0x00080000;
  
- ohci_create_ed(controller_number, port, 0, (port+1), ENDPOINT_0, 0, 3);
+ ohci_create_ed(controller_number, device_speed, 0, usb_device_address, ENDPOINT_0, 0, 3);
  ohci_create_td(controller_number, 0, 1, OHCI_SETUP, TOGGLE_0, usb_controllers[controller_number].setup_mem, 8);
  ohci_create_td(controller_number, 1, 2, OHCI_IN, TOGGLE_1, data_mem, 8);
  ohci_create_td(controller_number, 2, 0, OHCI_OUT, TOGGLE_1, 0, 0);
@@ -576,7 +589,7 @@ byte_t ohci_read_configuration_descriptor(byte_t controller_number, byte_t port,
  buffer[1]=(0x00000000 | (data_length<<16));
  data_mem = realloc(data_mem, data_length);
  
- ohci_send_setup_to_device(controller_number, port, data_length, data_mem, control_endpoint_length);
+ ohci_send_setup_to_device(controller_number, device_speed, data_length, data_mem, control_endpoint_length);
  
  parse_usb_configuration_descriptor(data_mem);
  
@@ -603,25 +616,27 @@ byte_t ohci_read_configuration_descriptor(byte_t controller_number, byte_t port,
    return STATUS_GOOD;
   }
   
-  ohci_set_configuration(controller_number, port, usb_descriptor_devices[0].configuration);
-  ohci_set_interface(controller_number, port, usb_descriptor_devices[0].interface, usb_descriptor_devices[0].alternative_interface);
-  ohci_set_protocol(controller_number, port, usb_descriptor_devices[0].interface, USB_BOOT_PROTOCOL);
-  ohci_set_idle(controller_number, port, usb_descriptor_devices[0].interface, 0);
+  ohci_set_configuration(controller_number, device_speed, usb_descriptor_devices[0].configuration);
+  ohci_set_interface(controller_number, device_speed, usb_descriptor_devices[0].interface, usb_descriptor_devices[0].alternative_interface);
+  ohci_set_protocol(controller_number, device_speed, usb_descriptor_devices[0].interface, USB_BOOT_PROTOCOL);
+  ohci_set_idle(controller_number, device_speed, usb_descriptor_devices[0].interface, 0);
   
   usb_keyboard_controller = controller_number;
-  log_var(usb_keyboard_controller);
+  log_var_with_space(usb_keyboard_controller);
   usb_keyboard_port = port;
-  log_var(usb_keyboard_port);
+  usb_keyboard_device_speed = device_speed;
+  usb_keyboard_address = usb_device_address;
+  log_var_with_space(usb_keyboard_port);
   usb_keyboard_interface = usb_descriptor_devices[0].interface;
   usb_keyboard_endpoint = usb_descriptor_devices[0].endpoint_interrupt;
-  log_var(usb_keyboard_endpoint);
+  log_var_with_space(usb_keyboard_endpoint);
   usb_keyboard_endpoint_out = usb_descriptor_devices[0].endpoint_interrupt_out; //if INTERRUPT OUT is not present, this will be zero - CONTROL endpoint
   log_var(usb_keyboard_endpoint_out);
   usb_keyboard_endpoint_length = usb_descriptor_devices[0].endpoint_interrupt_length;
   usb_keyboard_endpoint_time = usb_descriptor_devices[0].endpoint_interrupt_time;
   log("\n");
   
-  ohci_set_interrupt_transfer(usb_keyboard_controller, usb_keyboard_port, 2, 35, usb_keyboard_endpoint, usb_descriptor_devices[0].endpoint_interrupt_length, usb_descriptor_devices[0].endpoint_interrupt_time, usb_keyboard_data_memory);
+  ohci_set_interrupt_transfer(usb_keyboard_controller, usb_keyboard_device_speed, 2, 35, usb_keyboard_endpoint, usb_descriptor_devices[0].endpoint_interrupt_length, usb_descriptor_devices[0].endpoint_interrupt_time, usb_keyboard_data_memory);
   usb_keyboard_check_transfer_descriptor = usb_controllers[controller_number].mem3+16*35;
   
   usb_keyboard_state = USB_KEYBOARD_OHCI_PORT;
@@ -635,24 +650,26 @@ byte_t ohci_read_configuration_descriptor(byte_t controller_number, byte_t port,
    return STATUS_GOOD;
   }
   
-  ohci_set_configuration(controller_number, port, usb_descriptor_devices[0].configuration);
-  ohci_set_interface(controller_number, port, usb_descriptor_devices[0].interface, usb_descriptor_devices[0].alternative_interface);
-  ohci_set_idle(controller_number, port, usb_descriptor_devices[0].interface, 0);
+  ohci_set_configuration(controller_number, device_speed, usb_descriptor_devices[0].configuration);
+  ohci_set_interface(controller_number, device_speed, usb_descriptor_devices[0].interface, usb_descriptor_devices[0].alternative_interface);
+  ohci_set_idle(controller_number, device_speed, usb_descriptor_devices[0].interface, 0);
   
   usb_mouse_controller = controller_number;
-  log_var(usb_mouse_controller);
+  log_var_with_space(usb_mouse_controller);
   usb_mouse_port = port;
-  log_var(usb_mouse_port);
+  usb_mouse_device_speed = device_speed;
+  usb_mouse_address = usb_device_address;
+  log_var_with_space(usb_mouse_port);
   usb_mouse_endpoint = usb_descriptor_devices[0].endpoint_interrupt;
   log_var(usb_mouse_endpoint);
   usb_mouse_endpoint_length = usb_descriptor_devices[0].endpoint_interrupt_length;
   usb_mouse_endpoint_time = usb_descriptor_devices[0].endpoint_interrupt_time;
   log("\n");
   
-  ohci_read_hid_descriptor(controller_number, port, usb_descriptor_devices[0].interface, usb_descriptor_devices[0].hid_descriptor_length, control_endpoint_length);
-  ohci_set_protocol(controller_number, port, usb_descriptor_devices[0].interface, USB_HID_PROTOCOL);
+  ohci_read_hid_descriptor(controller_number, device_speed, usb_descriptor_devices[0].interface, usb_descriptor_devices[0].hid_descriptor_length, control_endpoint_length);
+  ohci_set_protocol(controller_number, device_speed, usb_descriptor_devices[0].interface, USB_HID_PROTOCOL);
 
-  ohci_set_interrupt_transfer(usb_mouse_controller, usb_mouse_port, 1, 34, usb_mouse_endpoint, usb_descriptor_devices[0].endpoint_interrupt_length, usb_descriptor_devices[0].endpoint_interrupt_time, usb_mouse_data_memory);
+  ohci_set_interrupt_transfer(usb_mouse_controller, usb_mouse_device_speed, 1, 34, usb_mouse_endpoint, usb_descriptor_devices[0].endpoint_interrupt_length, usb_descriptor_devices[0].endpoint_interrupt_time, usb_mouse_data_memory);
   usb_mouse_check_transfer_descriptor = usb_controllers[controller_number].mem3+16*34;
   
   usb_mouse_state = USB_MOUSE_OHCI_PORT;
@@ -660,8 +677,8 @@ byte_t ohci_read_configuration_descriptor(byte_t controller_number, byte_t port,
  else if(usb_descriptor_devices[0].type==USB_DEVICE_MASS_STORAGE) {
   log("OHCI: USB mass storage device ");
   
-  ohci_set_configuration(controller_number, port, usb_descriptor_devices[0].configuration);
-  ohci_set_interface(controller_number, port, usb_descriptor_devices[0].interface, usb_descriptor_devices[0].alternative_interface);
+  ohci_set_configuration(controller_number, device_speed, usb_descriptor_devices[0].configuration);
+  ohci_set_interface(controller_number, device_speed, usb_descriptor_devices[0].interface, usb_descriptor_devices[0].alternative_interface);
   
   for(int i=0; i<10; i++) {
    if(usb_mass_storage_devices[i].type==USB_MSD_NOT_ATTACHED) {
@@ -669,6 +686,8 @@ byte_t ohci_read_configuration_descriptor(byte_t controller_number, byte_t port,
     usb_mass_storage_devices[i].controller_type = USB_CONTROLLER_OHCI;
     usb_mass_storage_devices[i].controller_number = controller_number;
     usb_mass_storage_devices[i].port = port;
+    usb_mass_storage_devices[i].device_speed = device_speed;
+    usb_mass_storage_devices[i].address = usb_device_address;
     usb_mass_storage_devices[i].endpoint_in = usb_descriptor_devices[0].endpoint_bulk_in;
     log_var(usb_mass_storage_devices[i].endpoint_in);
     usb_mass_storage_devices[i].toggle_in = 0;
@@ -690,7 +709,7 @@ byte_t ohci_read_configuration_descriptor(byte_t controller_number, byte_t port,
  return STATUS_GOOD;
 }
 
-void ohci_read_hid_descriptor(byte_t controller_number, byte_t port, byte_t interface, word_t length, byte_t control_endpoint_length) {
+void ohci_read_hid_descriptor(byte_t controller_number, byte_t device_speed, byte_t interface, word_t length, byte_t control_endpoint_length) {
  dword_t *buffer = (dword_t *) usb_controllers[controller_number].setup_mem;
  dword_t data_mem = calloc((length+1));
  dword_t *data = (dword_t *) data_mem;
@@ -699,14 +718,14 @@ void ohci_read_hid_descriptor(byte_t controller_number, byte_t port, byte_t inte
  buffer[0]=0x22000681;
  buffer[1]=((length<<16) | interface);
  
- ohci_send_setup_to_device(controller_number, port, length, data_mem, control_endpoint_length);
+ ohci_send_setup_to_device(controller_number, device_speed, length, data_mem, control_endpoint_length);
 
  parse_hid_descriptor(data_mem);
  
  free(data_mem);
 }
 
-byte_t ohci_bulk_out(byte_t controller_number, byte_t port, byte_t endpoint, byte_t toggle, dword_t memory, dword_t length, dword_t time_to_wait) {
+byte_t ohci_bulk_out(byte_t controller_number, byte_t device_speed, byte_t address, byte_t endpoint, byte_t toggle, dword_t memory, dword_t length, dword_t time_to_wait) {
  byte_t status;
 
  for(int i=40; i<600; i++, ((toggle++) & 0x1)) {
@@ -718,7 +737,7 @@ byte_t ohci_bulk_out(byte_t controller_number, byte_t port, byte_t endpoint, byt
   else {
    ohci_create_td(controller_number, i, 0, OHCI_OUT, toggle, memory, length);
    ohci_toggle = ((toggle+=1) & 0x1);
-   ohci_create_ed(controller_number, port, 0, (port+1), endpoint, 40, (i+1));
+   ohci_create_ed(controller_number, device_speed, 0, address, endpoint, 40, (i+1));
    status = ohci_bulk_transfer(controller_number, i, time_to_wait);
    
    return status;
@@ -728,7 +747,7 @@ byte_t ohci_bulk_out(byte_t controller_number, byte_t port, byte_t endpoint, byt
  return STATUS_ERROR;
 }
 
-byte_t ohci_bulk_in(byte_t controller_number, byte_t port, byte_t endpoint, byte_t toggle, dword_t memory, dword_t length, dword_t time_to_wait) {
+byte_t ohci_bulk_in(byte_t controller_number, byte_t device_speed, byte_t address, byte_t endpoint, byte_t toggle, dword_t memory, dword_t length, dword_t time_to_wait) {
  byte_t status;
 
  for(int i=40; i<600; i++, ((toggle++) & 0x1)) {
@@ -740,7 +759,7 @@ byte_t ohci_bulk_in(byte_t controller_number, byte_t port, byte_t endpoint, byte
   else {
    ohci_create_td(controller_number, i, 0, OHCI_IN, toggle, memory, length);
    ohci_toggle = ((toggle+=1) & 0x1);
-   ohci_create_ed(controller_number, port, 0, (port+1), endpoint, 40, (i+1));
+   ohci_create_ed(controller_number, device_speed, 0, address, endpoint, 40, (i+1));
    status = ohci_bulk_transfer(controller_number, i, time_to_wait);
    
    return status;

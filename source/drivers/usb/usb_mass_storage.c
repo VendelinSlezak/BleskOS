@@ -58,21 +58,21 @@ byte_t usb_msd_transfer_command(byte_t device_number, byte_t direction, dword_t 
  csw[1]=0;
 
  //send Command Block Wrapper
- status = usb_bulk_out(usb_mass_storage_devices[device_number].controller_number, usb_mass_storage_devices[device_number].port, usb_mass_storage_devices[device_number].endpoint_out, usb_mass_storage_devices[device_number].toggle_out, usb_mass_storage_cbw_memory, 31, 500);
+ status = usb_bulk_out(usb_mass_storage_devices[device_number].controller_number, usb_mass_storage_devices[device_number].port, usb_mass_storage_devices[device_number].address, usb_mass_storage_devices[device_number].endpoint_out, usb_mass_storage_devices[device_number].toggle_out, usb_mass_storage_cbw_memory, 31, 500);
  usb_mass_storage_devices[device_number].toggle_out = get_usb_bulk_toggle(usb_mass_storage_devices[device_number].controller_number);
 
  //transfer data of command
  if(direction==USB_CBW_READ) {
-  status = usb_bulk_in(usb_mass_storage_devices[device_number].controller_number, usb_mass_storage_devices[device_number].port, usb_mass_storage_devices[device_number].endpoint_in, usb_mass_storage_devices[device_number].toggle_in, memory, length_of_transfer, 2000);
+  status = usb_bulk_in(usb_mass_storage_devices[device_number].controller_number, usb_mass_storage_devices[device_number].port, usb_mass_storage_devices[device_number].address, usb_mass_storage_devices[device_number].endpoint_in, usb_mass_storage_devices[device_number].toggle_in, memory, length_of_transfer, 2000);
   usb_mass_storage_devices[device_number].toggle_in = get_usb_bulk_toggle(usb_mass_storage_devices[device_number].controller_number);
  }
  else {
-  status = usb_bulk_out(usb_mass_storage_devices[device_number].controller_number, usb_mass_storage_devices[device_number].port, usb_mass_storage_devices[device_number].endpoint_out, usb_mass_storage_devices[device_number].toggle_out, memory, length_of_transfer, 2000);
+  status = usb_bulk_out(usb_mass_storage_devices[device_number].controller_number, usb_mass_storage_devices[device_number].port, usb_mass_storage_devices[device_number].address, usb_mass_storage_devices[device_number].endpoint_out, usb_mass_storage_devices[device_number].toggle_out, memory, length_of_transfer, 2000);
   usb_mass_storage_devices[device_number].toggle_out = get_usb_bulk_toggle(usb_mass_storage_devices[device_number].controller_number);
  }
   
  //read Command Status Wrapper
- status = usb_bulk_in(usb_mass_storage_devices[device_number].controller_number, usb_mass_storage_devices[device_number].port, usb_mass_storage_devices[device_number].endpoint_in, usb_mass_storage_devices[device_number].toggle_in, usb_mass_storage_csw_memory, 13, 500);
+ status = usb_bulk_in(usb_mass_storage_devices[device_number].controller_number, usb_mass_storage_devices[device_number].port, usb_mass_storage_devices[device_number].address, usb_mass_storage_devices[device_number].endpoint_in, usb_mass_storage_devices[device_number].toggle_in, usb_mass_storage_csw_memory, 13, 500);
  usb_mass_storage_devices[device_number].toggle_in = get_usb_bulk_toggle(usb_mass_storage_devices[device_number].controller_number);
  
  //test if this command was successful

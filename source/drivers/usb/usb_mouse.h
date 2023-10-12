@@ -14,6 +14,8 @@
 byte_t usb_mouse_state=0;
 byte_t usb_mouse_controller=0;
 byte_t usb_mouse_port=0;
+byte_t usb_mouse_device_speed=0;
+byte_t usb_mouse_address=0;
 byte_t usb_mouse_endpoint=0;
 byte_t usb_mouse_endpoint_length=0;
 byte_t usb_mouse_endpoint_time=0;

@@ -69,14 +69,18 @@ struct usb_descriptor_device_info {
 };
 struct usb_descriptor_device_info usb_descriptor_devices[10];
 
-dword_t usb_controllers_pointer=0, usb_device_type=0, usb_control_endpoint_length=0, usb_new_device_detected=0;
+byte_t usb_addresses[127];
+
+dword_t usb_controllers_pointer=0, usb_device_type=0, usb_control_endpoint_length=0, usb_device_address = 0, usb_new_device_detected=0;
 
 void initalize_usb_controllers(void);
 void detect_usb_devices(void);
 void detect_status_change_of_usb_devices(void);
+byte_t get_free_usb_address(void);
+void release_usb_address(byte_t address);
 void parse_usb_descriptor(dword_t descriptor_mem);
 void parse_usb_configuration_descriptor(dword_t descriptor_mem);
 void parse_hid_descriptor(dword_t descriptor_mem);
-byte_t usb_bulk_in(byte_t controller_number, byte_t port, byte_t endpoint, byte_t toggle, dword_t memory, dword_t length_of_transfer, dword_t time_to_wait);
-byte_t usb_bulk_out(byte_t controller_number, byte_t port, byte_t endpoint, byte_t toggle, dword_t memory, dword_t length_of_transfer, dword_t time_to_wait);
+byte_t usb_bulk_in(byte_t controller_number, byte_t port, byte_t address, byte_t endpoint, byte_t toggle, dword_t memory, dword_t length_of_transfer, dword_t time_to_wait);
+byte_t usb_bulk_out(byte_t controller_number, byte_t port, byte_t address, byte_t endpoint, byte_t toggle, dword_t memory, dword_t length_of_transfer, dword_t time_to_wait);
 byte_t get_usb_bulk_toggle(byte_t controller_number);
