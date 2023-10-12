@@ -109,7 +109,7 @@ void draw_text_editor(void) {
 
    find_function_text_area_info[TEXT_AREA_INFO_Y] = graphic_screen_y-20-16;
    draw_text_area(text_editor_find_function_text_area_info_mem);
-   add_zone_to_click_board(4, find_function_text_area_info[TEXT_AREA_INFO_Y], graphic_screen_x-16, 10, TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_FIND);
+   add_zone_to_click_board(4, graphic_screen_y-20-16, graphic_screen_x-24-160, 10, TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_FIND);
    program_interface_add_text_area(TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_FIND, text_editor_find_function_text_area_info_mem);
 
    draw_button("Next", graphic_screen_x-4-80-8-80, find_function_text_area_info[TEXT_AREA_INFO_Y], 80, 12);
@@ -123,7 +123,7 @@ void draw_text_editor(void) {
 
    find_function_text_area_info[TEXT_AREA_INFO_Y] = graphic_screen_y-20-20-16;
    draw_text_area(text_editor_find_function_text_area_info_mem);
-   add_zone_to_click_board(4, graphic_screen_y-20-20-16, find_function_text_area_info[TEXT_AREA_INFO_Y], 10, TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_FIND);
+   add_zone_to_click_board(4, graphic_screen_y-20-20-16, graphic_screen_x-24-160, 10, TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_FIND);
    program_interface_add_text_area(TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_FIND, text_editor_find_function_text_area_info_mem);
 
    draw_button("Next", graphic_screen_x-4-80-8-80, find_function_text_area_info[TEXT_AREA_INFO_Y], 80, 12);
@@ -133,7 +133,7 @@ void draw_text_editor(void) {
    add_zone_to_click_board(graphic_screen_x-4-80, find_function_text_area_info[TEXT_AREA_INFO_Y], 80, 12, TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_FIND_PREVIOUS);
 
    draw_text_area(text_editor_replace_function_text_area_mem);
-   add_zone_to_click_board(4, graphic_screen_y-20-16, graphic_screen_x-16, 10, TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_REPLACE);
+   add_zone_to_click_board(4, graphic_screen_y-20-16, graphic_screen_x-24-160, 10, TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_REPLACE);
    program_interface_add_text_area(TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_REPLACE, text_editor_replace_function_text_area_mem);
 
    draw_button("Replace", graphic_screen_x-4-100-8-60, graphic_screen_y-20-16, 65, 12);
@@ -429,19 +429,20 @@ void text_editor_find_next(void) {
   word_t *text_area_data = (word_t *) (actual_cursor_position);
   dword_t *find_text_area_info = (dword_t *) (text_editor_find_function_text_area_info_mem);
   word_t *find_text_area_data = (word_t *) (find_text_area_info[TEXT_AREA_INFO_MEMORY]);
+  byte_t show_no_match_message = STATUS_TRUE;
 
   if(find_text_area_data[0]==0) {
    return; //no string to find
   }
   text_area_disable_cursor(text_editor_find_function_text_area_info_mem);
   text_area_disable_cursor(text_editor_replace_function_text_area_mem);
-  text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER] = 0xFFFFFFFF;
 
   //if we are on match, skip it to find next match
-  if(*text_area_data!=0) {
+  if(text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]!=0xFFFFFFFF && *text_area_data!=0) {
    for(dword_t i=0; i<1001; i++) {
     if(find_text_area_data[i]==0) {
      text_area_data++;
+     show_no_match_message = STATUS_FALSE; //this is match
      break;
     }
 
@@ -450,6 +451,7 @@ void text_editor_find_next(void) {
     }
    }
   }
+  text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER] = 0xFFFFFFFF;
 
   //search from cursor position to end of document
   while(*text_area_data!=0) {
@@ -497,7 +499,9 @@ void text_editor_find_next(void) {
   }
 
   //no match founded
-  error_window("No match founded");
+  if(show_no_match_message==STATUS_TRUE) {
+   error_window("No match founded");
+  }
   program_interface_redraw();
  }
 }
@@ -509,25 +513,29 @@ void text_editor_find_previous(void) {
   word_t *text_area_data = (word_t *) (actual_cursor_position);
   dword_t *find_text_area_info = (dword_t *) (text_editor_find_function_text_area_info_mem);
   word_t *find_text_area_data = (word_t *) (find_text_area_info[TEXT_AREA_INFO_MEMORY]);
+  byte_t show_no_match_message = STATUS_TRUE;
 
   if(find_text_area_data[0]==0) {
    return; //no string to find
   }
   text_area_disable_cursor(text_editor_find_function_text_area_info_mem);
   text_area_disable_cursor(text_editor_replace_function_text_area_mem);
-  text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER] = 0xFFFFFFFF;
 
   //if we are on match, skip it to find previous match
-  for(dword_t i=0; i<1001; i++) {
-   if(find_text_area_data[i]==0) {
-    text_area_data--;
-    break;
-   }
+  if(text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]!=0xFFFFFFFF && *text_area_data!=0) {
+   for(dword_t i=0; i<1001; i++) {
+    if(find_text_area_data[i]==0) {
+     text_area_data++;
+     show_no_match_message = STATUS_FALSE; //this is match
+     break;
+    }
 
-   if(text_area_data[i]!=find_text_area_data[i]) {
-    break; //this is not match
+    if(text_area_data[i]!=find_text_area_data[i]) {
+     break; //this is not match
+    }
    }
   }
+  text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER] = 0xFFFFFFFF;
 
   //search from cursor position to start of document
   while((dword_t)text_area_data>=text_area_info[TEXT_AREA_INFO_MEMORY]) {
@@ -578,7 +586,9 @@ void text_editor_find_previous(void) {
   }
 
   //no match founded
-  error_window("No match founded");
+  if(show_no_match_message==STATUS_TRUE) {
+   error_window("No match founded");
+  }
   program_interface_redraw();
  }
 }
