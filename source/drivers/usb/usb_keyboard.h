@@ -28,6 +28,8 @@ KEY_LEFT_SHIFT, 0, 0, 0, KEY_RIGHT_SHIFT, 0, 0
 byte_t usb_keyboard_state=0;
 byte_t usb_keyboard_controller=0;
 byte_t usb_keyboard_port=0;
+byte_t usb_keyboard_device_speed=0;
+byte_t usb_keyboard_address=0;
 byte_t usb_keyboard_interface=0;
 byte_t usb_keyboard_endpoint=0;
 byte_t usb_keyboard_endpoint_length=0;

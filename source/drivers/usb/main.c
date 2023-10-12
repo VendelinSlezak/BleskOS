@@ -14,6 +14,9 @@ void initalize_usb_controllers(void) {
  for(int i=0; i<10; i++) {
   usb_mass_storage_devices[i].type = USB_MSD_NOT_ATTACHED;
  }
+ for(dword_t i=0; i<127; i++) {
+  usb_addresses[i]=0;
+ }
  
  if(usb_controllers_pointer==0) {
   log("\nno USB controllers\n");
@@ -112,6 +115,26 @@ void detect_status_change_of_usb_devices(void) {
    continue;
   }
  }
+}
+
+byte_t get_free_usb_address(void) {
+ for(dword_t i=0; i<127; i++) {
+  if(usb_addresses[i]==0) {
+   usb_device_address = (i+1);
+   usb_addresses[i] = 1;
+   log("\nUSB device: address ");
+   log_var(usb_device_address);
+   return STATUS_GOOD;
+  }
+ }
+
+ usb_device_address = 0;
+ log("\nUSB error: no free address");
+ return STATUS_ERROR; //no free address
+}
+
+void release_usb_address(byte_t address) {
+ usb_addresses[(address-1)] = 0;
 }
 
 void parse_usb_descriptor(dword_t descriptor_mem) {
@@ -390,29 +413,29 @@ void parse_hid_descriptor(dword_t descriptor_mem) {
  free(packet_input_type);
 }
 
-byte_t usb_bulk_in(byte_t controller_number, byte_t port, byte_t endpoint, byte_t toggle, dword_t memory, dword_t length_of_transfer, dword_t time_to_wait) {
+byte_t usb_bulk_in(byte_t controller_number, byte_t port, byte_t address, byte_t endpoint, byte_t toggle, dword_t memory, dword_t length_of_transfer, dword_t time_to_wait) {
  if(usb_controllers[controller_number].type==USB_CONTROLLER_EHCI) {
   return ehci_bulk_in(controller_number, port, endpoint, toggle, memory, length_of_transfer, time_to_wait);
  }
  else if(usb_mass_storage_devices[controller_number].controller_type==USB_CONTROLLER_UHCI) {
-  return uhci_bulk_in(controller_number, port, endpoint, toggle, memory, length_of_transfer, time_to_wait);
+  return uhci_bulk_in(controller_number, port, address, endpoint, toggle, memory, length_of_transfer, time_to_wait);
  }
  else if(usb_mass_storage_devices[controller_number].controller_type==USB_CONTROLLER_OHCI) {
-  return ohci_bulk_in(controller_number, port, endpoint, toggle, memory, length_of_transfer, time_to_wait);
+  return ohci_bulk_in(controller_number, port, address, endpoint, toggle, memory, length_of_transfer, time_to_wait);
  }
 
  return STATUS_ERROR;
 }
 
-byte_t usb_bulk_out(byte_t controller_number, byte_t port, byte_t endpoint, byte_t toggle, dword_t memory, dword_t length_of_transfer, dword_t time_to_wait) {
+byte_t usb_bulk_out(byte_t controller_number, byte_t port, byte_t address, byte_t endpoint, byte_t toggle, dword_t memory, dword_t length_of_transfer, dword_t time_to_wait) {
  if(usb_controllers[controller_number].type==USB_CONTROLLER_EHCI) {
   return ehci_bulk_out(controller_number, port, endpoint, toggle, memory, length_of_transfer, time_to_wait);
  }
  else if(usb_mass_storage_devices[controller_number].controller_type==USB_CONTROLLER_UHCI) {
-  return uhci_bulk_out(controller_number, port, endpoint, toggle, memory, length_of_transfer, time_to_wait);
+  return uhci_bulk_out(controller_number, port, address, endpoint, toggle, memory, length_of_transfer, time_to_wait);
  }
  else if(usb_mass_storage_devices[controller_number].controller_type==USB_CONTROLLER_OHCI) {
-  return ohci_bulk_out(controller_number, port, endpoint, toggle, memory, length_of_transfer, time_to_wait);
+  return ohci_bulk_out(controller_number, port, address, endpoint, toggle, memory, length_of_transfer, time_to_wait);
  }
 
  return STATUS_ERROR;

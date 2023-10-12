@@ -26,6 +26,8 @@ struct usb_mass_storage_device {
  byte_t controller_number;
  byte_t controller_type;
  byte_t port;
+ byte_t address;
+ byte_t device_speed;
  byte_t endpoint_in;
  byte_t toggle_in;
  byte_t endpoint_out;

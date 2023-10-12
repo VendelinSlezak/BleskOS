@@ -43,7 +43,7 @@ void wait_for_usb_keyboard(void) {
 }
 
 void usb_keyboard_set_led(byte_t led_state) {
- if(usb_controllers[usb_keyboard_controller].type==USB_CONTROLLER_UHCI) {
-  uhci_set_keyboard_led(usb_keyboard_controller, usb_keyboard_port, usb_keyboard_interface, usb_keyboard_endpoint_out, led_state);
- }
+ // if(usb_controllers[usb_keyboard_controller].type==USB_CONTROLLER_UHCI) {
+ //  uhci_set_keyboard_led(usb_keyboard_controller, usb_keyboard_port, usb_keyboard_interface, usb_keyboard_endpoint_out, led_state);
+ // }
 }
