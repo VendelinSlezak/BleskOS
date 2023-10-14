@@ -8,6 +8,10 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 8**
+- Driver for USB hubs on UHCI and OHCI controllers
+- Significant speed-up of bulk transfers on UHCI controllers
+
 **Update 7**
 - Fixed few bugs in Text editor and text areas
 - Improvements of USB drivers in order to make it possible to create driver for USB hubs
@@ -24,10 +28,6 @@ Here is info about most important improvements in several last updates.
 **Update 4**
 - Added function Undo and Redo for Text editor and text areas
 - Text editor support light/dark mode
-
-**Update 3**
-- Several improvements on UHCI, OHCI and AHCI drivers
-- Fixed showing of FAT entry with only short name
 
 ## How to try BleskOS
 
