@@ -120,7 +120,7 @@ void run_processes_on_background(void) {
    }
    
    //reactivate transfer
-   if(usb_controllers[usb_mouse_controller].ports_device_speed[usb_mouse_port]==USB_LOW_SPEED) {
+   if(usb_mouse_device_speed==USB_LOW_SPEED) {
     *descriptor=0x04800000; //low speed transfer
    }
    else {
