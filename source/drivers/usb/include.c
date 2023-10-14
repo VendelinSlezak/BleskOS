@@ -15,3 +15,4 @@
 #include "usb_mouse.c"
 #include "usb_keyboard.c"
 #include "usb_mass_storage.c"
+#include "usb_hub.c"

@@ -28,6 +28,10 @@ void wait_for_usb_keyboard(void) {
    connect_to_network_with_message();
    break;
   }
+  if((ticks_of_processes & 0x80)==0x80) {
+   detect_usb_devices_on_hubs(); //detect devices connected to USB HUBs
+   break;
+  }
  }
  
  if(usb_new_device_detected==1) {

@@ -9,6 +9,21 @@
 */
 
 void initalize_ehci_controller(byte_t controller_number) {
+ //test if we have ownership
+ dword_t pci_ehci_bios_register_offset = ((mmio_ind(usb_controllers[usb_controllers_pointer].base+0x08)>>8) & 0xFF);
+ if(pci_ehci_bios_register_offset>=0x40 && (pci_read(usb_controllers[usb_controllers_pointer].bus, usb_controllers[usb_controllers_pointer].device, usb_controllers[usb_controllers_pointer].function, pci_ehci_bios_register_offset) & 0xFF)==0x01) {
+  ticks = 0;
+  while(ticks<50) {
+   if((pci_read(usb_controllers[usb_controllers_pointer].bus, usb_controllers[usb_controllers_pointer].device, usb_controllers[usb_controllers_pointer].function, pci_ehci_bios_register_offset) & 0x01010000)==0x01000000) {
+    break;
+   }
+  }
+  if(ticks>=50) {
+   log("\nEHCI controller is still in BIOS ownership ");
+   log_hex(pci_read(usb_controllers[usb_controllers_pointer].bus, usb_controllers[usb_controllers_pointer].device, usb_controllers[usb_controllers_pointer].function, pci_ehci_bios_register_offset));
+  }
+ }
+
  //calculate base of operational registers
  usb_controllers[controller_number].base2 = (usb_controllers[controller_number].base+mmio_inb(usb_controllers[controller_number].base+0x00));
  
@@ -350,6 +365,8 @@ void ehci_read_configuration_descriptor(byte_t controller_number, byte_t port) {
   log("more than 10 devices connected\n");
  }
  
+ log("\nEHCI: device ");
+ log_hex(usb_descriptor_devices[0].type);
  free(data_mem);
 }
 

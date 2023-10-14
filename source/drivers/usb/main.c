@@ -9,13 +9,21 @@
 */
 
 void initalize_usb_controllers(void) {
+ //initalize values
+ for(dword_t i=0; i<127; i++) {
+  usb_addresses[i]=0;
+ }
  usb_mouse_state = 0;
  usb_keyboard_state = 0;
  for(int i=0; i<10; i++) {
   usb_mass_storage_devices[i].type = USB_MSD_NOT_ATTACHED;
  }
- for(dword_t i=0; i<127; i++) {
-  usb_addresses[i]=0;
+ for(int i=0; i<10; i++) {
+  usb_hub_devices[i].entry_state = USB_HUB_NOT_ATTACHED;
+  for(dword_t j=0; j<8; j++) {
+   usb_hub_devices[i].ports_state[j] = PORT_NO_DEVICE;
+   usb_hub_devices[i].ports_device_speed[j] = 0;
+  }
  }
  
  if(usb_controllers_pointer==0) {
@@ -29,6 +37,7 @@ void initalize_usb_controllers(void) {
  usb_mass_storage_cbw_memory = malloc(32);
  usb_mass_storage_response_memory = calloc(128);
  usb_mass_storage_csw_memory = malloc(16);
+ usb_hub_interrupt_endpoint_memory = calloc(64);
  
  //initalize EHCI USB controllers
  for(int i=0; i<usb_controllers_pointer; i++) {
@@ -63,11 +72,15 @@ void initalize_usb_controllers(void) {
  
  //detect already connected USB devices
  detect_usb_devices();
+
+ //detect devices connected to USB HUBs
+ detect_usb_devices_on_hubs();
  
  log("\n");
 }
 
 void detect_usb_devices(void) {
+ //detect devices connected to EHCI
  for(int i=0; i<usb_controllers_pointer; i++) {
   if(usb_controllers[i].type==USB_CONTROLLER_EHCI) {
    ehci_controller_detect_devices(i);
@@ -75,6 +88,7 @@ void detect_usb_devices(void) {
   }
  }
  
+ //detect devices connected to UHCI and OHCI
  for(int i=0; i<usb_controllers_pointer; i++) {
   if(usb_controllers[i].type==USB_CONTROLLER_UHCI) {
    uhci_controller_detect_devices(i);
@@ -83,6 +97,21 @@ void detect_usb_devices(void) {
   if(usb_controllers[i].type==USB_CONTROLLER_OHCI) {
    ohci_controller_detect_devices(i);
    continue;
+  }
+ }
+}
+
+void detect_usb_devices_on_hubs(void) {
+ for(dword_t i=0; i<10; i++) {
+  if(usb_hub_devices[i].entry_state==USB_HUB_ATTACHED) {
+   if(usb_hub_devices[i].controller_type==USB_CONTROLLER_UHCI) {
+    uhci_hub_detect_devices(i);
+    continue;
+   }
+   else if(usb_hub_devices[i].controller_type==USB_CONTROLLER_OHCI) {
+    ohci_hub_detect_devices(i);
+    continue;
+   }
   }
  }
 }

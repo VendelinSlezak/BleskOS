@@ -175,6 +175,118 @@ void ohci_controller_detect_devices(byte_t controller_number) {
  }
 }
 
+void ohci_hub_detect_devices(byte_t hub_number) {
+ dword_t port_status = 0;
+
+ //read if there is some connection status change
+ byte_t hub_change = ohci_hub_is_there_some_port_status_change(hub_number);
+ if(hub_change==0xFF) {
+  log("\nOHCI: hub not responding");
+  ohci_remove_device_if_connected(usb_hub_devices[hub_number].controller_number, usb_hub_devices[hub_number].port);
+  usb_new_device_detected=1;
+  return;
+ }
+ else if(hub_change==STATUS_FALSE) {
+  return;
+ }
+ else {
+  usb_new_device_detected=1;
+ }
+
+ for(dword_t port=0; port<usb_hub_devices[hub_number].number_of_ports; port++) {
+  //read port status
+  usb_device_address = usb_hub_devices[hub_number].address;
+  port_status = ohci_read_hub_port_status(usb_hub_devices[hub_number].controller_number, usb_hub_devices[hub_number].device_speed, usb_hub_devices[hub_number].address, port);
+
+  //is some device connected?
+  if((port_status & 0x1)==0x1) {
+   if(usb_hub_devices[hub_number].ports_state[port]==PORT_INITALIZED_DEVICE && ((port_status & 0x10000)==0x0)) {
+    continue; //we already initalized this device
+   }
+   usb_hub_devices[hub_number].ports_state[port]=PORT_DEVICE;
+   
+   ohci_remove_device_if_connected(usb_hub_devices[hub_number].controller_number, ((hub_number+1)*0x10)+port);
+
+   //reset device
+   ohci_set_feature(usb_hub_devices[hub_number].controller_number, usb_hub_devices[hub_number].device_speed, (port+1), 0x4);
+   wait(100);
+   ohci_clear_feature(usb_hub_devices[hub_number].controller_number, usb_hub_devices[hub_number].device_speed, (port+1), 0x14);
+   wait(50);
+
+   //read actual status
+   port_status = ohci_read_hub_port_status(usb_hub_devices[hub_number].controller_number, usb_hub_devices[hub_number].device_speed, usb_hub_devices[hub_number].address, port);
+   
+   //test if was port enabled
+   if((port_status & 0x2)!=0x2) {
+    log("\nOHCI: hub device was not enabled");
+    continue;
+   }
+
+   //clear status change
+   ohci_clear_feature(usb_hub_devices[hub_number].controller_number, usb_hub_devices[hub_number].device_speed, (port+1), 0x10);
+
+   //find if this is low speed or full speed device
+   if((port_status & 0x0200)==0x0200) {
+    usb_hub_devices[hub_number].ports_device_speed[port]=USB_LOW_SPEED;
+   }
+   else {
+    usb_hub_devices[hub_number].ports_device_speed[port]=USB_FULL_SPEED;
+   }
+
+   //get descriptor
+   if(usb_hub_devices[hub_number].ports_device_speed[port]==USB_LOW_SPEED) {
+    usb_control_endpoint_length = 8;
+    usb_device_type = ohci_read_descriptor(usb_hub_devices[hub_number].controller_number, usb_hub_devices[hub_number].ports_device_speed[port], 8, 8);
+   }
+   else if(usb_hub_devices[hub_number].ports_device_speed[port]==USB_FULL_SPEED) {
+    usb_control_endpoint_length = 64;
+    usb_device_type = ohci_read_descriptor(usb_hub_devices[hub_number].controller_number, usb_hub_devices[hub_number].ports_device_speed[port], 18, 64);
+   }
+   
+   //return if there was reading error
+   if(usb_device_type==0xFFFFFFFF) {
+    log("\nerror during reading USB descriptor");
+    return;
+   }
+
+   //get full descriptor from low speed devices
+   if(usb_hub_devices[hub_number].ports_device_speed[port]==USB_LOW_SPEED) {
+    if(ohci_read_descriptor(usb_hub_devices[hub_number].controller_number, usb_hub_devices[hub_number].ports_device_speed[port], 18, usb_control_endpoint_length)==0xFFFFFFFF) {
+     log("\nerror during reading low-speed USB descriptor");
+     return;
+    }
+   }
+   
+   //set address of device
+   if(ohci_set_address(usb_hub_devices[hub_number].controller_number, usb_hub_devices[hub_number].ports_device_speed[port])==STATUS_ERROR) {
+    log("\nOHCI: error during setting addres");
+    return;
+   }
+
+   //read configuration descriptor
+   if(ohci_read_configuration_descriptor(usb_hub_devices[hub_number].controller_number, ((hub_number+1)*0x10)+port, usb_hub_devices[hub_number].ports_device_speed[port], usb_control_endpoint_length)==STATUS_ERROR) {
+    log("\nOHCI: error during reading configuration descriptor");
+    return;
+   }
+   
+   //initalizing succesfull
+   usb_hub_devices[hub_number].ports_state[port]=PORT_INITALIZED_DEVICE;
+  }
+  else if(usb_hub_devices[hub_number].ports_state[port]!=PORT_NO_DEVICE) {
+   pstr("release");
+
+   //remove if there was connected device
+   ohci_remove_device_if_connected(usb_hub_devices[hub_number].controller_number, ((hub_number+1)*0x10)+port);
+   
+   //clear status change
+   ohci_clear_feature(usb_hub_devices[hub_number].controller_number, usb_hub_devices[hub_number].device_speed, (port+1), 0x10);
+   
+   //save port status change
+   usb_hub_devices[hub_number].ports_state[port]=PORT_NO_DEVICE;
+  }
+ }
+}
+
 void ohci_remove_device_if_connected(byte_t controller_number, byte_t port) {
  dword_t *hcca = (dword_t *) usb_controllers[controller_number].mem1;
 
@@ -221,6 +333,21 @@ void ohci_remove_device_if_connected(byte_t controller_number, byte_t port) {
     usb_mass_storage_devices[i].partitions_first_sector[j]=0;
     usb_mass_storage_devices[i].partitions_num_of_sectors[j]=0;
    }
+   return;
+  }
+ }
+ for(int i=0; i<10; i++) {
+  if(usb_hub_devices[i].entry_state==USB_HUB_ATTACHED && usb_hub_devices[i].controller_type==USB_CONTROLLER_OHCI && usb_hub_devices[i].controller_number==controller_number && usb_hub_devices[i].port==port) {
+   //remove devices connected to hub
+   for(dword_t j=0; j<16; j++) {
+    ohci_remove_device_if_connected(usb_hub_devices[i].controller_number, ((i+1)*0x10)+j);
+   }
+
+   usb_hub_devices[i].entry_state=USB_HUB_NOT_ATTACHED;
+   usb_hub_devices[i].controller_type=0;
+   release_usb_address(usb_hub_devices[i].address);
+   usb_hub_devices[i].port=0;
+   
    return;
   }
  }
@@ -414,6 +541,26 @@ void ohci_set_protocol(byte_t controller_number, byte_t device_speed, dword_t in
  //set protocol SETUP packet
  buffer[0]=(0x00000B21 | (protocol_type<<16));
  buffer[1]=interface_num;
+
+ ohci_transfer_set_setup(controller_number, device_speed);
+}
+
+void ohci_set_feature(byte_t controller_number, byte_t device_speed, dword_t destination, dword_t value) {
+ dword_t *buffer = (dword_t *) usb_controllers[controller_number].setup_mem;
+
+ //set protocol SETUP packet
+ buffer[0]=(0x00000323 | (value<<16));
+ buffer[1]=destination;
+
+ ohci_transfer_set_setup(controller_number, device_speed);
+}
+
+void ohci_clear_feature(byte_t controller_number, byte_t device_speed, dword_t destination, dword_t value) {
+ dword_t *buffer = (dword_t *) usb_controllers[controller_number].setup_mem;
+
+ //set protocol SETUP packet
+ buffer[0]=(0x00000123 | (value<<16));
+ buffer[1]=destination;
 
  ohci_transfer_set_setup(controller_number, device_speed);
 }
@@ -704,7 +851,56 @@ byte_t ohci_read_configuration_descriptor(byte_t controller_number, byte_t port,
   
   log("more than 10 devices connected\n");
  }
+ else if(usb_descriptor_devices[0].type==USB_DEVICE_HUB) {
+  log("OHCI: USB hub ");
+  
+  ohci_set_configuration(controller_number, device_speed, usb_descriptor_devices[0].configuration);
+  ohci_set_interface(controller_number, device_speed, usb_descriptor_devices[0].interface, usb_descriptor_devices[0].alternative_interface);
+  
+  for(int i=0; i<10; i++) {
+   if(usb_hub_devices[i].entry_state==USB_HUB_NOT_ATTACHED) {
+    usb_hub_devices[i].number_of_ports = ohci_read_hub_descriptor(controller_number, device_speed, control_endpoint_length);
+    if(usb_hub_devices[i].number_of_ports==0) {
+     log("error reading hub descriptor");
+     return STATUS_ERROR; //there was error with transfer
+    }
+    else if(usb_hub_devices[i].number_of_ports>8) {
+     log("too many hub ports ");
+     log_var(usb_hub_devices[i].number_of_ports);
+     usb_hub_devices[i].number_of_ports = 8;
+    }
+    else {
+     log_var(usb_hub_devices[i].number_of_ports);
+    }
+    usb_hub_devices[i].entry_state = USB_HUB_ATTACHED;
+    usb_hub_devices[i].controller_type = USB_CONTROLLER_OHCI;
+    usb_hub_devices[i].controller_number = controller_number;
+    usb_hub_devices[i].port = port;
+    usb_hub_devices[i].device_speed = device_speed;
+    usb_hub_devices[i].address = usb_device_address;
+    usb_hub_devices[i].interrupt_endpoint = usb_descriptor_devices[0].endpoint_interrupt;
+    usb_hub_devices[i].interrupt_endpoint_length = usb_descriptor_devices[0].endpoint_interrupt_length;
+    usb_hub_devices[i].toggle = 0;
 
+    //set power for all devices
+    for(dword_t j=0; j<usb_hub_devices[i].number_of_ports; j++) {
+     ohci_set_feature(controller_number, device_speed, (j+1), 0x8);
+    }
+    wait(50);
+
+    //read connected devices
+    ohci_hub_detect_devices(i);
+    
+    free(data_mem);
+    return STATUS_GOOD;
+   }
+  }
+  
+  log("more than 10 devices connected\n");
+ }
+
+ log("\nOHCI: device ");
+ log_hex(usb_descriptor_devices[0].type);
  free(data_mem);
  return STATUS_GOOD;
 }
@@ -723,6 +919,91 @@ void ohci_read_hid_descriptor(byte_t controller_number, byte_t device_speed, byt
  parse_hid_descriptor(data_mem);
  
  free(data_mem);
+}
+
+byte_t ohci_read_hub_descriptor(byte_t controller_number, byte_t device_speed, byte_t control_endpoint_length) {
+ dword_t *buffer = (dword_t *) usb_controllers[controller_number].setup_mem;
+ dword_t data_mem = calloc(0x47);
+ dword_t *data = (dword_t *) data_mem;
+
+ //set read HUB DESCRIPTOR SETUP packet
+ buffer[0]=0x290006A0;
+ buffer[1]=0x00470000;
+ 
+ ohci_send_setup_to_device(controller_number, device_speed, 0x47, data_mem, control_endpoint_length);
+
+ //return number of downstream ports
+ byte_t number_of_ports = ((data[0]>>16) & 0xFF);
+ free(data_mem);
+ return number_of_ports;
+}
+
+dword_t ohci_read_hub_port_status(byte_t controller_number, byte_t device_speed, byte_t address, byte_t port) {
+ dword_t *buffer = (dword_t *) usb_controllers[controller_number].setup_mem;
+ dword_t data_mem = calloc(4);
+ dword_t *data = (dword_t *) data_mem;
+
+ //set read HUB PORT STATE SETUP packet
+ buffer[0]=0x000000A3;
+ buffer[1]=(0x00040000 | (port+1)); //ports are 1 based
+ 
+ ohci_send_setup_to_device(controller_number, device_speed, 4, data_mem, 8);
+
+ //return port state
+ dword_t port_state = (data[0]);
+ free(data_mem);
+ return port_state;
+}
+
+byte_t ohci_hub_is_there_some_port_status_change(byte_t hub_number) {
+ dword_t buffer_mem = calloc(usb_hub_devices[hub_number].number_of_ports*8);
+ dword_t buffer_mem_pointer = buffer_mem;
+ dword_t *buffer = (dword_t *) (buffer_mem);
+ dword_t data_mem = calloc(usb_hub_devices[hub_number].number_of_ports*4);
+ dword_t data_mem_pointer = data_mem;
+ dword_t *data = (dword_t *) data_mem;
+ dword_t number_of_packets = 0;
+
+ //set read HUB PORT STATE SETUP packet
+ for(dword_t i=0; i<usb_hub_devices[hub_number].number_of_ports; i++) {
+  buffer[0]=0x000000A3;
+  buffer[1]=(0x00040000 | (i+1)); //ports are 1 based
+  buffer+=2;
+ }
+
+ //set chain of packets
+ for(dword_t i=0; i<usb_hub_devices[hub_number].number_of_ports; i++) {
+  ohci_create_td(usb_hub_devices[hub_number].controller_number, number_of_packets, (number_of_packets+1), OHCI_SETUP, TOGGLE_0, buffer_mem_pointer, 8);
+  buffer_mem_pointer+=8;
+  number_of_packets++;
+  ohci_create_td(usb_hub_devices[hub_number].controller_number, number_of_packets, (number_of_packets+1), OHCI_IN, TOGGLE_1, data_mem_pointer, 4);
+  data_mem_pointer+=4;
+  number_of_packets++;
+  ohci_create_td(usb_hub_devices[hub_number].controller_number, number_of_packets, (number_of_packets+1), OHCI_OUT, TOGGLE_1, 0x0, 0);
+  number_of_packets++;
+ }
+ number_of_packets--;
+ ohci_create_td(usb_hub_devices[hub_number].controller_number, number_of_packets, 0, OHCI_OUT, TOGGLE_1, 0x0, 0);
+ 
+ //transfer
+ ohci_create_ed(usb_hub_devices[hub_number].controller_number, usb_hub_devices[hub_number].device_speed, 0, usb_hub_devices[hub_number].address, ENDPOINT_0, 0, (number_of_packets+1));
+ byte_t status = ohci_control_transfer(usb_hub_devices[hub_number].controller_number, number_of_packets);
+ if(status==STATUS_ERROR) {
+  return 0xFF;
+ }
+
+ //return port state
+ for(dword_t i=0; i<usb_hub_devices[hub_number].number_of_ports; i++) {
+  if((data[i] & 0x10000)==0x10000) {
+   free(buffer_mem);
+   free(data_mem);
+   return STATUS_TRUE;
+  }
+ }
+
+ free(buffer_mem);
+ free(data_mem);
+ return STATUS_FALSE;
 }
 
 byte_t ohci_bulk_out(byte_t controller_number, byte_t device_speed, byte_t address, byte_t endpoint, byte_t toggle, dword_t memory, dword_t length, dword_t time_to_wait) {

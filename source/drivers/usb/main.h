@@ -29,6 +29,7 @@
 #define USB_DEVICE_KEYBOARD 0x030101
 #define USB_DEVICE_MOUSE 0x030102
 #define USB_DEVICE_MASS_STORAGE 0x080650
+#define USB_DEVICE_HUB 0x090000
 
 #define USB_BOOT_PROTOCOL 0
 #define USB_HID_PROTOCOL 1
@@ -39,6 +40,9 @@
 #define USB_HID_USAGE_WHEEL 4
 
 struct usb_controller_informations {
+ byte_t bus;
+ byte_t device;
+ byte_t function;
  byte_t type;
  dword_t base;
  dword_t base2;
@@ -75,6 +79,7 @@ dword_t usb_controllers_pointer=0, usb_device_type=0, usb_control_endpoint_lengt
 
 void initalize_usb_controllers(void);
 void detect_usb_devices(void);
+void detect_usb_devices_on_hubs(void);
 void detect_status_change_of_usb_devices(void);
 byte_t get_free_usb_address(void);
 void release_usb_address(byte_t address);
