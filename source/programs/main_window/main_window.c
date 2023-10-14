@@ -116,6 +116,11 @@ void bleskos_main_window_redraw(void) {
  if(ethernet_cards_pointer!=0) {
   bleskos_main_window_draw_item("Ethernet card", 0x00B5FF, 0);
  }
+ for(int i=0; i<10; i++) {
+  if(usb_hub_devices[i].entry_state==USB_HUB_ATTACHED) {
+   bleskos_main_window_draw_item("USB hub", 0x00B5FF, 0);
+  }
+ }
  if(usb_mouse_state!=0) {
   bleskos_main_window_draw_item("USB mouse", 0x00B5FF, 0);
  }
