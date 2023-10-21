@@ -18,17 +18,17 @@ void initalize_network_cards(void) {
   log("\nno ethernet card founded\n");
   return;
  }
- 
- log("\n");
- log_var(ethernet_cards_pointer);
- log("ethernet cards founded\n");
+ else if(ethernet_cards_pointer>1) {
+  log_var_with_space(ethernet_cards_pointer);
+  log("\nethernet cards founded");
+ }
  
  //initalize first card we have driver for
  for(int card=0; card<ethernet_cards_pointer; card++) {
   if(ethernet_cards[card].driver!=NETWORK_NO_DRIVER) {
    initalize_network_card(card);
 
-   log("MAC address: ");
+   log("\nMAC address: ");
    for(int i=0; i<6; i++) {
     log_hex_specific_size(mac_address[i], 2);
     log(" ");
