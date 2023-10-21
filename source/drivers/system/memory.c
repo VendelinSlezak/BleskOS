@@ -124,7 +124,7 @@ void log_starting_memory(void) {
    log("MB");
   }
   else {
-   log("Other entry");
+   log("Other entry ");
    log_hex_with_space(memory_map[offset+1]);
    log_hex_with_space(memory_map[offset+0]);
    log("length ");
