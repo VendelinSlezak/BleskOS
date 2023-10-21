@@ -40,7 +40,7 @@ void media_viewer(void) {
  program_interface_redraw();
 
  while(1) {
-  wait_for_usb_mouse();
+  wait_for_user_input();
   move_mouse_cursor();
 
   //close program
