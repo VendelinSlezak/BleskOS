@@ -25,7 +25,7 @@ void developer_program_log(void) {
  show_log();
 
  while(1) {
-  wait_for_usb_mouse();
+  wait_for_user_input();
   move_mouse_cursor();
   
   if(keyboard_value==KEY_ESC || mouse_drag_and_drop==MOUSE_CLICK) {
