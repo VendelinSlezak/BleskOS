@@ -402,7 +402,7 @@ void system_board(void) {
  redraw_screen();
 
  while(1) {
-  wait_for_usb_mouse();
+  wait_for_user_input();
   move_mouse_cursor();
 
   if(keyboard_value==KEY_ESC || (mouse_drag_and_drop==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y-10-5-8-5, graphic_screen_y-10, 10, 10+27*8)==STATUS_TRUE)) {
@@ -550,7 +550,7 @@ void system_board(void) {
     redraw_screen();
     
     while(1) {
-     wait_for_usb_keyboard();
+     wait_for_user_input();
 
      if(keyboard_value==KEY_SPACE || keyboard_value==KEY_LEFT || keyboard_value==KEY_RIGHT) {
       goto redraw;
