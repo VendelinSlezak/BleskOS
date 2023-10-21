@@ -117,14 +117,14 @@ void bleskos_main_window_redraw(void) {
   bleskos_main_window_draw_item("Ethernet card", 0x00B5FF, 0);
  }
  for(int i=0; i<10; i++) {
-  if(usb_hub_devices[i].entry_state==USB_HUB_ATTACHED) {
+  if(usb_hubs[i].controller_type!=USB_NO_DEVICE_ATTACHED) {
    bleskos_main_window_draw_item("USB hub", 0x00B5FF, 0);
   }
  }
- if(usb_mouse_state!=0) {
+ if(usb_mouse[0].controller_type!=USB_NO_DEVICE_ATTACHED) {
   bleskos_main_window_draw_item("USB mouse", 0x00B5FF, 0);
  }
- if(usb_keyboard_state!=0) {
+ if(usb_keyboard[0].controller_type!=USB_NO_DEVICE_ATTACHED) {
   bleskos_main_window_draw_item("USB keyboard", 0x00B5FF, 0);
  }
  for(int i=0; i<10; i++) {
@@ -166,7 +166,7 @@ void bleskos_main_window(void) {
  bleskos_main_window_time_redraw = 1;
  
  while(1) {
-  wait_for_usb_mouse();
+  wait_for_user_input();
   move_mouse_cursor();
 
   if(ethernet_link_state_change==1) {
@@ -272,7 +272,7 @@ void bleskos_main_window_change_keyboard_layout(void) {
  redraw_screen();
 
  while(1) {
-  wait_for_usb_mouse();
+  wait_for_user_input();
   move_mouse_cursor();
 
   if(keyboard_value==KEY_ESC) {
