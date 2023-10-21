@@ -13,6 +13,7 @@ Here is info about most important improvements in several last updates.
 - Reading from USB mass storage device on EHCI controller now exceeds 10 MB/s
 - After transfer error is USB mass storage device not halted as before, but reseted and can be used without replugging
 - USB hub driver works under all controllers
+- Support for devices that have more than one interface (e.g. wireless receiver from mouse/keyboard)
 - Fixed update of file name after saving file
 
 **Update 8**
