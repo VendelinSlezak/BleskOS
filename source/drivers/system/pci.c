@@ -327,9 +327,11 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
   if(usb_controllers_pointer>=20) {
    return;
   }
+  usb_controllers[usb_controllers_pointer].bus=bus;
+  usb_controllers[usb_controllers_pointer].device=device;
+  usb_controllers[usb_controllers_pointer].function=function;
   usb_controllers[usb_controllers_pointer].type=USB_CONTROLLER_EHCI;
   usb_controllers[usb_controllers_pointer].base=pci_read_mmio_bar(bus, device, function, PCI_BAR0);
-  pci_write(bus, device, function, ((mmio_ind(usb_controllers[usb_controllers_pointer].base+0x08)>>8) & 0xFF), (1 << 24)); //disable BIOS legacy support
   usb_controllers_pointer++;
   return;
  }
