@@ -8,6 +8,13 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 9**
+- All USB-related drivers were completely rewritten to much better version that was tested and proven to be working on 8 real computers
+- Reading from USB mass storage device on EHCI controller now exceeds 10 MB/s
+- After transfer error is USB mass storage device not halted as before, but reseted and can be used without replugging
+- USB hub driver works under all controllers
+- Fixed update of file name after saving file
+
 **Update 8**
 - Driver for USB hubs on UHCI and OHCI controllers
 - Significant speed-up of bulk transfers on UHCI controllers
@@ -70,7 +77,7 @@ Drivers
 - Inbuilt hardware: PS/2 keyboard, PS/2 mouse, PATA hard disk, PATAPI optical disk drive, AHCI hard disk, AHCI optical disk drive
 - Filesystems: FAT12/16/32, ext2 (read-only), ISO9660 (read-only)
 - USB controllers: UHCI, OHCI, EHCI
-- USB devices: USB mouse, USB keyboard, USB mass storage device
+- USB devices: USB mouse, USB keyboard, USB mass storage device, USB hub
 - Ethernet cards: Realtek 8139/8169, Intel e1000(e), AMD PC-net
 - Network stack: IPv4, ARP, UDP, TCP, DHCP, DNS, HTTP
 
