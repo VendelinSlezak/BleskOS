@@ -32,10 +32,6 @@ Here is info about most important improvements in several last updates.
 - Improvement of HDA driver
 - Better logging
 
-**Update 4**
-- Added function Undo and Redo for Text editor and text areas
-- Text editor support light/dark mode
-
 ## How to try BleskOS
 
 You can download image of last version here on github. Then you have two options:
