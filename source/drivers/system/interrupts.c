@@ -41,8 +41,8 @@ void set_interrupts(void) {
  bleskos_main_window_time_redraw = 0;
  hda_playing_state = 0;
  ac97_playing_state = 0;
- usb_mouse_state = 0;
- usb_keyboard_state = 0;
+ usb_mouse[0].controller_type = USB_NO_DEVICE_ATTACHED;
+ // usb_keyboard_state = 0;
  media_viewer_sound_state = MEDIA_VIEWER_SOUND_NO_FILE;
  
   //load IDT and enable interrupts

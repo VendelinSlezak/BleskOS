@@ -105,156 +105,96 @@ void run_processes_on_background(void) {
    }
   }
  }
- 
- if(usb_mouse_state==USB_MOUSE_UHCI_PORT) {
-  dword_t *descriptor = (dword_t *) usb_mouse_check_transfer_descriptor;
-  if((*descriptor & 0x00800000)==0x00000000) {
-   usb_mouse_wait = 0;
 
-   //reverse toggle bit
-   if((descriptor[1] & 0x00080000)==0x00000000) {
-    descriptor[1] |= 0x00080000;
+ if(usb_mouse[0].controller_type!=USB_NO_DEVICE_ATTACHED) {
+  dword_t *descriptor = (dword_t *) (usb_mouse[0].transfer_descriptor_check);
+
+  if(usb_mouse[0].controller_type==USB_CONTROLLER_UHCI) {
+   if((*descriptor & 0x00800000)==0x00000000) {
+    usb_mouse_packet_received = STATUS_TRUE;
+
+    //reverse toggle bit
+    if((descriptor[1] & 0x00080000)==0x00000000) {
+     descriptor[1] |= 0x00080000;
+    }
+    else {
+     descriptor[1] &= (~0x00080000);
+    }
+    
+    //reactivate transfer
+    if(usb_mouse[0].device_speed==USB_LOW_SPEED) {
+     *descriptor=0x04800000; //low speed transfer
+    }
+    else {
+     *descriptor=0x00800000; //full speed transfer
+    }
    }
-   else {
-    descriptor[1] &= (~0x00080000);
-   }
-   
-   //reactivate transfer
-   if(usb_mouse_device_speed==USB_LOW_SPEED) {
-    *descriptor=0x04800000; //low speed transfer
-   }
-   else {
-    *descriptor=0x00800000; //full speed transfer
+  }
+  else if(usb_mouse[0].controller_type==USB_CONTROLLER_OHCI) {
+   dword_t *ed = (dword_t *) (usb_mouse[0].transfer_descriptor_check);
+
+   if(ed[2]!=(ed[1]-0x10)) {
+    //no error
+    if((ed[2] & 0x1)==0x0) {
+     usb_mouse_packet_received = STATUS_TRUE;
+    }
+
+    //reactivate transfer
+    dword_t *td = (dword_t *) (usb_controllers[usb_mouse[0].controller_number].mem3+1025*16);
+    td[0] = ((td[0] & 0x0FFFFFFF) | 0xE0000000);
+    td[1] = usb_mouse_data_memory;
+    td[2] = 0;
+    td[3] = usb_mouse_data_memory+usb_mouse[0].endpoint_size-1;
+    ed[2] = (ed[1]-0x10);
    }
   }
  }
- else if(usb_mouse_state==USB_MOUSE_OHCI_PORT) {
-  dword_t *descriptor = (dword_t *) usb_mouse_check_transfer_descriptor;
-  
-  dword_t *ed = (dword_t *) (usb_controllers[usb_mouse_controller].mem2+1*16);
-  if(ed[2]!=(ed[1]-0x10)) {
-   if((ed[2] & 0x1)==0x0) { //no error
-    usb_mouse_wait = 0;
-   }
 
-   //reactivate transfer
-   dword_t *td = (dword_t *) (usb_controllers[usb_mouse_controller].mem3+34*16);
-   td[0] = ((td[0] & 0x0FFFFFFF) | 0xE0000000);
-   td[1] = usb_mouse_data_memory;
-   td[2] = 0;
-   td[3] = usb_mouse_data_memory+usb_mouse_endpoint_length-1;
-   ed[2] = (ed[1]-0x10);
-  }
- }
- 
- if(usb_keyboard_state==USB_KEYBOARD_UHCI_PORT) {
-  dword_t *descriptor = (dword_t *) usb_keyboard_check_transfer_descriptor;
-  byte_t *usb_keyboard_mem8 = (byte_t *) usb_keyboard_data_memory;
-  
-  if((*descriptor & 0x00800000)==0x00000000) {   
-   //process data
-   if(usb_keyboard_mem8[2]!=usb_keyboard_code) { //if not same key   
-    //process modifier keys
-    if((usb_keyboard_mem8[0] & 0x11)!=0x00) {
-     keyboard_control_keys |= KEYBOARD_CTRL;
+ if(usb_keyboard[0].controller_type!=USB_NO_DEVICE_ATTACHED) {
+  dword_t *descriptor = (dword_t *) (usb_keyboard[0].transfer_descriptor_check);
+
+  if(usb_keyboard[0].controller_type==USB_CONTROLLER_UHCI) {
+   if((*descriptor & 0x00800000)==0x00000000) { //new packet
+    usb_keyboard_process_new_packet();
+    
+    //reverse toggle bit
+    if((descriptor[1] & 0x00080000)==0x00000000) {
+     descriptor[1] |= 0x00080000;
     }
     else {
-     keyboard_control_keys &= ~KEYBOARD_CTRL;
+     descriptor[1] &= (~0x00080000);
     }
-    if((usb_keyboard_mem8[0] & 0x22)!=0x00) {
-     keyboard_control_keys |= KEYBOARD_SHIFT;
-    }
-    else {
-     keyboard_control_keys &= ~KEYBOARD_SHIFT;
-    }
-    if((usb_keyboard_mem8[0] & 0x44)!=0x00) {
-     keyboard_control_keys |= KEYBOARD_ALT;
+    
+    //reactivate transfer
+    if(usb_keyboard[0].device_speed==USB_LOW_SPEED) {
+     *descriptor=0x04800000; //low speed transfer
     }
     else {
-     keyboard_control_keys &= ~KEYBOARD_ALT;
-    }
-
-    usb_keyboard_code = usb_keyboard_mem8[2];
-    usb_keyboard_value = usb_keyboard_layout[usb_keyboard_code];
-    usb_keyboard_count = 0;
-    usb_keyboard_wait = 0;
-   }
-   
-   //reverse toggle bit
-   if((descriptor[1] & 0x00080000)==0x00000000) {
-    descriptor[1] |= 0x00080000;
-   }
-   else {
-    descriptor[1] &= (~0x00080000);
-   }
-   
-   //reactivate transfer
-   if(usb_controllers[usb_keyboard_controller].ports_device_speed[usb_keyboard_port]==USB_LOW_SPEED) {
-    *descriptor=0x04800000; //low speed transfer
-   }
-   else {
-    *descriptor=0x00800000; //full speed transfer
-   }
-  }
-  else if(usb_keyboard_code!=0x00) { //same key is still pressed
-   usb_keyboard_count++;
-   
-   if(usb_keyboard_count>250+20) { //repeat key after 500 ms every 40 ms
-    usb_keyboard_wait = 0;
-    usb_keyboard_count = 250;
-   }
-  }
- }
- else if(usb_keyboard_state==USB_KEYBOARD_OHCI_PORT) {
-  dword_t *descriptor = (dword_t *) usb_keyboard_check_transfer_descriptor;
-  byte_t *usb_keyboard_mem8 = (byte_t *) usb_keyboard_data_memory;
-  
-  dword_t *ed = (dword_t *) (usb_controllers[usb_keyboard_controller].mem2+2*16);
-  if(ed[2]!=(ed[1]-0x10)) {
-   if((ed[2] & 0x1)==0x0) { //no error
-    //process data
-    if(usb_keyboard_mem8[2]!=usb_keyboard_code) { //if not same key   
-     //process modifier keys
-     if((usb_keyboard_mem8[0] & 0x11)!=0x00) {
-      keyboard_control_keys |= KEYBOARD_CTRL;
-     }
-     else {
-      keyboard_control_keys &= ~KEYBOARD_CTRL;
-     }
-     if((usb_keyboard_mem8[0] & 0x22)!=0x00) {
-      keyboard_control_keys |= KEYBOARD_SHIFT;
-     }
-     else {
-      keyboard_control_keys &= ~KEYBOARD_SHIFT;
-     }
-     if((usb_keyboard_mem8[0] & 0x44)!=0x00) {
-      keyboard_control_keys |= KEYBOARD_ALT;
-     }
-     else {
-      keyboard_control_keys &= ~KEYBOARD_ALT;
-     }
-
-     usb_keyboard_code = usb_keyboard_mem8[2];
-     usb_keyboard_value = usb_keyboard_layout[usb_keyboard_code];
-     usb_keyboard_count = 0;
-     usb_keyboard_wait = 0;
+     *descriptor=0x00800000; //full speed transfer
     }
    }
-   
-   //reactivate transfer
-   dword_t *td = (dword_t *) (usb_controllers[usb_keyboard_controller].mem3+35*16);
-   td[0] = ((td[0] & 0x0FFFFFFF) | 0xE0000000);
-   td[1] = usb_keyboard_data_memory;
-   td[2] = 0;
-   td[3] = usb_keyboard_data_memory+usb_keyboard_endpoint_length-1;
-   ed[2] = (ed[1]-0x10);
+   else if(usb_keyboard_code!=0x00) { //same key is still pressed
+    usb_keyboard_process_no_new_packet();
+   }
   }
-  else if(usb_keyboard_code!=0x00) { //same key is still pressed
-   usb_keyboard_count++;
-   
-   if(usb_keyboard_count>250+20) { //repeat key after 500 ms every 40 ms
-    usb_keyboard_wait = 0;
-    usb_keyboard_count = 250;
+  else if(usb_keyboard[0].controller_type==USB_CONTROLLER_OHCI) {
+   dword_t *ed = (dword_t *) (usb_keyboard[0].transfer_descriptor_check);
+
+   if(ed[2]!=(ed[1]-0x10)) {
+    if((ed[2] & 0x1)==0x0) { //no error
+     usb_keyboard_process_new_packet();
+    }
+    
+    //reactivate transfer
+    dword_t *td = (dword_t *) (usb_controllers[usb_keyboard[0].controller_number].mem3+1026*16);
+    td[0] = ((td[0] & 0x0FFFFFFF) | 0xE0000000);
+    td[1] = usb_keyboard_data_memory;
+    td[2] = 0;
+    td[3] = usb_keyboard_data_memory+usb_keyboard[0].endpoint_size-1;
+    ed[2] = (ed[1]-0x10);
+   }
+   else if(usb_keyboard_code!=0x00) { //same key is still pressed
+    usb_keyboard_process_no_new_packet();
    }
   }
  }
