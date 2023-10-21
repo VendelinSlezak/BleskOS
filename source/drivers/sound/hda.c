@@ -213,7 +213,12 @@ void hda_initalize_codec(dword_t codec) {
     log_hex_specific_size(nodes_mem[node], 2);
    }
    log(" ");
-   log_hex(nodes_connection_mem[node]);
+   for(dword_t i=0; i<4; i++) {
+    if((nodes_connection_mem[node]>>(i*8))==0) {
+     break;
+    }
+    log_var_with_space((nodes_connection_mem[node]>>(i*8)) & 0xFF);
+   }
    log("\n");
   }
  }
