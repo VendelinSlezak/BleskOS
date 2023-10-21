@@ -59,6 +59,17 @@ void set_char_of_file_name(dword_t value_offset, dword_t value) {
  program_interface_file_name[value_offset] = value;
 }
 
+void set_file_name_from_file_dialog(void) {
+word_t *file_name = (word_t *) (file_dialog_file_name);
+
+ for(dword_t i=0; i<20; i++) {
+  set_char_of_file_name(i, file_name[i]);
+  if(file_name[i]==0) {
+   break;
+  }
+ }
+}
+
 void add_file(word_t *file_name, byte_t device_type, byte_t device_number, byte_t partition, dword_t file_size, dword_t file_disk_pointer) {
  if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)>=10) {
   return;

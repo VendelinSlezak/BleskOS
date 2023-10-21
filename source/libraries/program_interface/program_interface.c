@@ -483,7 +483,7 @@ byte_t dialog_yes_no(byte_t *string) {
  redraw_screen();
  
  while(1) {
-  wait_for_usb_mouse();
+  wait_for_user_input();
   move_mouse_cursor();
   
   if(keyboard_value==KEY_ESC) {
@@ -511,7 +511,7 @@ void error_window(byte_t *string) {
  redraw_screen();
 
  while(1) {
-  wait_for_usb_mouse();
+  wait_for_user_input();
   move_mouse_cursor();
 
   if(keyboard_value==KEY_ESC || keyboard_value==KEY_ENTER || mouse_drag_and_drop==MOUSE_CLICK) {
