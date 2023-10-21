@@ -79,8 +79,8 @@ void select_ext_partition(dword_t first_partition_sector) {
  }
 
  //calculate this value for achieving greater preformance
- if(ext_size_of_block_in_sectors<64) {
-  ext_max_number_of_blocks_per_one_read = (64/ext_size_of_block_in_sectors);
+ if(ext_size_of_block_in_sectors<128) {
+  ext_max_number_of_blocks_per_one_read = (128/ext_size_of_block_in_sectors);
  }
  else {
   ext_max_number_of_blocks_per_one_read = 1;
