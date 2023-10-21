@@ -47,7 +47,7 @@ void text_editor(void) {
  program_interface_redraw();
  
  while(1) {
-  wait_for_usb_mouse();
+  wait_for_user_input();
   move_mouse_cursor();
 
   //close program
@@ -202,9 +202,11 @@ void text_editor_save_file(void) {
 
  //save file
  file_dialog_save_set_extension("txt"); //TODO: more extensions
- file_dialog_save(converted_file_memory, converted_file_size-1); //size is without zero char ending
+ if(file_dialog_save(converted_file_memory, converted_file_size-1)==STATUS_GOOD) { //size is without zero char ending
+  set_file_value(PROGRAM_INTERFACE_FILE_FLAGS, (get_file_value(PROGRAM_INTERFACE_FILE_FLAGS) | PROGRAM_INTERFACE_FILE_FLAG_SAVED));
+  set_file_name_from_file_dialog();
+ }
  free(converted_file_memory);
- set_file_value(PROGRAM_INTERFACE_FILE_FLAGS, PROGRAM_INTERFACE_FILE_FLAG_SAVED);
 }
 
 void text_editor_new_file(void) {
@@ -294,7 +296,7 @@ void text_editor_key_f10_event(void) {
   redraw_part_of_screen(graphic_screen_x_center-32, graphic_screen_y_center-8-7-8, 8*8, 8+7+8+12+8+12+8);
 
   while(1) {
-   wait_for_usb_mouse();
+   wait_for_user_input();
    move_mouse_cursor();
 
    if(keyboard_value==KEY_ESC || (mouse_drag_and_drop==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center-8-7-8, graphic_screen_y_center+12+8+12+8, graphic_screen_x_center-4*8, graphic_screen_x_center+4*8+2)==STATUS_FALSE)) {
