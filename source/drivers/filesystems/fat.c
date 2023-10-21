@@ -405,8 +405,8 @@ dword_t read_fat_file(dword_t cluster, dword_t size_in_bytes) {
  file_cluster_list = (dword_t *) (file_clusters_list_mem);
  dword_t num_of_clusters_to_read = 0;
  dword_t max_clusters_per_one_read = 1;
- if(fat_cluster_length<64) {
-  max_clusters_per_one_read = (64/fat_cluster_length);
+ if(fat_cluster_length<128) {
+  max_clusters_per_one_read = (128/fat_cluster_length);
  }
  else {
   max_clusters_per_one_read = 1;
