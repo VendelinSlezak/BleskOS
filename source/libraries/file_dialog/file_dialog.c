@@ -517,7 +517,7 @@ dword_t file_dialog_window(dword_t new_file_memory, dword_t new_file_size) {
  redraw_screen();
  
  while(1) {
-  wait_for_usb_mouse();
+  wait_for_user_input();
   move_mouse_cursor();
 
   if(keyboard_value==KEY_F12 || usb_new_device_detected==1) {
@@ -735,7 +735,7 @@ dword_t file_dialog_window(dword_t new_file_memory, dword_t new_file_size) {
     //TODO: with mouse cursor
     draw_text_area(file_name_text_area);
     redraw_part_of_screen(graphic_screen_x-411, 5, 403, 12);
-    wait_for_usb_keyboard();
+    wait_for_user_input();
     if(keyboard_value==KEY_ESC) {
      delete_text_area(file_name_text_area);
      break;
@@ -1115,7 +1115,7 @@ dword_t file_dialog_window(dword_t new_file_memory, dword_t new_file_size) {
      //TODO: with mouse cursor
      draw_text_area(file_name_text_area);
      redraw_part_of_screen(graphic_screen_x-411, 5, 403, 12);
-     wait_for_usb_keyboard();
+     wait_for_user_input();
      if(keyboard_value==KEY_ESC) {
       delete_text_area(file_name_text_area);
       break;
