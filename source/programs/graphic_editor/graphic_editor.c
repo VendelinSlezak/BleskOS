@@ -78,7 +78,7 @@ void graphic_editor(void) {
  program_interface_redraw();
 
  while(1) {
-  wait_for_usb_mouse();
+  wait_for_user_input();
   move_mouse_cursor();
 
   //close program
@@ -421,7 +421,10 @@ void graphic_editor_open_file(void) {
 void graphic_editor_save_file(void) {
  file_dialog_save_set_extension("bmp");
  convert_image_data_to_bmp(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
- file_dialog_save(converted_file_memory, converted_file_size);
+ if(file_dialog_save(converted_file_memory, converted_file_size)==STATUS_GOOD) {
+  set_file_value(PROGRAM_INTERFACE_FILE_FLAGS, (get_file_value(PROGRAM_INTERFACE_FILE_FLAGS) | PROGRAM_INTERFACE_FILE_FLAG_SAVED));
+  set_file_name_from_file_dialog();
+ }
  free(converted_file_memory);
 }
 
@@ -459,7 +462,7 @@ void graphic_editor_new_file(void) {
  redraw_screen();
 
  while(1) {
-  wait_for_usb_mouse();
+  wait_for_user_input();
   move_mouse_cursor();
 
   //do not create new file
@@ -519,7 +522,7 @@ void graphic_editor_key_f7_event(void) {
   draw_menu_list("[l] Turn left\n[r] Turn right\n[h] Reverse left-right\n[v] Reverse up-down", COLUMN_OF_FIRST_BUTTON_ON_BOTTOM_LINE, 0);
 
   while(1) {
-   wait_for_usb_mouse();
+   wait_for_user_input();
    move_mouse_cursor();
 
    //close menu
@@ -667,7 +670,7 @@ void graphic_editor_key_t_event(void) {
  dword_t new_color = 0;
     
  while(1) {
-  wait_for_usb_mouse();
+  wait_for_user_input();
   move_mouse_cursor();
   new_color = get_mouse_cursor_pixel_color();
   
