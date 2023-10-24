@@ -8,10 +8,10 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
-NOTE: I am working on new program File Manager and I will release next update when I will finish first version of it.
+I am working on new program File Manager and I will release next update when I will finish first version of it.
 
 **BleskOS wiki**
-- I created wiki page that will contain documentation of BleskOS source code. [BleskOS wiki](https://github.com/VendelinSlezak/BleskOS/wiki)
+- I created wiki that will contain documentation of BleskOS source code. [BleskOS wiki](https://github.com/VendelinSlezak/BleskOS/wiki)
 
 **Update 9**
 - All USB-related drivers were completely rewritten to much better version that was tested and proven to be working on 8 real computers
