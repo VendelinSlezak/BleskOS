@@ -35,6 +35,8 @@ struct usb_mass_storage_device {
  byte_t toggle_in;
  byte_t endpoint_out;
  byte_t toggle_out;
+ dword_t ehci_hub_address;
+ dword_t ehci_hub_port_number;
  dword_t size_in_sectors;
  dword_t size_of_sector;
  byte_t partitions_type[4];

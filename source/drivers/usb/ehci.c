@@ -120,70 +120,69 @@ byte_t ehci_enable_device_on_port(byte_t controller_number, byte_t port_number) 
  else {
   usb_controllers[controller_number].ports_device_speed[port_number] = USB_HIGH_SPEED;
  }
-
- //this is not hub device
- ehci_hub_address = 0;
- ehci_hub_port_number = 0;
  
  return STATUS_GOOD;
 }
 
 void ehci_set_qh(byte_t controller_number, dword_t qh_number, dword_t first_td, dword_t device_address, dword_t device_speed, dword_t endpoint) {
  dword_t *queue_head = (dword_t *) (usb_controllers[controller_number].mem1+(qh_number*64));
- dword_t attributes = ((device_address) | (endpoint<<8) | (1<<14) | (1<<15));
+ dword_t attributes = ((device_address) | (endpoint<<8) | (1<<14) | (1<<15)), attributes2 = (0b01<<30);
+
  if(device_speed==USB_HIGH_SPEED) {
-  attributes |= (0b10<<12);
+  attributes |= (0b10<<12); //0b10 = high speed
   if(endpoint==0) {
-   attributes |= (64<<16);
+   attributes |= (64<<16); //max size per one transfer
   }
   else {
-   attributes |= (512<<16);
+   attributes |= (512<<16); //max size per one transfer
   }
  }
  else if(device_speed==USB_FULL_SPEED) {
-  attributes |= (64<<16);
-  if(endpoint==0) {
-   attributes |= ((1<<27) | 0xFF00);
-  }
+  attributes |= (64<<16); //0b00 = full speed + max size per one transfer
  }
  else if(device_speed==USB_LOW_SPEED) {
-  attributes |= ((0b01<<12) | (8<<16));
-  if(endpoint==0) {
-   attributes |= ((1<<27) | 0xFF00);
+  attributes |= ((0b01<<12) | (8<<16)); //0b01 = low speed + max size per one transfer
+ }
+ if(device_speed==USB_FULL_SPEED || device_speed==USB_LOW_SPEED) {
+  attributes2 |= ((ehci_hub_port_number<<23) | (ehci_hub_address<<16)); //describe where is device connected
+  if(endpoint==0) { //control transfer to low/full speed device need some extra fields
+   attributes |= (1<<27);
+   attributes2 |= (0xFF00);
   }
  }
 
- if(qh_number==0) {
+ if(qh_number==0) { //control/bulk transfer
   queue_head[0]=(usb_controllers[controller_number].mem1 | 0x2); //points to itself for fastest transfer
  }
- else {
+ else { //interrupt transfer
   queue_head[0]=EHCI_NO_POINTER;
+  attributes2 |= (0x1C01); //values from specification on Normal Case
  }
  queue_head[1]=attributes;
- queue_head[2]=((0b01<<30) | (ehci_hub_port_number<<23) | (ehci_hub_address<<16));
- queue_head[3]=0;
- queue_head[4]=(usb_controllers[controller_number].mem2+(first_td*64));
- queue_head[5]=0;
- queue_head[6]=0;
- queue_head[7]=0;
+ queue_head[2]=attributes2;
+ queue_head[3]=(usb_controllers[controller_number].mem2+(first_td*64)); //pointer to TD
+ queue_head[4]=(usb_controllers[controller_number].mem2+(first_td*64)); //pointer to TD
+ for(dword_t i=5; i<16; i++) {
+  queue_head[i]=0; //clear rest of queue head
+ }
 }
 
 void ehci_set_td(byte_t controller_number, dword_t td_number, dword_t next_td_number, dword_t packet_type, dword_t length, dword_t toggle, dword_t memory) {
  dword_t *td = (dword_t *) (usb_controllers[controller_number].mem2+td_number*64);
- 
+
  if(next_td_number==0) {
   td[0]=EHCI_NO_POINTER;
  }
  else {
-  td[0]=(usb_controllers[controller_number].mem2+next_td_number*64);
+  td[0]=(usb_controllers[controller_number].mem2+next_td_number*64); //pointer to next transfer descriptor
  }
  if(next_td_number==0) {
   td[1]=EHCI_NO_POINTER;
  }
  else {
-  td[1]=(usb_controllers[controller_number].mem2+next_td_number*64);
+  td[1]=(usb_controllers[controller_number].mem2+next_td_number*64); //pointer to next transfer descriptor
  }
- td[2]=((toggle<<31) | (length<<16) | 0xC00 | (packet_type<<8) | 0x82);
+ td[2]=((toggle<<31) | (length<<16) | 0xC00 | (packet_type<<8) | 0x80);
  td[3]=memory;
  if((memory & 0xFFF)!=0) {
   td[4]=((memory & 0xFFFFF000)+0x1000);
@@ -194,14 +193,9 @@ void ehci_set_td(byte_t controller_number, dword_t td_number, dword_t next_td_nu
  td[5]=(td[4]+0x1000);
  td[6]=(td[4]+0x2000);
  td[7]=(td[4]+0x3000);
- td[8]=0;
- td[9]=0;
- td[10]=0;
- td[11]=0;
- td[12]=0;
- td[13]=0;
- td[14]=0;
- td[15]=0;
+ for(dword_t i=8; i<16; i++) {
+  td[i]=0; //clear rest of transfer descriptor
+ }
 }
 
 byte_t ehci_control_or_bulk_transfer(byte_t controller_number, byte_t last_descriptor, dword_t time) {
@@ -231,6 +225,12 @@ byte_t ehci_control_or_bulk_transfer(byte_t controller_number, byte_t last_descr
  //stop transfer
  log("\nEHCI transfer timeout");
  mmio_outd(usb_controllers[controller_number].base2+0x00, 0x00080011);
+ transfer_descriptor = (dword_t *) (usb_controllers[controller_number].mem2+8);
+ for(dword_t i=0; i<(last_descriptor+1); i++) {
+  log("\n");
+  log_hex_with_space(*transfer_descriptor);
+  transfer_descriptor+=16;
+ }
  return STATUS_ERROR;
 }
 
@@ -273,8 +273,6 @@ byte_t ehci_control_transfer_with_data_stage(byte_t controller_number, byte_t de
 }
 
 dword_t ehci_interrupt_transfer(byte_t controller_number, byte_t device_number, byte_t device_address, byte_t device_speed, byte_t endpoint, byte_t endpoint_size, byte_t interrupt_time, dword_t memory) {
- //TODO:
- 
  //round interrupt time
  if(interrupt_time<8) {
   interrupt_time = 4;

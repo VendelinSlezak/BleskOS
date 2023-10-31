@@ -17,6 +17,8 @@ struct usb_hub {
  byte_t address;
  byte_t device_speed;
  byte_t number_of_ports;
+ dword_t ehci_hub_address;
+ dword_t ehci_hub_port_number;
  byte_t ports_state[8];
  byte_t ports_device_speed[8];
 };

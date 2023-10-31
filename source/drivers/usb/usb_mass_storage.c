@@ -53,6 +53,8 @@ void usb_msd_create_cbw(byte_t transfer_type, byte_t command_length, dword_t tra
 byte_t usb_msd_transfer_command(byte_t device_number, byte_t direction, dword_t memory, dword_t length_of_transfer) {
  byte_t status=0;
  clear_memory(usb_mass_storage_csw_memory, 8);
+ ehci_hub_address = usb_mass_storage_devices[device_number].ehci_hub_address;
+ ehci_hub_port_number = usb_mass_storage_devices[device_number].ehci_hub_port_number;
 
  //send Command Block Wrapper
  status = usb_bulk_out(usb_mass_storage_devices[device_number].controller_number, usb_mass_storage_devices[device_number].address, usb_mass_storage_devices[device_number].device_speed, usb_mass_storage_devices[device_number].endpoint_out, usb_mass_storage_devices[device_number].toggle_out, usb_mass_storage_cbw_memory, 31, 500);
@@ -150,6 +152,7 @@ byte_t usb_msd_send_capacity_command(byte_t device_number) {
 byte_t usb_msd_read(byte_t device_number, dword_t sector, byte_t number_of_sectors, dword_t memory) {
  byte_t *cbw8 = (byte_t *) usb_mass_storage_cbw_memory;
 
+ //create packet
  usb_msd_create_cbw(USB_CBW_READ, 10, (number_of_sectors*usb_mass_storage_devices[device_number].size_of_sector));
  cbw8[15] = USB_MSD_READ_10; //READ 10 command
  cbw8[17] = ((sector>>24) & 0xFF); //sector
@@ -158,9 +161,15 @@ byte_t usb_msd_read(byte_t device_number, dword_t sector, byte_t number_of_secto
  cbw8[20] = (sector & 0xFF); //sector
  cbw8[23] = number_of_sectors; //number of sectors
  
+ //send packet
  if(usb_msd_transfer_command(device_number, USB_CBW_READ, memory, (number_of_sectors*usb_mass_storage_devices[device_number].size_of_sector))==STATUS_ERROR) {
   usb_msd_recover_from_error(device_number);
-  return STATUS_ERROR;
+
+  //try again
+  if(usb_msd_transfer_command(device_number, USB_CBW_READ, memory, (number_of_sectors*usb_mass_storage_devices[device_number].size_of_sector))==STATUS_ERROR) {
+   usb_msd_recover_from_error(device_number);
+   return STATUS_ERROR;
+  }
  }
  
  return STATUS_GOOD;
@@ -169,6 +178,7 @@ byte_t usb_msd_read(byte_t device_number, dword_t sector, byte_t number_of_secto
 byte_t usb_msd_write(byte_t device_number, dword_t sector, byte_t number_of_sectors, dword_t memory) {
  byte_t *cbw8 = (byte_t *) usb_mass_storage_cbw_memory;
  
+ //create packet
  usb_msd_create_cbw(USB_CBW_WRITE, 10, (number_of_sectors*usb_mass_storage_devices[device_number].size_of_sector));
  cbw8[15] = USB_MSD_WRITE_10; //WRITE 10 command
  cbw8[17] = ((sector>>24) & 0xFF); //sector
@@ -177,9 +187,15 @@ byte_t usb_msd_write(byte_t device_number, dword_t sector, byte_t number_of_sect
  cbw8[20] = (sector & 0xFF); //sector
  cbw8[23] = number_of_sectors; //number of sectors
  
+ //send packet
  if(usb_msd_transfer_command(device_number, USB_CBW_WRITE, memory, (number_of_sectors*usb_mass_storage_devices[device_number].size_of_sector))==STATUS_ERROR) {
   usb_msd_recover_from_error(device_number);
-  return STATUS_ERROR;
+
+  //try again
+  if(usb_msd_transfer_command(device_number, USB_CBW_WRITE, memory, (number_of_sectors*usb_mass_storage_devices[device_number].size_of_sector))==STATUS_ERROR) {
+   usb_msd_recover_from_error(device_number);
+   return STATUS_ERROR;
+  }
  }
  
  return STATUS_GOOD;
