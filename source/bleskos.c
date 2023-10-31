@@ -38,6 +38,7 @@
 #include "programs/graphic_editor/graphic_editor.h"
 #include "programs/media_viewer/media_viewer.h"
 #include "programs/internet_browser/internet_browser.h"
+#include "programs/file_manager/file_manager.h"
 
 #include "drivers/system/include.c"
 #include "drivers/other/include.c"
@@ -68,19 +69,20 @@
 #include "programs/graphic_editor/graphic_editor.c"
 #include "programs/media_viewer/media_viewer.c"
 #include "programs/internet_browser/internet_browser.c"
+#include "programs/file_manager/file_manager.c"
 
 void bleskos(void) {
  initalize_memory();
- initalize_logging(); 
- log("BleskOS 2023 update 9\n\n");
+ initalize_logging();
+ log("BleskOS 2023 update 10\n\n");
  log_starting_memory();
  scan_pci();
  initalize_graphic();
  
- clear_screen(0x00C000); 
+ clear_screen(0x00C000);
  set_scalable_char_size(64);
  scalable_font_print("BleskOS", graphic_screen_x_center-(64*7/2), graphic_screen_y_center-92, BLACK);
- print_to_message_window("Version 2023 update 9", graphic_screen_y_center);
+ print_to_message_window("Version 2023 update 10", graphic_screen_y_center);
  draw_empty_square(graphic_screen_x_center-161, graphic_screen_y_center+30, 322, 15, BLACK);
  redraw_screen();
  
@@ -107,6 +109,7 @@ void bleskos(void) {
  initalize_ahci_controllers();
  bleskos_redraw_starting_screen("Initalizing IDE controllers...", 56);
  initalize_ide_controllers();
+ initalize_device_list();
  
  bleskos_redraw_starting_screen("Initalizing sound card...", 63);
  initalize_sound_card();
@@ -121,6 +124,9 @@ void bleskos(void) {
  }
 
  bleskos_redraw_starting_screen("Initalizing USB controllers...", 84);
+ skip_logs();
+ mouse_cursor_x = graphic_screen_x_center;
+ mouse_cursor_y = graphic_screen_y_center;
  initalize_usb_controllers();
  
  bleskos_redraw_starting_screen("Initalizing programs...", 92);
@@ -134,6 +140,7 @@ void bleskos(void) {
  initalize_graphic_editor();
  initalize_media_viewer();
  initalize_internet_browser();
+ initalize_file_manager();
  
  bleskos_redraw_starting_screen("Starting Graphic User Interface...", 100);
  log("\nEND OF BOOTING\n");
