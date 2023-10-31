@@ -10,6 +10,9 @@
 
 #define COLUMN_OF_FIRST_BUTTON_ON_BOTTOM_LINE 8+10*8+8
 
+#define PROGRAM_INTERFACE_TOP_LINE_HEIGTH 21
+#define PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH 20
+
 void draw_program_interface(byte_t *program_name, byte_t *down_string, dword_t border_color, dword_t background_color);
 void draw_dialog_yes_no(byte_t *string);
 void draw_bottom_line_button(byte_t *string, dword_t click_zone);
