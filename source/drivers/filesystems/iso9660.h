@@ -12,5 +12,7 @@ dword_t iso9660_root_dir_sector = 0, iso9660_root_dir_length = 0;
 
 byte_t is_partition_iso9660(dword_t first_partition_sector);
 void select_iso9660_partition(dword_t frist_partition_sector);
+void set_iso9660_partition_info_in_device_list_entry(void);
+void read_iso9660_partition_info_from_device_list_entry(void);
 dword_t iso9660_read_file(dword_t sector, dword_t length_of_file_in_bytes);
 dword_t read_iso9660_folder(dword_t sector, dword_t length_of_folder_in_bytes);

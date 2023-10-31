@@ -89,6 +89,32 @@ void select_ext_partition(dword_t first_partition_sector) {
  ext_read_folder(ROOT_DIRECTORY, 0xFFFFFFFF);
 }
 
+void set_ext_partition_info_in_device_list_entry(void) {
+ set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+0, ext_version);
+ set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+1, ext_size_of_block_in_bytes);
+ set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+2, ext_size_of_block_in_sectors);
+ set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+3, ext_block_descriptor_first_sector);
+ set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+4, ext_block_group_descriptor_size_in_bytes);
+ set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+5, ext_number_of_block_groups);
+ set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+6, ext_number_of_blocks_in_group);
+ set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+7, ext_number_of_inodes_in_group);
+ set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+8, ext_inode_size_in_bytes);
+ set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+9, ext_max_number_of_blocks_per_one_read);
+}
+
+void read_ext_partition_info_from_device_list_entry(void) {
+ ext_version = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+0);
+ ext_size_of_block_in_bytes = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+1);
+ ext_size_of_block_in_sectors = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+2);
+ ext_block_descriptor_first_sector = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+3);
+ ext_block_group_descriptor_size_in_bytes = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+4);
+ ext_number_of_block_groups = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+5);
+ ext_number_of_blocks_in_group = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+6);
+ ext_number_of_inodes_in_group = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+7);
+ ext_inode_size_in_bytes = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+8);
+ ext_max_number_of_blocks_per_one_read = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+9);
+}
+
 byte_t ext_read_block(dword_t block, dword_t memory) {
  return read_storage_medium(block*ext_size_of_block_in_sectors, ext_size_of_block_in_sectors, memory);
 }

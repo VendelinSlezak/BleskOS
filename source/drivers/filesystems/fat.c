@@ -42,6 +42,7 @@ void select_fat_partition(dword_t first_partition_sector) {
  //load first FAT table sector
  loaded_fat_sector = fat_table_sector;
  if(read_storage_medium(fat_table_sector, 1, (dword_t)fat_table_one_sector)==STATUS_ERROR) {
+  loaded_fat_sector = 0xFFFFFFFF;
   return;
  }
  
@@ -71,6 +72,34 @@ void select_fat_partition(dword_t first_partition_sector) {
   partition_label[i]=fat16_boot_sector.volume_label[i];
  }
  partition_label[11]=0;
+}
+
+void set_fat_partition_info_in_device_list_entry(void) {
+ set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+0, fat_total_sectors);
+ set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+1, fat_cluster_length);
+ set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+2, fat_cluster_length_in_bytes);
+ set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+3, fat_number_of_clusters);
+ set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+4, fat_table_sector);
+ set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+5, fat_root_dir_sector);
+ set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+6, fat_root_dir_length);
+ set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+7, fat_data_sector);
+}
+
+void read_fat_partition_info_from_device_list_entry(void) {
+ fat_total_sectors = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+0);
+ fat_cluster_length = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+1);
+ fat_cluster_length_in_bytes = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+2);
+ fat_number_of_clusters = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+3);
+ fat_table_sector = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+4);
+ fat_root_dir_sector = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+5);
+ fat_root_dir_length = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+6);
+ fat_data_sector = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+7);
+
+ //load first FAT table sector
+ loaded_fat_sector = 0xFFFFFFFF;
+ if(read_storage_medium(fat_table_sector, 1, (dword_t)fat_table_one_sector)==STATUS_GOOD) {
+  loaded_fat_sector = fat_table_sector;
+ }
 }
 
 dword_t get_fat_entry(dword_t entry) {
@@ -635,6 +664,7 @@ dword_t read_fat_folder(dword_t cluster, dword_t size_in_bytes) {
    size_in_bytes = fat_root_dir_length*512;
    fat_folder_mem = malloc(size_in_bytes);
    if(read_storage_medium(fat_root_dir_sector, fat_root_dir_length, fat_folder_mem)==STATUS_ERROR) {
+    log("\nFAT12/16: Error reading root dir");
     free(fat_folder_mem);
     return STATUS_ERROR;
    }
@@ -643,18 +673,21 @@ dword_t read_fat_folder(dword_t cluster, dword_t size_in_bytes) {
    //FAT32
    fat_folder_mem = read_fat_file(fat_root_dir_sector, fat_root_dir_length);
    if(fat_folder_mem==STATUS_ERROR) {
+    log("\nFAT32: Error reading root dir");
     return STATUS_ERROR;
    }
    size_in_bytes = fat_root_dir_length;
   }
  }
  else if(cluster<2 || cluster>(fat_number_of_clusters+2)) {
+  log("\nFAT: Error invalid folder cluster");
   return STATUS_ERROR;
  }
  else {
   size_in_bytes = fat_get_size_of_file_on_disk(cluster);  
   fat_folder_mem = read_fat_file(cluster, size_in_bytes);
   if(fat_folder_mem==STATUS_ERROR) {
+   log("\nFAT: Error reading directory");
    return STATUS_ERROR;
   }
  }
@@ -858,7 +891,7 @@ dword_t rewrite_fat_folder(dword_t cluster, dword_t folder_mem) {
   
    //FAT12/FAT16
    if(write_storage_medium(fat_root_dir_sector, fat_root_dir_length, root_dir_mem)==STATUS_ERROR) {
-    log("\nProblem with writing root folder");
+    log("\nFAT: Problem with writing root folder");
     free(root_dir_mem);
     free(fat_folder_mem);
     return STATUS_ERROR;
@@ -870,12 +903,12 @@ dword_t rewrite_fat_folder(dword_t cluster, dword_t folder_mem) {
   else {
    //FAT32
    if(delete_fat_file(fat32_boot_sector.root_dir_cluster)==STATUS_ERROR) {
-    log("\nProblem with deleting folder");
+    log("\nFAT: Problem with deleting folder");
     free(fat_folder_mem);
     return STATUS_ERROR;
    }
    if(write_fat_file(fat_folder_mem, fat_file_length, fat32_boot_sector.root_dir_cluster)==STATUS_ERROR) {
-    log("\nProblem with writing folder");
+    log("\nFAT: Problem with writing folder");
     free(fat_folder_mem);
     return STATUS_ERROR;
    }
@@ -890,12 +923,12 @@ dword_t rewrite_fat_folder(dword_t cluster, dword_t folder_mem) {
  else {
   //normal folder
   if(delete_fat_file(cluster)==STATUS_ERROR) {
-   log("\nProblem with deleting folder");
+   log("\nFAT: Problem with deleting folder");
    free(fat_folder_mem);
    return STATUS_ERROR;
   }
   if(write_fat_file(fat_folder_mem, fat_file_length, cluster)==STATUS_ERROR) {
-   log("\nProblem with writing folder");
+   log("\nFAT: Problem with writing folder");
    free(fat_folder_mem);
    return STATUS_ERROR;
   }

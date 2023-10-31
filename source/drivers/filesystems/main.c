@@ -401,6 +401,14 @@ void select_partition(byte_t partition_number) {
  }
 }
 
+byte_t is_filesystem_read_write(byte_t filesystem_type) {
+ if(filesystem_type==STORAGE_FAT) {
+  return STATUS_TRUE;
+ }
+ 
+ return STATUS_FALSE;
+}
+
 dword_t compare_file_extension(dword_t folder_mem, dword_t entry_number, dword_t extension_memory, dword_t extension_length) {
  word_t *folder16 = (word_t *) (folder_mem+entry_number*256+32);
  word_t *extension = (word_t *) extension_memory;
@@ -458,6 +466,16 @@ void get_file_extension(dword_t folder_mem, dword_t entry_number) {
    }
   }
  }
+}
+
+word_t get_char_of_file_from_folder_entry_name(dword_t folder_mem, dword_t entry_number, dword_t char_offset) {
+ word_t *folder16 = (word_t *) (folder_mem+entry_number*256+32+(char_offset*2));
+ return *folder16;
+}
+
+void set_char_of_file_from_folder_entry_name(dword_t folder_mem, dword_t entry_number, dword_t char_offset, word_t char_value) {
+ word_t *folder16 = (word_t *) (folder_mem+entry_number*256+32+(char_offset*2));
+ *folder16 = char_value;
 }
 
 byte_t is_loaded_file_extension(byte_t *extension) {

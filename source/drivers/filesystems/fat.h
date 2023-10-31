@@ -89,6 +89,8 @@ dword_t fat_file_length=0;
 
 byte_t is_partition_fat(dword_t first_partition_sector);
 void select_fat_partition(dword_t first_partition_sector);
+void set_fat_partition_info_in_device_list_entry(void);
+void read_fat_partition_info_from_device_list_entry(void);
 dword_t get_fat_entry(dword_t entry);
 byte_t set_fat_entry(dword_t entry, dword_t value);
 byte_t save_fat_table_sector(void);
