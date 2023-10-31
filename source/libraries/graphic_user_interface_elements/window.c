@@ -22,6 +22,10 @@ void draw_message_window(dword_t width, dword_t heigth) {
  draw_empty_square(graphic_screen_x_center-(width/2), graphic_screen_y_center-(heigth/2), width, heigth, BLACK);
 }
 
+void redraw_message_window(dword_t width, dword_t heigth) {
+ redraw_part_of_screen(graphic_screen_x_center-(width/2), graphic_screen_y_center-(heigth/2), width, heigth);
+}
+
 void print_to_message_window(byte_t *string, dword_t line) {
  for(int i=0, width=0; i<1000; i++) {
   if(string[i]==0) {
@@ -44,6 +48,11 @@ void message_window(byte_t *message) {
  
  draw_message_window(chars*8+16, 30);
  print(message, graphic_screen_x_center-chars*4, graphic_screen_y_center-4, BLACK);
+}
+
+void show_message_window(byte_t *message) {
+ message_window(message);
+ redraw_message_window(get_number_of_chars_in_ascii_string(message)*8+16, 30);
 }
 
 void show_system_message(byte_t *string) {
