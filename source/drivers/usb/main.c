@@ -124,6 +124,8 @@ void detect_usb_devices_on_controller(byte_t controller_number) {
    }
 
    //configure device
+   ehci_hub_address = 0;
+   ehci_hub_port_number = 0;
    usb_configure_device_with_zero_address(controller_number, port, usb_controllers[controller_number].ports_device_speed[port]);
   }
   else if(usb_controllers[controller_number].ports_state[port]!=PORT_NO_DEVICE) {
@@ -143,6 +145,8 @@ void detect_usb_devices_on_hub(byte_t hub_number) {
  dword_t port_status = 0;
 
  //read if there is some connection status change
+ ehci_hub_address = usb_hubs[hub_number].ehci_hub_address;
+ ehci_hub_port_number = usb_hubs[hub_number].ehci_hub_port_number;
  byte_t hub_change = usb_hub_is_there_some_port_connection_status_change(hub_number);
  if(hub_change==0xFF) {
   log("\nUSB: hub is not responding");
@@ -200,16 +204,18 @@ void detect_usb_devices_on_hub(byte_t hub_number) {
    //find if this is low/full/high speed device
    ehci_hub_address = usb_hubs[hub_number].address;
    ehci_hub_port_number = (port+1);
-   if((port_status & 0x0200)==0x0200) {
+   if((port_status & 0x0600)==0x0200) {
     usb_hubs[hub_number].ports_device_speed[port] = USB_LOW_SPEED;
    }
-   else if(usb_hubs[hub_number].device_speed==USB_FULL_SPEED) {
+   else if((port_status & 0x0600)==0x0000) {
     usb_hubs[hub_number].ports_device_speed[port] = USB_FULL_SPEED;
    }
-   else if(usb_hubs[hub_number].device_speed==USB_HIGH_SPEED) {
-    ehci_hub_address = 0;
-    ehci_hub_port_number = 0;
+   else if((port_status & 0x0600)==0x0400) {
     usb_hubs[hub_number].ports_device_speed[port] = USB_HIGH_SPEED;
+   }
+   else {
+    log("\nUSB hub: error device speed");
+    continue;
    }
 
    //configure device
@@ -250,6 +256,7 @@ void usb_remove_device(byte_t controller_number, byte_t port_number) {
    usb_mass_storage_devices[i].controller_number = 0;
    usb_mass_storage_devices[i].port = 0;
    release_usb_address(usb_mass_storage_devices[i].address);
+   remove_device_from_device_list(MEDIUM_USB_MSD, i);
   }
  }
  for(int i=0; i<10; i++) {
@@ -428,9 +435,9 @@ dword_t usb_interrupt_transfer(byte_t controller_number, byte_t device_number, b
  else if(usb_controllers[controller_number].type==USB_CONTROLLER_OHCI) {
   return ohci_interrupt_transfer(controller_number, device_number, device_address, device_speed, endpoint, endpoint_size, interrupt_time, memory);
  }
- // else if(usb_controllers[controller_number].type==USB_CONTROLLER_EHCI) {
- //  return ehci_interrupt_transfer(controller_number, device_number, device_address, device_speed, endpoint, endpoint_size, interrupt_time, memory);
- // }
+ else if(usb_controllers[controller_number].type==USB_CONTROLLER_EHCI) {
+  return ehci_interrupt_transfer(controller_number, device_number, device_address, device_speed, endpoint, endpoint_size, interrupt_time, memory);
+ }
 
  return STATUS_ERROR;
 }
@@ -527,8 +534,21 @@ void usb_configure_device_with_zero_address(byte_t controller_number, byte_t dev
   if(usb_descriptor_devices[interface_number].type==0x000000) {
    return;
   }
-  else if(usb_descriptor_devices[interface_number].type==USB_DEVICE_MOUSE) {
-   log("\nUSB: USB mouse");
+
+  log("\n");
+  if(usb_controllers[controller_number].type==USB_CONTROLLER_UHCI) {
+   log("UHCI");
+  }
+  else if(usb_controllers[controller_number].type==USB_CONTROLLER_OHCI) {
+   log("OHCI");
+  }
+  else if(usb_controllers[controller_number].type==USB_CONTROLLER_EHCI) {
+   log("EHCI");
+  }
+  log(" ");
+  
+  if(usb_descriptor_devices[interface_number].type==USB_DEVICE_MOUSE) {
+   log("USB: USB mouse");
 
    if(usb_mouse[0].controller_type!=USB_NO_DEVICE_ATTACHED) {
     log(" replacing already attached mouse");
@@ -553,7 +573,7 @@ void usb_configure_device_with_zero_address(byte_t controller_number, byte_t dev
    log("\n");
   }
   else if(usb_descriptor_devices[interface_number].type==USB_DEVICE_KEYBOARD) {
-   log("\nUSB: USB keyboard");
+   log("USB: USB keyboard");
 
    if(usb_keyboard[0].controller_type!=USB_NO_DEVICE_ATTACHED) {
     log(" replacing already attached keyboard");
@@ -577,7 +597,7 @@ void usb_configure_device_with_zero_address(byte_t controller_number, byte_t dev
    log("\n");
   }
   else if(usb_descriptor_devices[0].type==USB_DEVICE_MASS_STORAGE) {
-   log("\nUSB: USB mass storage device");
+   log("USB: USB mass storage device");
    
    for(int i=0; i<10; i++) {
     if(usb_mass_storage_devices[i].type==USB_MSD_NOT_ATTACHED) {
@@ -594,8 +614,24 @@ void usb_configure_device_with_zero_address(byte_t controller_number, byte_t dev
      usb_mass_storage_devices[i].toggle_in = 0;
      usb_mass_storage_devices[i].endpoint_out = usb_descriptor_devices[0].endpoint_bulk_out;
      usb_mass_storage_devices[i].toggle_out = 0;
+     usb_mass_storage_devices[i].ehci_hub_address = ehci_hub_address;
+     usb_mass_storage_devices[i].ehci_hub_port_number = ehci_hub_port_number;
      
      usb_mass_storage_initalize(i);
+     
+     //add partitions to device list
+     select_storage_medium(MEDIUM_USB_MSD, i);
+     read_partition_info();
+     for(dword_t j=0; j<8; j++) {
+      if(partitions[j].type==STORAGE_NO_PARTITION) {
+       break; //we went through all partitions
+      }
+
+      //add partition
+      if(partitions[j].type!=STORAGE_FREE_SPACE && partitions[j].type!=STORAGE_UNKNOWN_FILESYSTEM) {
+       add_device_partition_to_device_list(MEDIUM_USB_MSD, i, partitions[j].type, partitions[j].first_sector);
+      }
+     }
 
      log("\n");
      return;
@@ -605,7 +641,7 @@ void usb_configure_device_with_zero_address(byte_t controller_number, byte_t dev
    log(" more than 10 devices connected\n");
   }
   else if(usb_descriptor_devices[interface_number].type==USB_DEVICE_HUB) {
-   log("\nUSB: USB hub ");
+   log("USB: USB hub ");
 
    for(int i=0; i<10; i++) {
     if(usb_hubs[i].controller_type==USB_NO_DEVICE_ATTACHED) {
@@ -630,6 +666,8 @@ void usb_configure_device_with_zero_address(byte_t controller_number, byte_t dev
      usb_hubs[i].port = device_port;
      usb_hubs[i].device_speed = device_speed;
      usb_hubs[i].address = usb_device_address;
+     usb_hubs[i].ehci_hub_address = ehci_hub_address;
+     usb_hubs[i].ehci_hub_port_number = ehci_hub_port_number;
 
      //set power for all devices
      for(dword_t j=0; j<usb_hubs[i].number_of_ports; j++) {
@@ -650,7 +688,7 @@ void usb_configure_device_with_zero_address(byte_t controller_number, byte_t dev
    log("more than 10 devices connected\n");
   }
   else {
-   log("\nUSB: device ");
+   log("USB: device ");
    log_hex_specific_size(usb_descriptor_devices[interface_number].type, 6);
    log("\n");
   }
