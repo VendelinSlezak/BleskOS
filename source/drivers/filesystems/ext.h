@@ -16,6 +16,8 @@ dword_t ext_max_number_of_blocks_per_one_read = 0, ext_how_many_bytes_to_read = 
 
 byte_t is_partition_ext(dword_t first_partition_sector);
 void select_ext_partition(dword_t first_partition_sector);
+void set_ext_partition_info_in_device_list_entry(void);
+void read_ext_partition_info_from_device_list_entry(void);
 byte_t ext_read_block(dword_t block, dword_t memory);
 byte_t ext_read_blocks(dword_t block, dword_t num_of_blocks, dword_t memory);
 dword_t ext_read_inode(dword_t inode);

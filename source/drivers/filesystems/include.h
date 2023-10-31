@@ -11,4 +11,5 @@
 #include "fat.h"
 #include "ext.h"
 #include "iso9660.h"
+#include "device_list.h"
 #include "main.h"

@@ -23,11 +23,12 @@ byte_t is_partition_iso9660(dword_t first_partition_sector) {
 }
 
 void select_iso9660_partition(dword_t first_partition_sector) {
- byte_t status;
- 
+ for(int i=0; i<11; i++) {
+  partition_label[i]=0;
+ }
+
  for(int sector=0x10; sector<0x20; sector++) {
-  status = read_storage_medium(first_partition_sector+sector, 1, (dword_t)one_sector);
-  if(status==STATUS_ERROR) {
+  if(read_storage_medium(first_partition_sector+sector, 1, (dword_t)one_sector)==STATUS_ERROR) {
    return;
   }
   if(one_sector[0]==1) {
@@ -40,6 +41,16 @@ void select_iso9660_partition(dword_t first_partition_sector) {
    return;
   }
  }
+}
+
+void set_iso9660_partition_info_in_device_list_entry(void) {
+ set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+0, iso9660_root_dir_sector);
+ set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+1, iso9660_root_dir_length);
+}
+
+void read_iso9660_partition_info_from_device_list_entry(void) {
+ iso9660_root_dir_sector = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+0);
+ iso9660_root_dir_length = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+1);
 }
 
 dword_t iso9660_read_file(dword_t sector, dword_t length_of_file_in_bytes) {

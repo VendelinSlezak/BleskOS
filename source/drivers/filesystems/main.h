@@ -29,6 +29,8 @@ struct partition {
 };
 struct partition partitions[8];
 
+#define ATTRIBUTE_DIRECTORY 0x10
+
 byte_t storage_medium, storage_medium_number, save_value_storage_medium, save_value_storage_medium_number, selected_partition_number;
 byte_t one_sector[2048];
 byte_t mbr_sector[512];
@@ -45,10 +47,12 @@ byte_t write_storage_medium(dword_t sector, byte_t num_of_sectors, dword_t memor
 byte_t detect_optical_disk(void);
 void eject_optical_disk(void);
 void read_partition_info(void);
-void read_global_partition_table(dword_t sector);
 void select_partition(byte_t partition_number);
+byte_t is_filesystem_read_write(byte_t filesystem_type);
 dword_t compare_file_extension(dword_t folder_mem, dword_t entry_number, dword_t extension_memory, dword_t extension_length);
 void get_file_extension(dword_t folder_mem, dword_t entry_number);
+word_t get_char_of_file_from_folder_entry_name(dword_t folder_mem, dword_t entry_number, dword_t char_offset);
+void set_char_of_file_from_folder_entry_name(dword_t folder_mem, dword_t entry_number, dword_t char_offset, word_t char_value);
 byte_t is_loaded_file_extension(byte_t *extension);
 dword_t get_file_attribute(dword_t folder_mem, dword_t entry_number);
 dword_t get_file_starting_entry(dword_t folder_mem, dword_t entry_number);
