@@ -2,13 +2,17 @@
 
 BleskOS is 32-bit operating system written from scratch. One of main features is alternative graphic user interface that do not use windows, as classic operating systems do, but switches between programs on full screen. BleskOS is designed for older computers. Operating systems of today have very high hardware requirements that make computers even 10 years old completely unusable. Goal of BleskOS is to provide system, that could be installed on such computers and make them usable again.
 
-![VirtualBox_BleskOS_28_09_2023_16_46_49](https://github.com/VendelinSlezak/BleskOS/assets/43180618/7a25508d-fbed-4af2-addc-0f79a15a9f7d)
+![Snímka obrazovky_2023-10-31_17-24-12](https://github.com/VendelinSlezak/BleskOS/assets/43180618/ad8034bc-b659-4843-8071-2181a279f56a)
 
 ## What is new
 
 Here is info about most important improvements in several last updates.
 
-I am working on new program File Manager and I will release next update when I will finish first version of it.
+**Update 10**
+- New program File Manager that can copy, rename and delete files
+- EHCI controller support USB mouse and USB keyboard
+- USB hub driver is complete
+- Improved reaction to ISR
 
 **BleskOS wiki**
 - I created wiki that will contain documentation of BleskOS source code. [BleskOS wiki](https://github.com/VendelinSlezak/BleskOS/wiki)
@@ -31,12 +35,6 @@ I am working on new program File Manager and I will release next update when I w
 
 **Update 6**
 - Find/Find and replace/Go to line functions added to Text editor - from user perspective is now Text editor comparable to classic text editors such as Notepad
-
-**Update 5**
-- Functions to edit image that were in Media viewer are now also in Graphic editor
-- Fixed bug about reading USB descriptor from low-speed devices on UHCI
-- Improvement of HDA driver
-- Better logging
 
 ## How to try BleskOS
 
@@ -89,6 +87,7 @@ Programs
 - Graphic editor
 - Media viewer
 - Internet browser
+- File Manager
 
 Supported file formats
 
