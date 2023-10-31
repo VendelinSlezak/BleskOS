@@ -21,3 +21,8 @@ void draw_button(byte_t *string, dword_t x, dword_t y, dword_t width, dword_t he
  
  print(string, x+(width/2)-(string_length*4), y+((heigth-8)/2), BLACK);
 }
+
+void draw_button_with_click_zone(byte_t *string, dword_t x, dword_t y, dword_t width, dword_t heigth, dword_t click_zone) {
+ draw_button(string, x, y, width, heigth);
+ add_zone_to_click_board(x, y, width, heigth, click_zone);
+}

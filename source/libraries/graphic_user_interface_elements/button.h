@@ -9,3 +9,4 @@
 */
 
 void draw_button(byte_t *string, dword_t x, dword_t y, dword_t width, dword_t heigth);
+void draw_button_with_click_zone(byte_t *string, dword_t x, dword_t y, dword_t width, dword_t heigth, dword_t click_zone);

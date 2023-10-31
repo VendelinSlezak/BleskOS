@@ -29,6 +29,9 @@ dword_t calculate_scrollbar_rider_position(dword_t scrollbar_size, dword_t rider
 }
 
 dword_t calculate_scrollbar_rider_size(dword_t scrollbar_size, dword_t full_document_size, dword_t showed_document_size) {
+ if(full_document_size<=showed_document_size) {
+  return 0;
+ }
  return (scrollbar_size*showed_document_size/full_document_size);
 }
 
