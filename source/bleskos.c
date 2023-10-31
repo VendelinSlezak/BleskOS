@@ -124,9 +124,6 @@ void bleskos(void) {
  }
 
  bleskos_redraw_starting_screen("Initalizing USB controllers...", 84);
- skip_logs();
- mouse_cursor_x = graphic_screen_x_center;
- mouse_cursor_y = graphic_screen_y_center;
  initalize_usb_controllers();
  
  bleskos_redraw_starting_screen("Initalizing programs...", 92);
