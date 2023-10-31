@@ -85,6 +85,7 @@ void bleskos_main_window_redraw(void) {
  bleskos_main_window_draw_item("[g] Graphic editor", 0xFFE800, MW_GRAPHIC_EDITOR);
  bleskos_main_window_draw_item("[m] Media viewer", 0xFFE800, MW_MEDIA_VIEWER);
  bleskos_main_window_draw_item("[i] Internet browser", 0xFFE800, MW_INTERNET_BROWSER);
+ bleskos_main_window_draw_item("[f] File manager", 0xFFE800, MW_FILE_MANAGER);
 
  bleskos_main_window_drawing_line += 25;
  bleskos_main_window_print_item("System");
@@ -183,19 +184,24 @@ void bleskos_main_window(void) {
    text_editor();
    goto redraw;
   }
-  if(keyboard_value==KEY_G) {
+  else if(keyboard_value==KEY_G) {
    bleskos_main_window_time_redraw = 0;
    graphic_editor();
    goto redraw;
   }
-  if(keyboard_value==KEY_M) {
+  else if(keyboard_value==KEY_M) {
    bleskos_main_window_time_redraw = 0;
    media_viewer();
    goto redraw;
   }
-  if(keyboard_value==KEY_I) {
+  else if(keyboard_value==KEY_I) {
    bleskos_main_window_time_redraw = 0;
    internet_browser();
+   goto redraw;
+  }
+  else if(keyboard_value==KEY_F) {
+   bleskos_main_window_time_redraw = 0;
+   file_manager();
    goto redraw;
   }
   else if(keyboard_value==KEY_F1) {
@@ -235,6 +241,10 @@ void bleskos_main_window(void) {
    else if(click_value==MW_INTERNET_BROWSER) {
     bleskos_main_window_time_redraw = 0;
     internet_browser();
+   }
+   else if(click_value==MW_FILE_MANAGER) {
+    bleskos_main_window_time_redraw = 0;
+    file_manager();
    }
    else if(click_value==MW_SYSTEM_BOARD) {
     bleskos_main_window_time_redraw = 0;
