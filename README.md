@@ -8,6 +8,10 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 11**
+- File dialog rewritten to much better version to be like File Manager
+- Added option to export System log as TXT file
+
 **Update 10**
 - New program File Manager that can copy, rename and delete files
 - EHCI controller support USB mouse and USB keyboard
@@ -25,23 +29,12 @@ Here is info about most important improvements in several last updates.
 - Support for devices that have more than one interface (e.g. receiver from wireless mouse/keyboard)
 - Fixed update of file name after saving file
 
-**Update 8**
-- Driver for USB hubs on UHCI and OHCI controllers
-- Significant speed-up of bulk transfers on UHCI controllers
-
-**Update 7**
-- Fixed few bugs in Text editor and text areas
-- Improvements of USB drivers in order to make it possible to create driver for USB hubs
-
-**Update 6**
-- Find/Find and replace/Go to line functions added to Text editor - from user perspective is now Text editor comparable to classic text editors such as Notepad
-
 ## How to try BleskOS
 
 You can download image of last version here on github. Then you have two options:
 
 1. Run BleskOS on emulator - some of well-known are Virtualbox, QEMU, Bochs and so on. If you downloaded image .img, you should to connect it to emulator as floppy or hard disk, if you downloaded image .iso, you should connect it as optical disk.
-2. Run BleskOS on real computer - If you want to run BleskOS on your computer, you will need to create bootable medium. You can either burn .iso image on optical disk, or write .img image on USB flash. Do not just copy file! You need to write image right from start of USB flash. In linux, you can use program dd for this: `sudo dd if=bleskos_(actual version)_.img of=pathToYourUSB` For example if you have USB on /dev/sdg then you can write for example `sudo dd if=bleskos_2023_update_1.img of=/dev/sdg` Then insert optical disk/USB flash to your computer and boot it from your bootable medium. If you do not see your bootable medium, make sure that you are booting in legacy mode, because BleskOS do not support UEFI.
+2. Run BleskOS on real computer - If you want to run BleskOS on your computer, you will need to create bootable medium. You can either burn .iso image on optical disk, or write .img image on USB flash. Do not just copy file! You need to write image right from start of USB flash. In linux, you can use program dd for this: `sudo dd if=bleskos_(actual version).img of=pathToYourUSB` For example if you have USB on /dev/sdg then you can write for example `sudo dd if=bleskos_2023u11.img of=/dev/sdg` Then insert optical disk/USB flash to your computer and boot it from your bootable medium. If you do not see your bootable medium, make sure that you are booting in legacy mode, because BleskOS do not support UEFI.
 
 ## How to use BleskOS
 
@@ -81,6 +74,8 @@ Drivers
 - Ethernet cards: Realtek 8139/8169, Intel e1000(e), AMD PC-net
 - Network stack: IPv4, ARP, UDP, TCP, DHCP, DNS, HTTP
 
+[List of working hardware](https://github.com/VendelinSlezak/BleskOS/wiki/List-of-working-hardware) contain list of real hardware that was already tested and is working.
+
 Programs
 
 - Text editor
@@ -103,4 +98,4 @@ You are welcome 🙂
 - Give us a star
 - Watch repository to be notified about updates
 - If you will find some bugs, report them in [Issues](https://github.com/VendelinSlezak/BleskOS/issues)
-- Try BleskOS on some real computer and let us know how it worked in [Discussions](https://github.com/VendelinSlezak/BleskOS/discussions)
+- Try BleskOS on some real computer and let us know how it worked in [Discussions](https://github.com/VendelinSlezak/BleskOS/discussions) We would greatly appreciate if you would also add content of System log(Main window>[F1] Developer zone>[L] System log). It helps us to improve BleskOS. Thank you!
