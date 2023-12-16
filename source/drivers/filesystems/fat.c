@@ -514,13 +514,14 @@ dword_t write_fat_file(dword_t file_mem, dword_t size_in_bytes, dword_t first_cl
    free(clusters_numbers_mem);
    return STATUS_ERROR;
   }
-  if(cluster_number==0) {
+  if(cluster_number==0 && cluster!=first_cluster) {
    *clusters_numbers_ptr=cluster;
    clusters_numbers_ptr++;
    remaining_clusters--;
   }
  }
  if(remaining_clusters>0) {
+  log("\nFAT: not enough free clusters");
   free(clusters_numbers_mem);
   return STATUS_ERROR; //not enough free clusters
  }
