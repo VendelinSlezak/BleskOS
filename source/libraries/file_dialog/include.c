@@ -9,4 +9,3 @@
 */
 
 #include "file_dialog.c"
-#include "file_dialog_drawing.c"
