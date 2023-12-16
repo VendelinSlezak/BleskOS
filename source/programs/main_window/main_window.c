@@ -175,7 +175,6 @@ void bleskos_main_window(void) {
   }
   
   if(usb_new_device_detected==1) {
-   file_dialog_update_devices();
    goto redraw;
   }
   
