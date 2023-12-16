@@ -31,6 +31,24 @@ void developer_program_log(void) {
   if(keyboard_value==KEY_ESC || mouse_drag_and_drop==MOUSE_CLICK) {
    return;
   }
+  else if(keyboard_value==KEY_F1) {
+   //count number of chars
+   word_t *logging_area = (word_t *) (logging_mem);
+   dword_t number_of_chars = 0;
+   while(*logging_area!=0) {
+    number_of_chars++;
+    logging_area++;
+   }
+
+   //convert text area content to utf-8
+   convert_unicode_to_utf_8(logging_mem, number_of_chars);
+
+   //save file
+   file_dialog_save_set_extension("txt");
+   file_dialog_save(converted_file_memory, converted_file_size-1); //size is without zero char ending
+   free(converted_file_memory);
+   goto redraw;
+  }
   else if(keyboard_value==KEY_HOME) {
    logging_mem_draw_pointer = logging_mem; //go to start of logging memory
    log = (word_t *) (logging_mem_draw_pointer);
