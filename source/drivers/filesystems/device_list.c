@@ -94,6 +94,18 @@ void remove_device_from_device_list(dword_t device_type, dword_t device_number) 
  for(device_list_selected_entry=0; device_list_selected_entry<DEVICE_LIST_NUMBER_OF_ENTRIES; device_list_selected_entry++) {
   if(get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_TYPE)==device_type && get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_NUMBER)==device_number) {
    //we found entry of this device
+   
+   //remove it from file dialog
+   if(get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_TYPE)==file_dialog_folder_device_type && get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_NUMBER)==file_dialog_folder_device_number) {
+    free(file_dialog_folder_memory);
+    file_dialog_folder_memory = 0;
+    file_dialog_folder_device_type = 0;
+    file_dialog_folder_device_number = 0;
+    file_dialog_folder_device_partition_type = 0;
+    file_dialog_folder_device_partition_first_sector = 0;
+   }
+   
+   //remove it from device list
    copy_memory((device_list_mem+(DEVICE_LIST_SIZE_OF_ENTRY*(device_list_selected_entry+1))), (device_list_mem+(DEVICE_LIST_SIZE_OF_ENTRY*device_list_selected_entry)), (device_list_mem+(DEVICE_LIST_SIZE_OF_ENTRY*(DEVICE_LIST_NUMBER_OF_ENTRIES-1)))-(device_list_mem+(DEVICE_LIST_SIZE_OF_ENTRY*(device_list_selected_entry+1))));
    clear_memory((device_list_mem+DEVICE_LIST_SIZE_OF_ENTRY*((DEVICE_LIST_NUMBER_OF_ENTRIES-1))), DEVICE_LIST_SIZE_OF_ENTRY);
    return;

@@ -213,6 +213,9 @@ void eject_optical_disk(void) {
  if(save_value_storage_medium!=MEDIUM_CDROM || save_value_storage_medium_number!=DEFAULT_MEDIUM) {
   select_storage_medium(save_value_storage_medium, save_value_storage_medium_number);
  }
+
+ //update device list
+ device_list_check_optical_drive();
 }
 
 void read_partition_info(void) {
