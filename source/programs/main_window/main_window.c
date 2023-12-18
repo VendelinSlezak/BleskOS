@@ -95,45 +95,75 @@ void bleskos_main_window_redraw(void) {
  
  bleskos_main_window_drawing_line = 40;
  bleskos_main_window_drawing_column = graphic_screen_x_center;
- bleskos_main_window_print_item("Connected hardware");
- if(ac97_present==DEVICE_PRESENT) {
-  bleskos_main_window_draw_item("AC97 sound card", 0x00B5FF, 0);
+ bleskos_main_window_print_item("Sound volume");
+ add_zone_to_click_board(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20, MW_SOUND_VOLUME);
+ draw_full_square(bleskos_main_window_drawing_column+5, bleskos_main_window_drawing_line, 285*sound_volume/100, 20, WHITE);
+ draw_full_square(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 5, 20, BLACK);
+ draw_full_square(bleskos_main_window_drawing_column+290, bleskos_main_window_drawing_line, 5, 20, BLACK);
+ draw_empty_square(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20, BLACK);
+ if(sound_volume<10) {
+  print_var(sound_volume, bleskos_main_window_drawing_column+295/2-4, bleskos_main_window_drawing_line+6, BLACK);
  }
- if(hda_present==DEVICE_PRESENT) {
-  bleskos_main_window_draw_item("High Definition Audio sound card", 0x00B5FF, 0);
+ else if(sound_volume<100) {
+  print_var(sound_volume, bleskos_main_window_drawing_column+295/2-8, bleskos_main_window_drawing_line+6, BLACK);
  }
- if(ide_hdd_base!=0) {
-  bleskos_main_window_draw_item("IDE hard disk", 0x00B5FF, 0);
+ else {
+  print("100", bleskos_main_window_drawing_column+295/2-12, bleskos_main_window_drawing_line+6, BLACK);
  }
- if(ide_cdrom_base!=0) {
-  bleskos_main_window_draw_item("IDE optical disk drive", 0x00B5FF, 0);
- }
- if(ahci_hdd_base!=0) {
-  bleskos_main_window_draw_item("AHCI hard disk", 0x00B5FF, 0);
- }
- if(ahci_cdrom_base!=0) {
-  bleskos_main_window_draw_item("AHCI optical disk drive", 0x00B5FF, 0);
- }
- if(ethernet_cards_pointer!=0) {
-  bleskos_main_window_draw_item("Ethernet card", 0x00B5FF, 0);
- }
- for(int i=0; i<10; i++) {
-  if(usb_hubs[i].controller_type!=USB_NO_DEVICE_ATTACHED) {
-   bleskos_main_window_draw_item("USB hub", 0x00B5FF, 0);
+ bleskos_main_window_drawing_line += 25;
+
+ if(ethernet_selected_card!=0xFF) {
+  bleskos_main_window_drawing_line += 10;
+  bleskos_main_window_print_item("Network");
+  if(is_ethernet_cable_connected==STATUS_FALSE) {
+   bleskos_main_window_draw_item("Ethernet cable is not connected", 0x00C000, 0);
+  }
+  else if(connected_to_network==NETWORK_CONNECTION_FALIED) {
+   bleskos_main_window_draw_item("Connection to network failed", 0x00C000, 0);
+  }
+  else if(connected_to_network==NETWORK_CONNECTED) {
+   bleskos_main_window_draw_item("You are connected to network", 0x00C000, 0);
   }
  }
- if(usb_mouse[0].controller_type!=USB_NO_DEVICE_ATTACHED) {
-  bleskos_main_window_draw_item("USB mouse", 0x00B5FF, 0);
- }
- if(usb_keyboard[0].controller_type!=USB_NO_DEVICE_ATTACHED) {
-  bleskos_main_window_draw_item("USB keyboard", 0x00B5FF, 0);
- }
- for(int i=0; i<10; i++) {
-  if(usb_mass_storage_devices[i].type==USB_MSD_INITALIZED) {
-   bleskos_main_window_draw_item("USB mass storage device", 0x00B5FF, 0);
+
+ if(ps2_first_channel_device==PS2_CHANNEL_MOUSE_INITALIZED || ps2_second_channel_device==PS2_CHANNEL_MOUSE_INITALIZED) {
+  bleskos_main_window_drawing_line += 10;
+  bleskos_main_window_print_item("Touchpad");
+  if(ps2_mouse_enable==STATUS_TRUE) {
+   bleskos_main_window_draw_item("[F10] Disable touchpad", 0x00B5FF, MW_ENABLE_DISABLE_TOUCHPAD);
   }
-  else if(usb_mass_storage_devices[i].type==USB_MSD_ATTACHED) {
-   bleskos_main_window_draw_item("USB mass storage device", 0x00B5FF, 0);
+  else {
+   bleskos_main_window_draw_item("[F10] Enable touchpad", 0x00B5FF, MW_ENABLE_DISABLE_TOUCHPAD);
+  }
+ }
+
+ if(ide_cdrom_base!=0) { //TODO: also AHCI
+  bleskos_main_window_drawing_line += 10;
+  bleskos_main_window_print_item("Optical drive");
+  bleskos_main_window_draw_item("[F11] Eject optical disk drive", 0x00B5FF, MW_EJECT_OPTICAL_DISK_DRIVE);
+ }
+
+ if(usb_controllers_pointer!=0) {
+  bleskos_main_window_drawing_line += 10;
+  bleskos_main_window_print_item("Connected USB devices");
+  for(int i=0; i<10; i++) {
+   if(usb_hubs[i].controller_type!=USB_NO_DEVICE_ATTACHED) {
+    bleskos_main_window_draw_item("USB hub", 0x00B5FF, 0);
+   }
+  }
+  if(usb_mouse[0].controller_type!=USB_NO_DEVICE_ATTACHED) {
+   bleskos_main_window_draw_item("USB mouse", 0x00B5FF, 0);
+  }
+  if(usb_keyboard[0].controller_type!=USB_NO_DEVICE_ATTACHED) {
+   bleskos_main_window_draw_item("USB keyboard", 0x00B5FF, 0);
+  }
+  for(int i=0; i<10; i++) {
+   if(usb_mass_storage_devices[i].type==USB_MSD_INITALIZED) {
+    bleskos_main_window_draw_item("USB mass storage device", 0x00B5FF, 0);
+   }
+   else if(usb_mass_storage_devices[i].type==USB_MSD_ATTACHED) {
+    bleskos_main_window_draw_item("USB mass storage device", 0x00B5FF, 0);
+   }
   }
  }
  
@@ -144,14 +174,6 @@ void bleskos_main_window_redraw(void) {
  else if(((dword_t)keyboard_layout_ptr)==((dword_t)slovak_keyboard_layout)) {
   print("Slovak", 20+17*8, graphic_screen_y-30, BLACK);
  }
-
- draw_full_square(graphic_screen_x-20-28*8, graphic_screen_y-50, 28*8, 10, 0x00C000);
- if(connected_to_network==NETWORK_CONNECTED) {
-  print("You are connected to network", graphic_screen_x-20-28*8, graphic_screen_y-50, BLACK);
- }
- else if(connected_to_network==NETWORK_CONNECTION_FALIED) {
-  print("Connection to network failed", graphic_screen_x-20-28*8, graphic_screen_y-50, BLACK);
- }
  
  bleskos_main_window_redraw_time();
 }
@@ -160,6 +182,7 @@ void bleskos_main_window(void) {
  read_time();
 
  redraw:
+ bleskos_main_window_time_redraw = 0;
  bleskos_main_window_redraw();
  mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
  draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
@@ -212,6 +235,14 @@ void bleskos_main_window(void) {
    bleskos_main_window_change_keyboard_layout();
    goto redraw;
   }
+  else if(keyboard_value==KEY_F10) {
+   bleskos_main_window_enable_disable_touchpad();
+   goto redraw;
+  }
+  else if(keyboard_value==KEY_F11 && ide_cdrom_base!=0) { //TODO: also AHCI
+   eject_optical_disk();
+   continue;
+  }
   else if(keyboard_value==KEY_F12) {
    bleskos_main_window_shutdown();
    goto redraw;
@@ -252,11 +283,48 @@ void bleskos_main_window(void) {
    else if(click_value==MW_CHANGE_KEYBOARD_LAYOUT) {
     bleskos_main_window_change_keyboard_layout();
    }
-   if(click_value==MW_SHUTDOWN) {
+   else if(click_value==MW_SHUTDOWN) {
     bleskos_main_window_shutdown();
+   }
+   else if(click_value==MW_SOUND_VOLUME) {
+    if(mouse_cursor_x<=graphic_screen_x_center+5) {
+     sound_set_volume(0);
+    }
+    else if(mouse_cursor_x>=graphic_screen_x_center+290) {
+     sound_set_volume(100);
+    }
+    else {
+     sound_set_volume((100*(mouse_cursor_x-graphic_screen_x_center-5)/285));
+    }
+   }
+   else if(click_value==MW_ENABLE_DISABLE_TOUCHPAD) {
+    bleskos_main_window_enable_disable_touchpad();
+   }
+   else if(click_value==MW_EJECT_OPTICAL_DISK_DRIVE) {
+    eject_optical_disk();
    }
    
    goto redraw;
+  }
+
+  //drag
+  if(mouse_drag_and_drop==MOUSE_DRAG) {
+   dword_t click_value = get_mouse_cursor_click_board_value();
+   if(click_value==NO_CLICK) {
+    continue;
+   }
+   else if(click_value==MW_SOUND_VOLUME) {
+    if(mouse_cursor_x<=graphic_screen_x_center+5) {
+     sound_set_volume(0);
+    }
+    else if(mouse_cursor_x>=graphic_screen_x_center+290) {
+     sound_set_volume(100);
+    }
+    else {
+     sound_set_volume((100*(mouse_cursor_x-graphic_screen_x_center-5)/285));
+    }
+    goto redraw;
+   }
   }
  }
 }
@@ -338,5 +406,14 @@ void bleskos_main_window_shutdown(void) {
   while(1) { 
    asm("hlt");
   }
+ }
+}
+
+void bleskos_main_window_enable_disable_touchpad(void) {
+ if(ps2_mouse_enable==STATUS_TRUE) {
+  disable_ps2_mouse();
+ }
+ else {
+  enable_ps2_mouse();
  }
 }
