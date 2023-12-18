@@ -2,11 +2,15 @@
 
 BleskOS is 32-bit operating system written from scratch. One of main features is alternative graphic user interface that do not use windows, as classic operating systems do, but switches between programs on full screen. BleskOS is designed for older computers. Operating systems of today have very high hardware requirements that make computers even 10 years old completely unusable. Goal of BleskOS is to provide system, that could be installed on such computers and make them usable again.
 
-![Snímka obrazovky_2023-10-31_17-24-12](https://github.com/VendelinSlezak/BleskOS/assets/43180618/ad8034bc-b659-4843-8071-2181a279f56a)
+![Snímka obrazovky_2023-12-18_16-44-32](https://github.com/VendelinSlezak/BleskOS/assets/43180618/2c78c6dc-bee3-4a4e-a9bc-2ce52179fb3d)
 
 ## What is new
 
 Here is info about most important improvements in several last updates.
+
+**Update 12**
+- Improvement of Main window
+- Fixed finding path of nodes in HDA driver, now can BleskOS play at least some sound on much more computers
 
 **Update 11**
 - File dialog rewritten to much better version to be like File Manager
@@ -20,14 +24,6 @@ Here is info about most important improvements in several last updates.
 
 **BleskOS wiki**
 - I created wiki that will contain documentation of BleskOS source code. [BleskOS wiki](https://github.com/VendelinSlezak/BleskOS/wiki)
-
-**Update 9**
-- All USB-related drivers were completely rewritten to much better version that was tested and proven to be working on 8 real computers
-- Reading from USB mass storage device on EHCI controller now exceeds 10 MB/s
-- After transfer error is USB mass storage device not halted as before, but reseted and can be used without replugging
-- USB hub driver works under all controllers
-- Support for devices that have more than one interface (e.g. receiver from wireless mouse/keyboard)
-- Fixed update of file name after saving file
 
 ## How to try BleskOS
 
