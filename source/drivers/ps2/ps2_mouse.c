@@ -9,6 +9,8 @@
 */
 
 void initalize_ps2_mouse(void) {
+ ps2_mouse_enable = STATUS_TRUE;
+
  //initalize device on first channel
  if(ps2_first_channel_device==PS2_CHANNEL_MOUSE_CONNECTED) {
   //send request to enable wheel
@@ -88,4 +90,18 @@ void initalize_ps2_mouse(void) {
    }
   }
  }
+}
+
+void enable_ps2_mouse(void) {
+ if(ps2_first_channel_device==PS2_CHANNEL_MOUSE_INITALIZED) {
+  ps2_first_channel_buffer_pointer = 0;
+ }
+ if(ps2_second_channel_device==PS2_CHANNEL_MOUSE_INITALIZED) {
+  ps2_second_channel_buffer_pointer = 0;
+ }
+ ps2_mouse_enable = STATUS_TRUE;
+}
+
+void disable_ps2_mouse(void) {
+ ps2_mouse_enable = STATUS_FALSE;
 }

@@ -10,7 +10,9 @@
 
 byte_t ps2_mouse_data[4];
 
-byte_t ps2_mouse_wait = 0;
+byte_t ps2_mouse_wait = 0, ps2_mouse_enable = STATUS_TRUE;
 byte_t ps2_first_channel_mouse_data_bytes = 0, ps2_second_channel_mouse_data_bytes = 0;
 
 void initalize_ps2_mouse(void);
+void enable_ps2_mouse(void);
+void disable_ps2_mouse(void);

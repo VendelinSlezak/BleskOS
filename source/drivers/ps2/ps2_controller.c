@@ -353,7 +353,7 @@ void ps2_first_channel_irq_handler(void) {
   }
   return;
  }
- else if(ps2_first_channel_device==PS2_CHANNEL_MOUSE_INITALIZED) {
+ else if(ps2_first_channel_device==PS2_CHANNEL_MOUSE_INITALIZED && ps2_mouse_enable==STATUS_TRUE) {
   if(ps2_first_channel_buffer_pointer>=ps2_first_channel_mouse_data_bytes) {
    //if program waits for data from mouse, copy them
    if(ps2_mouse_wait==1) {
@@ -401,7 +401,7 @@ void ps2_second_channel_irq_handler(void) {
   }
   return;
  }
- else if(ps2_second_channel_device==PS2_CHANNEL_MOUSE_INITALIZED) {
+ else if(ps2_second_channel_device==PS2_CHANNEL_MOUSE_INITALIZED && ps2_mouse_enable==STATUS_TRUE) {
   if(ps2_second_channel_buffer_pointer>=ps2_second_channel_mouse_data_bytes) {
    //if program waits for data from mouse, copy them
    if(ps2_mouse_wait==1) {
