@@ -18,6 +18,10 @@
 #define MW_CHANGE_KEYBOARD_LAYOUT 11
 #define MW_SHUTDOWN 12
 
+#define MW_SOUND_VOLUME 100
+#define MW_ENABLE_DISABLE_TOUCHPAD 101
+#define MW_EJECT_OPTICAL_DISK_DRIVE 102
+
 #define MW_KEYBOARD_LAYOUT_ENGLISH 1
 #define MW_KEYBOARD_LAYOUT_SLOVAK 2
 
@@ -42,3 +46,4 @@ void bleskos_main_window_redraw(void);
 void bleskos_main_window(void);
 void bleskos_main_window_change_keyboard_layout(void);
 void bleskos_main_window_shutdown(void);
+void bleskos_main_window_enable_disable_touchpad(void);
