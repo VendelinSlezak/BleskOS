@@ -74,7 +74,7 @@
 void bleskos(void) {
  initalize_memory();
  initalize_logging();
- log("BleskOS 2023 update 11\n\nPress F1 to save System log as TXT file\n\n");
+ log("BleskOS 2023 update 12\n\nPress F1 to save System log as TXT file\n\n");
  log_starting_memory();
  scan_pci();
  initalize_graphic();
@@ -82,7 +82,7 @@ void bleskos(void) {
  clear_screen(0x00C000);
  set_scalable_char_size(64);
  scalable_font_print("BleskOS", graphic_screen_x_center-(64*7/2), graphic_screen_y_center-92, BLACK);
- print_to_message_window("Version 2023 update 11", graphic_screen_y_center);
+ print_to_message_window("Version 2023 update 12", graphic_screen_y_center);
  draw_empty_square(graphic_screen_x_center-161, graphic_screen_y_center+30, 322, 15, BLACK);
  redraw_screen();
  
