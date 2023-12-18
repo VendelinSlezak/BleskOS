@@ -224,25 +224,40 @@ void hda_initalize_codec(dword_t codec) {
  }
  
  //find speaker with amp
+ log("\nFinding output PIN node:");
  hda_output_pin_node=0xFF;
  for(int node=0; node<256; node++) {
   if(nodes_mem[node]==HDA_PIN_SPEAKER) {  
    response = hda_send_verb(codec, node, 0xF00, 0x09);
+   log("\n ");
+   log_var_with_space(node);
+   log_hex_with_space(response);
    
    //there is connected output device
    if((response & 0x4)==0x4) {
     response = hda_send_verb(codec, node, 0xF1C, 0x00);
+    log_hex_with_space(response);
     
     //pin have jack or fixed device
     if((response>>30)!=0x1) {
      response = hda_send_verb(codec, node, 0xF00, 0x0C);
-     
+     log_hex_with_space(response);
+
      //pin is output capable
      if((response & 0x10)==0x10) {
       hda_output_pin_node = node;
       break;
      }
+     else {
+      log("not output capable");
+     }
     }
+    else {
+     log("not jack or fixed device");
+    }
+   }
+   else {
+    log("no connected output device");
    }
   }
  }
@@ -267,7 +282,7 @@ void hda_initalize_codec(dword_t codec) {
   }
  }
 
- //if there is no line out, found digital other out
+ //if there is no headphone out, found digital other out
  if(hda_output_pin_node==0xFF) {
   for(int node=0; node<256; node++) {
    if(nodes_mem[node]==HDA_PIN_DIGITAL_OTHER_OUT && nodes_connection_mem[node]!=0) {
@@ -293,23 +308,38 @@ void hda_initalize_codec(dword_t codec) {
  hda_node_set_volume(codec, hda_output_pin_node, 100);
  
  //search if is pin directly connected to audio output
+ log("\nFinding path to audio output:\n");
  hda_output_audio_node = 0xFF;
- response = (hda_send_verb(codec, hda_output_pin_node, 0xF00, 0x0E) & 0x7F);
- for(int i=0, shift=0; i<response; i++, shift+=8) {
+ for(int i=0, shift=0; i<4; i++, shift+=8) {
   hda_node_in_path = ((nodes_connection_mem[hda_output_pin_node]>>shift) & 0xFF);
+  log_var_with_space(hda_node_in_path);
+  log_hex_with_space(nodes_mem[hda_node_in_path]);
   if(nodes_mem[hda_node_in_path]==HDA_NODE_OUTPUT) {
    hda_output_audio_node = hda_node_in_path;
    break;
   }
  }
+
  //search if some mixer connected to pin is connected to audio output
  if(hda_output_audio_node==0xFF) {
-  for(int i=0, shift=0; i<response; i++, shift+=8) {
+  for(int i=0, shift=0; i<4; i++, shift+=8) {
    hda_node_in_path = ((nodes_connection_mem[hda_output_pin_node]>>shift) & 0xFF);
+   log("\n");
+   log_var_with_space(hda_node_in_path);
+
    if(nodes_mem[hda_node_in_path]==HDA_NODE_MIXER) {
-    for(int j=0, num_of_connections=(hda_send_verb(codec, hda_output_pin_node, 0xF00, 0x0E) & 0x7F), shift2=0; j<num_of_connections; j++, shift2+=8) {
-     hda_output_audio_node = ((nodes_connection_mem[hda_node_in_path]>>shift2) & 0xFF);
-     break;
+    for(int j=0, shift2=0, hda_node_in_path2=0; j<4; j++, shift2+=8) {
+     hda_node_in_path2 = ((nodes_connection_mem[hda_node_in_path]>>shift2) & 0xFF);
+     log("\n ");
+     log_var_with_space(hda_node_in_path2);
+
+     if(nodes_mem[hda_node_in_path2]==HDA_NODE_OUTPUT) {
+      hda_output_audio_node = hda_node_in_path2;
+      break;
+     }
+    }
+    if(hda_output_audio_node!=0xFF) {
+     break; //we found audio output
     }
    }
   }
@@ -328,28 +358,30 @@ void hda_initalize_codec(dword_t codec) {
  //set data format to 16 bit 2 channels
  hda_send_verb(codec, hda_output_audio_node, 0x200, 0x11);
  
- //unmute audio output
- hda_node_set_volume(codec, hda_output_audio_node, 100);
- 
  //read output audio capabilites
  hda_output_sound_capabilites = hda_send_verb(codec, hda_output_audio_node, 0xF00, 0x0A);
+
+ //unmute audio output
+ sound_set_volume(50);
  
  //LOG
  if(nodes_mem[hda_node_in_path]==HDA_NODE_OUTPUT) {
-  log("output->pin ");
+  log("\nPath: output->pin ");
   log_var_with_space(hda_output_audio_node);
   log_var(hda_output_pin_node);
  }
  if(nodes_mem[hda_node_in_path]==HDA_NODE_MIXER) {
-  log("output->mixer->pin ");
+  log("\nPath: output->mixer->pin ");
   log_var_with_space(hda_output_audio_node);
   log_var_with_space(hda_node_in_path);
   log_var(hda_output_pin_node);
-  
-  log("\n");
+
+  //unmute mixer
   hda_node_set_volume(codec, hda_node_in_path, 100);
  }
  
+ log("\nOutput capabilites: ");
+ log_hex(hda_output_sound_capabilites);
  log("\n");
 }
 
@@ -372,8 +404,6 @@ void hda_node_set_volume(dword_t codec, dword_t node, dword_t volume) {
  hda_send_verb(codec, node, 0x300, (0xF000 | (volume_scale-((100-volume)*volume_scale/100))));
 }
 
-//TODO: set sample rate
-
 byte_t hda_is_supported_channel_size(byte_t size) {
  byte_t channel_sizes[5] = {8, 16, 20, 24, 32};
  dword_t mask=0x00010000;
@@ -395,7 +425,7 @@ byte_t hda_is_supported_channel_size(byte_t size) {
 
 byte_t hda_is_supported_sample_rate(dword_t sample_rate) {
  dword_t sample_rates[11] = {8000, 11025, 16000, 22050, 32000, 44100, 48000, 88200, 96000, 176400, 192000};
- word_t mask=1;
+ word_t mask=0x0000001;
  
  for(int i=0; i<11; i++) {
   if(sample_rates[i]==sample_rate) {
