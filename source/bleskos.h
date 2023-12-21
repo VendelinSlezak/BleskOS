@@ -13,6 +13,7 @@
 #define STATUS_TRUE 1
 #define STATUS_FALSE 0
 #define BIG_ENDIAN(x) (((x & 0xFF)<<8) | ((x>>8) & 0xFF))
+// #define BIG_ENDAIN(x) (((x & 0xFF)<<8) | ((x>>8) & 0xFF))
 
 typedef unsigned char byte_t;
 typedef unsigned short word_t;
