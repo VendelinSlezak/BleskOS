@@ -63,6 +63,35 @@ void bleskos_main_window_redraw_time(void) {
  print_var(time_year, graphic_screen_x-20-32, graphic_screen_y-30, BLACK);
 }
 
+void bleskos_main_window_redraw_sound_volume(void) {
+ mouse_cursor_restore_background(mouse_cursor_x, mouse_cursor_y);
+
+ bleskos_main_window_drawing_line = 40;
+ bleskos_main_window_drawing_column = graphic_screen_x_center;
+ bleskos_main_window_print_item("Sound volume");
+ add_zone_to_click_board(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20, MW_SOUND_VOLUME);
+ draw_full_square(bleskos_main_window_drawing_column+5, bleskos_main_window_drawing_line, 295, 20, 0x00C000);
+ draw_full_square(bleskos_main_window_drawing_column+5, bleskos_main_window_drawing_line, 285*sound_volume/100, 20, WHITE);
+ draw_full_square(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 5, 20, BLACK);
+ draw_full_square(bleskos_main_window_drawing_column+290, bleskos_main_window_drawing_line, 5, 20, BLACK);
+ draw_empty_square(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20, BLACK);
+ if(sound_volume<10) {
+  print_var(sound_volume, bleskos_main_window_drawing_column+295/2-4, bleskos_main_window_drawing_line+6, BLACK);
+ }
+ else if(sound_volume<100) {
+  print_var(sound_volume, bleskos_main_window_drawing_column+295/2-8, bleskos_main_window_drawing_line+6, BLACK);
+ }
+ else {
+  print("100", bleskos_main_window_drawing_column+295/2-12, bleskos_main_window_drawing_line+6, BLACK);
+ }
+
+ mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
+ draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
+
+ redraw_mouse_cursor();
+ redraw_part_of_screen(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20);
+}
+
 void bleskos_main_window_draw_background(void) {
  clear_screen(0x00C000);
  draw_full_square(0, 0, graphic_screen_x, 10, BLACK);
@@ -247,6 +276,24 @@ void bleskos_main_window(void) {
    bleskos_main_window_shutdown();
    goto redraw;
   }
+  else if(keyboard_value==KEY_RIGHT) {
+   if(sound_volume>90) {
+    sound_volume = 100;
+   }
+   else {
+    sound_volume += 10;
+   }
+   bleskos_main_window_redraw_sound_volume();
+  }
+  else if(keyboard_value==KEY_LEFT) {
+   if(sound_volume<10) {
+    sound_volume = 0;
+   }
+   else {
+    sound_volume -= 10;
+   }
+   bleskos_main_window_redraw_sound_volume();
+  }
   
   //click
   if(mouse_drag_and_drop==MOUSE_CLICK) {   
@@ -323,7 +370,7 @@ void bleskos_main_window(void) {
     else {
      sound_set_volume((100*(mouse_cursor_x-graphic_screen_x_center-5)/285));
     }
-    goto redraw;
+    bleskos_main_window_redraw_sound_volume();
    }
   }
  }
