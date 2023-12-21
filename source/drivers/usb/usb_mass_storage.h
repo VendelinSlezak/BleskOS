@@ -19,6 +19,7 @@
 
 #define USB_MSD_REQUEST_SENSE 0x03
 #define USB_MSD_INQUIRY 0x12
+#define USB_MSD_READ_FORMAT_CAPACITIES 0x23
 #define USB_MSD_CAPACITY 0x25
 #define USB_MSD_READ_10 0x28
 #define USB_MSD_WRITE_10 0x2A
@@ -39,9 +40,6 @@ struct usb_mass_storage_device {
  dword_t ehci_hub_port_number;
  dword_t size_in_sectors;
  dword_t size_of_sector;
- byte_t partitions_type[4];
- dword_t partitions_first_sector[4];
- dword_t partitions_num_of_sectors[4];
 };
 struct usb_mass_storage_device usb_mass_storage_devices[10];
 
