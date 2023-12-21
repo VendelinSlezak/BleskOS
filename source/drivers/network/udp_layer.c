@@ -13,11 +13,11 @@ void create_udp_layer(dword_t memory, word_t length_of_data, word_t source_port,
  word_t *packet16 = (word_t *) (memory+ETHERNET_LAYER_LENGTH+IP_LAYER_LENGTH);
  word_t big_endain_value;
  
- big_endain_value = BIG_ENDAIN(source_port);
+ big_endain_value = BIG_ENDIAN(source_port);
  packet16[0] = big_endain_value;
- big_endain_value = BIG_ENDAIN(destination_port);
+ big_endain_value = BIG_ENDIAN(destination_port);
  packet16[1] = big_endain_value;
- big_endain_value = BIG_ENDAIN(length_of_data);
+ big_endain_value = BIG_ENDIAN(length_of_data);
  packet16[2] = big_endain_value;
  packet16[3] = 0; //checksum
 }
