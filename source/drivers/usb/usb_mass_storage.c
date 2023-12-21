@@ -14,28 +14,33 @@ void usb_mass_storage_initalize(byte_t device_number) {
  }
 
  if(usb_msd_send_inquiry_command(device_number)==STATUS_ERROR) {
-  return;
- }
- if(usb_msd_send_request_sense_command(device_number)==STATUS_ERROR) {
+  log("\nUSB msd: Unable to read Inquiry command");
   return;
  }
  if(usb_msd_send_capacity_command(device_number)==STATUS_ERROR) {
-  return;
+  //send Request sense
+  if(usb_msd_send_request_sense_command(device_number)==STATUS_ERROR) {
+   log("\nUSB msd: Unable to get Request sense after first try to read capacity");
+   return;
+  }
+
+  //try again
+  if(usb_msd_send_capacity_command(device_number)==STATUS_ERROR) {
+   //send Request sense
+   if(usb_msd_send_request_sense_command(device_number)==STATUS_ERROR) {
+    log("\nUSB msd: Unable to get Request sense after second try to read capacity");
+    return;
+   }
+
+   //try last time
+   if(usb_msd_send_capacity_command(device_number)==STATUS_ERROR) {
+    log("\nUSB msd: Unable to read capacity");
+    return;
+   }
+  }
  }
  
  usb_mass_storage_devices[device_number].type = USB_MSD_INITALIZED;
- 
- //read info about partitions
- byte_t medium = storage_medium;
- byte_t medium_number = storage_medium_number;
- select_storage_medium(MEDIUM_USB_MSD, device_number);
- read_partition_info();
- for(int i=0; i<4; i++) {
-  usb_mass_storage_devices[device_number].partitions_type[i]=partitions[i].type;
-  usb_mass_storage_devices[device_number].partitions_first_sector[i]=partitions[i].first_sector;
-  usb_mass_storage_devices[device_number].partitions_num_of_sectors[i]=partitions[i].num_of_sectors;
- }
- select_storage_medium(medium, medium_number);
 }
 
 void usb_msd_create_cbw(byte_t transfer_type, byte_t command_length, dword_t transfer_length) {
