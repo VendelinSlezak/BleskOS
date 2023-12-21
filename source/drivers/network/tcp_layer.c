@@ -14,9 +14,9 @@ void create_tcp_layer(dword_t memory, word_t source_port, dword_t sequence_numbe
  dword_t *packet32 = (dword_t *) (memory+ETHERNET_LAYER_LENGTH+IP_LAYER_LENGTH);
  word_t big_endain_value;
  
- big_endain_value = BIG_ENDAIN(source_port);
+ big_endain_value = BIG_ENDIAN(source_port);
  packet16[0] = big_endain_value; //source port
- packet16[1] = BIG_ENDAIN(80); //destination port
+ packet16[1] = BIG_ENDIAN(80); //destination port
  packet32[1] = (((sequence_number & 0xFF)<<24) | (((sequence_number>>8) & 0xFF)<<16) | (((sequence_number>>16) & 0xFF)<<8) | (sequence_number>>24)); //sequence number
  packet32[2] = (((acknowledge_number & 0xFF)<<24) | (((acknowledge_number>>8) & 0xFF)<<16) | (((acknowledge_number>>16) & 0xFF)<<8) | (acknowledge_number>>24)); //acknowledge number
  packet8[12]=0x60; //TCP layer length
