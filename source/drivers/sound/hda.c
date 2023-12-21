@@ -139,94 +139,127 @@ void hda_initalize_codec(dword_t codec) {
  dword_t *nodes_connection_mem = (dword_t *) hda_codec_nodes_connection_mem;
  dword_t response;
  
- log("codec nodes:\n");
+ log("codec nodes:");
+
+ //clear node list
+ for(dword_t i=0; i<256; i++) {
+  nodes_mem[i] = 0xFF;
+  nodes_connection_mem[i] = 0xFFFFFFFF;
+ }
+
+ //find nodes of groups
+ response = hda_send_verb(codec, 0, 0xF00, 0x04);
+ dword_t first_node_of_group_nodes = (response >> 16);
+ dword_t number_of_group_nodes = (response & 0xFF);
+ for(dword_t i=0; i<number_of_group_nodes; i++) {
+  if((hda_send_verb(codec, (first_node_of_group_nodes+i), 0xF00, 0x05) & 0x7F)==0x01) {
+   nodes_mem[first_node_of_group_nodes+i] = HDA_NODE_AUDIO_FUNCTION_GROUP;
+   nodes_connection_mem[first_node_of_group_nodes+i] = hda_send_verb(codec, first_node_of_group_nodes+i, 0xF00, 0x04);
+  }
+ }
  
- //find nodes
+ //find widgets
  for(int node=0; node<256; node++) {
   response = hda_send_verb(codec, node, 0xF00, 0x09);
-  nodes_mem[node] = 0xFF;
-  nodes_connection_mem[node] = 0xFFFFFFFF;
   
   if(response!=0 && response!=0xFFFFFFFF) {
    //type of node
-   nodes_mem[node] = (byte_t)((response>>20) & 0xF);
-   
+   if(nodes_mem[node]!=HDA_NODE_AUDIO_FUNCTION_GROUP) {
+    nodes_mem[node] = (byte_t)((response>>20) & 0xF);
+   }
+
    //type of pin
    if(nodes_mem[node]==HDA_NODE_OUTPUT) {
     hda_send_verb(codec, node, 0x706, 0x00); //disable by setting stream to 0
    }
    if(nodes_mem[node]==HDA_NODE_PIN) {
-    nodes_mem[node] = (byte_t)(((hda_send_verb(codec, node, 0xF1C, 0x00)>>20) & 0xF)+0x10);
+    nodes_mem[node] = (byte_t)(((hda_send_verb(codec, node, 0xF1C, 0x00)>>20) & 0xF)+0x10); //get PIN type
    }
    
    //get connection list
    nodes_connection_mem[node] = hda_send_verb(codec, node, 0xF02, 0x00);
    
-   //turn on every widget
+   //turn on power for every widget
    hda_send_verb(codec, node, 0x705, 0x00);
-   
-   //LOG node
-   log_var_with_space(node);
-   if(nodes_mem[node]==0) {
-    log("Audio Output");
+  }
+ }
+
+ //log nodes
+ for(dword_t node=0; node<256; node++) {
+  if(nodes_mem[node]==0xFF) { //no widget here
+   continue;
+  }
+
+  log("\n");
+  log_var_with_space(node);
+  if(nodes_mem[node]==HDA_NODE_AUDIO_FUNCTION_GROUP) {
+   log("Audio Function Group");
+   continue;
+  }
+  else if(nodes_mem[node]==0) {
+   log("Audio Output");
+  }
+  else if(nodes_mem[node]==1) {
+   log("Audio Input");
+  }
+  else if(nodes_mem[node]==2) {
+   log("Audio Mixer");
+  }
+  else if(nodes_mem[node]==3) {
+   log("Audio Selector");
+  }
+  else if(nodes_mem[node]==0x10) {
+   log("Pin Line Out");
+  }
+  else if(nodes_mem[node]==0x11) {
+   log("Pin Speaker");
+  }
+  else if(nodes_mem[node]==0x12) {
+   log("Pin HP Out");
+  }
+  else if(nodes_mem[node]==0x13) {
+   log("Pin CD");
+  }
+  else if(nodes_mem[node]==0x14) {
+   log("Pin SPDIF Out");
+  }
+  else if(nodes_mem[node]==0x15) {
+   log("Pin Digital Other Out");
+  }
+  else if(nodes_mem[node]==0x18) {
+   log("Pin Line In");
+  }
+  else if(nodes_mem[node]==0x19) {
+   log("Pin AUX");
+  }
+  else if(nodes_mem[node]==0x1A) {
+   log("Pin Mic In");
+  }
+  else if(nodes_mem[node]==0x1D) {
+   log("Pin Digital Other In");
+  }
+  else {
+   log_hex_specific_size(nodes_mem[node], 2);
+  }
+  log(" ");
+  for(dword_t i=0; i<4; i++) {
+   if((nodes_connection_mem[node]>>(i*8))==0) {
+    break;
    }
-   else if(nodes_mem[node]==1) {
-    log("Audio Input");
-   }
-   else if(nodes_mem[node]==2) {
-    log("Audio Mixer");
-   }
-   else if(nodes_mem[node]==3) {
-    log("Audio Selector");
-   }
-   else if(nodes_mem[node]==0x10) {
-    log("Pin Line Out");
-   }
-   else if(nodes_mem[node]==0x11) {
-    log("Pin Speaker");
-   }
-   else if(nodes_mem[node]==0x12) {
-    log("Pin HP Out");
-   }
-   else if(nodes_mem[node]==0x13) {
-    log("Pin CD");
-   }
-   else if(nodes_mem[node]==0x14) {
-    log("Pin SPDIF Out");
-   }
-   else if(nodes_mem[node]==0x15) {
-    log("Pin Digital Other Out");
-   }
-   else if(nodes_mem[node]==0x18) {
-    log("Pin Line In");
-   }
-   else if(nodes_mem[node]==0x19) {
-    log("Pin AUX");
-   }
-   else if(nodes_mem[node]==0x1A) {
-    log("Pin Mic In");
-   }
-   else if(nodes_mem[node]==0x1D) {
-    log("Pin Digital Other In");
-   }
-   else {
-    log_hex_specific_size(nodes_mem[node], 2);
-   }
-   log(" ");
-   for(dword_t i=0; i<4; i++) {
-    if((nodes_connection_mem[node]>>(i*8))==0) {
-     break;
-    }
-    log_var_with_space((nodes_connection_mem[node]>>(i*8)) & 0xFF);
-   }
-   log("\n");
+   log_var_with_space((nodes_connection_mem[node]>>(i*8)) & 0xFF);
   }
  }
  
  //find speaker with amp
  log("\nFinding output PIN node:");
  hda_output_pin_node=0xFF;
- for(int node=0; node<256; node++) {
+ for(int node=0; node<256; node++) { //set first speaker PIN as default option
+  if(nodes_mem[node]==HDA_PIN_SPEAKER) {
+   hda_output_pin_node = node;
+   break;
+  }
+ }
+ for(int node=0; node<256; node++) { //if there is other PIN with connected speaker, set this PIN instead
   if(nodes_mem[node]==HDA_PIN_SPEAKER) {  
    response = hda_send_verb(codec, node, 0xF00, 0x09);
    log("\n ");
@@ -267,6 +300,7 @@ void hda_initalize_codec(dword_t codec) {
   for(int node=0; node<256; node++) {
    if(nodes_mem[node]==HDA_PIN_LINE_OUT && nodes_connection_mem[node]!=0) {
     hda_output_pin_node = node;
+    log("\nLine Out PIN");
     break;
    }
   }
@@ -277,6 +311,7 @@ void hda_initalize_codec(dword_t codec) {
   for(int node=0; node<256; node++) {
    if(nodes_mem[node]==HDA_PIN_HEADPHONE && nodes_connection_mem[node]!=0) {
     hda_output_pin_node = node;
+    log("\nHeadphone PIN");
     break;
    }
   }
@@ -287,6 +322,7 @@ void hda_initalize_codec(dword_t codec) {
   for(int node=0; node<256; node++) {
    if(nodes_mem[node]==HDA_PIN_DIGITAL_OTHER_OUT && nodes_connection_mem[node]!=0) {
     hda_output_pin_node = node;
+    log("\nDigital Other Out PIN");
     break;
    }
   }
@@ -294,6 +330,7 @@ void hda_initalize_codec(dword_t codec) {
 
  //ERROR: no output pin was founded
  if(hda_output_pin_node==0xFF) {
+  log("\nHDA error: no output pin founded");
   return;
  }
 
@@ -360,6 +397,16 @@ void hda_initalize_codec(dword_t codec) {
  
  //read output audio capabilites
  hda_output_sound_capabilites = hda_send_verb(codec, hda_output_audio_node, 0xF00, 0x0A);
+ if(hda_output_sound_capabilites==0x00000000 || hda_output_sound_capabilites==0xFFFFFFFF) {
+  //read output audio capabilites from Audio Function Group
+  for(dword_t node=0; node<256; node++) {
+   if(nodes_mem[node]==HDA_NODE_AUDIO_FUNCTION_GROUP && hda_output_audio_node>=(nodes_connection_mem[node] >> 16) && hda_output_audio_node<=((nodes_connection_mem[node] >> 16)+(nodes_connection_mem[node] & 0xFF))) {
+    //this node is in this Audio Function Group
+    hda_output_sound_capabilites = hda_send_verb(codec, node, 0xF00, 0x0A);
+    break;
+   }
+  }
+ }
 
  //unmute audio output
  sound_set_volume(50);
@@ -386,22 +433,28 @@ void hda_initalize_codec(dword_t codec) {
 }
 
 void hda_node_set_volume(dword_t codec, dword_t node, dword_t volume) {
- dword_t volume_scale = ((hda_send_verb(codec, node, 0xF00, 0x12)>>8) & 0x7F);
+ dword_t response = hda_send_verb(codec, node, 0xF00, 0x12);
+ dword_t number_of_steps = ((response>>8) & 0x7F);
+
+ // log("\nVolume capabilites: Num of steps: ");
+ // log_var_with_space(number_of_steps);
+ // log("Offset to zero gain: ");
+ // log_var_with_space(response & 0x7F);
  
  //fixed volume
- if(volume_scale==0) {
+ if(number_of_steps==0) {
   hda_send_verb(codec, node, 0x300, (0xF000 | 0x00)); //unmute
   return;
  }
  
  //set maximal volume
  if(volume==100) {
-  hda_send_verb(codec, node, 0x300, (0xF000 | volume_scale));
+  hda_send_verb(codec, node, 0x300, (0xF000 | number_of_steps));
   return;
  }
  
  //recalculate volume scale 0-100 to node volume scale
- hda_send_verb(codec, node, 0x300, (0xF000 | (volume_scale-((100-volume)*volume_scale/100))));
+ hda_send_verb(codec, node, 0x300, (0xF000 | (number_of_steps-((100-volume)*number_of_steps/100))));
 }
 
 byte_t hda_is_supported_channel_size(byte_t size) {
