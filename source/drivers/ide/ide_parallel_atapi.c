@@ -87,9 +87,9 @@ byte_t patapi_read_capabilites(word_t base_port, word_t alt_base_port) {
  
  //read response
  response = inw(base_port + 0);
- optical_disk_size = (BIG_ENDAIN(response)<<16);
+ optical_disk_size = (BIG_ENDIAN(response)<<16);
  response = inw(base_port + 0);
- optical_disk_size |= BIG_ENDAIN(response);
+ optical_disk_size |= BIG_ENDIAN(response);
  inw(base_port + 0);
  inw(base_port + 0);
  
@@ -134,9 +134,9 @@ byte_t patapi_read(word_t base_port, word_t alt_base_port, dword_t sector, byte_
  //send packet
  outw(base_port + 0, 0xA8); //read command
  value = (word_t)(sector>>16);
- outw(base_port + 0, BIG_ENDAIN(value));
+ outw(base_port + 0, BIG_ENDIAN(value));
  value = (word_t)sector;
- outw(base_port + 0, BIG_ENDAIN(value));
+ outw(base_port + 0, BIG_ENDIAN(value));
  outw(base_port + 0, 0);
  outw(base_port + 0, (number_of_sectors<<8)); //number of sectors
  outw(base_port + 0, 0);
@@ -218,9 +218,9 @@ byte_t patapi_read_audio_cd_sector(word_t base_port, dword_t sector, dword_t mem
  //send packet
  outw(base_port + 0, 0xBE); //read CD command
  value = (word_t)(sector>>16);
- outw(base_port + 0, BIG_ENDAIN(value));
+ outw(base_port + 0, BIG_ENDIAN(value));
  value = (word_t)sector;
- outw(base_port + 0, BIG_ENDAIN(value));
+ outw(base_port + 0, BIG_ENDIAN(value));
  outw(base_port + 0, 0);
  outw(base_port + 0, 0x1001); //one sector and we are reading User Data - 0x10
  outw(base_port + 0, 0);
