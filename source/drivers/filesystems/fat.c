@@ -593,9 +593,10 @@ dword_t write_fat_file(dword_t file_mem, dword_t size_in_bytes, dword_t first_cl
 dword_t delete_fat_file(dword_t cluster) {
  dword_t last_cluster;
 
- if(cluster==0 || cluster>(fat_number_of_clusters+2) || get_fat_entry(cluster)<2) {
-  log("\nInvalid cluster request");
-  return STATUS_ERROR;
+ if(cluster<2 || cluster>(fat_number_of_clusters+2) || get_fat_entry(cluster)<2) {
+  log("\nFAT: Invalid cluster delete request ");
+  log_var(cluster);
+  return STATUS_GOOD; //this file do not exist
  }
  
  for(dword_t i=0; i<fat_number_of_clusters; i++) {  
@@ -605,7 +606,7 @@ dword_t delete_fat_file(dword_t cluster) {
   
   //delete cluster
   if(set_fat_entry(last_cluster, 0)==STATUS_ERROR) {
-   log("\nError with setting cluster");
+   log("\nFAT: Error with setting cluster");
    return STATUS_ERROR;
   }
   
@@ -614,7 +615,7 @@ dword_t delete_fat_file(dword_t cluster) {
    //FAT12
    if(cluster>=0xFF8 && cluster<=0xFFF) {
     if(save_fat_table_sector()==STATUS_ERROR) { //save changed values in last sector
-     log("\nError with saving FAT table sector");
+     log("\nFAT: Error with saving FAT table sector");
      return STATUS_ERROR;
     }
     break;
@@ -624,7 +625,7 @@ dword_t delete_fat_file(dword_t cluster) {
    //FAT16
    if(cluster>=0xFFF8 && cluster<=0xFFFF) {
     if(save_fat_table_sector()==STATUS_ERROR) { //save changed values in last sector
-     log("\nError with saving FAT table sector");
+     log("\nFAT: Error with saving FAT table sector");
      return STATUS_ERROR;
     }
     break;
@@ -634,7 +635,7 @@ dword_t delete_fat_file(dword_t cluster) {
    //FAT32
    if(cluster>=0x0FFFFFF8) {
     if(save_fat_table_sector()==STATUS_ERROR) { //save changed values in last sector
-     log("\nError with saving FAT table sector");
+     log("\nFAT: Error with saving FAT table sector");
      return STATUS_ERROR;
     }
     break;
@@ -642,14 +643,14 @@ dword_t delete_fat_file(dword_t cluster) {
   }
   
   //test errors
-  if(cluster==0 || cluster>(fat_number_of_clusters+2)) {
-   log("\nInvalid cluster in process of deleting");
+  if(cluster<2 || cluster>(fat_number_of_clusters+2)) {
+   log("\nFAT: Invalid cluster in process of deleting");
    break;
   }
  }
 
  if(save_fat_table_sector()==STATUS_ERROR) { //save changed values in last sector
-  log("\nError with saving FAT table sector");
+  log("\nFAT: Error with saving FAT table sector");
   return STATUS_ERROR;
  }
  return STATUS_GOOD; //we succesfully deleted file
