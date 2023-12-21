@@ -118,9 +118,9 @@ byte_t satapi_read_drive_capabilites(dword_t base_port, dword_t commands_memory,
  
  //read disk size
  response = ahci_drive_info_mem[0];
- optical_disk_size = (BIG_ENDAIN(response)<<16);
+ optical_disk_size = (BIG_ENDIAN(response)<<16);
  response = ahci_drive_info_mem[1];
- optical_disk_size |= BIG_ENDAIN(response);
+ optical_disk_size |= BIG_ENDIAN(response);
  
  return STATUS_GOOD;
 }
@@ -129,5 +129,5 @@ byte_t satapi_read_sector(dword_t base_port, dword_t commands_memory, dword_t fi
  word_t upper_sector = (sector >> 16);
  sector &= 0xFFFF;
  
- return satapi_send_command(base_port, commands_memory, fis_memory, 2048, (0x00A8 | BIG_ENDAIN(upper_sector)), (BIG_ENDAIN(sector)), 0x00000100, memory);
+ return satapi_send_command(base_port, commands_memory, fis_memory, 2048, (0x00A8 | BIG_ENDIAN(upper_sector)), (BIG_ENDIAN(sector)), 0x00000100, memory);
 }
