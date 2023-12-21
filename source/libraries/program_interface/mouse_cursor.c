@@ -9,14 +9,14 @@
 */
 
 void draw_mouse_cursor(dword_t x, dword_t y) {
+ if(x>graphic_screen_x || y>graphic_screen_y) {
+  return;
+ }
+ 
  dword_t *screen;
  dword_t first_line_pixel_pointer = (screen_mem + (y*screen_bytes_per_line) + (x<<2));
  dword_t old_x = x;
  dword_t *mouse_cursor_img_ptr = (dword_t *) mouse_cursor_img;
- 
- if(x>graphic_screen_x || y>graphic_screen_y) {
-  return;
- }
  
  for(int i=0; i<MOUSE_CURSOR_HEIGTH; i++) {
   screen = (dword_t *) first_line_pixel_pointer;
