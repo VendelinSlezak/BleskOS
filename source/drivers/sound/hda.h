@@ -11,6 +11,7 @@
 #define HDA_CORB_RIRB 1
 #define HDA_PIO 2
 
+#define HDA_NODE_AUDIO_FUNCTION_GROUP 0xF0
 #define HDA_NODE_OUTPUT 0x0
 #define HDA_NODE_INPUT 0x1
 #define HDA_NODE_MIXER 0x2
