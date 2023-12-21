@@ -8,6 +8,9 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 13**
+- Many little fixes and improvements
+
 **Update 12**
 - Improvement of Main window
 - Fixed finding path of nodes in HDA driver, now can BleskOS play at least some sound on much more computers
@@ -15,15 +18,6 @@ Here is info about most important improvements in several last updates.
 **Update 11**
 - File dialog rewritten to much better version to be like File Manager
 - Added option to export System log as TXT file
-
-**Update 10**
-- New program File Manager that can copy, rename and delete files
-- EHCI controller support USB mouse and USB keyboard
-- USB hub driver is complete
-- Improved reaction to ISR
-
-**BleskOS wiki**
-- I created wiki that will contain documentation of BleskOS source code. [BleskOS wiki](https://github.com/VendelinSlezak/BleskOS/wiki)
 
 ## How to try BleskOS
 
@@ -62,7 +56,7 @@ In dialog windows you can press ENTER for selecting Yes, or ESC for selecting No
 Drivers
 
 - Graphic: VBE
-- Sound: AC97, Intel HD Audio(works in QEMU)
+- Sound: AC97, Intel HD Audio
 - Inbuilt hardware: PS/2 keyboard, PS/2 mouse, PATA hard disk, PATAPI optical disk drive, AHCI hard disk, AHCI optical disk drive
 - Filesystems: FAT12/16/32, ext2 (read-only), ISO9660 (read-only)
 - USB controllers: UHCI, OHCI, EHCI
