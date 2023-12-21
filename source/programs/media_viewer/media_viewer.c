@@ -323,6 +323,10 @@ void media_viewer_open_file(void) {
    return;
   }
   if(is_supported_sound_format(sound_info[SOUND_INFO_NUMBER_OF_CHANNELS], sound_info[SOUND_INFO_BITS_PER_SAMPLE], sound_info[SOUND_INFO_SAMPLE_RATE])==STATUS_FALSE) {
+   log("\nUnplayable sound file ");
+   log_var_with_space(sound_info[SOUND_INFO_NUMBER_OF_CHANNELS]);
+   log_var_with_space(sound_info[SOUND_INFO_BITS_PER_SAMPLE]);
+   log_var_with_space(sound_info[SOUND_INFO_SAMPLE_RATE]);
    free(new_file_mem);
    delete_sound((dword_t)sound_info);
    remove_file(get_program_value(PROGRAM_INTERFACE_SELECTED_FILE));
