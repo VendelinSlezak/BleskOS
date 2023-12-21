@@ -15,7 +15,7 @@ void create_ip_layer(dword_t memory, dword_t length_of_data, byte_t protocol_typ
  dword_t checksum;
  
  packet16[0] = 0x0045; //header
- packet16[1] = BIG_ENDAIN(length_of_data);
+ packet16[1] = BIG_ENDIAN(length_of_data);
  packet32[1] = 0;
  packet8[8] = 0x80; //time to live
  packet8[9] = protocol_type;
