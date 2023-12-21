@@ -41,6 +41,7 @@ byte_t bleskos_main_window_time_redraw = 0;
 void bleskos_main_window_print_item(byte_t *string);
 void bleskos_main_window_draw_item(byte_t *string, dword_t color, byte_t type);
 void bleskos_main_window_redraw_time(void);
+void bleskos_main_window_redraw_sound_volume(void);
 void bleskos_main_window_draw_background(void);
 void bleskos_main_window_redraw(void);
 void bleskos_main_window(void);
