@@ -31,7 +31,7 @@ void developer_program_log(void) {
   if(keyboard_value==KEY_ESC || mouse_drag_and_drop==MOUSE_CLICK) {
    return;
   }
-  else if(keyboard_value==KEY_F1) {
+  else if(keyboard_value==KEY_F2) {
    //count number of chars
    word_t *logging_area = (word_t *) (logging_mem);
    dword_t number_of_chars = 0;
