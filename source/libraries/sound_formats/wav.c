@@ -15,7 +15,7 @@ dword_t convert_wav_to_sound_data(dword_t wav_memory, dword_t wav_length) {
  
  //check signature
  if(wav32[0]!=0x46464952 && wav32[2]!=0x45564157) {
-  log("WAV: invalid signature\n");
+  log("\nWAV: invalid signature");
   return STATUS_ERROR;
  }
  
@@ -25,7 +25,7 @@ dword_t convert_wav_to_sound_data(dword_t wav_memory, dword_t wav_length) {
   if(wav32[0]==0x20746D66) { //fmt 
    //check sound format
    if((wav32[2] & 0xFFFF)!=WAV_FORMAT_PCM) {
-    log("WAV: not raw PCM\n");
+    log("\nWAV: not raw PCM");
     return STATUS_ERROR;
    }
    
@@ -36,22 +36,28 @@ dword_t convert_wav_to_sound_data(dword_t wav_memory, dword_t wav_length) {
   }
   else if(wav32[0]==0x61746164) { //data   
    if(channels==0 || sample_rate==0 || bits_per_sample==0) {
-    log("WAV: data chunk before fmt chunk\n");
+    log("\nWAV: data chunk before fmt chunk");
     return STATUS_ERROR;
    }
-   
-   //allocate memory
-   sound_memory = create_sound(channels, bits_per_sample, sample_rate, wav32[1]);
+
+   //convert PCM data
+   dword_t converted_pcm_data_memory = convert_pcm_to_2_channels_16_bit_samples_48000_44100_sample_rate(((dword_t)wav32+8), wav32[1], channels, bits_per_sample, sample_rate);
    
    //copy sound data
-   copy_memory(((dword_t)wav32+8), (get_sound_data_memory(sound_memory)), wav32[1]);
+   if(converted_pcm_data_memory==STATUS_ERROR) {
+    sound_memory = create_sound(channels, bits_per_sample, sample_rate, wav32[1]);
+    copy_memory(((dword_t)wav32+8), (get_sound_data_memory(sound_memory)), wav32[1]);
+   }
+   else {
+    sound_memory = create_sound(2, 16, converted_pcm_data_sample_rate, converted_pcm_data_length);
+    copy_memory(converted_pcm_data_memory, (get_sound_data_memory(sound_memory)), converted_pcm_data_length);
+   }
    
    return sound_memory;
   }
   else {
-   log("WAV: unknown chunk ");
+   log("\nWAV: unknown chunk ");
    log_hex(wav32[0]);
-   log("\n");
   }
   
   //go to next chunk

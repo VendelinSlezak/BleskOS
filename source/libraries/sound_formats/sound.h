@@ -26,6 +26,9 @@
 #define SOUND_SAMPLE_RATE_44100 44100
 #define SOUND_SAMPLE_RATE_48000 48000
 
+dword_t converted_pcm_data_length = 0, converted_pcm_data_sample_rate = 0;
+
 dword_t create_sound(dword_t channels, dword_t bits_per_sample, dword_t sample_rate, dword_t length_of_data);
 void delete_sound(dword_t sound_info_mem);
 dword_t get_sound_data_memory(dword_t sound_info_mem);
+dword_t convert_pcm_to_2_channels_16_bit_samples_48000_44100_sample_rate(dword_t pcm_sound_memory, dword_t length_of_data, dword_t channels, dword_t bits_per_sample, dword_t sample_rate);
