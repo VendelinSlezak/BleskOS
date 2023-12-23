@@ -21,6 +21,10 @@ void initalize_hda(void) {
  //read capabilites
  hda_input_stream_base = (hda_base + 0x80);
  hda_output_stream_base = (hda_base + 0x80 + (0x20*((mmio_inw(hda_base + 0x00)>>8) & 0xF))); //skip input streams ports
+
+ //allocate memory for silent
+ hda_silent_sound_memory = aligned_malloc(0x20000, 0x7F);
+ clear_memory(hda_silent_sound_memory, 0x20000);
  
  //disable interrupts
  mmio_outd(hda_base + 0x20, 0);
@@ -35,20 +39,16 @@ void initalize_hda(void) {
  
  //configure input stream
  mmio_outd(hda_input_stream_base + 0x00, 0x00240000);
- hda_input_buffer_list = aligned_malloc(16*2, 0x7F);
- if(hda_input_buffer_list==0) {
-  memory_error_debug(0x0000FF);
- }
+ hda_input_buffer_list = aligned_malloc(16*4, 0x7F);
+ clear_memory(hda_input_buffer_list, 16*4);
  mmio_outw(hda_input_stream_base + 0x0C, 1); //two buffer entries
  mmio_outd(hda_input_stream_base + 0x18, hda_input_buffer_list);
  mmio_outd(hda_input_stream_base + 0x1C, 0);
  
  //configure output stream
- mmio_outd(hda_output_stream_base + 0x00, 0x00140000);
- hda_output_buffer_list = aligned_malloc(16*2, 0x7F);
- if(hda_output_buffer_list==0) {
-  memory_error_debug(0x0000FF);
- }
+ mmio_outd(hda_output_stream_base + 0x00, 0x00100000);
+ hda_output_buffer_list = aligned_malloc(16*4, 0x7F);
+ clear_memory(hda_output_buffer_list, 16*4);
  mmio_outw(hda_output_stream_base + 0x0C, 1); //two buffer entries
  mmio_outd(hda_output_stream_base + 0x18, hda_output_buffer_list);
  mmio_outd(hda_output_stream_base + 0x1C, 0);
@@ -197,13 +197,15 @@ void hda_initalize_codec(dword_t codec) {
    continue;
   }
   else if(nodes_mem[node]==0) {
-   log("Audio Output");
+   log("Audio Output ");
+   log_hex(hda_send_verb(codec, node, 0xF00, 0x12)); //volume capabilites
   }
   else if(nodes_mem[node]==1) {
    log("Audio Input");
   }
   else if(nodes_mem[node]==2) {
-   log("Audio Mixer");
+   log("Audio Mixer ");
+   log_hex_with_space(hda_send_verb(codec, node, 0xF00, 0x12)); //volume capabilites
   }
   else if(nodes_mem[node]==3) {
    log("Audio Selector");
@@ -341,7 +343,7 @@ void hda_initalize_codec(dword_t codec) {
  //power amplifier + L-R swap
  hda_send_verb(codec, hda_output_pin_node, 0x70C, 0x6);
   
- //set max volume
+ //unmute pin
  hda_node_set_volume(codec, hda_output_pin_node, 100);
  
  //search if is pin directly connected to audio output
@@ -409,15 +411,21 @@ void hda_initalize_codec(dword_t codec) {
  }
 
  //unmute audio output
- sound_set_volume(50);
- 
- //LOG
+ hda_node_set_volume(codec, hda_output_audio_node, 100);
+
+ //find node for changing volume
  if(nodes_mem[hda_node_in_path]==HDA_NODE_OUTPUT) {
   log("\nPath: output->pin ");
   log_var_with_space(hda_output_audio_node);
   log_var(hda_output_pin_node);
+
+  //find node for changing volume
+  hda_node_for_changing_volume = hda_output_audio_node;
+  if(hda_send_verb(codec, hda_output_audio_node, 0xF00, 0x12)==0x00000000) {
+   hda_node_for_changing_volume = hda_output_pin_node;
+  }
  }
- if(nodes_mem[hda_node_in_path]==HDA_NODE_MIXER) {
+ else if(nodes_mem[hda_node_in_path]==HDA_NODE_MIXER) {
   log("\nPath: output->mixer->pin ");
   log_var_with_space(hda_output_audio_node);
   log_var_with_space(hda_node_in_path);
@@ -425,21 +433,29 @@ void hda_initalize_codec(dword_t codec) {
 
   //unmute mixer
   hda_node_set_volume(codec, hda_node_in_path, 100);
+
+  //find node for changing volume
+  hda_node_for_changing_volume = hda_output_audio_node;
+  if(hda_send_verb(codec, hda_output_audio_node, 0xF00, 0x12)==0x00000000) {
+   hda_node_for_changing_volume = hda_node_in_path;
+
+   if(hda_send_verb(codec, hda_node_in_path, 0xF00, 0x12)==0x00000000) {
+    hda_node_for_changing_volume = hda_output_pin_node;
+   }
+  }
  }
  
  log("\nOutput capabilites: ");
  log_hex(hda_output_sound_capabilites);
+ log("\nVolume capabilites: ");
+ log_var_with_space(hda_node_for_changing_volume);
+ log_hex(hda_send_verb(codec, hda_node_for_changing_volume, 0xF00, 0x12));
  log("\n");
 }
 
 void hda_node_set_volume(dword_t codec, dword_t node, dword_t volume) {
  dword_t response = hda_send_verb(codec, node, 0xF00, 0x12);
  dword_t number_of_steps = ((response>>8) & 0x7F);
-
- // log("\nVolume capabilites: Num of steps: ");
- // log_var_with_space(number_of_steps);
- // log("Offset to zero gain: ");
- // log_var_with_space(response & 0x7F);
  
  //fixed volume
  if(number_of_steps==0) {
@@ -601,25 +617,48 @@ void hda_play_memory(dword_t memory, dword_t sample_rate, dword_t channels, dwor
  dword_t *buffer = (dword_t *) hda_output_buffer_list;
  
  //stop stream
+ hda_playing_state = 0;
  mmio_outd(hda_output_stream_base + 0x00, 0x00100000);
- 
- //reset stream
- mmio_outd(hda_output_stream_base + 0x00, 0x00100001);
- wait(5);
- mmio_outd(hda_output_stream_base + 0x00, 0x00100000);
- wait(5);
- 
- //buffer memory
- mmio_outd(hda_output_stream_base + 0x18, hda_output_buffer_list);
- mmio_outd(hda_output_stream_base + 0x1C, 0);
- 
+
  //length of data
  dword_t bytes_per_sample = (bits_per_sample/8); //8 bits/16 bits
  if(bits_per_sample>16) { //20 bits/24 bits/32 bits
   bytes_per_sample = 4;
  }
- hda_sound_length = number_of_samples_in_one_channel*bytes_per_sample*channels;
- mmio_outd(hda_output_stream_base + 0x08, hda_sound_length*2); //we need at least two buffer descriptors
+ hda_sound_length = (number_of_samples_in_one_channel*bytes_per_sample*channels);
+ dword_t hda_silent_sound_length = (sample_rate/10);
+
+ //buffer entries
+ buffer[0]=memory;
+ buffer[1]=0;
+ buffer[2]=hda_sound_length;
+ buffer[3]=0;
+ 
+ buffer[4+0]=hda_silent_sound_memory;
+ buffer[4+1]=0;
+ buffer[4+2]=hda_silent_sound_length;
+ buffer[4+3]=0;
+ 
+ //reset stream
+ mmio_outd(hda_output_stream_base + 0x00, 0x00100001);
+ ticks = 0;
+ while(ticks<2) {
+  if((mmio_ind(hda_output_stream_base + 0x00) & 0x1)==0x1) {
+   break;
+  }
+ }
+ mmio_outd(hda_output_stream_base + 0x00, 0x00100000);
+ ticks = 0;
+ while(ticks<2) {
+  if((mmio_ind(hda_output_stream_base + 0x00) & 0x1)==0x0) {
+   break;
+  }
+ }
+ 
+ //buffer memory
+ mmio_outd(hda_output_stream_base + 0x18, hda_output_buffer_list);
+ mmio_outd(hda_output_stream_base + 0x1C, 0);
+ mmio_outd(hda_output_stream_base + 0x08, hda_sound_length+hda_silent_sound_length); //length of sound data
  
  //last valid buffer entry
  mmio_outw(hda_output_stream_base + 0x0C, 1); //two entries
@@ -629,29 +668,20 @@ void hda_play_memory(dword_t memory, dword_t sample_rate, dword_t channels, dwor
 
  //set audio output node data format
  hda_send_verb(hda_codec_number, hda_output_audio_node, 0x200, hda_return_sound_data_format(sample_rate, channels, bits_per_sample));
-
- //buffer entries
- buffer[0]=memory;
- buffer[1]=0;
- buffer[2]=hda_sound_length;
- buffer[3]=0;
- 
- buffer[4+0]=memory;
- buffer[4+1]=0;
- buffer[4+2]=hda_sound_length;
- buffer[4+3]=0;
  
  //start streaming to stream 1
- mmio_outd(hda_output_stream_base + 0x00, 0x00100002);
+ wait(1);
+ mmio_outd(hda_output_stream_base + 0x00, 0x00140002);
+ hda_bytes_on_output_for_stopping_sound = 0;
  hda_playing_state = 1;
 }
 
 void hda_stop_sound(void) {
- mmio_outd(hda_output_stream_base + 0x00, 0x00100000);
+ mmio_outd(hda_output_stream_base + 0x00, 0x00140000);
  hda_playing_state = 0;
 }
 
 void hda_resume_sound(void) {
- mmio_outd(hda_output_stream_base + 0x00, 0x00100002);
+ mmio_outd(hda_output_stream_base + 0x00, 0x00140002);
  hda_playing_state = 1;
 }
