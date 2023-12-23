@@ -30,6 +30,7 @@
 #define FILE_DIALOG_MAX_FILE_EXTENSION_LENGTH 10
 #define FILE_DIALOG_MAX_OF_ALLOWED_EXTENSIONS 10
 
+dword_t file_dialog_selected_device_entry = 0;
 dword_t file_dialog_folder_device_type = 0;
 dword_t file_dialog_folder_device_number = 0;
 dword_t file_dialog_folder_device_partition_type = 0;
