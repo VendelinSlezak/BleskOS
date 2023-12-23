@@ -9,6 +9,7 @@
 */
 
 void initalize_file_dialog(void) {
+ file_dialog_selected_device_entry = 0xFFFFFFFF;
  file_dialog_folder_device_type = 0;
  file_dialog_folder_device_number = 0;
  file_dialog_folder_device_partition_type = 0;
@@ -244,17 +245,17 @@ void redraw_file_dialog(byte_t dialog_type) {
 }
 
 void file_dialog_show_progress(void) {
- draw_full_square(FILE_DIALOG_DEVICE_LIST_WIDTH+8, 60, (graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8), 16, 0xFF6600);
- draw_full_square(FILE_DIALOG_DEVICE_LIST_WIDTH+8, 60, ((graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8)*file_work_done_percents/100), 16, 0x000CFF);
+ draw_full_square(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, (graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8), 16, 0xFF6600);
+ draw_full_square(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, ((graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8)*file_work_done_percents/100), 16, 0x000CFF);
  if(file_work_done_percents<10) {
-  print_var(file_work_done_percents, FILE_DIALOG_DEVICE_LIST_WIDTH+8+((graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8)/2), 64, BLACK);
-  draw_char('%', FILE_DIALOG_DEVICE_LIST_WIDTH+8+((graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8)/2)+8, 64, BLACK);
+  print_var(file_work_done_percents, FILE_DIALOG_DEVICE_LIST_WIDTH+8+((graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8)/2), PROGRAM_INTERFACE_TOP_LINE_HEIGTH+28, BLACK);
+  draw_char('%', FILE_DIALOG_DEVICE_LIST_WIDTH+8+((graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8)/2)+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+28, BLACK);
  }
  else {
-  print_var(file_work_done_percents, FILE_DIALOG_DEVICE_LIST_WIDTH+8+((graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8)/2), 64, BLACK);
-  draw_char('%', FILE_DIALOG_DEVICE_LIST_WIDTH+8+((graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8)/2)+16, 64, BLACK);
+  print_var(file_work_done_percents, FILE_DIALOG_DEVICE_LIST_WIDTH+8+((graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8)/2), PROGRAM_INTERFACE_TOP_LINE_HEIGTH+28, BLACK);
+  draw_char('%', FILE_DIALOG_DEVICE_LIST_WIDTH+8+((graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8)/2)+16, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+28, BLACK);
  }
- redraw_part_of_screen(FILE_DIALOG_DEVICE_LIST_WIDTH+8, 60, (graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8), 16);
+ redraw_part_of_screen(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, (graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8), 16);
 }
 
 void file_dialog_print_message(byte_t *message) {
@@ -723,7 +724,37 @@ dword_t file_dialog(byte_t dialog_type, dword_t new_file_memory, dword_t new_fil
     continue;
    }
   }
-  if(keyboard_value==KEY_B) {
+  if(keyboard_value==KEY_PAGE_DOWN) {
+   if(number_of_device_list_entries==0) {
+    continue;
+   }
+   if(file_dialog_selected_device_entry==0xFFFFFFFF) {
+    file_dialog_selected_device_entry = 0;
+   }
+   else if(file_dialog_selected_device_entry<(number_of_device_list_entries-1)) {
+    file_dialog_selected_device_entry++;
+   }
+   else {
+    continue;
+   }
+   goto select_device_entry;
+  }
+  else if(keyboard_value==KEY_PAGE_UP) {
+   if(number_of_device_list_entries==0) {
+    continue;
+   }
+   if(file_dialog_selected_device_entry==0xFFFFFFFF) {
+    file_dialog_selected_device_entry = (number_of_device_list_entries-1);
+   }
+   else if(file_dialog_selected_device_entry>0) {
+    file_dialog_selected_device_entry--;
+   }
+   else {
+    continue;
+   }
+   goto select_device_entry;
+  }
+  else if(keyboard_value==KEY_B) {
    file_dialog_folder_back(dialog_type);
    continue;
   }
@@ -752,9 +783,11 @@ dword_t file_dialog(byte_t dialog_type, dword_t new_file_memory, dword_t new_fil
   if(mouse_drag_and_drop==MOUSE_CLICK) {
    //click on device
    if(click_zone>=FILE_DIALOG_CLICK_ZONE_DEVICE_ENTRY && click_zone<=FILE_DIALOG_CLICK_ZONE_DEVICE_LAST_ENTRY) {
-    device_list_selected_entry = (click_zone-FILE_DIALOG_CLICK_ZONE_DEVICE_ENTRY);
+    file_dialog_selected_device_entry = (click_zone-FILE_DIALOG_CLICK_ZONE_DEVICE_ENTRY);
 
     //test if this entry still exist
+    select_device_entry:
+    device_list_selected_entry = file_dialog_selected_device_entry;
     if(get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_TYPE)==0) {
      redraw_file_dialog(dialog_type);
      continue;
