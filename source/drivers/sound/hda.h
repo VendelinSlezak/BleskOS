@@ -30,8 +30,10 @@ dword_t hda_output_stream_base = 0, hda_output_buffer_list = 0;
 dword_t hda_corb_mem, hda_corb_pointer;
 dword_t hda_rirb_mem, hda_rirb_pointer;
 dword_t hda_codec_number, hda_codec_nodes_types_mem, hda_codec_nodes_connection_mem;
-dword_t hda_output_pin_node, hda_node_in_path, hda_output_audio_node;
+dword_t hda_output_pin_node, hda_node_in_path, hda_output_audio_node, hda_node_for_changing_volume;
 dword_t hda_sound_length, hda_output_sound_capabilites;
+dword_t hda_silent_sound_memory = 0;
+dword_t hda_bytes_on_output_for_stopping_sound = 0;
 
 void initalize_hda(void);
 void hda_initalize_codec(dword_t codec);

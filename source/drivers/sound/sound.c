@@ -26,7 +26,7 @@ void sound_set_volume(byte_t volume) {
   ac97_set_volume(volume);
  }
  else if(hda_present==DEVICE_PRESENT) {
-  hda_node_set_volume(hda_codec_number, hda_output_audio_node, volume);
+  hda_node_set_volume(hda_codec_number, hda_node_for_changing_volume, volume);
  }
 }
 
