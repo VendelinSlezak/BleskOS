@@ -65,6 +65,7 @@ byte_t usb_msd_transfer_command(byte_t device_number, byte_t direction, dword_t 
  status = usb_bulk_out(usb_mass_storage_devices[device_number].controller_number, usb_mass_storage_devices[device_number].address, usb_mass_storage_devices[device_number].device_speed, usb_mass_storage_devices[device_number].endpoint_out, usb_mass_storage_devices[device_number].toggle_out, usb_mass_storage_cbw_memory, 31, 500);
  if(status==STATUS_ERROR) {
   log("\nUSB msd: CBW transfer error");
+  usb_mass_storage_devices[device_number].toggle_out = usb_bulk_toggle;
   return STATUS_ERROR;
  }
  usb_mass_storage_devices[device_number].toggle_out = usb_bulk_toggle;
@@ -74,6 +75,7 @@ byte_t usb_msd_transfer_command(byte_t device_number, byte_t direction, dword_t 
   status = usb_bulk_in(usb_mass_storage_devices[device_number].controller_number, usb_mass_storage_devices[device_number].address, usb_mass_storage_devices[device_number].device_speed, usb_mass_storage_devices[device_number].endpoint_in, usb_mass_storage_devices[device_number].toggle_in, memory, length_of_transfer, 2000);
   if(status==STATUS_ERROR) {
    log("\nUSB msd: bulk in transfer error");
+   usb_mass_storage_devices[device_number].toggle_in = usb_bulk_toggle;
    return STATUS_ERROR;
   }
   usb_mass_storage_devices[device_number].toggle_in = usb_bulk_toggle;
@@ -82,6 +84,7 @@ byte_t usb_msd_transfer_command(byte_t device_number, byte_t direction, dword_t 
   status = usb_bulk_out(usb_mass_storage_devices[device_number].controller_number, usb_mass_storage_devices[device_number].address, usb_mass_storage_devices[device_number].device_speed, usb_mass_storage_devices[device_number].endpoint_out, usb_mass_storage_devices[device_number].toggle_out, memory, length_of_transfer, 2000);
   if(status==STATUS_ERROR) {
    log("\nUSB msd: bulk out transfer error");
+   usb_mass_storage_devices[device_number].toggle_out = usb_bulk_toggle;
    return STATUS_ERROR;
   }
   usb_mass_storage_devices[device_number].toggle_out = usb_bulk_toggle;
@@ -91,6 +94,7 @@ byte_t usb_msd_transfer_command(byte_t device_number, byte_t direction, dword_t 
  status = usb_bulk_in(usb_mass_storage_devices[device_number].controller_number, usb_mass_storage_devices[device_number].address, usb_mass_storage_devices[device_number].device_speed, usb_mass_storage_devices[device_number].endpoint_in, usb_mass_storage_devices[device_number].toggle_in, usb_mass_storage_csw_memory, 13, 500);
  if(status==STATUS_ERROR) {
   log("\nUSB msd: CSW transfer error");
+  usb_mass_storage_devices[device_number].toggle_in = usb_bulk_toggle;
   return STATUS_ERROR;
  }
  usb_mass_storage_devices[device_number].toggle_in = usb_bulk_toggle;
