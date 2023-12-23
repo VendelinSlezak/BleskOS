@@ -33,8 +33,14 @@ void run_processes_on_background(void) {
  }
 
  if(hda_playing_state==1) {
-  if(mmio_ind(hda_output_stream_base + 0x04)>=hda_sound_length) {
+  dword_t link_position_in_buffer = mmio_ind(hda_output_stream_base + 0x04);
+  if(hda_bytes_on_output_for_stopping_sound>link_position_in_buffer || link_position_in_buffer>mmio_ind(hda_output_stream_base + 0x08)) {
    hda_stop_sound();
+   hda_playing_state = 0;
+   hda_bytes_on_output_for_stopping_sound = 0;
+  }
+  else {
+   hda_bytes_on_output_for_stopping_sound = link_position_in_buffer;
   }
  }
  else if(ac97_playing_state==1) {
