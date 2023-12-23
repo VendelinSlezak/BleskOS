@@ -20,6 +20,7 @@
 
 dword_t device_list_mem = 0;
 dword_t device_list_selected_entry = 0;
+dword_t number_of_device_list_entries = 0;
 
 void initalize_device_list(void);
 dword_t get_device_list_entry_value(dword_t offset);
