@@ -11,6 +11,7 @@
 void initalize_device_list(void) {
  device_list_mem = calloc(DEVICE_LIST_NUMBER_OF_ENTRIES*DEVICE_LIST_SIZE_OF_ENTRY);
  device_list_selected_entry = 0xFFFFFFFF;
+ number_of_device_list_entries = 0;
 
  //add partitions from hard disk
  if(if_storage_medium_exist(MEDIUM_HDD, DEFAULT_MEDIUM)==STATUS_TRUE) {
@@ -60,6 +61,7 @@ void add_device_partition_to_device_list(dword_t device_type, dword_t device_num
    set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_NUMBER, device_number);
    set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_TYPE, partition_type);
    set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_FIRST_SECTOR, first_partition_sector);
+
    select_storage_medium(device_type, device_number);
    if(partition_type==STORAGE_FAT) {
     select_fat_partition(first_partition_sector);
@@ -85,6 +87,8 @@ void add_device_partition_to_device_list(dword_t device_type, dword_t device_num
     set_device_entry_list_name_value(11, 0);
     set_ext_partition_info_in_device_list_entry();
    }
+
+   number_of_device_list_entries++;
    break;
   }
  }
@@ -103,12 +107,13 @@ void remove_device_from_device_list(dword_t device_type, dword_t device_number) 
     file_dialog_folder_device_number = 0;
     file_dialog_folder_device_partition_type = 0;
     file_dialog_folder_device_partition_first_sector = 0;
+    file_dialog_selected_device_entry = 0xFFFFFFFF;
    }
    
    //remove it from device list
    copy_memory((device_list_mem+(DEVICE_LIST_SIZE_OF_ENTRY*(device_list_selected_entry+1))), (device_list_mem+(DEVICE_LIST_SIZE_OF_ENTRY*device_list_selected_entry)), (device_list_mem+(DEVICE_LIST_SIZE_OF_ENTRY*(DEVICE_LIST_NUMBER_OF_ENTRIES-1)))-(device_list_mem+(DEVICE_LIST_SIZE_OF_ENTRY*(device_list_selected_entry+1))));
    clear_memory((device_list_mem+DEVICE_LIST_SIZE_OF_ENTRY*((DEVICE_LIST_NUMBER_OF_ENTRIES-1))), DEVICE_LIST_SIZE_OF_ENTRY);
-   return;
+   number_of_device_list_entries--;
   }
  }
 }
