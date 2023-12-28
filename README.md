@@ -8,6 +8,10 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 15**
+- Fixed recognizing of FAT16 filesystem
+- Improvement of HDA driver
+
 **Update 14**
 - Much more types of WAV files could be played
 - Further important improvements of HDA driver
@@ -15,10 +19,6 @@ Here is info about most important improvements in several last updates.
 
 **Update 13**
 - Many little fixes and improvements
-
-**Update 12**
-- Improvement of Main window
-- Fixed finding path of nodes in HDA driver, now can BleskOS play at least some sound on much more computers
 
 ## How to try BleskOS
 
