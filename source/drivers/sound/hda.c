@@ -146,7 +146,7 @@ void hda_initalize_codec(dword_t codec) {
   nodes_mem[i] = 0xFF;
   nodes_connection_mem[i] = 0xFFFFFFFF;
  }
-
+ 
  //find nodes of groups
  response = hda_send_verb(codec, 0, 0xF00, 0x04);
  dword_t first_node_of_group_nodes = (response >> 16);
@@ -155,11 +155,14 @@ void hda_initalize_codec(dword_t codec) {
   if((hda_send_verb(codec, (first_node_of_group_nodes+i), 0xF00, 0x05) & 0x7F)==0x01) {
    nodes_mem[first_node_of_group_nodes+i] = HDA_NODE_AUDIO_FUNCTION_GROUP;
    nodes_connection_mem[first_node_of_group_nodes+i] = hda_send_verb(codec, first_node_of_group_nodes+i, 0xF00, 0x04);
+
+   //turn on power for audio group
+   hda_send_verb(codec, (first_node_of_group_nodes+i), 0x705, 0x00);
   }
  }
  
  //find widgets
- for(int node=0; node<256; node++) {
+ for(int node=0; node<128; node++) {
   response = hda_send_verb(codec, node, 0xF00, 0x09);
   
   if(response!=0 && response!=0xFFFFFFFF) {
@@ -255,13 +258,13 @@ void hda_initalize_codec(dword_t codec) {
  //find speaker with amp
  log("\nFinding output PIN node:");
  hda_output_pin_node=0xFF;
- for(int node=0; node<256; node++) { //set first speaker PIN as default option
-  if(nodes_mem[node]==HDA_PIN_SPEAKER) {
+ for(int node=0; node<256; node++) { //first speaker PIN is default output, even if it do not report connected device
+  if(nodes_mem[node]==HDA_PIN_SPEAKER) {  
    hda_output_pin_node = node;
    break;
   }
  }
- for(int node=0; node<256; node++) { //if there is other PIN with connected speaker, set this PIN instead
+ for(int node=0; node<256; node++) { //search for PIN with connected speaker
   if(nodes_mem[node]==HDA_PIN_SPEAKER) {  
    response = hda_send_verb(codec, node, 0xF00, 0x09);
    log("\n ");
