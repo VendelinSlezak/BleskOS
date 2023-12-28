@@ -18,6 +18,8 @@ void usb_mass_storage_initalize(byte_t device_number) {
   return;
  }
  if(usb_msd_send_capacity_command(device_number)==STATUS_ERROR) {
+  usb_msd_recover_from_error(device_number);
+
   //send Request sense
   if(usb_msd_send_request_sense_command(device_number)==STATUS_ERROR) {
    log("\nUSB msd: Unable to get Request sense after first try to read capacity");
@@ -26,6 +28,8 @@ void usb_mass_storage_initalize(byte_t device_number) {
 
   //try again
   if(usb_msd_send_capacity_command(device_number)==STATUS_ERROR) {
+   usb_msd_recover_from_error(device_number);
+
    //send Request sense
    if(usb_msd_send_request_sense_command(device_number)==STATUS_ERROR) {
     log("\nUSB msd: Unable to get Request sense after second try to read capacity");
