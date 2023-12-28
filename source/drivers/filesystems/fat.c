@@ -46,7 +46,7 @@ void select_fat_partition(dword_t first_partition_sector) {
   return;
  }
  
- if(fat_number_of_clusters>=65525) {
+ if(fat_number_of_clusters>65536) {
   //load first sector of partition with info about FAT32
   if(read_storage_medium(first_partition_sector, 1, (dword_t)&fat32_boot_sector)==STATUS_ERROR) {
    return;
@@ -148,7 +148,7 @@ dword_t get_fat_entry(dword_t entry) {
    return ((fat12_third_cluster_byte<<4) | (fat12_second_cluster_byte>>4));
   }
  }
- else if(fat_number_of_clusters<65525) {
+ else if(fat_number_of_clusters<=65536) {
   //FAT16
   //load FAT table sector
   if(loaded_fat_sector!=(fat_table_sector + (entry/256))) {
@@ -248,7 +248,7 @@ byte_t set_fat_entry(dword_t entry, dword_t value) {
    return STATUS_GOOD;
   }
  }
- else if(fat_number_of_clusters<65525) {
+ else if(fat_number_of_clusters<=65536) {
   //FAT16
   //load FAT table sector
   if(loaded_fat_sector!=(fat_table_sector + (entry/256))) {
@@ -264,8 +264,6 @@ byte_t set_fat_entry(dword_t entry, dword_t value) {
   //write new value
   fat_table_one_sector16[(entry % 256)] = value;
   return STATUS_GOOD;
-
-  //return write_storage_medium(fat_table_sector + (entry/256), 1, (dword_t)fat_table_one_sector);
  }
  else {
   //FAT32
@@ -287,7 +285,7 @@ byte_t set_fat_entry(dword_t entry, dword_t value) {
 }
 
 byte_t save_fat_table_sector(void) {
- if(fat_number_of_clusters<65525) { //FAT12/16
+ if(fat_number_of_clusters<=65536) { //FAT12/16
   if(write_storage_medium(loaded_fat_sector, 1, (dword_t)fat_table_one_sector)==STATUS_ERROR) { //save to first FAT table
    return STATUS_ERROR;
   }
@@ -341,7 +339,7 @@ dword_t fat_get_size_of_file_on_disk(dword_t cluster) {
     return (number_of_clusters*fat_cluster_length_in_bytes); //return size in bytes
    }
   }
-  else if(fat_number_of_clusters<65525) {
+  else if(fat_number_of_clusters<=65536) {
    //FAT16
    if(cluster>=0xFFF8 && cluster<=0xFFFF) {
     return (number_of_clusters*fat_cluster_length_in_bytes); //return size in bytes
@@ -418,7 +416,7 @@ dword_t read_fat_file(dword_t cluster, dword_t size_in_bytes) {
     break;
    }
   }
-  else if(fat_number_of_clusters<65525) { //FAT16
+  else if(fat_number_of_clusters<=65536) { //FAT16
    if(cluster>=0xFFF8 && cluster<=0xFFFF) {
     break;
    }
@@ -568,7 +566,7 @@ dword_t write_fat_file(dword_t file_mem, dword_t size_in_bytes, dword_t first_cl
    return STATUS_ERROR;
   }
  }
- else if(fat_number_of_clusters<65525) {
+ else if(fat_number_of_clusters<=65536) {
   //FAT16
   if(set_fat_entry(*clusters_numbers_ptr, 0xFFFF)==STATUS_ERROR) {
    free(clusters_numbers_mem);
@@ -621,7 +619,7 @@ dword_t delete_fat_file(dword_t cluster) {
     break;
    }
   }
-  else if(fat_number_of_clusters<65525) {
+  else if(fat_number_of_clusters<=65536) {
    //FAT16
    if(cluster>=0xFFF8 && cluster<=0xFFFF) {
     if(save_fat_table_sector()==STATUS_ERROR) { //save changed values in last sector
@@ -661,7 +659,7 @@ dword_t read_fat_folder(dword_t cluster, dword_t size_in_bytes) {
  
  //load folder
  if(cluster==ROOT_DIRECTORY) {
-  if(fat_number_of_clusters<65525) {
+  if(fat_number_of_clusters<=65536) {
    //FAT12/FAT16
    size_in_bytes = fat_root_dir_length*512;
    fat_folder_mem = malloc(size_in_bytes);
@@ -886,7 +884,7 @@ dword_t rewrite_fat_folder(dword_t cluster, dword_t folder_mem) {
 
  //root directory
  if(cluster==ROOT_DIRECTORY) {
-  if(fat_number_of_clusters<65525) {
+  if(fat_number_of_clusters<=65536) {
    //allocate memory of size of root directiory
    dword_t root_dir_mem = calloc(512*fat_root_dir_length);
    copy_memory(fat_folder_mem, root_dir_mem, fat_file_length);
