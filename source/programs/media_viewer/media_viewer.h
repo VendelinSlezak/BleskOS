@@ -39,7 +39,7 @@
 #define MEDIA_VIEWER_CLICK_ZONE_SOUND_VOLUME_PLUS_10 202
 #define MEDIA_VIEWER_CLICK_ZONE_SOUND_PLAY_STOP 203
 
-dword_t media_viewer_program_interface_memory = 0, media_viewer_sound_state = 0;
+dword_t media_viewer_program_interface_memory = 0, media_viewer_sound_state = 0, media_viewer_showed_square_length_of_skipped_data = 0;
 
 void initalize_media_viewer(void);
 void media_viewer(void);
