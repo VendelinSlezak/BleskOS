@@ -283,6 +283,7 @@ void bleskos_main_window(void) {
    else {
     sound_volume += 10;
    }
+   sound_set_volume(sound_volume);
    bleskos_main_window_redraw_sound_volume();
   }
   else if(keyboard_value==KEY_LEFT) {
@@ -292,6 +293,7 @@ void bleskos_main_window(void) {
    else {
     sound_volume -= 10;
    }
+   sound_set_volume(sound_volume);
    bleskos_main_window_redraw_sound_volume();
   }
   
