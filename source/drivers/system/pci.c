@@ -56,7 +56,7 @@ void scan_pci(void) {
  ethernet_cards_pointer = 0;
  usb_controllers_pointer = 0;
  ac97_present = DEVICE_NOT_PRESENT;
- hda_present = DEVICE_NOT_PRESENT;
+ hda_sound_card_pointer = 0;
 
  //this array is used in System board
  pci_devices_array_mem = calloc(12*1000);
@@ -286,9 +286,14 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  //HD Audio sound card
  if(type_of_device==0x040300) {
   log("sound card HDA\n");
-  hda_present = DEVICE_PRESENT;
-  hda_base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
+  if(hda_sound_card_pointer>=10) {
+   return;
+  }
+  hda_sound_cards[hda_sound_card_pointer].present = DEVICE_PRESENT;
+  hda_sound_cards[hda_sound_card_pointer].base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
+  hda_sound_cards[hda_sound_card_pointer].communication = HDA_UNINITALIZED;
   pci_enable_mmio_busmastering(bus, device, function);
+  hda_sound_card_pointer++;
   return;
  }
  
@@ -369,6 +374,18 @@ byte_t *get_pci_vendor_string(dword_t vendor_id) {
  }
  else if(vendor_id==VENDOR_TEXAS_INSTUMENTS) {
   return "Texas Instruments";
+ }
+ else if(vendor_id==VENDOR_CONEXANT_SYSTEMS) {
+  return "Conexant Systems";
+ }
+ else if(vendor_id==VENDOR_SIGMATEL) {
+  return "SigmaTel";
+ }
+ else if(vendor_id==VENDOR_RED_HAT) {
+  return "Red Hat";
+ }
+ else if(vendor_id==0x1234) {
+  return "Emulator";
  }
  else {
   return "";

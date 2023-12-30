@@ -33,11 +33,14 @@ void run_processes_on_background(void) {
  }
 
  if(hda_playing_state==1) {
-  dword_t link_position_in_buffer = mmio_ind(hda_output_stream_base + 0x04);
-  if(hda_bytes_on_output_for_stopping_sound>link_position_in_buffer || link_position_in_buffer>mmio_ind(hda_output_stream_base + 0x08)) {
-   hda_stop_sound();
+  dword_t link_position_in_buffer = mmio_ind(hda_sound_cards[selected_hda_sound_card].output_stream_base + 0x04);
+  if(hda_bytes_on_output_for_stopping_sound>link_position_in_buffer || link_position_in_buffer>mmio_ind(hda_sound_cards[selected_hda_sound_card].output_stream_base + 0x08)) {
+   hda_stop_sound(selected_hda_sound_card);
    hda_playing_state = 0;
-   hda_bytes_on_output_for_stopping_sound = 0;
+   hda_bytes_on_output_for_stopping_sound = hda_sound_length;
+   if(media_viewer_sound_state==MEDIA_VIEWER_SOUND_STATE_PLAYING) {
+    set_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS, get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS));
+   }
   }
   else {
    hda_bytes_on_output_for_stopping_sound = link_position_in_buffer;
@@ -51,7 +54,12 @@ void run_processes_on_background(void) {
  
  if(media_viewer_sound_state==MEDIA_VIEWER_SOUND_STATE_PLAYING) {
   //update counter of played miliseconds
-  set_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS, get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)+2);
+  if(hda_playing_state==1) {
+   set_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS, (get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)*((hda_bytes_on_output_for_stopping_sound+media_viewer_showed_square_length_of_skipped_data)/1024)/((hda_sound_length+media_viewer_showed_square_length_of_skipped_data)/1024)));
+  }
+  else if(ac97_playing_state==1) {
+   set_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS, get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)+2);
+  }
 
   //everything from file was played
   if(get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)>=get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)) {

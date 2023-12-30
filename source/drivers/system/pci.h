@@ -32,6 +32,9 @@
 #define VENDOR_QUALCOMM_ATHEROS_2 0x1969
 #define VENDOR_NVIDIA 0x10DE
 #define VENDOR_TEXAS_INSTUMENTS 0x104C
+#define VENDOR_CONEXANT_SYSTEMS 0x14F1
+#define VENDOR_SIGMATEL 0x8384
+#define VENDOR_RED_HAT 0x1AF4
 
 dword_t pci_devices_array_mem = 0, pci_num_of_devices = 0;
 
