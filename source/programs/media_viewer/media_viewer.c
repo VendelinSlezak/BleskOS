@@ -255,7 +255,6 @@ void draw_media_viewer(void) {
 void media_viewer_draw_image(void) {
  mouse_cursor_restore_background(mouse_cursor_x, mouse_cursor_y);
  draw_resized_image(get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY));
- mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
  draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
  redraw_screen();
 }

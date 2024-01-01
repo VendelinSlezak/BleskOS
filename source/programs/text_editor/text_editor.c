@@ -291,7 +291,6 @@ void text_editor_key_f10_event(void) {
   print("Line:", graphic_screen_x_center-24, graphic_screen_y_center-8-7, BLACK);
   draw_text_area(text_editor_go_to_line_text_area_mem);
   draw_button("Go", graphic_screen_x_center-24, graphic_screen_y_center+12+8, 6*8+2, 12);
-  mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
   draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
   redraw_part_of_screen(graphic_screen_x_center-32, graphic_screen_y_center-8-7-8, 8*8, 8+7+8+12+8+12+8);
 
@@ -332,7 +331,6 @@ void text_editor_key_f10_event(void) {
     text_area_keyboard_event(text_editor_go_to_line_text_area_mem);
     mouse_cursor_restore_background(mouse_cursor_x, mouse_cursor_y);
     draw_text_area(text_editor_go_to_line_text_area_mem);
-    mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
     draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
     redraw_text_area(text_editor_go_to_line_text_area_mem);
    }
@@ -341,7 +339,6 @@ void text_editor_key_f10_event(void) {
     text_area_mouse_event(text_editor_go_to_line_text_area_mem);
     mouse_cursor_restore_background(mouse_cursor_x, mouse_cursor_y);
     draw_text_area(text_editor_go_to_line_text_area_mem);
-    mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
     draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
     redraw_text_area(text_editor_go_to_line_text_area_mem);
    }

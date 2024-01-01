@@ -397,7 +397,6 @@ void system_board(void) {
 
  redraw:
  system_board_redraw();
- mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
  draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
  redraw_screen();
 

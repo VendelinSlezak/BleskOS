@@ -114,7 +114,6 @@ void redraw_file_dialog(byte_t dialog_type) {
   }
 
   print("There is no storage device with known filesystem connected", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+8, BLACK);
-  mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
   draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
   redraw_screen();
   return;
@@ -128,7 +127,6 @@ void redraw_file_dialog(byte_t dialog_type) {
   }
   
   print("This device was removed", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+8, BLACK);
-  mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
   draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
   redraw_screen();
   return;
@@ -144,7 +142,6 @@ void redraw_file_dialog(byte_t dialog_type) {
   //no files in folder
   if(file_dialog_folder_number_of_entries==0) {
    print("There are no files in this directory", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+8, BLACK);
-   mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
    draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
    redraw_screen();
    return;
@@ -239,7 +236,6 @@ void redraw_file_dialog(byte_t dialog_type) {
  }
 
  //redraw screen
- mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
  draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
  redraw_screen();
 }
@@ -579,7 +575,6 @@ byte_t file_dialog_save_file(byte_t dialog_type, dword_t new_file_memory, dword_
  draw_button("Cancel", graphic_screen_x_center-100, graphic_screen_y_center+15, 90, 20);
  draw_button("Save", graphic_screen_x_center+10, graphic_screen_y_center+15, 90, 20);
 
- mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
  draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
 
  redraw_screen();
@@ -608,7 +603,6 @@ byte_t file_dialog_save_file(byte_t dialog_type, dword_t new_file_memory, dword_
   text_area_keyboard_event(file_dialog_new_name_text_area);
   text_area_mouse_event(file_dialog_new_name_text_area);
   draw_text_area(file_dialog_new_name_text_area);
-  mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
   draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
   redraw_text_area(file_dialog_new_name_text_area);
  }

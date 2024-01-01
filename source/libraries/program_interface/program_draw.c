@@ -205,7 +205,6 @@ void draw_menu_list(byte_t *items_string, dword_t x, dword_t click_zone) {
     draw_list_item(string);
 
     add_zone_to_click_board(x, graphic_screen_y-20-number_of_items*20, longest_item, number_of_items*20, click_zone);
-    mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
     draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
     redraw_mouse_cursor();
     redraw_part_of_screen(x, graphic_screen_y-20-number_of_items*20, longest_item, number_of_items*20);

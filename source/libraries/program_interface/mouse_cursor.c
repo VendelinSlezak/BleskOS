@@ -17,15 +17,18 @@ void draw_mouse_cursor(dword_t x, dword_t y) {
  dword_t first_line_pixel_pointer = (screen_mem + (y*screen_bytes_per_line) + (x<<2));
  dword_t old_x = x;
  dword_t *mouse_cursor_img_ptr = (dword_t *) mouse_cursor_img;
+ dword_t *mouse_cursor_background_ptr = (dword_t *) mouse_cursor_background;
  
  for(int i=0; i<MOUSE_CURSOR_HEIGTH; i++) {
   screen = (dword_t *) first_line_pixel_pointer;
   for(int j=0; j<MOUSE_CURSOR_WIDTH; j++) {
    if(*mouse_cursor_img_ptr!=TRANSPARENT_COLOR && x<graphic_screen_x && y<graphic_screen_y) {
+    *mouse_cursor_background_ptr = *screen;
     *screen = *mouse_cursor_img_ptr;
    }
    screen++;
    mouse_cursor_img_ptr++;
+   mouse_cursor_background_ptr++;
    x++;
   }
   first_line_pixel_pointer += screen_bytes_per_line;
@@ -38,53 +41,31 @@ void redraw_mouse_cursor(void) {
  redraw_part_of_screen(mouse_cursor_x, mouse_cursor_y, MOUSE_CURSOR_WIDTH, MOUSE_CURSOR_HEIGTH);
 }
 
-void mouse_cursor_save_background(dword_t x, dword_t y) {
- dword_t *screen;
- dword_t first_line_pixel_pointer = (screen_mem + (y*screen_bytes_per_line) + (x<<2));
- dword_t *mouse_cursor_background_ptr = (dword_t *) mouse_cursor_background;
- 
- dword_t heigth = MOUSE_CURSOR_HEIGTH;
- if((y+MOUSE_CURSOR_HEIGTH)>graphic_screen_y) {
-  heigth = (graphic_screen_y-y);
- }
- dword_t width = MOUSE_CURSOR_WIDTH;
- if((x+MOUSE_CURSOR_WIDTH)>graphic_screen_x) {
-  width = (graphic_screen_x-x);
- }
- 
- for(int i=0; i<heigth; i++) {
-  screen = (dword_t *) first_line_pixel_pointer;
-  for(int j=0; j<width; j++) {
-   *mouse_cursor_background_ptr = *screen;
-   screen++;
-   mouse_cursor_background_ptr++;
-  }
-  first_line_pixel_pointer += screen_bytes_per_line;
- }
-}
-
 void mouse_cursor_restore_background(dword_t x, dword_t y) {
+ if(x>graphic_screen_x || y>graphic_screen_y) {
+  return;
+ }
+ 
  dword_t *screen;
  dword_t first_line_pixel_pointer = (screen_mem + (y*screen_bytes_per_line) + (x<<2));
+ dword_t old_x = x;
+ dword_t *mouse_cursor_img_ptr = (dword_t *) mouse_cursor_img;
  dword_t *mouse_cursor_background_ptr = (dword_t *) mouse_cursor_background;
  
- dword_t heigth = MOUSE_CURSOR_HEIGTH;
- if((y+MOUSE_CURSOR_HEIGTH)>graphic_screen_y) {
-  heigth = (graphic_screen_y-y);
- }
- dword_t width = MOUSE_CURSOR_WIDTH;
- if((x+MOUSE_CURSOR_WIDTH)>graphic_screen_x) {
-  width = (graphic_screen_x-x);
- }
- 
- for(int i=0; i<heigth; i++) {
+ for(int i=0; i<MOUSE_CURSOR_HEIGTH; i++) {
   screen = (dword_t *) first_line_pixel_pointer;
-  for(int j=0; j<width; j++) {
-   *screen = *mouse_cursor_background_ptr;
+  for(int j=0; j<MOUSE_CURSOR_WIDTH; j++) {
+   if(*mouse_cursor_img_ptr!=TRANSPARENT_COLOR && x<graphic_screen_x && y<graphic_screen_y) {
+    *screen = *mouse_cursor_background_ptr;
+   }
    screen++;
+   mouse_cursor_img_ptr++;
    mouse_cursor_background_ptr++;
+   x++;
   }
   first_line_pixel_pointer += screen_bytes_per_line;
+  y++;
+  x = old_x;
  }
 }
 
@@ -151,10 +132,7 @@ void move_mouse_cursor(void) {
   mouse_cursor_y_dnd = mouse_cursor_y;
  }
  
- //read background of actual cursor position
- mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
- 
- //draw cursor
+ // draw + save background cursor 
  draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
  
  //show cursor change on screen

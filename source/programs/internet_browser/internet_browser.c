@@ -363,7 +363,6 @@ void internet_browser_vertical_scrollbar_event(void) {
   internet_browser_last_show_line = (internet_browser_first_show_line+internet_browser_webpage_heigth);
   internet_browser_redraw_webpage(get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_MEMORY));
   draw_vertical_scrollbar(internet_browser_webpage_width, INTERNET_BROWSER_WEBPAGE_START_LINE, internet_browser_webpage_heigth, get_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION), get_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE));
-  mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
   draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
   redraw_screen();
  }

@@ -364,7 +364,6 @@ void graphic_editor_redraw_image(void) {
  //draw image
  mouse_cursor_restore_background(mouse_cursor_x, mouse_cursor_y);
  draw_resized_image(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
- mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
  draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
 
  //redraw image
@@ -457,7 +456,6 @@ void graphic_editor_new_file(void) {
 
  draw_button("OK", graphic_screen_x_center-24, graphic_screen_y_center+20, 48, 20);
 
- mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
  draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
  redraw_screen();
 

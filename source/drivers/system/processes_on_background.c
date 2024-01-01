@@ -21,7 +21,6 @@ void run_processes_on_background(void) {
     mouse_cursor_restore_background(mouse_cursor_x, mouse_cursor_y);
     draw_full_square(graphic_screen_x-20-152, graphic_screen_y-30, 152, 10, 0x00C000);
     bleskos_main_window_redraw_time();
-    mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
     draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
     redraw_part_of_screen(graphic_screen_x-20-152, graphic_screen_y-30, 152, 10);
    }
@@ -68,7 +67,6 @@ void run_processes_on_background(void) {
    media_viewer_sound_state = MEDIA_VIEWER_SOUND_STATE_STOPPED;
    mouse_cursor_restore_background(mouse_cursor_x, mouse_cursor_y);
    draw_media_viewer();
-   mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
    draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
 
    redraw_part_of_screen(10, graphic_screen_y-60, graphic_screen_x-20, 40);
@@ -108,7 +106,6 @@ void run_processes_on_background(void) {
    //draw square of played part of file
    draw_full_square(11, graphic_screen_y-59, ((graphic_screen_x-22)*get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)/get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)), 8, 0x0900FF);
 
-   mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
    draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
 
    redraw_part_of_screen(10, graphic_screen_y-60, graphic_screen_x-20, 40);

@@ -29,7 +29,6 @@ dword_t mouse_cursor_x, mouse_cursor_y, mouse_cursor_x_click, mouse_cursor_y_cli
 
 void draw_mouse_cursor(dword_t x, dword_t y);
 void redraw_mouse_cursor(void);
-void mouse_cursor_save_background(dword_t x, dword_t y);
 void mouse_cursor_restore_background(dword_t x, dword_t y);
 void move_mouse_cursor(void);
 byte_t is_mouse_in_zone(dword_t up, dword_t down, dword_t left, dword_t right);

@@ -97,7 +97,6 @@ void program_interface_redraw(void) {
  extern void call(dword_t method);
 
  call(program_interface_draw_method_pointer);
- mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
  draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
  redraw_screen();
 }
@@ -124,7 +123,6 @@ void program_interface_process_keyboard_event(void) {
     //redraw
     mouse_cursor_restore_background(mouse_cursor_x, mouse_cursor_y);
     draw_text_area(element[2]);
-    mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
     draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
     redraw_text_area(element[2]);
     redraw_mouse_cursor();
@@ -241,7 +239,6 @@ void program_interface_process_mouse_event(void) {
     //redraw
     mouse_cursor_restore_background(mouse_cursor_x, mouse_cursor_y);
     draw_text_area(element[2]);
-    mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
     draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
     redraw_text_area(element[2]);
     redraw_mouse_cursor();
@@ -344,7 +341,6 @@ void program_interface_process_mouse_event(void) {
      //redraw
      mouse_cursor_restore_background(mouse_cursor_x, mouse_cursor_y);
      draw_text_area(element[2]);
-     mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
      draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
      redraw_text_area(element[2]);
      redraw_mouse_cursor();
@@ -374,7 +370,6 @@ void program_interface_process_mouse_event(void) {
     //redraw
     mouse_cursor_restore_background(mouse_cursor_x, mouse_cursor_y);
     draw_text_area(program_interface_text_area_info_memory);
-    mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
     draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
     redraw_screen();
    }
@@ -395,7 +390,6 @@ void program_interface_process_mouse_event(void) {
     //redraw
     mouse_cursor_restore_background(mouse_cursor_x, mouse_cursor_y);
     draw_text_area(program_interface_text_area_info_memory);
-    mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
     draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
     redraw_screen();
    }
@@ -447,7 +441,6 @@ void program_interface_process_mouse_event(void) {
     //redraw
     mouse_cursor_restore_background(mouse_cursor_x, mouse_cursor_y);
     draw_text_area(element[2]);
-    mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
     draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
     redraw_text_area(element[2]);
     redraw_mouse_cursor();
@@ -466,7 +459,6 @@ void program_interface_process_mouse_event(void) {
     //redraw
     mouse_cursor_restore_background(mouse_cursor_x, mouse_cursor_y);
     draw_text_area(element[2]);
-    mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
     draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
     redraw_text_area(element[2]);
     redraw_mouse_cursor();
@@ -478,7 +470,6 @@ void program_interface_process_mouse_event(void) {
 byte_t dialog_yes_no(byte_t *string) {
  mouse_cursor_restore_background(mouse_cursor_x, mouse_cursor_y);
  draw_dialog_yes_no(string);
- mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
  draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
  redraw_screen();
  
@@ -506,7 +497,6 @@ byte_t dialog_yes_no(byte_t *string) {
 void error_window(byte_t *string) {
  mouse_cursor_restore_background(mouse_cursor_x, mouse_cursor_y);
  message_window(string);
- mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
  draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
  redraw_screen();
 

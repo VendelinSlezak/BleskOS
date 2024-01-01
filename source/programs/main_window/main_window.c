@@ -85,7 +85,6 @@ void bleskos_main_window_redraw_sound_volume(void) {
   print("100", bleskos_main_window_drawing_column+295/2-12, bleskos_main_window_drawing_line+6, BLACK);
  }
 
- mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
  draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
 
  redraw_mouse_cursor();
@@ -213,7 +212,6 @@ void bleskos_main_window(void) {
  redraw:
  bleskos_main_window_time_redraw = 0;
  bleskos_main_window_redraw();
- mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
  draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
  redraw_screen();
  bleskos_main_window_time_redraw = 1;
@@ -393,7 +391,6 @@ void bleskos_main_window_change_keyboard_layout(void) {
 
  print("You can go back with ESC", 20, graphic_screen_y-30, BLACK);
 
- mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
  draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
  redraw_screen();
 
@@ -440,7 +437,7 @@ void bleskos_main_window_shutdown(void) {
  bleskos_main_window_time_redraw = 0;
 
  clear_screen(0x00C000);
- mouse_cursor_save_background(mouse_cursor_x, mouse_cursor_y);
+ draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
 
  if(dialog_yes_no("Do you really want to shut down computer?")==STATUS_TRUE) {
   clear_screen(0x00C000);
