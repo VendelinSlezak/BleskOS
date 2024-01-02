@@ -8,6 +8,10 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Version 2024 Update 1**
+- Optimalized code of mouse cursor
+- Update of source code license to year 2024
+
 **Update 16**
 - HDA driver completely rewritten into much better version
 
