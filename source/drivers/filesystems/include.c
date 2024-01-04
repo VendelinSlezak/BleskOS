@@ -11,5 +11,6 @@
 #include "fat.c"
 #include "ext.c"
 #include "iso9660.c"
+#include "cdda.c"
 #include "device_list.c"
 #include "main.c"

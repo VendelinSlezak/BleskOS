@@ -8,9 +8,7 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "fat.h"
-#include "ext.h"
-#include "iso9660.h"
-#include "cdda.h"
-#include "device_list.h"
-#include "main.h"
+byte_t is_optical_disk_cdda(void);
+void select_cdda_partition(void);
+dword_t cdda_read_file(dword_t sector, dword_t length_of_file_in_bytes);
+dword_t cdda_read_root_folder(void);

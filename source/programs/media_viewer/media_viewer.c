@@ -267,6 +267,7 @@ void media_viewer_open_file(void) {
  file_dialog_open_file_add_extension("png");
  file_dialog_open_file_add_extension("gif");
  file_dialog_open_file_add_extension("wav");
+ file_dialog_open_file_add_extension("cdda");
  dword_t new_file_mem = file_dialog_open();
  if(new_file_mem==0) {
   return; //file not loaded
@@ -304,11 +305,18 @@ void media_viewer_open_file(void) {
   //calculate image dimensions, position on screen and scrollbars
   media_viewer_image_recalculate_zoom();
  }
- else if(is_loaded_file_extension("wav")==STATUS_TRUE) {
+ else if(is_loaded_file_extension("wav")==STATUS_TRUE || is_loaded_file_extension("cdda")==STATUS_TRUE) {
   //convert file
   set_file_value(MEDIA_VIEWER_FILE_SOUND_ORIGINAL_FILE_MEMORY, new_file_mem);
   set_file_value(MEDIA_VIEWER_FILE_SOUND_ORIGINAL_FILE_SIZE, file_dialog_file_size);
-  set_file_value(MEDIA_VIEWER_FILE_SOUND_INFO_MEMORY, convert_wav_to_sound_data(new_file_mem, file_dialog_file_size));
+  if(is_loaded_file_extension("wav")==STATUS_TRUE) {
+   set_file_value(MEDIA_VIEWER_FILE_SOUND_INFO_MEMORY, convert_wav_to_sound_data(new_file_mem, file_dialog_file_size));
+   set_file_value(MEDIA_VIEWER_FILE_SOUND_ORIGINAL_FILE_TYPE, MEDIA_VIEWER_SOUND_WAV);
+  }
+  else if(is_loaded_file_extension("cdda")==STATUS_TRUE) {
+   set_file_value(MEDIA_VIEWER_FILE_SOUND_INFO_MEMORY, convert_cdda_to_sound_data(new_file_mem, file_dialog_file_size));
+   set_file_value(MEDIA_VIEWER_FILE_SOUND_ORIGINAL_FILE_TYPE, MEDIA_VIEWER_SOUND_CDDA);
+  }
 
   //test errors
   dword_t *sound_info = (dword_t *) (get_file_value(MEDIA_VIEWER_FILE_SOUND_INFO_MEMORY));
@@ -362,7 +370,13 @@ void media_viewer_save_file(void) {
   free(converted_file_memory);
  }
  else if(get_file_value(MEDIA_VIEWER_FILE_TYPE)==MEDIA_VIEWER_FILE_SOUND) {
-  file_dialog_save_set_extension("wav");
+  if(get_file_value(MEDIA_VIEWER_FILE_SOUND_ORIGINAL_FILE_TYPE)==MEDIA_VIEWER_SOUND_WAV) {
+   file_dialog_save_set_extension("wav");
+  }
+  else if(get_file_value(MEDIA_VIEWER_FILE_SOUND_ORIGINAL_FILE_TYPE)==MEDIA_VIEWER_SOUND_CDDA) {
+   file_dialog_save_set_extension("cdda");
+  }
+  
   file_dialog_save(get_file_value(MEDIA_VIEWER_FILE_SOUND_ORIGINAL_FILE_MEMORY), get_file_value(MEDIA_VIEWER_FILE_SOUND_ORIGINAL_FILE_SIZE));
  }
 }

@@ -225,8 +225,8 @@ byte_t patapi_read_audio_cd_sector(word_t base_port, dword_t sector, dword_t mem
  outw(base_port + 0, 0x1001); //one sector and we are reading User Data - 0x10
  outw(base_port + 0, 0);
  
- //wait max 4 seconds
- if(ide_wait_for_data(base_port, 2000)==STATUS_ERROR) {
+ //wait max 6 seconds
+ if(ide_wait_for_data(base_port, 3000)==STATUS_ERROR) {
   return STATUS_ERROR;
  }
  

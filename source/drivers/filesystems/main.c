@@ -112,6 +112,19 @@ byte_t read_storage_medium(dword_t sector, byte_t num_of_sectors, dword_t memory
  return STATUS_ERROR;
 }
 
+byte_t read_audio_cd(dword_t sector, dword_t num_of_sectors, dword_t memory) {
+ if(storage_medium==MEDIUM_CDROM) {
+  if(ide_cdrom_base!=0) { //CDROM is connected to IDE port
+   for(int i=0; i<num_of_sectors; i++, sector++, memory+=2352) {
+    if(patapi_read_audio_cd_sector(ide_cdrom_base, sector, memory)==STATUS_ERROR) {
+     return STATUS_ERROR;
+    }
+   }
+   return STATUS_GOOD;
+  }
+ }
+}
+
 byte_t write_storage_medium(dword_t sector, byte_t num_of_sectors, dword_t memory) {
  if(storage_medium==MEDIUM_HDD) {
   //write HDD
@@ -218,6 +231,36 @@ void eject_optical_disk(void) {
  device_list_check_optical_drive();
 }
 
+byte_t read_optical_disk_toc(void) {
+ if(if_storage_medium_exist(MEDIUM_CDROM, DEFAULT_MEDIUM)==STATUS_FALSE) {
+  return STATUS_ERROR;
+ }
+
+ //clear
+ for(dword_t i=0; i<32; i++) {
+  optical_disk_table_of_content.track[i].number = 0;
+  optical_disk_table_of_content.track[i].first_sector = 0;
+ }
+
+ //read TOC
+ if(ide_cdrom_base!=0) { //CDROM is connected to IDE port
+  if(patapi_read_audio_cd_toc(ide_cdrom_base, ide_cdrom_alt_base, (dword_t)(&optical_disk_table_of_content))==STATUS_ERROR) {
+   return STATUS_ERROR;
+  }
+ }
+
+ //convert big endian to little endian
+ optical_disk_table_of_content.length = BIG_ENDIAN(optical_disk_table_of_content.length);
+ for(dword_t i=0; i<(optical_disk_table_of_content.last_track+1); i++) {
+  byte_t byte_1 = (byte_t)(optical_disk_table_of_content.track[i].first_sector);
+  byte_t byte_2 = (byte_t)(optical_disk_table_of_content.track[i].first_sector>>8);
+  byte_t byte_3 = (byte_t)(optical_disk_table_of_content.track[i].first_sector>>16);
+  byte_t byte_4 = (byte_t)(optical_disk_table_of_content.track[i].first_sector>>24);
+  optical_disk_table_of_content.track[i].first_sector = (byte_1<<24 | byte_2<<16 | byte_3<<8 | byte_4);
+ }
+ return STATUS_GOOD;
+}
+
 void read_partition_info(void) {
  //clear partition table
  for(int i=0; i<8; i++) {
@@ -239,6 +282,11 @@ void read_partition_info(void) {
 
   if(is_partition_iso9660(0)==STATUS_TRUE) {
    partitions[0].type = STORAGE_ISO9660;
+   partitions[0].first_sector = 0;
+   partitions[0].num_of_sectors = optical_disk_size;
+  }
+  else if(is_optical_disk_cdda()==STATUS_TRUE) {
+   partitions[0].type = STORAGE_CDDA;
    partitions[0].first_sector = 0;
    partitions[0].num_of_sectors = optical_disk_size;
   }
@@ -378,6 +426,9 @@ void read_partition_info(void) {
    else if(partitions[i].type==STORAGE_ISO9660) {
     log("ISO9660\n");
    }
+   else if(partitions[i].type==STORAGE_CDDA) {
+    log("CDDA\n");
+   }
    else {
     log("unknown filesystem\n");
    }
@@ -401,6 +452,9 @@ void select_partition(byte_t partition_number) {
  }
  else if(partitions[partition_number].type==STORAGE_ISO9660) {
   select_iso9660_partition(partitions[partition_number].first_sector);
+ }
+ else if(partitions[partition_number].type==STORAGE_CDDA) {
+  select_cdda_partition();
  }
 }
 
@@ -515,6 +569,9 @@ dword_t read_file(dword_t file_starting_entry, dword_t file_size) {
  else if(partitions[selected_partition_number].type==STORAGE_ISO9660) {
   return iso9660_read_file(file_starting_entry, file_size);
  }
+ else if(partitions[selected_partition_number].type==STORAGE_CDDA) {
+  return cdda_read_file(file_starting_entry, file_size);
+ }
  
  return STATUS_ERROR;
 }
@@ -555,6 +612,9 @@ dword_t read_folder(dword_t file_starting_entry, dword_t file_size) {
  }
  else if(partitions[selected_partition_number].type==STORAGE_ISO9660) {
   return read_iso9660_folder(file_starting_entry, file_size);
+ }
+ else if(partitions[selected_partition_number].type==STORAGE_CDDA) {
+  return cdda_read_root_folder();
  }
  
  return STATUS_ERROR;

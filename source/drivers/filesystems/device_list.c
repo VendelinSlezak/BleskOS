@@ -87,6 +87,13 @@ void add_device_partition_to_device_list(dword_t device_type, dword_t device_num
     set_device_entry_list_name_value(11, 0);
     set_ext_partition_info_in_device_list_entry();
    }
+   else if(partition_type==STORAGE_CDDA) {
+    select_cdda_partition();
+    for(dword_t i=0; i<11; i++) {
+     set_device_entry_list_name_value(i, partition_label[i]);
+    }
+    set_device_entry_list_name_value(11, 0);
+   }
 
    number_of_device_list_entries++;
    break;
@@ -152,6 +159,11 @@ byte_t select_device_list_entry(dword_t device_type, dword_t device_number, dwor
 
     //TODO: !!!!
     partitions[0].type = STORAGE_EXT;
+    selected_partition_number = 0;
+   }
+   else if(get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_TYPE)==STORAGE_CDDA) {
+    //TODO: !!!!
+    partitions[0].type = STORAGE_CDDA;
     selected_partition_number = 0;
    }
    else {
