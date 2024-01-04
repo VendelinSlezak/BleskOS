@@ -1,4 +1,4 @@
-;BleskOS bootloader v29/08/2023
+;BleskOS bootloader v04/01/2024
 
 ;;;;;
 ;; MIT License
@@ -110,33 +110,23 @@ extended_bootloader_redraw:
  int 10h
  
  ;print strings
- mov ah, 0x2
  mov dx, 0x0101
- int 10h
  mov si, boot_up_str
  call print
  
- mov ah, 0x2
  mov dx, 0x0301
- int 10h
  mov si, boot_bleskos_str
  call print
  
- mov ah, 0x2
  mov dx, 0x0401
- int 10h
  mov si, boot_bleskos_boot_options_str
  call print
  
- mov ah, 0x2
  mov dx, 0x1501
- int 10h
  mov si, boot_options_str
  call print
  
- mov ah, 0x2
  mov dx, 0x1701
- int 10h
  mov si, boot_down_str
  call print
  
@@ -200,9 +190,7 @@ options:
  int 10h
  
  ;print strings
- mov ah, 0x2
  mov dx, 0x0101
- int 10h
  mov si, options_graphic_mode_str
  call print
  
@@ -261,6 +249,8 @@ select_graphic_mode:
  call print_hex
  
  ;select mode
+ cmp byte [es:0x19], 16
+ je .select_mode
  cmp byte [es:0x19], 24
  je .select_mode
  cmp byte [es:0x19], 32
@@ -414,12 +404,24 @@ highest_graphic_mode:
    ja .next_mode
   .if_edid_best_x_present:
 
-  ;we support only 24 or 32 bit color modes
+  ;we support 16/24/32 bit color modes
+  cmp byte [es:0x19], 16
+  je .mode_16_bpp
   cmp byte [es:0x19], 24
   je .mode_24_bpp
   cmp byte [es:0x19], 32
   je .mode_32_bpp
 
+  jmp .next_mode
+
+  .mode_16_bpp:
+  mov bx, word [vesa_last_16_mode_x]
+  mov dx, word [es:0x12]
+  cmp bx, dx
+  jg .next_mode ;we already have bigger mode
+  mov word [vesa_16_mode_number], cx
+  mov bx, word [es:0x12]
+  mov word [vesa_last_16_mode_x], bx
   jmp .next_mode
 
   .mode_24_bpp:
@@ -447,16 +449,21 @@ highest_graphic_mode:
 
  .get_value_of_best_mode:
  mov ax, word [vesa_32_mode_number]
- mov word [selected_graphic_mode], ax
  cmp word [vesa_32_mode_number], 0
- jne .done
+ jne .select_graphic_mode
 
  mov ax, word [vesa_24_mode_number]
- mov word [selected_graphic_mode], ax
  cmp word [vesa_24_mode_number], 0
- jne .done
- 
- mov word [selected_graphic_mode], 0
+ jne .select_graphic_mode
+
+ mov ax, word [vesa_16_mode_number]
+ cmp word [vesa_16_mode_number], 0
+ jne .select_graphic_mode
+
+ mov ax, 0 ;no usable graphic mode founded
+
+ .select_graphic_mode:
+ mov word [selected_graphic_mode], ax
  
  .done:
  ret
@@ -473,9 +480,7 @@ error_background:
  mov cx, 2000
  int 10h
  
- mov ah, 0x2
- mov dx, 0x0101
- int 10h
+ mov dx, 0x0101 ;there will be printed error message
  
  ret
  
@@ -513,6 +518,12 @@ error_halt:
  jmp error_halt
  
 print:
+ ;move cursor
+ mov ah, 0x2
+ ;dx is already set
+ int 10h
+
+ .after_cursor_is_moved:
  mov al, byte [si]
  cmp al, 0
  je .done
@@ -521,7 +532,7 @@ print:
  mov bh, 0
  int 10h
  inc si
- jmp print
+ jmp .after_cursor_is_moved
  
  .done:
  ret
@@ -560,7 +571,7 @@ print_var:
  mov si, print_var_str
  
  .print:
- call print
+ call print.after_cursor_is_moved
  
  ret
 
@@ -611,8 +622,10 @@ print_hex:
  selected_graphic_mode dw 0x118
  graphic_mode dw 0x118
  vesa_mode_number dw 0
+ vesa_16_mode_number dw 0
  vesa_24_mode_number dw 0
  vesa_32_mode_number dw 0
+ vesa_last_16_mode_x dw 0
  vesa_last_24_mode_x dw 0
  vesa_last_32_mode_x dw 0
  edid_best_x dw 0
@@ -630,10 +643,7 @@ load_bleskos:
  mov cx, 2000
  int 10h
  
- mov ah, 0x2
  mov dx, 0x0101
- int 10h
-
  mov si, boot_loading_str
  call print
 

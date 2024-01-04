@@ -14,13 +14,14 @@ void initalize_network_cards(void) {
  ethernet_timer_monitoring_of_line_status = STATUS_FALSE;
  ethernet_selected_card = 0xFF;
 
+ log("\n");
  if(ethernet_cards_pointer==0) {
-  log("\nno ethernet card founded\n");
+  log("no ethernet card founded\n");
   return;
  }
  else if(ethernet_cards_pointer>1) {
   log_var_with_space(ethernet_cards_pointer);
-  log("\nethernet cards founded");
+  log("ethernet cards founded");
  }
  
  //initalize first card we have driver for
@@ -47,20 +48,28 @@ void initalize_network_card(byte_t card) {
  ethernet_selected_card = card;
 
  if(ethernet_cards[card].driver==NETWORK_DRIVER_ETHERNET_INTEL_E1000) {
-  log("intel e1000 driver\n");
+  log("\nintel e1000 driver");
   initalize_ethernet_card_intel_e1000();
+  network_send_packet = &ethernet_card_intel_e1000_send_packet;
+  ethernet_card_get_cable_status = &ethernet_card_intel_e1000_get_cable_status;
  }
  else if(ethernet_cards[card].driver==NETWORK_DRIVER_ETHERNET_AMD_PCNET) {
-  log("AMD PC-net driver\n");
+  log("\nAMD PC-net driver");
   initalize_ethernet_card_amd_pcnet();
+  network_send_packet = &ethernet_card_amd_pcnet_send_packet;
+  ethernet_card_get_cable_status = &ethernet_card_amd_pcnet_get_cable_status;
  }
  else if(ethernet_cards[card].driver==NETWORK_DRIVER_ETHERNET_REALTEK_8139) {
-  log("realtek 8139 driver\n");
+  log("\nrealtek 8139 driver");
   initalize_ethernet_card_realtek_8139();
+  network_send_packet = &ethernet_card_realtek_8139_send_packet;
+  ethernet_card_get_cable_status = &ethernet_card_realtek_8139_get_cable_status;
  }
  else if(ethernet_cards[card].driver==NETWORK_DRIVER_ETHERNET_REALTEK_8169) {
-  log("realtek 8169 driver\n");
+  log("\nrealtek 8169 driver");
   initalize_ethernet_card_realtek_8169();
+  network_send_packet = &ethernet_card_realtek_8169_send_packet;
+  ethernet_card_get_cable_status = &ethernet_card_realtek_8169_get_cable_status;
  }
 }
 
@@ -69,42 +78,16 @@ void initalize_network_stack(void) {
 }
 
 void read_ethernet_cable_status(void) {
-byte_t cable_previous_state = is_ethernet_cable_connected;
+ byte_t cable_previous_state = is_ethernet_cable_connected;
 
- if(ethernet_cards[ethernet_selected_card].driver==NETWORK_DRIVER_ETHERNET_INTEL_E1000) {
-  is_ethernet_cable_connected = ethernet_card_intel_e1000_get_cable_status();
- }
- else if(ethernet_cards[ethernet_selected_card].driver==NETWORK_DRIVER_ETHERNET_AMD_PCNET) {
-  is_ethernet_cable_connected = ethernet_card_amd_pcnet_get_cable_status();
- }
- else if(ethernet_cards[ethernet_selected_card].driver==NETWORK_DRIVER_ETHERNET_REALTEK_8139) {
-  is_ethernet_cable_connected = ethernet_card_realtek_8139_get_cable_status();
- }
- else if(ethernet_cards[ethernet_selected_card].driver==NETWORK_DRIVER_ETHERNET_REALTEK_8169) {
-  is_ethernet_cable_connected = ethernet_card_realtek_8169_get_cable_status();
- }
+ is_ethernet_cable_connected = (*ethernet_card_get_cable_status)();
 
  if(is_ethernet_cable_connected==STATUS_FALSE) {
   connected_to_network = STATUS_FALSE;
  }
 
  if(cable_previous_state!=is_ethernet_cable_connected) {
-  ethernet_link_state_change = 1;
- }
-}
-
-void network_send_packet(dword_t memory, dword_t length) {
- if(ethernet_cards[ethernet_selected_card].driver==NETWORK_DRIVER_ETHERNET_INTEL_E1000) {
-   ethernet_card_intel_e1000_send_packet(memory, length);
- }
- else if(ethernet_cards[ethernet_selected_card].driver==NETWORK_DRIVER_ETHERNET_AMD_PCNET) {
-   ethernet_card_amd_pcnet_send_packet(memory, length);
- }
- else if(ethernet_cards[ethernet_selected_card].driver==NETWORK_DRIVER_ETHERNET_REALTEK_8139) {
-   ethernet_card_realtek_8139_send_packet(memory, length);
- }
- else if(ethernet_cards[ethernet_selected_card].driver==NETWORK_DRIVER_ETHERNET_REALTEK_8169) {
-   ethernet_card_realtek_8169_send_packet(memory, length);
+  ethernet_link_state_change = STATUS_TRUE;
  }
 }
 

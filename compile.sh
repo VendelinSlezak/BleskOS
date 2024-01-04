@@ -12,3 +12,5 @@ dd if=/dev/zero of=bleskos.img bs=1024 count=1440
 dd if=compile/bootloader.bin of=bleskos.img conv=notrunc seek=0
 dd if=compile/bleskos.bin of=bleskos.img conv=notrunc seek=5
 echo "Done"
+
+#qemu-system-i386 -hda bleskos.img

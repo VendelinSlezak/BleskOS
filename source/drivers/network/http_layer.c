@@ -78,7 +78,7 @@ void send_http_get(byte_t *url, dword_t ip, word_t source_port) {
  
  calculate_tcp_checksum(packet_memory, TCP_LAYER_LENGTH + http_get_length);
  
- network_send_packet(packet_memory, (ETHERNET_LAYER_LENGTH + IP_LAYER_LENGTH + TCP_LAYER_LENGTH + http_get_length));
+ (*network_send_packet)(packet_memory, (ETHERNET_LAYER_LENGTH + IP_LAYER_LENGTH + TCP_LAYER_LENGTH + http_get_length));
 }
 
 void process_http_reply(dword_t memory, dword_t end_of_memory) {

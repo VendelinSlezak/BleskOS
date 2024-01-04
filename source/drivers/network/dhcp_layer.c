@@ -121,7 +121,7 @@ void send_dhcp_discover(void) {
  create_dhcp_discover_layer(packet_memory);
  calculate_udp_checksum(packet_memory, (UDP_LAYER_LENGTH + DHCP_DISCOVER_LAYER_LENGTH));
  
- network_send_packet(packet_memory, (ETHERNET_LAYER_LENGTH + IP_LAYER_LENGTH + UDP_LAYER_LENGTH + DHCP_DISCOVER_LAYER_LENGTH));
+ (*network_send_packet)(packet_memory, (ETHERNET_LAYER_LENGTH + IP_LAYER_LENGTH + UDP_LAYER_LENGTH + DHCP_DISCOVER_LAYER_LENGTH));
 }
 
 void send_dhcp_request(void) {
@@ -135,7 +135,7 @@ void send_dhcp_request(void) {
  create_dhcp_request_layer(packet_memory);
  calculate_udp_checksum(packet_memory, (UDP_LAYER_LENGTH + DHCP_REQUEST_LAYER_LENGTH));
  
- network_send_packet(packet_memory, (ETHERNET_LAYER_LENGTH + IP_LAYER_LENGTH + UDP_LAYER_LENGTH + DHCP_REQUEST_LAYER_LENGTH));
+ (*network_send_packet)(packet_memory, (ETHERNET_LAYER_LENGTH + IP_LAYER_LENGTH + UDP_LAYER_LENGTH + DHCP_REQUEST_LAYER_LENGTH));
 }
 
 void process_dhcp_packet(dword_t memory) {

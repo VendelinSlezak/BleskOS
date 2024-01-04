@@ -73,7 +73,7 @@ void send_tcp_handshake(dword_t ip, word_t source_port) {
  create_tcp_layer(packet_memory, source_port, 0, 0, (1 << 1)); //SYN flag
  calculate_tcp_checksum(packet_memory, TCP_LAYER_LENGTH);
  
- network_send_packet(packet_memory, (ETHERNET_LAYER_LENGTH + IP_LAYER_LENGTH + TCP_LAYER_LENGTH));
+ (*network_send_packet)(packet_memory, (ETHERNET_LAYER_LENGTH + IP_LAYER_LENGTH + TCP_LAYER_LENGTH));
 }
 
 void send_tcp_acknowledge(dword_t ip, word_t source_port, dword_t sequence_number, dword_t acknowledge_number) {
@@ -86,7 +86,7 @@ void send_tcp_acknowledge(dword_t ip, word_t source_port, dword_t sequence_numbe
  create_tcp_layer(packet_memory, source_port, sequence_number, acknowledge_number, (1 << 4)); //ACK flag
  calculate_tcp_checksum(packet_memory, TCP_LAYER_LENGTH);
  
- network_send_packet(packet_memory, (ETHERNET_LAYER_LENGTH + IP_LAYER_LENGTH + TCP_LAYER_LENGTH));
+ (*network_send_packet)(packet_memory, (ETHERNET_LAYER_LENGTH + IP_LAYER_LENGTH + TCP_LAYER_LENGTH));
 }
 
 void send_tcp_finalize(dword_t ip, word_t source_port, dword_t sequence_number, dword_t acknowledge_number) {
@@ -99,7 +99,7 @@ void send_tcp_finalize(dword_t ip, word_t source_port, dword_t sequence_number, 
  create_tcp_layer(packet_memory, source_port, sequence_number, acknowledge_number, (1 << 0)); //FIN and ACK flag
  calculate_tcp_checksum(packet_memory, TCP_LAYER_LENGTH);
  
- network_send_packet(packet_memory, (ETHERNET_LAYER_LENGTH + IP_LAYER_LENGTH + TCP_LAYER_LENGTH));
+ (*network_send_packet)(packet_memory, (ETHERNET_LAYER_LENGTH + IP_LAYER_LENGTH + TCP_LAYER_LENGTH));
 }
 
 void send_tcp_reset(dword_t ip, word_t source_port, dword_t sequence_number, dword_t acknowledge_number) {
@@ -112,5 +112,5 @@ void send_tcp_reset(dword_t ip, word_t source_port, dword_t sequence_number, dwo
  create_tcp_layer(packet_memory, source_port, sequence_number, acknowledge_number, (1 << 2)); //RST flag
  calculate_tcp_checksum(packet_memory, TCP_LAYER_LENGTH);
  
- network_send_packet(packet_memory, (ETHERNET_LAYER_LENGTH + IP_LAYER_LENGTH + TCP_LAYER_LENGTH));
+ (*network_send_packet)(packet_memory, (ETHERNET_LAYER_LENGTH + IP_LAYER_LENGTH + TCP_LAYER_LENGTH));
 }
