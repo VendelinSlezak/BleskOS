@@ -10,3 +10,4 @@
 
 #include "sound.c"
 #include "wav.c"
+#include "cdda.c"

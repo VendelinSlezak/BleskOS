@@ -21,7 +21,9 @@
 #define STORAGE_FAT 2
 #define STORAGE_EXT 3
 #define STORAGE_ISO9660 4
-#define STORAGE_UNKNOWN_FILESYSTEM 5
+#define STORAGE_CDDA 5
+#define STORAGE_BLESKOS_BOOTABLE 6
+#define STORAGE_UNKNOWN_FILESYSTEM 7
 struct partition {
  byte_t type;
  dword_t first_sector;
@@ -35,17 +37,33 @@ byte_t storage_medium, storage_medium_number, save_value_storage_medium, save_va
 byte_t one_sector[2048];
 byte_t mbr_sector[512];
 byte_t ebr_sector[512];
+// dword_t optical_disk_table_of_content[128];
 byte_t partition_label[12];
 byte_t file_extension[10];
 dword_t file_work_done_percents, file_show_file_work_progress;
 dword_t hard_disk_size;
 
+struct table_of_content_entry {
+ word_t unknown;
+ word_t number;
+ dword_t first_sector;
+};
+struct table_of_content {
+ word_t length;
+ byte_t first_track;
+ byte_t last_track;
+ struct table_of_content_entry track[32];
+};
+struct table_of_content optical_disk_table_of_content;
+
 byte_t if_storage_medium_exist(byte_t type_of_medium, byte_t medium_number);
 void select_storage_medium(byte_t type_of_medium, byte_t medium_number);
 byte_t read_storage_medium(dword_t sector, byte_t num_of_sectors, dword_t memory);
+byte_t read_audio_cd(dword_t sector, dword_t num_of_sectors, dword_t memory);
 byte_t write_storage_medium(dword_t sector, byte_t num_of_sectors, dword_t memory);
 byte_t detect_optical_disk(void);
 void eject_optical_disk(void);
+byte_t read_optical_disk_toc(void);
 void read_partition_info(void);
 void select_partition(byte_t partition_number);
 byte_t is_filesystem_read_write(byte_t filesystem_type);
