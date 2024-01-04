@@ -54,5 +54,9 @@ void initalize_network_cards(void);
 void initalize_network_card(byte_t card);
 void initalize_network_stack(void);
 void read_ethernet_cable_status(void);
-void network_send_packet(dword_t memory, dword_t length);
 void network_process_packet(dword_t memory, byte_t is_last_packet);
+void connect_to_network(void);
+void connect_to_network_with_message(void);
+
+byte_t (*ethernet_card_get_cable_status)(void);
+void (*network_send_packet)(dword_t memory, dword_t length);

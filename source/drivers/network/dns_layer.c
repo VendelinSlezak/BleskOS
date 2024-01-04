@@ -61,7 +61,7 @@ void send_dns_query(byte_t *url) {
  
  calculate_udp_checksum(packet_memory, (UDP_LAYER_LENGTH + DNS_BASIC_LAYER_LENGTH + dns_variabile_length));
  
- network_send_packet(packet_memory, (ETHERNET_LAYER_LENGTH + IP_LAYER_LENGTH + UDP_LAYER_LENGTH + DNS_BASIC_LAYER_LENGTH + dns_variabile_length));
+ (*network_send_packet)(packet_memory, (ETHERNET_LAYER_LENGTH + IP_LAYER_LENGTH + UDP_LAYER_LENGTH + DNS_BASIC_LAYER_LENGTH + dns_variabile_length));
 }
 
 void process_dns_reply(dword_t memory) {

@@ -52,7 +52,7 @@ void process_arp_request(dword_t memory) {
  packet32 = (dword_t *) (packet_memory+38);
  *packet32 = request_packet32[7];
  
- network_send_packet(packet_memory, (ETHERNET_LAYER_LENGTH + ARP_REPLY_LAYER_LENGTH + 18));
+ (*network_send_packet)(packet_memory, (ETHERNET_LAYER_LENGTH + ARP_REPLY_LAYER_LENGTH + 18));
 }
 
 void send_arp_request(dword_t ip) {
@@ -98,5 +98,5 @@ void send_arp_request(dword_t ip) {
  packet32 = (dword_t *) (packet_memory+38);
  *packet32 = ip;
  
- network_send_packet(packet_memory, (ETHERNET_LAYER_LENGTH + ARP_REPLY_LAYER_LENGTH + 18));
+ (*network_send_packet)(packet_memory, (ETHERNET_LAYER_LENGTH + ARP_REPLY_LAYER_LENGTH + 18));
 }
