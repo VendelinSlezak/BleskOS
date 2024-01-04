@@ -97,4 +97,4 @@ You are welcome 🙂
 - Give us a star
 - Watch repository to be notified about updates
 - If you will find some bugs, report them in [Issues](https://github.com/VendelinSlezak/BleskOS/issues)
-- Try BleskOS on some real computer and let us know how it worked in [Discussions](https://github.com/VendelinSlezak/BleskOS/discussions) We would greatly appreciate if you would also add content of System log(Main window>[F1] Developer zone>[L] System log>[F2] Backup the log). It helps us to improve BleskOS. Thank you!
+- Try BleskOS on some real computer and let us know how it worked in [Discussions](https://github.com/VendelinSlezak/BleskOS/discussions) We would greatly appreciate if you would also add content of System log (Main window>[F1] System board>[L] System log>[F2] Backup the log). It helps us to improve BleskOS. Thank you!
