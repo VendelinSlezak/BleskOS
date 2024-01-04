@@ -146,6 +146,7 @@ void bleskos(void) {
  bleskos_redraw_starting_screen("Starting Graphic User Interface...", 100);
  log("\nEND OF BOOTING\n");
 
+ //move cursor to middle of screen and start Main Window
  mouse_cursor_x = graphic_screen_x_center;
  mouse_cursor_y = graphic_screen_y_center;
  bleskos_main_window();
