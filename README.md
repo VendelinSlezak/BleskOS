@@ -10,7 +10,7 @@ Here is info about most important improvements in several last updates.
 
 **Update 2**
 - VBE can use also 16 bpp graphic modes
-- Optimalization of redrawing code and code of mouse cursor
+- Optimalization of redrawing screen and mouse cursor
 - Optimalization of calling network functions
 
 **Version 2024 Update 1**
