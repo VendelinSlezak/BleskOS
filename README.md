@@ -8,6 +8,10 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 3**
+- Driver for Audio CD filesystem
+- Support for CDDA audio files
+
 **Update 2**
 - VBE can use also 16 bpp graphic modes
 - Optimalization of redrawing screen and mouse cursor
@@ -63,7 +67,7 @@ Drivers
 - Graphic: VBE
 - Sound: AC97, Intel HD Audio
 - Inbuilt hardware: PS/2 keyboard, PS/2 mouse, PATA hard disk, PATAPI optical disk drive, AHCI hard disk, AHCI optical disk drive
-- Filesystems: FAT12/16/32, ext2 (read-only), ISO9660 (read-only)
+- Filesystems: FAT12/16/32, ext2 (read-only), ISO9660 (read-only), CDDA (read-only)
 - USB controllers: UHCI, OHCI, EHCI
 - USB devices: USB mouse, USB keyboard, USB mass storage device, USB hub
 - Ethernet cards: Realtek 8139/8169, Intel e1000(e), AMD PC-net
@@ -83,7 +87,7 @@ Supported file formats
 
 - TXT and all UTF-8 encoded text files
 - PNG, GIF, BMP
-- WAV
+- WAV, CDDA
 - HTML
 
 ## I like this project, can I help you?
