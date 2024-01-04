@@ -8,6 +8,11 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 2**
+- VBE can use also 16 bpp graphic modes
+- Optimalization of redrawing screen and mouse cursor
+- Optimalization of calling network functions
+
 **Version 2024 Update 1**
 - Optimalized code of mouse cursor
 - Update of source code license to year 2024
@@ -18,11 +23,6 @@ Here is info about most important improvements in several last updates.
 **Update 15**
 - Fixed recognizing of FAT16 filesystem
 - Improvement of HDA driver
-
-**Update 14**
-- Much more types of WAV files could be played
-- Further important improvements of HDA driver
-- In File Dialog you can change between devices by Page Up and Page Down
 
 ## How to try BleskOS
 
