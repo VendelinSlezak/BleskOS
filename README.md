@@ -2,7 +2,7 @@
 
 BleskOS is 32-bit operating system written from scratch. One of main features is alternative graphic user interface that do not use windows, as classic operating systems do, but switches between programs on full screen. BleskOS is designed for older computers. Operating systems of today have very high hardware requirements that make computers even 10 years old completely unusable. Goal of BleskOS is to provide system, that could be installed on such computers and make them usable again.
 
-![Snímka obrazovky_2023-12-18_16-44-32](https://github.com/VendelinSlezak/BleskOS/assets/43180618/2c78c6dc-bee3-4a4e-a9bc-2ce52179fb3d)
+![Snímka obrazovky_2024-01-06_19-40-08](https://github.com/VendelinSlezak/BleskOS/assets/43180618/193a474b-e4f8-4b06-a600-bc3a2a610a7e)
 
 ## What is new
 
