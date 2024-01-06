@@ -8,6 +8,9 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 5**
+- Tool for making screenshots
+
 **Update 4**
 - Media Viewer can save sound files as WAV
 - Improved reading from Audio CD
@@ -23,10 +26,6 @@ Here is info about most important improvements in several last updates.
 - VBE can use also 16 bpp graphic modes
 - Optimalization of redrawing screen and mouse cursor
 - Optimalization of calling network functions
-
-**Version 2024 Update 1**
-- Optimalized code of mouse cursor
-- Update of source code license to year 2024
 
 ## How to try BleskOS
 
