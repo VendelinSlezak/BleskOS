@@ -11,4 +11,5 @@
 byte_t is_optical_disk_cdda(void);
 void select_cdda_partition(void);
 dword_t cdda_read_file(dword_t sector, dword_t length_of_file_in_bytes);
+dword_t cdda_read_file_skipping_errors(dword_t sector, dword_t length_of_file_in_bytes);
 dword_t cdda_read_root_folder(void);

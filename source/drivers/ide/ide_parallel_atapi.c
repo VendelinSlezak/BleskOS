@@ -203,7 +203,7 @@ byte_t patapi_read_audio_cd_toc(word_t base_port, word_t alt_base_port, dword_t 
  return STATUS_GOOD;
 }
 
-byte_t patapi_read_audio_cd_sector(word_t base_port, dword_t sector, dword_t memory) {
+byte_t patapi_read_audio_cd_sector(word_t base_port, dword_t sector, byte_t number_of_sectors, dword_t memory) {
  word_t *mem = (word_t *) memory;
  word_t value;
 
@@ -211,7 +211,7 @@ byte_t patapi_read_audio_cd_sector(word_t base_port, dword_t sector, dword_t mem
  ide_clear_device_output(base_port);
  
  //send packet command
- if(patapi_send_packet_command(base_port, 2352)==STATUS_ERROR) {
+ if(patapi_send_packet_command(base_port, (number_of_sectors*2352))==STATUS_ERROR) {
   return STATUS_ERROR;
  }
  
@@ -222,7 +222,7 @@ byte_t patapi_read_audio_cd_sector(word_t base_port, dword_t sector, dword_t mem
  value = (word_t)sector;
  outw(base_port + 0, BIG_ENDIAN(value));
  outw(base_port + 0, 0);
- outw(base_port + 0, 0x1001); //one sector and we are reading User Data - 0x10
+ outw(base_port + 0, (0x1000 | number_of_sectors)); //number of sectors and we are reading User Data - 0x10
  outw(base_port + 0, 0);
  
  //wait max 6 seconds
@@ -231,7 +231,7 @@ byte_t patapi_read_audio_cd_sector(word_t base_port, dword_t sector, dword_t mem
  }
  
  //read data
- for(int i=0; i<1176; i++) {
+ for(int i=0; i<(number_of_sectors*1176); i++) {
   *mem = inw(base_port + 0);
   mem++;
  }

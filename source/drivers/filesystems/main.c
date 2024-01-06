@@ -115,12 +115,7 @@ byte_t read_storage_medium(dword_t sector, byte_t num_of_sectors, dword_t memory
 byte_t read_audio_cd(dword_t sector, dword_t num_of_sectors, dword_t memory) {
  if(storage_medium==MEDIUM_CDROM) {
   if(ide_cdrom_base!=0) { //CDROM is connected to IDE port
-   for(int i=0; i<num_of_sectors; i++, sector++, memory+=2352) {
-    if(patapi_read_audio_cd_sector(ide_cdrom_base, sector, memory)==STATUS_ERROR) {
-     return STATUS_ERROR;
-    }
-   }
-   return STATUS_GOOD;
+   return patapi_read_audio_cd_sector(ide_cdrom_base, sector, num_of_sectors, memory);
   }
  }
 }
@@ -279,8 +274,16 @@ void read_partition_info(void) {
   if(detect_optical_disk()==STATUS_FALSE) {
    return;
   }
+  if(read_optical_disk_toc()==STATUS_FALSE) {
+   return;
+  }
 
-  if(is_partition_iso9660(0)==STATUS_TRUE) {
+  if(optical_disk_table_of_content.first_track==0) {
+   partitions[0].type = STORAGE_FREE_SPACE;
+   partitions[0].first_sector = 0;
+   partitions[0].num_of_sectors = optical_disk_size;
+  }
+  else if(is_partition_iso9660(0)==STATUS_TRUE) {
    partitions[0].type = STORAGE_ISO9660;
    partitions[0].first_sector = 0;
    partitions[0].num_of_sectors = optical_disk_size;

@@ -148,9 +148,21 @@ word_t get_unicode_char_with_diacritic(word_t value, word_t diacritic) {
 }
 
 dword_t get_number_of_chars_in_ascii_string(byte_t *string) {
- for(dword_t i=0; i<1000; i++) {
+ for(dword_t i=0; i<100000; i++) {
   if(string[i]==0) {
    return i;
   }
  }
+
+ return STATUS_ERROR;
+}
+
+dword_t get_number_of_chars_in_unicode_string(word_t *string) {
+ for(dword_t i=0; i<100000; i++) {
+  if(string[i]==0) {
+   return i;
+  }
+ }
+
+ return STATUS_ERROR;
 }

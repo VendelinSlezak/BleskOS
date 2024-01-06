@@ -26,82 +26,51 @@ void system_board_redraw(void) {
  draw_full_square(10, 30+system_board_selected_item*30, 200, 20, WHITE);
 
  //read available items
- for(dword_t i=0; i<100; i++) {
-  system_board_items_list[i]=0;
- }
+ clear_memory((dword_t)(&system_board_items_list), 100);
+ system_board_draw_line = 36;
  system_board_items_list[0]=SYSTEM_BOARD_MEMORY;
+ system_board_print_hardware_item("Memory");
  system_board_items_list[1]=SYSTEM_BOARD_PCI;
+ system_board_print_hardware_item("PCI");
  system_board_items_list[2]=SYSTEM_BOARD_PC_SPEAKER;
+ system_board_print_hardware_item("PC speaker");
  system_board_items_list[3]=SYSTEM_BOARD_GRAPHIC;
+ system_board_print_hardware_item("Graphic");
  system_board_num_of_items = 4;
  if(rsdt_mem!=0) {
   system_board_items_list[system_board_num_of_items]=SYSTEM_BOARD_ACPI;
+  system_board_print_hardware_item("ACPI tables");
   system_board_num_of_items++;
  }
  if(hpet_base!=0) {
   system_board_items_list[system_board_num_of_items]=SYSTEM_BOARD_HPET_TIMER;
+  system_board_print_hardware_item("HPET timer");
   system_board_num_of_items++;
  }
  if(ps2_controller_present==DEVICE_PRESENT) {
   system_board_items_list[system_board_num_of_items]=SYSTEM_BOARD_PS2_CONTROLLER;
+  system_board_print_hardware_item("PS/2 controller");
   system_board_num_of_items++;
  }
  if(ide_hdd_base!=0) {
   system_board_items_list[system_board_num_of_items]=SYSTEM_BOARD_IDE_HDD;
+  system_board_print_hardware_item("IDE hard disk");
   system_board_num_of_items++;
  }
  if(ide_cdrom_base!=0) {
   system_board_items_list[system_board_num_of_items]=SYSTEM_BOARD_IDE_CDROM;
+  system_board_print_hardware_item("IDE optical disk");
   system_board_num_of_items++;
  }
  if(ahci_hdd_base!=0) {
   system_board_items_list[system_board_num_of_items]=SYSTEM_BOARD_AHCI_HDD;
+  system_board_print_hardware_item("AHCI hard disk");
   system_board_num_of_items++;
  }
  if(ahci_cdrom_base!=0) {
   system_board_items_list[system_board_num_of_items]=SYSTEM_BOARD_AHCI_CDROM;
+  system_board_print_hardware_item("AHCI optical disk drive");
   system_board_num_of_items++;
- }
-
- //draw items
- system_board_draw_line = 36;
- for(dword_t i=0; i<100; i++) {
-  if(system_board_items_list[i]==0) {
-   break;
-  }
-  else if(system_board_items_list[i]==SYSTEM_BOARD_MEMORY) {
-   system_board_print_hardware_item("Memory");
-  }
-  else if(system_board_items_list[i]==SYSTEM_BOARD_PCI) {
-   system_board_print_hardware_item("PCI");
-  }
-  else if(system_board_items_list[i]==SYSTEM_BOARD_PC_SPEAKER) {
-   system_board_print_hardware_item("PC speaker");
-  }
-  else if(system_board_items_list[i]==SYSTEM_BOARD_GRAPHIC) {
-   system_board_print_hardware_item("Graphic");
-  }
-  else if(system_board_items_list[i]==SYSTEM_BOARD_ACPI) {
-   system_board_print_hardware_item("ACPI tables");
-  }
-  else if(system_board_items_list[i]==SYSTEM_BOARD_HPET_TIMER) {
-   system_board_print_hardware_item("HPET timer");
-  }
-  else if(system_board_items_list[i]==SYSTEM_BOARD_PS2_CONTROLLER) {
-   system_board_print_hardware_item("PS/2 controller");
-  }
-  else if(system_board_items_list[i]==SYSTEM_BOARD_IDE_HDD) {
-   system_board_print_hardware_item("IDE hard disk");
-  }
-  else if(system_board_items_list[i]==SYSTEM_BOARD_IDE_CDROM) {
-   system_board_print_hardware_item("IDE optical disk");
-  }
-  else if(system_board_items_list[i]==SYSTEM_BOARD_AHCI_HDD) {
-   system_board_print_hardware_item("AHCI hard disk");
-  }
-  else if(system_board_items_list[i]==SYSTEM_BOARD_AHCI_CDROM) {
-   system_board_print_hardware_item("AHCI optical disk drive");
-  }
  }
 
  //draw item specific things
@@ -444,11 +413,11 @@ void system_board(void) {
 
   //hardware specific things
   if(system_board_items_list[system_board_selected_item]==SYSTEM_BOARD_MEMORY) {
-   if(keyboard_value==KEY_LEFT && system_item_variabile>0) {
+   if((keyboard_value==KEY_LEFT || (mouse_wheel!=0 && mouse_wheel<0x80000000)) && system_item_variabile>0) {
     system_item_variabile--;
     goto redraw;
    }
-   else if(keyboard_value==KEY_RIGHT && system_item_variabile<0xFFFF) {
+   else if((keyboard_value==KEY_RIGHT || (mouse_wheel!=0 && mouse_wheel>0x80000000)) && system_item_variabile<0xFFFF) {
     system_item_variabile++;
     goto redraw;
    }
@@ -476,56 +445,10 @@ void system_board(void) {
     print("Device type:", graphic_screen_x_center, 90, BLACK);
     print_hex(pci_read(pci_device[0], pci_device[1], pci_device[2], 0x08), graphic_screen_x_center+14*8, 90, BLACK);
     print("Class:", graphic_screen_x_center, 110, BLACK);
-    if((pci_read(pci_device[0], pci_device[1], pci_device[2], 0x08)>>24)==0) {
-     print("Unclassified", graphic_screen_x_center+7*8, 110, BLACK);
-    }
-    else if((pci_read(pci_device[0], pci_device[1], pci_device[2], 0x08)>>24)==1) {
-     print("Mass Storage Controller", graphic_screen_x_center+7*8, 110, BLACK);
-    }
-    else if((pci_read(pci_device[0], pci_device[1], pci_device[2], 0x08)>>24)==2) {
-     print("Network Controller", graphic_screen_x_center+7*8, 110, BLACK);
-    }
-    else if((pci_read(pci_device[0], pci_device[1], pci_device[2], 0x08)>>24)==3) {
-     print("Display Controller", graphic_screen_x_center+7*8, 110, BLACK);
-    }
-    else if((pci_read(pci_device[0], pci_device[1], pci_device[2], 0x08)>>24)==4) {
-     print("Multimedia Controller", graphic_screen_x_center+7*8, 110, BLACK);
-    }
-    else if((pci_read(pci_device[0], pci_device[1], pci_device[2], 0x08)>>24)==5) {
-     print("Memory Controller", graphic_screen_x_center+7*8, 110, BLACK);
-    }
-    else if((pci_read(pci_device[0], pci_device[1], pci_device[2], 0x08)>>24)==6) {
-     print("Bridge", graphic_screen_x_center+7*8, 110, BLACK);
-    }
-    else if((pci_read(pci_device[0], pci_device[1], pci_device[2], 0x08)>>24)==7) {
-     print("Simple Communication Controller", graphic_screen_x_center+7*8, 110, BLACK);
-    }
-    else if((pci_read(pci_device[0], pci_device[1], pci_device[2], 0x08)>>24)==8) {
-     print("Base System Pheriphal", graphic_screen_x_center+7*8, 110, BLACK);
-    }
-    else if((pci_read(pci_device[0], pci_device[1], pci_device[2], 0x08)>>24)==9) {
-     print("Input Device Controller", graphic_screen_x_center+7*8, 110, BLACK);
-    }
-    else if((pci_read(pci_device[0], pci_device[1], pci_device[2], 0x08)>>24)==10) {
-     print("Docking Station", graphic_screen_x_center+7*8, 110, BLACK);
-    }
-    else if((pci_read(pci_device[0], pci_device[1], pci_device[2], 0x08)>>24)==11) {
-     print("Processor", graphic_screen_x_center+7*8, 110, BLACK);
-    }
-    else if((pci_read(pci_device[0], pci_device[1], pci_device[2], 0x08)>>24)==12) {
-     print("Serial Bus Controller", graphic_screen_x_center+7*8, 110, BLACK);
-    }
-    else if((pci_read(pci_device[0], pci_device[1], pci_device[2], 0x08)>>24)==13) {
-     print("SWireless Controller", graphic_screen_x_center+7*8, 110, BLACK);
-    }
-    else if((pci_read(pci_device[0], pci_device[1], pci_device[2], 0x08)>>24)==14) {
-     print("Intelligent Controller", graphic_screen_x_center+7*8, 110, BLACK);
-    }
-    else if((pci_read(pci_device[0], pci_device[1], pci_device[2], 0x08)>>24)==15) {
-     print("Satellite Communication Controller", graphic_screen_x_center+7*8, 110, BLACK);
-    }
-    else if((pci_read(pci_device[0], pci_device[1], pci_device[2], 0x08)>>24)==16) {
-     print("Encryption Controller", graphic_screen_x_center+7*8, 110, BLACK);
+    extern dword_t pci_class_type_string_array[16];
+    dword_t class_number = (pci_read(pci_device[0], pci_device[1], pci_device[2], 0x08)>>24);
+    if(class_number<=0xF) {
+     print((byte_t *)(pci_class_type_string_array[class_number]), graphic_screen_x_center+7*8, 110, BLACK);
     }
     else {
      print("Other", graphic_screen_x_center+7*8, 110, BLACK);
@@ -549,18 +472,19 @@ void system_board(void) {
     
     while(1) {
      wait_for_user_input();
+     move_mouse_cursor();
 
-     if(keyboard_value==KEY_SPACE || keyboard_value==KEY_LEFT || keyboard_value==KEY_RIGHT) {
+     if(keyboard_value==KEY_SPACE || keyboard_value==KEY_LEFT || keyboard_value==KEY_RIGHT || mouse_drag_and_drop==MOUSE_CLICK) {
       goto redraw;
      }
     }
    }
 
-   if(keyboard_value==KEY_LEFT && system_item_variabile>0) {
+   if(((mouse_wheel!=0 && mouse_wheel<0x80000000) || keyboard_value==KEY_LEFT) && system_item_variabile>0) {
     system_item_variabile--;
     goto redraw;
    }
-   else if(keyboard_value==KEY_RIGHT && system_item_variabile<(pci_num_of_devices-1)) {
+   else if(((mouse_wheel!=0 && mouse_wheel>0x80000000) || keyboard_value==KEY_RIGHT) && system_item_variabile<(pci_num_of_devices-1)) {
     system_item_variabile++;
     goto redraw;
    }

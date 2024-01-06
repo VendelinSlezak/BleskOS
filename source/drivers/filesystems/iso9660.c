@@ -71,21 +71,12 @@ dword_t iso9660_read_file(dword_t sector, dword_t length_of_file_in_bytes) {
  if(file_mem==0) {
   return STATUS_ERROR;
  }
-
- //set good value for balance between performance and informing user about progress
- byte_t how_many_sectors_read_at_once = 0;
- if(file_sectors<512) {
-  how_many_sectors_read_at_once = 64;
- }
- else {
-  how_many_sectors_read_at_once = 255;
- }
  
  //read file
  dword_t write_file_mem = file_mem, readed_sectors = 0, number_of_file_sectors = file_sectors;
  while(file_sectors>0) {
-  if(file_sectors>how_many_sectors_read_at_once) {
-   if(read_storage_medium(sector, how_many_sectors_read_at_once, write_file_mem)==STATUS_ERROR) {
+  if(file_sectors>32) {
+   if(read_storage_medium(sector, 32, write_file_mem)==STATUS_ERROR) {
     free(file_mem);
     return STATUS_ERROR;
    }
@@ -96,10 +87,10 @@ dword_t iso9660_read_file(dword_t sector, dword_t length_of_file_in_bytes) {
     }
    }
   
-   sector+=how_many_sectors_read_at_once;
-   readed_sectors+=how_many_sectors_read_at_once;
-   file_sectors-=how_many_sectors_read_at_once;
-   write_file_mem += (2048*how_many_sectors_read_at_once);
+   sector+=32;
+   readed_sectors+=32;
+   file_sectors-=32;
+   write_file_mem += (2048*32);
   }
   else {
    if(read_storage_medium(sector, file_sectors, write_file_mem)==STATUS_ERROR) {
