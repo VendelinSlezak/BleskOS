@@ -8,6 +8,13 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 4**
+- Media Viewer can save sound files as WAV
+- Improved reading from Audio CD
+- Option to read as much as possible from Audio CD track
+- Now you can use BleskOS to save data from Audio CDs
+- Multiple minor fixes and improvements
+
 **Update 3**
 - Driver for Audio CD filesystem
 - Support for CDDA audio files
@@ -20,13 +27,6 @@ Here is info about most important improvements in several last updates.
 **Version 2024 Update 1**
 - Optimalized code of mouse cursor
 - Update of source code license to year 2024
-
-**Update 16**
-- HDA driver completely rewritten into much better version
-
-**Update 15**
-- Fixed recognizing of FAT16 filesystem
-- Improvement of HDA driver
 
 ## How to try BleskOS
 
