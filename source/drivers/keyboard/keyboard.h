@@ -116,6 +116,7 @@
 #define KEY_KEYPAD_9 0x49
 
 #define KEY_POWER_BUTTON 0xE05E
+#define KEY_PRINT_SCREEN 0xE037
 
 #define RELEASED_KEY(key) (key+0x80)
 

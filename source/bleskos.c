@@ -40,6 +40,7 @@
 #include "programs/media_viewer/media_viewer.h"
 #include "programs/internet_browser/internet_browser.h"
 #include "programs/file_manager/file_manager.h"
+#include "programs/screenshooter/screenshooter.h"
 
 #include "drivers/system/include.c"
 #include "drivers/other/include.c"
@@ -72,11 +73,12 @@
 #include "programs/media_viewer/media_viewer.c"
 #include "programs/internet_browser/internet_browser.c"
 #include "programs/file_manager/file_manager.c"
+#include "programs/screenshooter/screenshooter.c"
 
 void bleskos(void) {
  initalize_memory();
  initalize_logging();
- log("BleskOS 2024 update 4\n\nPress F2 to save System log as TXT file\n\n");
+ log("BleskOS 2024 update 5\n\nPress F2 to save System log as TXT file\n\n");
  log_starting_memory();
  scan_pci();
  initalize_graphic();
@@ -86,7 +88,7 @@ void bleskos(void) {
  clear_screen(0x00C000);
  set_scalable_char_size(64);
  scalable_font_print("BleskOS", graphic_screen_x_center-(64*7/2), graphic_screen_y_center-92, BLACK);
- print_to_message_window("Version 2024 update 4", graphic_screen_y_center);
+ print_to_message_window("Version 2024 update 5", graphic_screen_y_center);
  draw_empty_square(graphic_screen_x_center-161, graphic_screen_y_center+30, 322, 15, BLACK);
  (*redraw_framebuffer)();
  
@@ -142,6 +144,7 @@ void bleskos(void) {
  initalize_media_viewer();
  initalize_internet_browser();
  initalize_file_manager();
+ initalize_screenshooter();
  
  bleskos_redraw_starting_screen("Starting Graphic User Interface...", 100);
  log("\nEND OF BOOTING\n");
