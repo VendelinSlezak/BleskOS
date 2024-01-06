@@ -354,40 +354,14 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
 }
 
 byte_t *get_pci_vendor_string(dword_t vendor_id) {
- if(vendor_id==VENDOR_INTEL) {
-  return "Intel";
- }
- else if(vendor_id==VENDOR_AMD_1 || vendor_id==VENDOR_AMD_2) {
-  return "AMD";
- }
- else if(vendor_id==VENDOR_BROADCOM) {
-  return "Broadcom";
- }
- else if(vendor_id==VENDOR_REALTEK) {
-  return "Realtek";
- }
- else if(vendor_id==VENDOR_QUALCOMM_ATHEROS_1 || vendor_id==VENDOR_QUALCOMM_ATHEROS_2) {
-  return "Qualcomm Atheros";
- }
- else if(vendor_id==VENDOR_NVIDIA) {
-  return "NVidia";
- }
- else if(vendor_id==VENDOR_TEXAS_INSTUMENTS) {
-  return "Texas Instruments";
- }
- else if(vendor_id==VENDOR_CONEXANT_SYSTEMS) {
-  return "Conexant Systems";
- }
- else if(vendor_id==VENDOR_SIGMATEL) {
-  return "SigmaTel";
- }
- else if(vendor_id==VENDOR_RED_HAT) {
-  return "Red Hat";
- }
- else if(vendor_id==0x1234) {
-  return "Emulator";
- }
- else {
-  return "";
+ extern dword_t pci_vendor_id_string_array[256];
+
+ for(dword_t i=0; i<256; i+=2) {
+  if(pci_vendor_id_string_array[i]==0) {
+   return ""; //this vendor id is not in list
+  }
+  else if(pci_vendor_id_string_array[i]==vendor_id) {
+   return (byte_t *)(pci_vendor_id_string_array[i+1]);
+  }
  }
 }

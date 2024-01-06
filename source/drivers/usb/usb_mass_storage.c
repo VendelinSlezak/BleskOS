@@ -14,8 +14,13 @@ void usb_mass_storage_initalize(byte_t device_number) {
  }
 
  if(usb_msd_send_inquiry_command(device_number)==STATUS_ERROR) {
-  log("\nUSB msd: Unable to read Inquiry command");
-  return;
+  usb_msd_recover_from_error(device_number);
+
+  //try again
+  if(usb_msd_send_inquiry_command(device_number)==STATUS_ERROR) {
+   log("\nUSB msd: Unable to read Inquiry command");
+   return;
+  }
  }
  if(usb_msd_send_capacity_command(device_number)==STATUS_ERROR) {
   usb_msd_recover_from_error(device_number);

@@ -307,8 +307,6 @@ void media_viewer_open_file(void) {
  }
  else if(is_loaded_file_extension("wav")==STATUS_TRUE || is_loaded_file_extension("cdda")==STATUS_TRUE) {
   //convert file
-  set_file_value(MEDIA_VIEWER_FILE_SOUND_ORIGINAL_FILE_MEMORY, new_file_mem);
-  set_file_value(MEDIA_VIEWER_FILE_SOUND_ORIGINAL_FILE_SIZE, file_dialog_file_size);
   if(is_loaded_file_extension("wav")==STATUS_TRUE) {
    set_file_value(MEDIA_VIEWER_FILE_SOUND_INFO_MEMORY, convert_wav_to_sound_data(new_file_mem, file_dialog_file_size));
    set_file_value(MEDIA_VIEWER_FILE_SOUND_ORIGINAL_FILE_TYPE, MEDIA_VIEWER_SOUND_WAV);
@@ -317,6 +315,7 @@ void media_viewer_open_file(void) {
    set_file_value(MEDIA_VIEWER_FILE_SOUND_INFO_MEMORY, convert_cdda_to_sound_data(new_file_mem, file_dialog_file_size));
    set_file_value(MEDIA_VIEWER_FILE_SOUND_ORIGINAL_FILE_TYPE, MEDIA_VIEWER_SOUND_CDDA);
   }
+  free(new_file_mem);
 
   //test errors
   dword_t *sound_info = (dword_t *) (get_file_value(MEDIA_VIEWER_FILE_SOUND_INFO_MEMORY));
@@ -370,14 +369,10 @@ void media_viewer_save_file(void) {
   free(converted_file_memory);
  }
  else if(get_file_value(MEDIA_VIEWER_FILE_TYPE)==MEDIA_VIEWER_FILE_SOUND) {
-  if(get_file_value(MEDIA_VIEWER_FILE_SOUND_ORIGINAL_FILE_TYPE)==MEDIA_VIEWER_SOUND_WAV) {
-   file_dialog_save_set_extension("wav");
-  }
-  else if(get_file_value(MEDIA_VIEWER_FILE_SOUND_ORIGINAL_FILE_TYPE)==MEDIA_VIEWER_SOUND_CDDA) {
-   file_dialog_save_set_extension("cdda");
-  }
-  
-  file_dialog_save(get_file_value(MEDIA_VIEWER_FILE_SOUND_ORIGINAL_FILE_MEMORY), get_file_value(MEDIA_VIEWER_FILE_SOUND_ORIGINAL_FILE_SIZE));
+  file_dialog_save_set_extension("wav");
+  convert_sound_data_to_wav(get_file_value(MEDIA_VIEWER_FILE_SOUND_INFO_MEMORY));
+  file_dialog_save(converted_file_memory, converted_file_size);
+  free(converted_file_memory);
  }
 }
 
@@ -389,7 +384,6 @@ void media_viewer_close_file(void) {
   delete_image(get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY));
  }
  else if(get_file_value(MEDIA_VIEWER_FILE_TYPE)==MEDIA_VIEWER_FILE_SOUND) {
-  free(get_file_value(MEDIA_VIEWER_FILE_SOUND_ORIGINAL_FILE_MEMORY));
   delete_sound(get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY));
   media_viewer_sound_state = MEDIA_VIEWER_SOUND_NO_FILE;
  }

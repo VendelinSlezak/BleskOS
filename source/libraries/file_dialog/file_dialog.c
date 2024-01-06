@@ -41,6 +41,11 @@ void redraw_file_dialog(byte_t dialog_type) {
  print("File dialog", 8, 6, BLACK);
  draw_full_square(0, graphic_screen_y-19, graphic_screen_x, 19, 0x00C000);
  draw_straigth_line(0, graphic_screen_y-20, graphic_screen_x);
+ if(dialog_type==FILE_DIALOG_TYPE_SAVE) {
+  dword_t number_of_chars_in_extension = get_number_of_chars_in_unicode_string(file_dialog_file_extension);
+  print("Save file with extension:", graphic_screen_x-8-(number_of_chars_in_extension*8)-8-(25*8), 6, BLACK);
+  print_unicode(file_dialog_file_extension, graphic_screen_x-8-(number_of_chars_in_extension*8), 6, BLACK);
+ }
 
  //draw "BACK" button
  print("[esc] Back", 8, graphic_screen_y-6-7, BLACK);
@@ -150,6 +155,11 @@ void redraw_file_dialog(byte_t dialog_type) {
   //draw selected file background
   if(file_dialog_folder_selected_entry!=NO_FILE_SELECTED && file_dialog_folder_selected_entry>=file_dialog_folder_first_showed_entry && file_dialog_folder_selected_entry<(file_dialog_folder_first_showed_entry+file_dialog_number_of_files_on_screen)) {
    draw_full_square(FILE_DIALOG_DEVICE_LIST_WIDTH+8, (PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+(file_dialog_folder_selected_entry-file_dialog_folder_first_showed_entry)*10), (graphic_screen_x-(FILE_DIALOG_DEVICE_LIST_WIDTH+8)-20), 10, RED);
+   
+   if(dialog_type==FILE_DIALOG_TYPE_OPEN && file_dialog_folder_device_partition_type==STORAGE_CDDA) {
+    set_program_value(PROGRAM_INTERFACE_BOTTOM_LINE_DRAW_COLUMN, 0);
+    draw_bottom_line_button("[F12] Read with skipping errors", FILE_DIALOG_CLICK_ZONE_BUTTON_READ_SKIPPING_ERRORS);
+   }
   }
 
   //print file entries
@@ -388,7 +398,7 @@ dword_t file_dialog_double_click_on_file(byte_t dialog_type, dword_t new_file_me
   if(get_file_attribute(file_dialog_folder_memory, file_dialog_folder_selected_entry)==0x10) { //folder
    if(file_dialog_folder_path_actual_folder_number>=FILE_DIALOG_MAX_PATH_FOLDERS) { //too many folders
     error_window("You can not open more than 50 folders");
-    redraw_file_dialog(dialog_type);
+    redraw_file_dialog((dialog_type & 0xF));
     return STATUS_ERROR;
    }
 
@@ -408,7 +418,7 @@ dword_t file_dialog_double_click_on_file(byte_t dialog_type, dword_t new_file_me
    dword_t folder_memory = read_folder(folder_starting_entry, folder_size);
    if(folder_memory==STATUS_ERROR) {
     error_window("Error during reading folder");
-    redraw_file_dialog(dialog_type);
+    redraw_file_dialog((dialog_type & 0xF));
     return STATUS_ERROR;
    }
 
@@ -430,11 +440,11 @@ dword_t file_dialog_double_click_on_file(byte_t dialog_type, dword_t new_file_me
    file_dialog_compute_number_of_files_in_directory();
    
    //show directory on screen
-   redraw_file_dialog(dialog_type);
+   redraw_file_dialog((dialog_type & 0xF));
    return FILE_DIALOG_FOLDER_WAS_LOADED;
   }
   else { //file
-   if(dialog_type==FILE_DIALOG_TYPE_OPEN) {
+   if(dialog_type==FILE_DIALOG_TYPE_OPEN || dialog_type==FILE_DIALOG_TYPE_OPEN_FILE_SKIPPING_ERRORS) {
     //check if this is file with allowed extension
     if(file_dialog_number_of_allowed_extensions!=0) { //0 = no extensions, open all files
      dword_t allowed_extension = STATUS_FALSE;
@@ -448,29 +458,61 @@ dword_t file_dialog_double_click_on_file(byte_t dialog_type, dword_t new_file_me
 
      if(allowed_extension==STATUS_FALSE) {
       error_window("This file type can not be opened in this program");
-      redraw_file_dialog(dialog_type);
+      redraw_file_dialog((dialog_type & 0xF));
       return STATUS_ERROR;
      }
     }
+
+    //test if there is enough free memory
+    dword_t file_size = get_file_size(file_dialog_folder_memory, file_dialog_folder_selected_entry);
+    if(all_actual_free_memory_in_bytes<1024*1024*8 || (all_actual_free_memory_in_bytes-(1024*1024*8))<file_size) { //we always leave at least 8 MB of free memory
+     error_window("There is not enough free memory, try to close some opened files");
+     redraw_file_dialog((dialog_type & 0xF));
+     return STATUS_ERROR;
+    }
+
+    //select medium
+    if(select_device_list_entry(file_dialog_folder_device_type, file_dialog_folder_device_number, file_dialog_folder_device_partition_type, file_dialog_folder_device_partition_first_sector)==STATUS_ERROR) {
+     if(file_dialog_folder_memory!=0) {
+      free(file_dialog_folder_memory);
+     }
+     file_dialog_print_message("Device is not inserted");
+     return STATUS_ERROR;
+    }
     
+    //read file
     file_dialog_print_message("Reading file...");
     dword_t file_starting_entry = get_file_starting_entry(file_dialog_folder_memory, file_dialog_folder_selected_entry);
-    dword_t file_size = get_file_size(file_dialog_folder_memory, file_dialog_folder_selected_entry);
     file_show_file_work_progress = STATUS_TRUE;
-    dword_t file_memory = read_file(file_starting_entry, file_size);
+    dword_t file_memory = 0;
+    if(dialog_type==FILE_DIALOG_TYPE_OPEN_FILE_SKIPPING_ERRORS && file_dialog_folder_device_partition_type==STORAGE_CDDA) {
+     file_memory = cdda_read_file_skipping_errors(file_starting_entry, file_size);
+    }
+    else {
+     file_memory = read_file(file_starting_entry, file_size);
+    }
     file_show_file_work_progress = STATUS_FALSE;
     if(file_memory==STATUS_ERROR) {
      error_window("Error during reading file");
-     redraw_file_dialog(dialog_type);
+     redraw_file_dialog((dialog_type & 0xF));
      return STATUS_ERROR;
     }
     file_dialog_read_file_properties(file_dialog_folder_memory, file_dialog_folder_selected_entry);
     return file_memory;
    }
    else if(dialog_type==FILE_DIALOG_TYPE_SAVE && is_filesystem_read_write(file_dialog_folder_device_partition_type)==STATUS_TRUE) {
+    //select medium
+    if(select_device_list_entry(file_dialog_folder_device_type, file_dialog_folder_device_number, file_dialog_folder_device_partition_type, file_dialog_folder_device_partition_first_sector)==STATUS_ERROR) {
+     if(file_dialog_folder_memory!=0) {
+      free(file_dialog_folder_memory);
+     }
+     file_dialog_print_message("Device is not inserted");
+     return STATUS_ERROR;
+    }
+
     //dialog window
     if(dialog_yes_no("Do you really want to rewrite this file?")==STATUS_FALSE) {
-     redraw_file_dialog(dialog_type);
+     redraw_file_dialog((dialog_type & 0xF));
      return STATUS_ERROR;
     }
 
@@ -480,7 +522,7 @@ dword_t file_dialog_double_click_on_file(byte_t dialog_type, dword_t new_file_me
     if(rewrite_file(get_file_starting_entry(file_dialog_folder_memory, file_dialog_folder_selected_entry), get_file_size(file_dialog_folder_memory, file_dialog_folder_selected_entry), new_file_memory, new_file_size)==STATUS_ERROR) {
      file_show_file_work_progress = STATUS_FALSE;
      error_window("Error during rewriting file");
-     redraw_file_dialog(dialog_type);
+     redraw_file_dialog((dialog_type & 0xF));
      return STATUS_ERROR;
     }
     file_show_file_work_progress = STATUS_FALSE;
@@ -498,13 +540,15 @@ dword_t file_dialog_double_click_on_file(byte_t dialog_type, dword_t new_file_me
     }
     if(rewrite_folder(folder_starting_entry, file_dialog_folder_memory)==STATUS_ERROR) {
      error_window("Error during rewriting folder");
-     redraw_file_dialog(dialog_type);
+     redraw_file_dialog((dialog_type & 0xF));
      return STATUS_ERROR;
     }
     return STATUS_GOOD;
    }
   }
  }
+
+ return STATUS_ERROR;
 }
 
 void file_dialog_folder_back(byte_t dialog_type) {
@@ -560,10 +604,7 @@ byte_t file_dialog_save_file(byte_t dialog_type, dword_t new_file_memory, dword_
 
  //show dialog window
  clear_click_board();
- 
-
  draw_message_window(270, 95);
-
  print("Write name of new file:", graphic_screen_x_center-120, graphic_screen_y_center-25, BLACK);
  draw_text_area(file_dialog_new_name_text_area);
  draw_button("Cancel", graphic_screen_x_center-100, graphic_screen_y_center+15, 90, 20);
@@ -590,7 +631,6 @@ byte_t file_dialog_save_file(byte_t dialog_type, dword_t new_file_memory, dword_
   }
 
   //process text area events
-  
   text_area_keyboard_event(file_dialog_new_name_text_area);
   text_area_mouse_event(file_dialog_new_name_text_area);
   draw_text_area(file_dialog_new_name_text_area);
@@ -607,7 +647,10 @@ byte_t file_dialog_save_file(byte_t dialog_type, dword_t new_file_memory, dword_
  }
 
  //save file
+ file_dialog_print_message("Saving file...");
+ file_show_file_work_progress = STATUS_TRUE;
  dword_t file_starting_entry = create_file(new_file_memory, new_file_size);
+ file_show_file_work_progress = STATUS_FALSE;
  if(file_starting_entry==STATUS_ERROR) {
   error_window("Error during saving file");
   return STATUS_ERROR;
@@ -762,9 +805,38 @@ dword_t file_dialog(byte_t dialog_type, dword_t new_file_memory, dword_t new_fil
    redraw_file_dialog(dialog_type); //error during saving file
    continue;
   }
+  else if(keyboard_value==KEY_F8) { //refresh device list
+   device_list_check_optical_drive();
+   redraw_file_dialog(dialog_type);
+   continue;
+  }
+  else if(keyboard_value==KEY_F12 && dialog_type==FILE_DIALOG_TYPE_OPEN && file_dialog_folder_memory!=0 && file_dialog_folder_selected_entry!=NO_FILE_SELECTED && file_dialog_folder_device_partition_type==STORAGE_CDDA) { //CDDA filesystem - read with skipping errors
+   if(dialog_yes_no("This may be slow, do you want to continue?")==STATUS_FALSE) {
+    redraw_file_dialog(dialog_type);
+    continue;
+   }
+   dword_t value = file_dialog_double_click_on_file(FILE_DIALOG_TYPE_OPEN_FILE_SKIPPING_ERRORS, new_file_memory, new_file_size);
+   if(value==FILE_DIALOG_FOLDER_WAS_LOADED) {
+    continue;
+   }
+   if(dialog_type==FILE_DIALOG_TYPE_OPEN && value!=STATUS_ERROR) {
+    return value;
+   }
+   else if(value==STATUS_GOOD) {
+    return STATUS_GOOD;
+   }
+   continue;
+  }
 
   //process mouse event
   if(mouse_drag_and_drop==MOUSE_CLICK) {
+   //refresh device list button
+   if(click_zone==FILE_DIALOG_CLICK_ZONE_BUTTON_REFRESH_DEVICES) {
+    device_list_check_optical_drive();
+    redraw_file_dialog(dialog_type);
+    continue;
+   }
+
    //click on device
    if(click_zone>=FILE_DIALOG_CLICK_ZONE_DEVICE_ENTRY && click_zone<=FILE_DIALOG_CLICK_ZONE_DEVICE_LAST_ENTRY) {
     file_dialog_selected_device_entry = (click_zone-FILE_DIALOG_CLICK_ZONE_DEVICE_ENTRY);
@@ -837,6 +909,23 @@ dword_t file_dialog(byte_t dialog_type, dword_t new_file_memory, dword_t new_fil
      //first click
      file_dialog_folder_selected_entry = selected_entry;
      redraw_file_dialog(dialog_type);
+    }
+    else if(click_zone==FILE_DIALOG_CLICK_ZONE_BUTTON_READ_SKIPPING_ERRORS) { //CDDA filesystem - read with skipping errors
+     if(dialog_yes_no("This may be slow, do you want to continue?")==STATUS_FALSE) {
+      redraw_file_dialog(dialog_type);
+      continue;
+     }
+     dword_t value = file_dialog_double_click_on_file(FILE_DIALOG_TYPE_OPEN_FILE_SKIPPING_ERRORS, new_file_memory, new_file_size);
+     if(value==FILE_DIALOG_FOLDER_WAS_LOADED) {
+      continue;
+     }
+     if(dialog_type==FILE_DIALOG_TYPE_OPEN && value!=STATUS_ERROR) {
+      return value;
+     }
+     else if(value==STATUS_GOOD) {
+      return STATUS_GOOD;
+     }
+     continue;
     }
     else if(file_dialog_folder_selected_entry!=NO_FILE_SELECTED) {
      //unselect file

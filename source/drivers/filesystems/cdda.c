@@ -35,16 +35,16 @@ dword_t cdda_read_file(dword_t sector, dword_t length_of_file_in_bytes) {
  }
 
  while(1) {
-  //read 100 sectors
-  if(number_of_sectors>100) {
-   if(read_audio_cd(sector, 100, memory_pointer)==STATUS_ERROR) {
+  //read 27 sectors, max value for one transfer request
+  if(number_of_sectors>27) {
+   if(read_audio_cd(sector, 27, memory_pointer)==STATUS_ERROR) {
     free(memory);
     return STATUS_ERROR;
    }
-   number_of_sectors-=100;
-   sector+=100;
-   number_of_readed_sectors+=100;
-   memory_pointer+=(2352*100);
+   number_of_sectors-=27;
+   sector+=27;
+   number_of_readed_sectors+=27;
+   memory_pointer+=(2352*27);
   }
   else {
    if(read_audio_cd(sector, number_of_sectors, memory_pointer)==STATUS_ERROR) {
@@ -60,6 +60,53 @@ dword_t cdda_read_file(dword_t sector, dword_t length_of_file_in_bytes) {
    file_dialog_show_progress();
   }
  }
+}
+
+dword_t cdda_read_file_skipping_errors(dword_t sector, dword_t length_of_file_in_bytes) {
+ dword_t memory = calloc(length_of_file_in_bytes+2352);
+ dword_t memory_pointer = memory;
+ dword_t number_of_sectors = (length_of_file_in_bytes/2352);
+ dword_t full_number_of_sectors = number_of_sectors, number_of_readed_sectors = 0;
+ dword_t number_of_bad_sectors = 0;
+
+ file_work_done_percents = 0;
+ if(file_show_file_work_progress==1) {
+  file_dialog_show_progress();
+  print("Number of readed sectors: 0", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8, BLACK);
+  print("Number of bad sectors: 0", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8+16, BLACK);
+  print("Number of all sectors:", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8+16+16, BLACK);
+  print_var(full_number_of_sectors, FILE_DIALOG_DEVICE_LIST_WIDTH+8+24*8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8+16+16, BLACK);
+  redraw_part_of_screen(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8, 40*8, 40);
+ }
+
+ for(dword_t i=0; i<number_of_sectors; i++) {
+  //read one sector per request
+  if(read_audio_cd(sector, 1, memory_pointer)==STATUS_ERROR) {
+   //try read it again
+   if(read_audio_cd(sector, 1, memory_pointer)==STATUS_ERROR) {
+    number_of_bad_sectors++;
+   }
+  }
+  sector++;
+  number_of_readed_sectors++;
+  memory_pointer+=2352;
+
+  //update reading progress
+  file_work_done_percents = (100*number_of_readed_sectors/full_number_of_sectors);
+  if(file_show_file_work_progress==1) {
+   file_dialog_show_progress();
+   draw_full_square(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8, 40*8, 24, 0xFF6600);
+   print("Number of readed sectors:", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8, BLACK);
+   print_var(number_of_readed_sectors, FILE_DIALOG_DEVICE_LIST_WIDTH+8+26*8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8, BLACK);
+   print("Number of bad sectors:", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8+16, BLACK);
+   print_var(number_of_bad_sectors, FILE_DIALOG_DEVICE_LIST_WIDTH+8+23*8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8+16, BLACK);
+   print("Number of all sectors:", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8+16+16, BLACK);
+   print_var(full_number_of_sectors, FILE_DIALOG_DEVICE_LIST_WIDTH+8+23*8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8+16+16, BLACK);
+   redraw_part_of_screen(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8, 40*8, 40);
+  }
+ }
+
+ return memory;
 }
 
 dword_t cdda_read_root_folder(void) {

@@ -16,4 +16,4 @@ byte_t patapi_read_capabilites(word_t base_port, word_t alt_base_port);
 byte_t patapi_eject_drive(word_t base_port, word_t alt_base_port);
 byte_t patapi_read(word_t base_port, word_t alt_base_port, dword_t sector, byte_t number_of_sectors, dword_t memory);
 byte_t patapi_read_audio_cd_toc(word_t base_port, word_t alt_base_port, dword_t memory);
-byte_t patapi_read_audio_cd_sector(word_t base_port, dword_t sector, dword_t memory);
+byte_t patapi_read_audio_cd_sector(word_t base_port, dword_t sector, byte_t number_of_sectors, dword_t memory);

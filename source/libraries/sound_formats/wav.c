@@ -66,3 +66,29 @@ dword_t convert_wav_to_sound_data(dword_t wav_memory, dword_t wav_length) {
  
  return STATUS_ERROR;
 }
+
+void convert_sound_data_to_wav(dword_t sound_info_mem) {
+ dword_t *sound_info = (dword_t *) (sound_info_mem);
+ dword_t wav_memory = malloc(sound_info[SOUND_INFO_LENGTH_OF_DATA]+44);
+ dword_t *wav32 = (dword_t *) (wav_memory);
+
+ //create info
+ wav32[0] = 0x46464952; //'RIFF'
+ wav32[1] = (sound_info[SOUND_INFO_LENGTH_OF_DATA]+44); //length of WAV file
+ wav32[2] = 0x45564157; //'WAVE'
+ wav32[3] = 0x20746D66; //'fmt '
+ wav32[4] = 16; //chunk size
+ wav32[5] = ((WAV_FORMAT_PCM) | (sound_info[SOUND_INFO_NUMBER_OF_CHANNELS]<<16)); //sound format and number of channels
+ wav32[6] = sound_info[SOUND_INFO_SAMPLE_RATE]; //sample rate
+ wav32[7] = ((sound_info[SOUND_INFO_SAMPLE_RATE]*sound_info[SOUND_INFO_BITS_PER_SAMPLE]*sound_info[SOUND_INFO_NUMBER_OF_CHANNELS])/8); //data rate
+ wav32[8] = ((sound_info[SOUND_INFO_BYTES_PER_SAMPLE]*sound_info[SOUND_INFO_NUMBER_OF_CHANNELS]) | (sound_info[SOUND_INFO_BITS_PER_SAMPLE]<<16)); //data block size and bits per sample
+ wav32[9] = 0x61746164; //'data'
+ wav32[10] = sound_info[SOUND_INFO_LENGTH_OF_DATA]; //length of sound data
+
+ //copy sound data
+ copy_memory(get_sound_data_memory(sound_info_mem), wav_memory+44, sound_info[SOUND_INFO_LENGTH_OF_DATA]);
+
+ //set variabiles
+ converted_file_memory = wav_memory;
+ converted_file_size = (sound_info[SOUND_INFO_LENGTH_OF_DATA]+44);
+}

@@ -11,3 +11,4 @@
 #define WAV_FORMAT_PCM 0x0001
 
 dword_t convert_wav_to_sound_data(dword_t wav_memory, dword_t wav_length);
+void convert_sound_data_to_wav(dword_t sound_memory);

@@ -31,3 +31,4 @@ call:
 %include "source/assembly/idt.asm"
 %include "source/assembly/binary_font.asm"
 %include "source/assembly/scalable_font.asm"
+%include "source/assembly/pci_strings.asm"
