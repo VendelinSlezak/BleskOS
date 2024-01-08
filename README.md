@@ -8,6 +8,11 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 6**
+- Significat improvement of PATAPI driver
+- You can stop reading from Audio CD by ESC
+- Multiple fixes of different things
+
 **Update 5**
 - Tool for making screenshots
 
@@ -21,11 +26,6 @@ Here is info about most important improvements in several last updates.
 **Update 3**
 - Driver for Audio CD filesystem
 - Support for CDDA audio files
-
-**Update 2**
-- VBE can use also 16 bpp graphic modes
-- Optimalization of redrawing screen and mouse cursor
-- Optimalization of calling network functions
 
 ## How to try BleskOS
 
