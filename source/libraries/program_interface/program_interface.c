@@ -54,14 +54,14 @@ void program_interface_add_click_zone_event(dword_t click_zone, dword_t method) 
  program_interface_num_of_click_zone_events++;
 }
 
-void program_interface_add_vertical_scrollbar(dword_t click_zone, dword_t pointer_to_scrollbar_heigth, dword_t pointer_to_rider_position, dword_t pointer_to_rider_size, dword_t scrollbar_draw_method_pointer) {
+void program_interface_add_vertical_scrollbar(dword_t click_zone, dword_t pointer_to_scrollbar_height, dword_t pointer_to_rider_position, dword_t pointer_to_rider_size, dword_t scrollbar_draw_method_pointer) {
  if(program_interface_num_of_elements>=100) {
   return;
  }
  dword_t *elements = (dword_t *) (program_interface_elements_list_mem+program_interface_num_of_elements*32);
  elements[0] = ELEMENT_VERTICAL_SCROLLBAR;
  elements[1] = click_zone;
- elements[2] = pointer_to_scrollbar_heigth;
+ elements[2] = pointer_to_scrollbar_height;
  elements[3] = pointer_to_rider_position;
  elements[4] = pointer_to_rider_size;
  elements[5] = scrollbar_draw_method_pointer;

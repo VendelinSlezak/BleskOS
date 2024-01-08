@@ -38,7 +38,7 @@
 
 #define FILE_MANAGER_MAX_PATH_FOLDERS 50
 
-dword_t file_manager_program_interface_memory = 0, file_manager_number_of_files_on_screen = 0, file_manager_number_of_chars_of_file_name = 0, file_manager_scrollbar_heigth = 0;
+dword_t file_manager_program_interface_memory = 0, file_manager_number_of_files_on_screen = 0, file_manager_number_of_chars_of_file_name = 0, file_manager_scrollbar_height = 0;
 dword_t file_manager_copy_entry_memory = 0, file_manager_copied_file_memory = 0, file_manager_copied_file_size = 0, file_manager_file_copied = 0;
 dword_t file_manager_rename_text_area = 0, file_manager_rename_window_showed = 0;
 

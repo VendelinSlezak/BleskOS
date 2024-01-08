@@ -33,12 +33,12 @@ void redraw_framebuffer_32_bpp(void);
 void redraw_framebuffer_24_bpp(void);
 void redraw_framebuffer_16_bpp(void);
 void redraw_screen(void);
-void redraw_part_of_framebuffer_32_bpp(dword_t x, dword_t y, dword_t width, dword_t heigth);
-void redraw_part_of_framebuffer_24_bpp(dword_t x, dword_t y, dword_t width, dword_t heigth);
-void redraw_part_of_framebuffer_16_bpp(dword_t x, dword_t y, dword_t width, dword_t heigth);
-void redraw_part_of_screen(dword_t x, dword_t y, dword_t width, dword_t heigth);
+void redraw_part_of_framebuffer_32_bpp(dword_t x, dword_t y, dword_t width, dword_t height);
+void redraw_part_of_framebuffer_24_bpp(dword_t x, dword_t y, dword_t width, dword_t height);
+void redraw_part_of_framebuffer_16_bpp(dword_t x, dword_t y, dword_t width, dword_t height);
+void redraw_part_of_screen(dword_t x, dword_t y, dword_t width, dword_t height);
 void screen_save_variabiles(void);
 void screen_restore_variables(void);
 
 void (*redraw_framebuffer)(void);
-void (*redraw_part_of_framebuffer)(dword_t x, dword_t y, dword_t width, dword_t heigth);
+void (*redraw_part_of_framebuffer)(dword_t x, dword_t y, dword_t width, dword_t height);

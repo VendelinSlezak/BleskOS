@@ -16,7 +16,8 @@
 dword_t screenshoot_image_info_mem = 0, screenshoot_image_info_data_mem = 0, screenshoot_image_info_data_length = 0;
 byte_t screenshot_was_made = STATUS_FALSE, screenshot_is_cropped = STATUS_FALSE;
 dword_t cropped_image_info_mem = 0;
-dword_t screenshot_crop_x = 0, screenshot_crop_y = 0, screenshot_crop_width = 0, screenshot_crop_heigth = 0;
+dword_t screenshot_crop_x = 0, screenshot_crop_y = 0, screenshot_crop_width = 0, screenshot_crop_height = 0;
+dword_t screenshot_buffer_image_original_width = 0, screenshot_buffer_image_original_height = 0, screenshot_buffer_image_original_x = 0, screenshot_buffer_image_original_y = 0;
 
 void initalize_screenshooter(void);
 void screenshooter(void);

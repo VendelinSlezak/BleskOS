@@ -28,7 +28,7 @@ void internet_browser_redraw_webpage(dword_t webpage_mem) {
  set_scalable_char_size(ib_font_size);
 
  //clear click board
- add_zone_to_click_board(0, INTERNET_BROWSER_WEBPAGE_START_LINE, internet_browser_webpage_width, internet_browser_webpage_heigth, 0);
+ add_zone_to_click_board(0, INTERNET_BROWSER_WEBPAGE_START_LINE, internet_browser_webpage_width, internet_browser_webpage_height, 0);
  
  //draw webpage
  while(*webpage!=0) {
@@ -101,9 +101,9 @@ void internet_browser_redraw_webpage(dword_t webpage_mem) {
     if(webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_TOP_BORDER_SIZE]!=0) {
      if(webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_TOP_BORDER_TYPE]==WEBPAGE_BORDER_TYPE_SOLID) {
       internet_browser_calculate_draw_square(ib_draw_column, ib_draw_line, webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_LEFT_BORDER_SIZE]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_WIDTH]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_RIGHT_BORDER_SIZE], webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_TOP_BORDER_SIZE]);
-      if(ib_square_heigth!=0) {
+      if(ib_square_height!=0) {
        webpage32 = (dword_t *) ((dword_t)webpage+WEBPAGE_COMMAND_DRAW_BOX_BYTE_OFFSET_TOP_BORDER_COLOR);
-       draw_full_square(ib_square_x, ib_square_y, ib_square_width, ib_square_heigth, *webpage32);
+       draw_full_square(ib_square_x, ib_square_y, ib_square_width, ib_square_height, *webpage32);
       }
      }
      //TODO: more types of border
@@ -113,9 +113,9 @@ void internet_browser_redraw_webpage(dword_t webpage_mem) {
     if(webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_BOTTOM_BORDER_SIZE]!=0) {
      if(webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_BOTTOM_BORDER_TYPE]==WEBPAGE_BORDER_TYPE_SOLID) {
       internet_browser_calculate_draw_square(ib_draw_column, ib_draw_line+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_TOP_BORDER_SIZE]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGTH], webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_LEFT_BORDER_SIZE]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_WIDTH]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_RIGHT_BORDER_SIZE], webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_BOTTOM_BORDER_SIZE]);
-      if(ib_square_heigth!=0) {
+      if(ib_square_height!=0) {
        webpage32 = (dword_t *) ((dword_t)webpage+WEBPAGE_COMMAND_DRAW_BOX_BYTE_OFFSET_BOTTOM_BORDER_COLOR);
-       draw_full_square(ib_square_x, ib_square_y, ib_square_width, ib_square_heigth, *webpage32);
+       draw_full_square(ib_square_x, ib_square_y, ib_square_width, ib_square_height, *webpage32);
       }
      }
      //TODO: more types of border
@@ -125,9 +125,9 @@ void internet_browser_redraw_webpage(dword_t webpage_mem) {
     if(webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_LEFT_BORDER_SIZE]!=0) {
      if(webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_LEFT_BORDER_TYPE]==WEBPAGE_BORDER_TYPE_SOLID) {
       internet_browser_calculate_draw_square(ib_draw_column, ib_draw_line, webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_LEFT_BORDER_SIZE], webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_TOP_BORDER_SIZE]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGTH]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_BOTTOM_BORDER_SIZE]);
-      if(ib_square_heigth!=0) {
+      if(ib_square_height!=0) {
        webpage32 = (dword_t *) ((dword_t)webpage+WEBPAGE_COMMAND_DRAW_BOX_BYTE_OFFSET_LEFT_BORDER_COLOR);
-       draw_full_square(ib_square_x, ib_square_y, ib_square_width, ib_square_heigth, *webpage32);
+       draw_full_square(ib_square_x, ib_square_y, ib_square_width, ib_square_height, *webpage32);
       }
      }
      //TODO: more types of border
@@ -137,9 +137,9 @@ void internet_browser_redraw_webpage(dword_t webpage_mem) {
     if(webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_RIGHT_BORDER_SIZE]!=0) {
      if(webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_RIGHT_BORDER_TYPE]==WEBPAGE_BORDER_TYPE_SOLID) {
       internet_browser_calculate_draw_square(ib_draw_column+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_LEFT_BORDER_SIZE]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_WIDTH], ib_draw_line, webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_RIGHT_BORDER_SIZE], webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_TOP_BORDER_SIZE]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGTH]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_BOTTOM_BORDER_SIZE]);
-      if(ib_square_heigth!=0) {
+      if(ib_square_height!=0) {
        webpage32 = (dword_t *) ((dword_t)webpage+WEBPAGE_COMMAND_DRAW_BOX_BYTE_OFFSET_RIGHT_BORDER_COLOR);
-       draw_full_square(ib_square_x, ib_square_y, ib_square_width, ib_square_heigth, *webpage32);
+       draw_full_square(ib_square_x, ib_square_y, ib_square_width, ib_square_height, *webpage32);
       }
      }
      //TODO: more types of border
@@ -151,10 +151,10 @@ void internet_browser_redraw_webpage(dword_t webpage_mem) {
     
     //draw background
     internet_browser_calculate_draw_square(ib_draw_column, ib_draw_line, webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_WIDTH], webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGTH]);
-    if(ib_square_heigth!=0) {
+    if(ib_square_height!=0) {
      webpage32 = (dword_t *) ((dword_t)webpage+WEBPAGE_COMMAND_DRAW_BOX_BYTE_OFFSET_BACKGROUND_COLOR);
      if(*webpage32!=WEBPAGE_EMPTY_ENTRY_32) {
-      draw_full_square(ib_square_x, ib_square_y, ib_square_width, ib_square_heigth, *webpage32);
+      draw_full_square(ib_square_x, ib_square_y, ib_square_width, ib_square_height, *webpage32);
      }
      
      //TODO: background with image
@@ -166,9 +166,9 @@ void internet_browser_redraw_webpage(dword_t webpage_mem) {
    else if(*webpage==WEBPAGE_COMMAND_DRAW_BORDER_LINE) {
     if(webpage[WEBPAGE_COMMAND_DRAW_BORDER_LINE_OFFSET_BORDER_TYPE]==WEBPAGE_BORDER_TYPE_SOLID) {
      internet_browser_calculate_draw_square(ib_draw_column, ib_draw_line, webpage[WEBPAGE_COMMAND_DRAW_BORDER_LINE_OFFSET_BORDER_WIDTH], webpage[WEBPAGE_COMMAND_DRAW_BORDER_LINE_OFFSET_BORDER_HEIGTH]);
-     if(ib_square_heigth!=0) {
+     if(ib_square_height!=0) {
       webpage32 = (dword_t *) ((dword_t)webpage+WEBPAGE_COMMAND_DRAW_BORDER_LINE_BYTE_OFFSET_BORDER_COLOR);
-      draw_full_square(ib_square_x, ib_square_y, ib_square_width, ib_square_heigth, *webpage32);
+      draw_full_square(ib_square_x, ib_square_y, ib_square_width, ib_square_height, *webpage32);
      }
     }
     //TODO: more types of border
@@ -198,17 +198,17 @@ void internet_browser_redraw_webpage(dword_t webpage_mem) {
   //draw char
   if(webpage_element_visibility==STATUS_TRUE) {   
    internet_browser_calculate_draw_square(ib_draw_column, ib_draw_line+ib_line_size-ib_font_size, ib_font_size, ib_font_size+ib_font_size/2);
-   if(ib_square_width==ib_font_size && ib_square_heigth==ib_font_size+ib_font_size/2) {
+   if(ib_square_width==ib_font_size && ib_square_height==ib_font_size+ib_font_size/2) {
     draw_scalable_char(*webpage, ib_square_x, ib_square_y, ib_font_color);
 
-    add_zone_to_click_board(ib_square_x, ib_square_y, ib_square_width, ib_square_heigth, webpage_url_pointer_mem);
+    add_zone_to_click_board(ib_square_x, ib_square_y, ib_square_width, ib_square_height, webpage_url_pointer_mem);
    }
-   else if(ib_square_width!=0 && ib_square_heigth!=0) {
-    draw_part_of_scalable_char(*webpage, ib_square_x, ib_square_y, ib_square_draw_column, ib_square_draw_line, ib_square_width, ib_square_heigth, ib_font_color);
+   else if(ib_square_width!=0 && ib_square_height!=0) {
+    draw_part_of_scalable_char(*webpage, ib_square_x, ib_square_y, ib_square_draw_column, ib_square_draw_line, ib_square_width, ib_square_height, ib_font_color);
    
-    add_zone_to_click_board(ib_square_x, ib_square_y, ib_square_width, ib_square_heigth, webpage_url_pointer_mem);
+    add_zone_to_click_board(ib_square_x, ib_square_y, ib_square_width, ib_square_height, webpage_url_pointer_mem);
    }
-   if(ib_square_width==0 || ib_square_heigth==0) {
+   if(ib_square_width==0 || ib_square_height==0) {
     webpage_element_visibility = STATUS_FALSE;
    }
   }
@@ -220,11 +220,11 @@ void internet_browser_redraw_webpage(dword_t webpage_mem) {
 
 }
 
-void internet_browser_calculate_draw_square(dword_t column, dword_t line, dword_t width, dword_t heigth) {
+void internet_browser_calculate_draw_square(dword_t column, dword_t line, dword_t width, dword_t height) {
  ib_square_x = 0;
  ib_square_y = 0;
  ib_square_width = 0;
- ib_square_heigth = 0;
+ ib_square_height = 0;
  ib_square_draw_column = 0;
  ib_square_draw_line = 0;
  
@@ -232,7 +232,7 @@ void internet_browser_calculate_draw_square(dword_t column, dword_t line, dword_
  if(line>internet_browser_last_show_line) {
   return; //not in screen
  }
- else if((line+heigth)<internet_browser_first_show_line) {
+ else if((line+height)<internet_browser_first_show_line) {
   return; //not in screen
  }
  if(column>internet_browser_last_show_column) {
@@ -246,21 +246,21 @@ void internet_browser_calculate_draw_square(dword_t column, dword_t line, dword_
  if(line>internet_browser_first_show_line) {
   ib_square_y = INTERNET_BROWSER_WEBPAGE_START_LINE+(line-internet_browser_first_show_line);
   ib_square_draw_line = 0;
-  if((line+heigth)<=internet_browser_last_show_line) {
-   ib_square_heigth = heigth;
+  if((line+height)<=internet_browser_last_show_line) {
+   ib_square_height = height;
   }
   else {
-   ib_square_heigth = (heigth-(line+heigth-internet_browser_last_show_line));
+   ib_square_height = (height-(line+height-internet_browser_last_show_line));
   }
  }
  else {
   ib_square_y = INTERNET_BROWSER_WEBPAGE_START_LINE;
-  ib_square_draw_line = (heigth-(line+heigth-internet_browser_first_show_line));
-  if((heigth-ib_square_draw_line)>=internet_browser_webpage_heigth) {
-   ib_square_heigth = internet_browser_webpage_heigth;
+  ib_square_draw_line = (height-(line+height-internet_browser_first_show_line));
+  if((height-ib_square_draw_line)>=internet_browser_webpage_height) {
+   ib_square_height = internet_browser_webpage_height;
   }
   else {
-   ib_square_heigth = (line+heigth-internet_browser_first_show_line);
+   ib_square_height = (line+height-internet_browser_first_show_line);
   }
  }
  

@@ -327,7 +327,7 @@ void system_board_redraw(void) {
   print_hex(inb(ide_cdrom_base+7), graphic_screen_x_center+17*8, 30, BLACK);
   print("Error register:", graphic_screen_x_center, 50, BLACK);
   print_hex(inb(ide_cdrom_base+1), graphic_screen_x_center+16*8, 50, BLACK);
-  print("[d] Detect disk [e] Eject drive", graphic_screen_x_center, 90, BLACK);
+  print("[d] Detect disk [e] Eject drive [r] Reset", graphic_screen_x_center, 90, BLACK);
   if(detect_optical_disk()==STATUS_TRUE) {
    print("Optical disk inserted", graphic_screen_x_center, 70, BLACK);
   }
@@ -514,6 +514,10 @@ void system_board(void) {
    }
    else if(keyboard_value==KEY_E) {
     eject_optical_disk();
+    goto redraw;
+   }
+   else if(keyboard_value==KEY_R) {
+    reset_optical_drive();
     goto redraw;
    }
   }

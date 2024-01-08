@@ -39,11 +39,13 @@ byte_t ide_wait_for_data(word_t base_port, dword_t wait_ticks) {
  ticks=0;
  
  while(ticks<wait_ticks) {
-  if((inb(base_port + 7) & 0x01)==0x01) { //error
-   break;
-  }
-  else if((inb(base_port + 7) & 0x88)==0x08) { //data are ready
+  byte_t status = inb(base_port + 7);
+  
+  if((status & 0x88)==0x08) { //data are ready
    return STATUS_GOOD;
+  }
+  else if((status & 0x81)==0x01) { //error
+   break;
   }
  }
  

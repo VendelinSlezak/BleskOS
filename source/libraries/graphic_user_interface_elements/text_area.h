@@ -60,7 +60,7 @@
 dword_t text_area_absoulte_cursor_line = 0, text_area_absoulte_cursor_column = 0, text_area_change_type = 0, text_area_mouse_cursor_char_memory = 0;
 dword_t text_area_copy_memory = 0, text_area_copy_memory_length = 0, text_area_change_command = 0;
 
-dword_t create_text_area(dword_t type, dword_t length_in_chars, dword_t x, dword_t y, dword_t width, dword_t heigth);
+dword_t create_text_area(dword_t type, dword_t length_in_chars, dword_t x, dword_t y, dword_t width, dword_t height);
 void delete_text_area(dword_t text_area_info_mem);
 void draw_text_area(dword_t text_area_info_mem);
 void redraw_text_area(dword_t text_area_info_mem);

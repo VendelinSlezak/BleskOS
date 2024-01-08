@@ -138,8 +138,8 @@ void draw_straigth_line(dword_t x, dword_t y, dword_t length) {
  }
 }
 
-void draw_straigth_column(dword_t x, dword_t y, dword_t heigth) {
- for(int i=0; i<heigth; i++) {
+void draw_straigth_column(dword_t x, dword_t y, dword_t height) {
+ for(int i=0; i<height; i++) {
   draw_pixel(x, y);
   y++;
  }
@@ -247,19 +247,19 @@ void draw_quadratic_bezier(int x0, int y0, int x1, int y1, int x2, int y2, dword
  plotQuadBezierSeg(x0, y0, x1, y1, x2, y2);
 }
 
-void draw_empty_square(dword_t x, dword_t y, dword_t width, dword_t heigth, dword_t color) {
+void draw_empty_square(dword_t x, dword_t y, dword_t width, dword_t height, dword_t color) {
  global_color = color;
  draw_straigth_line(x, y, width);
- draw_straigth_column(x, y, heigth);
- draw_straigth_line(x, y+heigth-1, width);
- draw_straigth_column(x+width-1, y, heigth);
+ draw_straigth_column(x, y, height);
+ draw_straigth_line(x, y+height-1, width);
+ draw_straigth_column(x+width-1, y, height);
 }
 
-void draw_full_square(dword_t x, dword_t y, dword_t width, dword_t heigth, dword_t color) {
+void draw_full_square(dword_t x, dword_t y, dword_t width, dword_t height, dword_t color) {
  dword_t first_line_pixel_pointer = (screen_mem + (y*screen_bytes_per_line) + (x<<2));
  dword_t *screen = (dword_t *) first_line_pixel_pointer;
  
- for(int i=0; i<heigth; i++) {
+ for(int i=0; i<height; i++) {
   for(int j=0; j<width; j++) {
    *screen = color;
    screen++;

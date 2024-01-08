@@ -13,12 +13,12 @@ void initalize_graphic_editor(void) {
 
  graphic_editor_pen_size_text_area_info_memory = create_text_area(TEXT_AREA_NUMBER_INPUT, 3, 8, 0, 160, 10);
  graphic_editor_width_text_area_info_memory = create_text_area(TEXT_AREA_NUMBER_INPUT, 4, graphic_screen_x_center-24, graphic_screen_y_center-50+25, 48, 10);
- graphic_editor_heigth_text_area_info_memory = create_text_area(TEXT_AREA_NUMBER_INPUT, 4, graphic_screen_x_center-24, graphic_screen_y_center-50+55, 48, 10);
+ graphic_editor_height_text_area_info_memory = create_text_area(TEXT_AREA_NUMBER_INPUT, 4, graphic_screen_x_center-24, graphic_screen_y_center-50+55, 48, 10);
 
  graphic_editor_image_area_width = (graphic_screen_x-GRAPHIC_EDITOR_SIDE_PANEL_WIDTH);
  graphic_editor_image_area_width_center = GRAPHIC_EDITOR_SIDE_PANEL_WIDTH+(graphic_editor_image_area_width/2);
- graphic_editor_image_area_heigth = (graphic_screen_y-41-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH);
- graphic_editor_image_area_heigth_center = 21+(graphic_editor_image_area_heigth/2);
+ graphic_editor_image_area_height = (graphic_screen_y-41-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH);
+ graphic_editor_image_area_height_center = 21+(graphic_editor_image_area_height/2);
 
  graphic_editor_color = BLACK;
  graphic_editor_tool = GRAPHIC_EDITOR_TOOL_PEN;
@@ -130,7 +130,7 @@ void graphic_editor(void) {
     dword_t ge_redraw_square_x = 0;
     dword_t ge_redraw_square_y = 0;
     dword_t ge_redraw_square_width = abs(image_mouse_x-graphic_editor_mouse_cursor_previous_image_x);
-    dword_t ge_redraw_square_heigth = abs(image_mouse_y-graphic_editor_mouse_cursor_previous_image_y);
+    dword_t ge_redraw_square_height = abs(image_mouse_y-graphic_editor_mouse_cursor_previous_image_y);
     if(image_mouse_x>graphic_editor_mouse_cursor_previous_image_x) {
      ge_redraw_square_x = graphic_editor_mouse_cursor_previous_image_x;
     }
@@ -162,10 +162,10 @@ void graphic_editor(void) {
     else if(graphic_editor_tool==GRAPHIC_EDITOR_TOOL_SQUARE) {
      graphic_editor_prepare_drawing_by_tool();
      if(graphic_editor_tool_state==GRAPHIC_EDITOR_TOOL_STATE_EMPTY) {
-      draw_empty_square(ge_redraw_square_x, ge_redraw_square_y, ge_redraw_square_width, ge_redraw_square_heigth, graphic_editor_color);
+      draw_empty_square(ge_redraw_square_x, ge_redraw_square_y, ge_redraw_square_width, ge_redraw_square_height, graphic_editor_color);
      }
      else if(graphic_editor_tool_state==GRAPHIC_EDITOR_TOOL_STATE_FULL) {
-      draw_full_square(ge_redraw_square_x, ge_redraw_square_y, ge_redraw_square_width, ge_redraw_square_heigth, graphic_editor_color);
+      draw_full_square(ge_redraw_square_x, ge_redraw_square_y, ge_redraw_square_width, ge_redraw_square_height, graphic_editor_color);
      }
      graphic_editor_finish_drawing_by_tool();
     }
@@ -334,13 +334,13 @@ void draw_graphic_editor(void) {
   
   //print image dimensions
   dword_t *image_info = (dword_t *) (get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
-  dword_t size_of_digits_of_width = (get_number_of_digits_in_number(image_info[IMAGE_INFO_REAL_WIDTH])*8), size_of_digits_of_heigth = (get_number_of_digits_in_number(image_info[IMAGE_INFO_REAL_HEIGTH])*8);
-  print_var(image_info[IMAGE_INFO_REAL_WIDTH], graphic_screen_x-8-size_of_digits_of_heigth-8-size_of_digits_of_width, graphic_screen_y-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH+6, BLACK);
-  print("x", graphic_screen_x-8-size_of_digits_of_heigth-8, graphic_screen_y-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH+6, BLACK);
-  print_var(image_info[IMAGE_INFO_REAL_HEIGTH], graphic_screen_x-8-size_of_digits_of_heigth, graphic_screen_y-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH+6, BLACK);
+  dword_t size_of_digits_of_width = (get_number_of_digits_in_number(image_info[IMAGE_INFO_REAL_WIDTH])*8), size_of_digits_of_height = (get_number_of_digits_in_number(image_info[IMAGE_INFO_REAL_HEIGTH])*8);
+  print_var(image_info[IMAGE_INFO_REAL_WIDTH], graphic_screen_x-8-size_of_digits_of_height-8-size_of_digits_of_width, graphic_screen_y-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH+6, BLACK);
+  print("x", graphic_screen_x-8-size_of_digits_of_height-8, graphic_screen_y-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH+6, BLACK);
+  print_var(image_info[IMAGE_INFO_REAL_HEIGTH], graphic_screen_x-8-size_of_digits_of_height, graphic_screen_y-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH+6, BLACK);
 
   //draw image
-  add_zone_to_click_board(GRAPHIC_EDITOR_SIDE_PANEL_WIDTH, 20, graphic_editor_image_area_width, graphic_editor_image_area_heigth, NO_CLICK); //clear click board
+  add_zone_to_click_board(GRAPHIC_EDITOR_SIDE_PANEL_WIDTH, 20, graphic_editor_image_area_width, graphic_editor_image_area_height, NO_CLICK); //clear click board
   draw_resized_image(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
   add_zone_to_click_board(image_info[IMAGE_INFO_SCREEN_X], image_info[IMAGE_INFO_SCREEN_Y], image_info[IMAGE_INFO_DRAW_WIDTH], image_info[IMAGE_INFO_DRAW_HEIGTH], GRAPHIC_EDITOR_CLICK_ZONE_IMAGE); //add image click zone
 
@@ -426,9 +426,9 @@ void graphic_editor_save_file(void) {
 }
 
 void graphic_editor_new_file(void) {
- dword_t width = 640, heigth = 480;
+ dword_t width = 640, height = 480;
  dword_t *width_text_area = (dword_t *) (graphic_editor_width_text_area_info_memory);
- dword_t *heigth_text_area = (dword_t *) (graphic_editor_heigth_text_area_info_memory);
+ dword_t *height_text_area = (dword_t *) (graphic_editor_height_text_area_info_memory);
 
  //create dialog window
  clear_program_interface_before_drawing();
@@ -444,12 +444,12 @@ void graphic_editor_new_file(void) {
  program_interface_add_text_area(GRAPHIC_EDITOR_CLICK_ZONE_TEXT_AREA_WIDTH, graphic_editor_width_text_area_info_memory);
  add_zone_to_click_board(graphic_screen_x_center-24, graphic_screen_y_center-25, 48, 10, GRAPHIC_EDITOR_CLICK_ZONE_TEXT_AREA_WIDTH);
 
- text_area_disable_cursor(graphic_editor_heigth_text_area_info_memory);
- clear_memory(heigth_text_area[TEXT_AREA_INFO_MEMORY], 8);
- covert_number_to_word_string(heigth, heigth_text_area[TEXT_AREA_INFO_MEMORY]);
+ text_area_disable_cursor(graphic_editor_height_text_area_info_memory);
+ clear_memory(height_text_area[TEXT_AREA_INFO_MEMORY], 8);
+ covert_number_to_word_string(height, height_text_area[TEXT_AREA_INFO_MEMORY]);
  print("Heigth", graphic_screen_x_center-24, graphic_screen_y_center-50+35+6, BLACK);
- draw_text_area(graphic_editor_heigth_text_area_info_memory);
- program_interface_add_text_area(GRAPHIC_EDITOR_CLICK_ZONE_TEXT_AREA_HEIGTH, graphic_editor_heigth_text_area_info_memory);
+ draw_text_area(graphic_editor_height_text_area_info_memory);
+ program_interface_add_text_area(GRAPHIC_EDITOR_CLICK_ZONE_TEXT_AREA_HEIGTH, graphic_editor_height_text_area_info_memory);
  add_zone_to_click_board(graphic_screen_x_center-24, graphic_screen_y_center+5, 48, 10, GRAPHIC_EDITOR_CLICK_ZONE_TEXT_AREA_HEIGTH);
 
  draw_button("OK", graphic_screen_x_center-24, graphic_screen_y_center+20, 48, 20);
@@ -472,27 +472,27 @@ void graphic_editor_new_file(void) {
   if(keyboard_value==KEY_ENTER || (mouse_drag_and_drop==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center+20, graphic_screen_y_center+40, graphic_screen_x_center-24, graphic_screen_x_center+24)==STATUS_TRUE)) {
    //get image size
    width = convert_word_string_to_number(width_text_area[TEXT_AREA_INFO_MEMORY]);
-   heigth = convert_word_string_to_number(heigth_text_area[TEXT_AREA_INFO_MEMORY]);
-   if(width==0 || heigth==0) {
+   height = convert_word_string_to_number(height_text_area[TEXT_AREA_INFO_MEMORY]);
+   if(width==0 || height==0) {
     return;
    }
    if(width>4000) {
     width = 4000;
    }
-   if(heigth>4000) {
-    heigth = 4000;
+   if(height>4000) {
+    height = 4000;
    }
 
    //create new file
    add_file((word_t *)"N\0e\0w\0 \0i\0m\0a\0g\0e\0\0\0", 0, 0, 0, 0, 0);
-   set_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY, create_image(width, heigth));
+   set_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY, create_image(width, height));
    set_file_value(GRAPHIC_EDITOR_FILE_IMAGE_ZOOM, 100);
-   set_file_value(GRAPHIC_EDITOR_FILE_IMAGE_PREVIEW_MEMORY, malloc(width*heigth*4));
+   set_file_value(GRAPHIC_EDITOR_FILE_IMAGE_PREVIEW_MEMORY, malloc(width*height*4));
    set_program_value(PROGRAM_INTERFACE_SELECTED_CLICK_ZONE, 0);
 
    //white image
    dword_t *new_image_memory = (dword_t *) (get_image_data_memory(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY)));
-   for(int i=0; i<(width*heigth); i++) {
+   for(int i=0; i<(width*height); i++) {
     *new_image_memory = WHITE;
     new_image_memory++;
    }
@@ -803,24 +803,24 @@ void graphic_editor_image_recalculate_scrollbars(void) {
  else {
   image_info[IMAGE_INFO_DRAW_WIDTH] = graphic_editor_image_area_width;
  }
- if(image_info[IMAGE_INFO_HEIGTH]<graphic_editor_image_area_heigth) {
+ if(image_info[IMAGE_INFO_HEIGTH]<graphic_editor_image_area_height) {
   image_info[IMAGE_INFO_DRAW_HEIGTH] = image_info[IMAGE_INFO_HEIGTH];
  }
  else {
-  image_info[IMAGE_INFO_DRAW_HEIGTH] = graphic_editor_image_area_heigth;
+  image_info[IMAGE_INFO_DRAW_HEIGTH] = graphic_editor_image_area_height;
  }
- if(image_info[IMAGE_INFO_WIDTH]>graphic_editor_image_area_width && image_info[IMAGE_INFO_HEIGTH]>graphic_editor_image_area_heigth) { //both scrollbars
+ if(image_info[IMAGE_INFO_WIDTH]>graphic_editor_image_area_width && image_info[IMAGE_INFO_HEIGTH]>graphic_editor_image_area_height) { //both scrollbars
   image_info[IMAGE_INFO_DRAW_HEIGTH] -= 10;
   image_info[IMAGE_INFO_DRAW_WIDTH] -= 10;
  }
- else if(image_info[IMAGE_INFO_HEIGTH]>graphic_editor_image_area_heigth && image_info[IMAGE_INFO_WIDTH]<=graphic_editor_image_area_width) { //vertical scrollbar
+ else if(image_info[IMAGE_INFO_HEIGTH]>graphic_editor_image_area_height && image_info[IMAGE_INFO_WIDTH]<=graphic_editor_image_area_width) { //vertical scrollbar
   if((graphic_editor_image_area_width-image_info[IMAGE_INFO_WIDTH])<20 || (graphic_editor_image_area_width-image_info[IMAGE_INFO_WIDTH])>0x80000000) { //also horizontal scrollbar
    image_info[IMAGE_INFO_DRAW_HEIGTH] -= 10;
    image_info[IMAGE_INFO_DRAW_WIDTH] -= 10;
   }
  }
- else if(image_info[IMAGE_INFO_HEIGTH]<=graphic_editor_image_area_heigth && image_info[IMAGE_INFO_WIDTH]>graphic_editor_image_area_width) { //horizontal scrollbar
-  if((graphic_editor_image_area_heigth-image_info[IMAGE_INFO_HEIGTH])<20 || (graphic_editor_image_area_heigth-image_info[IMAGE_INFO_HEIGTH])>0x80000000) { //also vertical scrollbar
+ else if(image_info[IMAGE_INFO_HEIGTH]<=graphic_editor_image_area_height && image_info[IMAGE_INFO_WIDTH]>graphic_editor_image_area_width) { //horizontal scrollbar
+  if((graphic_editor_image_area_height-image_info[IMAGE_INFO_HEIGTH])<20 || (graphic_editor_image_area_height-image_info[IMAGE_INFO_HEIGTH])>0x80000000) { //also vertical scrollbar
    image_info[IMAGE_INFO_DRAW_HEIGTH] -= 10;
    image_info[IMAGE_INFO_DRAW_WIDTH] -= 10;
   }
@@ -834,7 +834,7 @@ void graphic_editor_image_recalculate_zoom(void) {
  dword_t *image_info = (dword_t *) (get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
  dword_t zoom = get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_ZOOM);
  
- //calculate width and heigth by zoom
+ //calculate width and height by zoom
  image_info[IMAGE_INFO_WIDTH]=(image_info[IMAGE_INFO_REAL_WIDTH]*zoom/100);
  image_info[IMAGE_INFO_HEIGTH]=(image_info[IMAGE_INFO_REAL_HEIGTH]*zoom/100);
  image_info[IMAGE_INFO_DRAW_WIDTH]=image_info[IMAGE_INFO_WIDTH];
@@ -852,15 +852,15 @@ void graphic_editor_image_recalculate_zoom(void) {
    image_info[IMAGE_INFO_DRAW_X] = (image_info[IMAGE_INFO_WIDTH]-graphic_editor_image_area_width);
   }
  }
- if(image_info[IMAGE_INFO_HEIGTH]<graphic_editor_image_area_heigth) {
-  image_info[IMAGE_INFO_SCREEN_Y] = (graphic_editor_image_area_heigth_center-(image_info[IMAGE_INFO_HEIGTH]/2));
+ if(image_info[IMAGE_INFO_HEIGTH]<graphic_editor_image_area_height) {
+  image_info[IMAGE_INFO_SCREEN_Y] = (graphic_editor_image_area_height_center-(image_info[IMAGE_INFO_HEIGTH]/2));
   image_info[IMAGE_INFO_DRAW_Y] = 0;
  }
  else {
-  image_info[IMAGE_INFO_DRAW_HEIGTH] = graphic_editor_image_area_heigth;
+  image_info[IMAGE_INFO_DRAW_HEIGTH] = graphic_editor_image_area_height;
   image_info[IMAGE_INFO_SCREEN_Y] = 21;
-  if(image_info[IMAGE_INFO_DRAW_Y]>(image_info[IMAGE_INFO_HEIGTH]-graphic_editor_image_area_heigth)) {
-   image_info[IMAGE_INFO_DRAW_Y] = (image_info[IMAGE_INFO_HEIGTH]-graphic_editor_image_area_heigth);
+  if(image_info[IMAGE_INFO_DRAW_Y]>(image_info[IMAGE_INFO_HEIGTH]-graphic_editor_image_area_height)) {
+   image_info[IMAGE_INFO_DRAW_Y] = (image_info[IMAGE_INFO_HEIGTH]-graphic_editor_image_area_height);
   }
  }
  

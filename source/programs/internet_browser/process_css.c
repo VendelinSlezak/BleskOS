@@ -443,7 +443,7 @@ void css_parse_declaration(void) {
   if(css_compare_property_string("height")==STATUS_TRUE) {
    css_skip_property();
    
-   css_heigth = css_read_number_value(1);
+   css_height = css_read_number_value(1);
   }
  }
  else if(*css=='m') {

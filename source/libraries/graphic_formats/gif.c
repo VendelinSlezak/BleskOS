@@ -14,7 +14,7 @@ dword_t convert_gif_to_image_data(dword_t gif_memory, dword_t gif_file_length) {
  dword_t *gif32 = (dword_t *) gif_memory;
  dword_t image_memory = 0;
  dword_t *image_data = (dword_t *) image_memory;
- dword_t width, heigth, num_of_colors, palette_memory;
+ dword_t width, height, num_of_colors, palette_memory;
 
  //check signature
  if(gif8[0]!='G' || gif8[1]!='I' || gif8[2]!='F' || gif8[3]!='8' || !(gif8[4]=='7' || gif8[4]=='9') || gif8[5]!='a') {
@@ -23,15 +23,15 @@ dword_t convert_gif_to_image_data(dword_t gif_memory, dword_t gif_file_length) {
   
  //read base info
  width = gif16[3];
- heigth = gif16[4];
+ height = gif16[4];
  
- if(width==0 || heigth==0 || (width*heigth)>4096*4096) {
+ if(width==0 || height==0 || (width*height)>4096*4096) {
   log("GIF: not fitting\n");
   return STATUS_ERROR;
  }
  
  //create image
- image_memory = create_image(width, heigth);
+ image_memory = create_image(width, height);
  image_data = (dword_t *) (get_image_data_memory(image_memory));
  
  //read palette
@@ -82,7 +82,7 @@ dword_t convert_gif_to_image_data(dword_t gif_memory, dword_t gif_file_length) {
   else if(gif8[0]==0x2C) { //image descriptor   
    //TODO: other size of image
    gif16 = (word_t *) ((dword_t)gif8+1);
-   if(gif16[2]!=width || gif16[3]!=heigth || gif16[0]!=0 || gif16[0]!=0) {
+   if(gif16[2]!=width || gif16[3]!=height || gif16[0]!=0 || gif16[0]!=0) {
     log("GIF: image not fitting\n");
     delete_image(image_memory);
     return STATUS_ERROR;
@@ -120,8 +120,8 @@ dword_t convert_gif_to_image_data(dword_t gif_memory, dword_t gif_file_length) {
    }
    
    //decode image data from LZW
-   dword_t gif_image_decoded_data = malloc(width*heigth);
-   if(decode_lzw(num_of_colors, gif_image_data, length_of_image_data, gif_image_decoded_data, (width*heigth))==STATUS_ERROR) {
+   dword_t gif_image_decoded_data = malloc(width*height);
+   if(decode_lzw(num_of_colors, gif_image_data, length_of_image_data, gif_image_decoded_data, (width*height))==STATUS_ERROR) {
     log("GIF: LZW error\n");
     delete_image(image_memory);
     free(gif_image_data);
@@ -132,7 +132,7 @@ dword_t convert_gif_to_image_data(dword_t gif_memory, dword_t gif_file_length) {
    //convert to image data
    byte_t *palette = (byte_t *) palette_memory;
    byte_t *image_decoded_data = (byte_t *) gif_image_decoded_data;
-   for(int i=0; i<(width*heigth); i++) {    
+   for(int i=0; i<(width*height); i++) {    
     *image_data = (palette[*image_decoded_data*3+0]<<16 | palette[*image_decoded_data*3+1]<<8 | palette[*image_decoded_data*3+2]);
     image_data++;
     image_decoded_data++;

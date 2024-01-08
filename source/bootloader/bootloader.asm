@@ -279,7 +279,7 @@ select_graphic_mode:
  mov dx, 0x0701
  int 10h
  mov ax, word [es:0x14]
- call print_var ;heigth
+ call print_var ;height
  
  mov ah, 0x2
  mov dx, 0x0901

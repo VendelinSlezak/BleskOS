@@ -32,7 +32,7 @@ void set_program_interface(dword_t program_interface_mem, dword_t program_redraw
 void clear_program_interface_before_drawing(void);
 void program_interface_add_keyboard_event(dword_t key, dword_t method);
 void program_interface_add_click_zone_event(dword_t click_zone, dword_t method);
-void program_interface_add_vertical_scrollbar(dword_t click_zone, dword_t pointer_to_scrollbar_heigth, dword_t pointer_to_rider_position, dword_t pointer_to_rider_size, dword_t scrollbar_draw_method_pointer);
+void program_interface_add_vertical_scrollbar(dword_t click_zone, dword_t pointer_to_scrollbar_height, dword_t pointer_to_rider_position, dword_t pointer_to_rider_size, dword_t scrollbar_draw_method_pointer);
 void program_interface_add_horizontal_scrollbar(dword_t click_zone, dword_t pointer_to_scrollbar_width, dword_t pointer_to_rider_position, dword_t pointer_to_rider_size, dword_t scrollbar_draw_method_pointer);
 void program_interface_add_text_area(dword_t click_zone, dword_t text_area_info_mem);
 void program_interface_redraw(void);

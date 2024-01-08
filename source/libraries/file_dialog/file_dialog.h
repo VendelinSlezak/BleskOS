@@ -53,7 +53,7 @@ word_t file_dialog_file_extension[128];
 dword_t file_dialog_array_of_allowed_extension_mem = 0;
 dword_t file_dialog_number_of_allowed_extensions = 0;
 
-dword_t file_dialog_number_of_files_on_screen = 0, file_dialog_number_of_chars_of_file_name = 0, file_dialog_scrollbar_heigth = 0;
+dword_t file_dialog_number_of_files_on_screen = 0, file_dialog_number_of_chars_of_file_name = 0, file_dialog_scrollbar_height = 0;
 dword_t file_dialog_window_shown = 0;
 dword_t file_dialog_new_name_text_area = 0;
 

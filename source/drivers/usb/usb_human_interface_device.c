@@ -98,25 +98,12 @@ void wait_for_user_input(void) {
   }
  }
 
- //make screenshot
- if(keyboard_value==KEY_PRINT_SCREEN) {
-  copy_memory(screen_mem, screenshoot_image_info_data_mem, screenshoot_image_info_data_length);
-  show_system_message("You made a screenshot");
-  wait(500);
-  remove_system_message();
-  screenshot_was_made = STATUS_TRUE;
-  screenshot_is_cropped = STATUS_FALSE;
- }
-
  //detect changes in USB devices
  if(usb_new_device_detected==STATUS_TRUE) {
   detect_usb_devices();
  }
  
- if(ps2_keyboard_wait==0) {
-  return;
- }
- 
+ //process PS/2 mouse (touchpad) event
  if(ps2_mouse_wait==0) {
   //convert data
   mouse_buttons = ps2_mouse_data[0];
@@ -159,6 +146,7 @@ void wait_for_user_input(void) {
   return;
  }
  
+ //process USB mouse event
  if(usb_mouse_packet_received==STATUS_TRUE) {
   //convert data
   mouse_data_mem = (dword_t *) (usb_mouse_data_memory+usb_mouse_buttons_data_offset_byte);
@@ -200,7 +188,18 @@ void wait_for_user_input(void) {
   }
  }
  
+ //process USB keyboard event
  if(usb_keyboard_packet_received==STATUS_TRUE) {
   keyboard_process_code(usb_keyboard_value);
+ }
+
+ //make screenshot
+ if(keyboard_value==KEY_PRINT_SCREEN) {
+  copy_memory(screen_mem, screenshoot_image_info_data_mem, screenshoot_image_info_data_length);
+  show_system_message("You made a screenshot");
+  wait(500);
+  remove_system_message();
+  screenshot_was_made = STATUS_TRUE;
+  screenshot_is_cropped = STATUS_FALSE;
  }
 }

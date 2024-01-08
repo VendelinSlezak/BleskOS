@@ -8,7 +8,7 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-dword_t create_text_area(dword_t type, dword_t length_in_chars, dword_t x, dword_t y, dword_t width, dword_t heigth) {
+dword_t create_text_area(dword_t type, dword_t length_in_chars, dword_t x, dword_t y, dword_t width, dword_t height) {
  dword_t text_area_memory = malloc(28*4);
  dword_t *text_area_info = (dword_t *) text_area_memory;
 
@@ -17,9 +17,9 @@ dword_t create_text_area(dword_t type, dword_t length_in_chars, dword_t x, dword
  text_area_info[TEXT_AREA_INFO_NUM_OF_CHARS] = length_in_chars; //maximum number of chars in this text area
  text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE] = (text_area_info[TEXT_AREA_INFO_MEMORY] + length_in_chars*2); //last byte in text area memory
  text_area_info[TEXT_AREA_INFO_WIDTH] = width;
- text_area_info[TEXT_AREA_INFO_HEIGTH] = heigth;
+ text_area_info[TEXT_AREA_INFO_HEIGTH] = height;
  text_area_info[TEXT_AREA_INFO_REAL_WIDTH] = width;
- text_area_info[TEXT_AREA_INFO_REAL_HEIGTH] = heigth;
+ text_area_info[TEXT_AREA_INFO_REAL_HEIGTH] = height;
  text_area_info[TEXT_AREA_INFO_FIRST_SHOW_COLUMN] = 0; //first column in pixels to show
  text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE] = 0; //first line in pixels to show
  text_area_info[TEXT_AREA_INFO_CURSOR_POSITION] = text_area_info[TEXT_AREA_INFO_MEMORY]; //cursor position

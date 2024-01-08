@@ -63,6 +63,7 @@ byte_t read_audio_cd(dword_t sector, dword_t num_of_sectors, dword_t memory);
 byte_t write_storage_medium(dword_t sector, byte_t num_of_sectors, dword_t memory);
 byte_t detect_optical_disk(void);
 void eject_optical_disk(void);
+void reset_optical_drive(void);
 byte_t read_optical_disk_toc(void);
 void read_partition_info(void);
 void select_partition(byte_t partition_number);

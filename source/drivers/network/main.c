@@ -13,6 +13,7 @@ void initalize_network_cards(void) {
  is_ethernet_cable_connected = STATUS_FALSE;
  ethernet_timer_monitoring_of_line_status = STATUS_FALSE;
  ethernet_selected_card = 0xFF;
+ ethernet_card_working_driver = STATUS_FALSE;
 
  log("\n");
  if(ethernet_cards_pointer==0) {
@@ -46,6 +47,7 @@ void initalize_network_card(byte_t card) {
  }
  
  ethernet_selected_card = card;
+ ethernet_card_working_driver = STATUS_FALSE;
 
  if(ethernet_cards[card].driver==NETWORK_DRIVER_ETHERNET_INTEL_E1000) {
   log("\nintel e1000 driver");
@@ -80,7 +82,9 @@ void initalize_network_stack(void) {
 void read_ethernet_cable_status(void) {
  byte_t cable_previous_state = is_ethernet_cable_connected;
 
- is_ethernet_cable_connected = (*ethernet_card_get_cable_status)();
+ if(ethernet_card_working_driver==STATUS_TRUE) {
+  is_ethernet_cable_connected = (*ethernet_card_get_cable_status)();
+ }
 
  if(is_ethernet_cable_connected==STATUS_FALSE) {
   connected_to_network = STATUS_FALSE;
@@ -278,6 +282,10 @@ void network_process_packet(dword_t memory, byte_t is_last_packet) {
 }
 
 void connect_to_network(void) {
+ if(ethernet_card_working_driver==STATUS_FALSE) {
+  return;
+ }
+
  //Discover
  send_dhcp_discover();
  

@@ -10,16 +10,16 @@
 
 void initalize_image_operations(void) {
  image_resize_width_array_mem = malloc(4096);
- image_resize_heigth_array_mem = malloc(4096);
+ image_resize_height_array_mem = malloc(4096);
 }
 
-void copy_raw_image_data(dword_t source_memory, dword_t source_width, dword_t source_x, dword_t source_y, dword_t image_width, dword_t image_heigth, dword_t dest_memory, dword_t dest_width, dword_t dest_x, dword_t dest_y) {
+void copy_raw_image_data(dword_t source_memory, dword_t source_width, dword_t source_x, dword_t source_y, dword_t image_width, dword_t image_height, dword_t dest_memory, dword_t dest_width, dword_t dest_x, dword_t dest_y) {
  dword_t *source = (dword_t *) (source_memory + (source_y*source_width*4) + (source_x<<2));
  dword_t source_bytes_to_next_line = (source_width-image_width);
  dword_t *destination = (dword_t *) (dest_memory + (dest_y*dest_width*4) + (dest_x<<2));
  dword_t destination_bytes_to_next_line = (dest_width-image_width);
  
- for(int line=0; line<image_heigth; line++) {
+ for(int line=0; line<image_height; line++) {
   for(int column=0; column<image_width; column++) {
    if(*source!=TRANSPARENT_COLOR) {
     *destination = *source;
@@ -33,26 +33,26 @@ void copy_raw_image_data(dword_t source_memory, dword_t source_width, dword_t so
  }
 }
 
-void copy_and_resize_raw_image_data(dword_t source_memory, dword_t source_width, dword_t source_heigth, dword_t resized_source_width, dword_t resized_source_heigth, dword_t source_x, dword_t source_y, dword_t image_width, dword_t image_heigth, dword_t dest_memory, dword_t dest_width, dword_t dest_x, dword_t dest_y) { 
+void copy_and_resize_raw_image_data(dword_t source_memory, dword_t source_width, dword_t source_height, dword_t resized_source_width, dword_t resized_source_height, dword_t source_x, dword_t source_y, dword_t image_width, dword_t image_height, dword_t dest_memory, dword_t dest_width, dword_t dest_x, dword_t dest_y) { 
  byte_t *image_resize_width_array = (byte_t *) image_resize_width_array_mem;
- byte_t *image_resize_heigth_array = (byte_t *) image_resize_heigth_array_mem;
+ byte_t *image_resize_height_array = (byte_t *) image_resize_height_array_mem;
  dword_t *source = (dword_t *) (source_memory);
  dword_t *destination = (dword_t *) (dest_memory + (dest_y*dest_width*4) + (dest_x<<2));
  dword_t destination_start_of_line = ((dword_t)destination);
  dword_t source_start_of_line = ((dword_t)source);
  
- //we will calculate how many times will be displayed pixel in every column(image_resize_width_array) and in every line(image_resize_heigth_array)
+ //we will calculate how many times will be displayed pixel in every column(image_resize_width_array) and in every line(image_resize_height_array)
  //for example if we have image with size 4x4, and we want to resize it to 2x2, arrays will look like this:
- //image_resize_width_array = 0, 1, 0, 1 image_resize_heigth_array = 0, 1, 0, 1
+ //image_resize_width_array = 0, 1, 0, 1 image_resize_height_array = 0, 1, 0, 1
  //if we want to resize it to size 8x4, arrays will look like this:
- //image_resize_width_array = 2, 2, 2, 2 image_resize_heigth_array = 1, 1, 1, 1
+ //image_resize_width_array = 2, 2, 2, 2 image_resize_height_array = 1, 1, 1, 1
  
  //add base pixels
  dword_t width_base = (resized_source_width/source_width); 
- dword_t heigth_base = (resized_source_heigth/source_heigth);
+ dword_t height_base = (resized_source_height/source_height);
  for(int i=0; i<4096; i++) {
   image_resize_width_array[i] = width_base;
-  image_resize_heigth_array[i] = heigth_base;
+  image_resize_height_array[i] = height_base;
  }
  
  //add all other pixels
@@ -68,14 +68,14 @@ void copy_and_resize_raw_image_data(dword_t source_memory, dword_t source_width,
   }
  }
  
- heigth_base = (resized_source_heigth%source_heigth);
- if(heigth_base!=0) {
-  heigth_base++;
+ height_base = (resized_source_height%source_height);
+ if(height_base!=0) {
+  height_base++;
   
-  for(int i=0, j=heigth_base, k=source_heigth; i<source_heigth; i++, j+=heigth_base) {
+  for(int i=0, j=height_base, k=source_height; i<source_height; i++, j+=height_base) {
    if(j>k) {
-    k+=source_heigth;
-    image_resize_heigth_array[i]++;
+    k+=source_height;
+    image_resize_height_array[i]++;
    }
   }
  }
@@ -116,40 +116,40 @@ void copy_and_resize_raw_image_data(dword_t source_memory, dword_t source_width,
  
  for(int i=0; i<4096; i++) {
   if(source_y>0) {
-   if(image_resize_heigth_array[i]>source_y) {
-    image_resize_heigth_array[i]-=source_y;
+   if(image_resize_height_array[i]>source_y) {
+    image_resize_height_array[i]-=source_y;
     source_y=0;
     
-    if(image_resize_heigth_array[i]>image_heigth) {
-     image_resize_heigth_array[i]=image_heigth;
-     image_heigth=0;
+    if(image_resize_height_array[i]>image_height) {
+     image_resize_height_array[i]=image_height;
+     image_height=0;
     }
     else {
-     image_heigth-=image_resize_heigth_array[i];
+     image_height-=image_resize_height_array[i];
     }
    }
    else {
-    source_y-=image_resize_heigth_array[i];
-    image_resize_heigth_array[i]=0;
+    source_y-=image_resize_height_array[i];
+    image_resize_height_array[i]=0;
    }
   }
-  else if(image_heigth>0) {
-   if(image_resize_heigth_array[i]>image_heigth) {
-    image_resize_heigth_array[i]=image_heigth;
-    image_heigth=0;
+  else if(image_height>0) {
+   if(image_resize_height_array[i]>image_height) {
+    image_resize_height_array[i]=image_height;
+    image_height=0;
    }
    else {
-    image_heigth-=image_resize_heigth_array[i];
+    image_height-=image_resize_height_array[i];
    }
   }
   else {
-   image_resize_heigth_array[i]=0;
+   image_resize_height_array[i]=0;
   }
  }
  
  //copy data
- for(int line=0; line<source_heigth; line++) {
-  for(int pixel_heigth=0; pixel_heigth<image_resize_heigth_array[line]; pixel_heigth++) {
+ for(int line=0; line<source_height; line++) {
+  for(int pixel_height=0; pixel_height<image_resize_height_array[line]; pixel_height++) {
    source = (dword_t *) source_start_of_line;
    destination = (dword_t *) destination_start_of_line;
   
@@ -170,18 +170,18 @@ void copy_and_resize_raw_image_data(dword_t source_memory, dword_t source_width,
  }
 }
 
-dword_t create_image(dword_t width, dword_t heigth) {
- dword_t image_info_mem = calloc(IMAGE_SIZE_OF_INFO_IN_BYTES+(width*heigth*4));
+dword_t create_image(dword_t width, dword_t height) {
+ dword_t image_info_mem = calloc(IMAGE_SIZE_OF_INFO_IN_BYTES+(width*height*4));
  dword_t *image_info = (dword_t *) image_info_mem;
 
  image_info[IMAGE_INFO_REAL_WIDTH] = width;
- image_info[IMAGE_INFO_REAL_HEIGTH] = heigth;
+ image_info[IMAGE_INFO_REAL_HEIGTH] = height;
  image_info[IMAGE_INFO_WIDTH] = width;
- image_info[IMAGE_INFO_HEIGTH] = heigth;
+ image_info[IMAGE_INFO_HEIGTH] = height;
  image_info[IMAGE_INFO_DRAW_X] = 0;
  image_info[IMAGE_INFO_DRAW_Y] = 0;
  image_info[IMAGE_INFO_DRAW_WIDTH] = width;
- image_info[IMAGE_INFO_DRAW_HEIGTH] = heigth;
+ image_info[IMAGE_INFO_DRAW_HEIGTH] = height;
  image_info[IMAGE_INFO_SCREEN_X] = 0;
  image_info[IMAGE_INFO_SCREEN_Y] = 0;
  image_info[IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE] = 0;
@@ -253,7 +253,7 @@ void calculate_image_scrollbars(dword_t image_info_mem) {
 void get_mouse_coordinates_on_image(dword_t image_info_mem) {
  dword_t *image_info = (dword_t *) image_info_mem;
  byte_t *image_resize_width_array = (byte_t *) image_resize_width_array_mem;
- byte_t *image_resize_heigth_array = (byte_t *) image_resize_heigth_array_mem;
+ byte_t *image_resize_height_array = (byte_t *) image_resize_height_array_mem;
  
  image_mouse_x = 0xFFFFFFFF;
  image_mouse_y = 0xFFFFFFFF;
@@ -262,20 +262,20 @@ void get_mouse_coordinates_on_image(dword_t image_info_mem) {
  }
  
  dword_t resized_source_width = image_info[IMAGE_INFO_WIDTH];
- dword_t resized_source_heigth = image_info[IMAGE_INFO_HEIGTH];
+ dword_t resized_source_height = image_info[IMAGE_INFO_HEIGTH];
  dword_t source_width = image_info[IMAGE_INFO_REAL_WIDTH];
- dword_t source_heigth = image_info[IMAGE_INFO_REAL_HEIGTH];
+ dword_t source_height = image_info[IMAGE_INFO_REAL_HEIGTH];
  dword_t source_x = image_info[IMAGE_INFO_DRAW_X];
  dword_t source_y = image_info[IMAGE_INFO_DRAW_Y];
  dword_t image_width = image_info[IMAGE_INFO_DRAW_WIDTH];
- dword_t image_heigth = image_info[IMAGE_INFO_DRAW_HEIGTH];
+ dword_t image_height = image_info[IMAGE_INFO_DRAW_HEIGTH];
  
  //add base pixels
  dword_t width_base = (resized_source_width/source_width); 
- dword_t heigth_base = (resized_source_heigth/source_heigth);
+ dword_t height_base = (resized_source_height/source_height);
  for(int i=0; i<4096; i++) {
   image_resize_width_array[i] = width_base;
-  image_resize_heigth_array[i] = heigth_base;
+  image_resize_height_array[i] = height_base;
  }
  
  //add all other pixels
@@ -291,14 +291,14 @@ void get_mouse_coordinates_on_image(dword_t image_info_mem) {
   }
  }
  
- heigth_base = (resized_source_heigth%source_heigth);
- if(heigth_base!=0) {
-  heigth_base++;
+ height_base = (resized_source_height%source_height);
+ if(height_base!=0) {
+  height_base++;
   
-  for(int i=0, j=heigth_base, k=source_heigth; i<source_heigth; i++, j+=heigth_base) {
+  for(int i=0, j=height_base, k=source_height; i<source_height; i++, j+=height_base) {
    if(j>k) {
-    k+=source_heigth;
-    image_resize_heigth_array[i]++;
+    k+=source_height;
+    image_resize_height_array[i]++;
    }
   }
  }
@@ -339,34 +339,34 @@ void get_mouse_coordinates_on_image(dword_t image_info_mem) {
  
  for(int i=0; i<4096; i++) {
   if(source_y>0) {
-   if(image_resize_heigth_array[i]>source_y) {
-    image_resize_heigth_array[i]-=source_y;
+   if(image_resize_height_array[i]>source_y) {
+    image_resize_height_array[i]-=source_y;
     source_y=0;
     
-    if(image_resize_heigth_array[i]>image_heigth) {
-     image_resize_heigth_array[i]=image_heigth;
-     image_heigth=0;
+    if(image_resize_height_array[i]>image_height) {
+     image_resize_height_array[i]=image_height;
+     image_height=0;
     }
     else {
-     image_heigth-=image_resize_heigth_array[i];
+     image_height-=image_resize_height_array[i];
     }
    }
    else {
-    source_y-=image_resize_heigth_array[i];
-    image_resize_heigth_array[i]=0;
+    source_y-=image_resize_height_array[i];
+    image_resize_height_array[i]=0;
    }
   }
-  else if(image_heigth>0) {
-   if(image_resize_heigth_array[i]>image_heigth) {
-    image_resize_heigth_array[i]=image_heigth;
-    image_heigth=0;
+  else if(image_height>0) {
+   if(image_resize_height_array[i]>image_height) {
+    image_resize_height_array[i]=image_height;
+    image_height=0;
    }
    else {
-    image_heigth-=image_resize_heigth_array[i];
+    image_height-=image_resize_height_array[i];
    }
   }
   else {
-   image_resize_heigth_array[i]=0;
+   image_resize_height_array[i]=0;
   }
  }
  
@@ -380,7 +380,7 @@ void get_mouse_coordinates_on_image(dword_t image_info_mem) {
   }
  }
  for(int i=0, j=0, mouse_cursor=(mouse_cursor_y-image_info[IMAGE_INFO_SCREEN_Y]); i<4096; i++) {
-  j+=image_resize_heigth_array[i];
+  j+=image_resize_height_array[i];
   
   if(j>mouse_cursor) {
    image_mouse_y=i;

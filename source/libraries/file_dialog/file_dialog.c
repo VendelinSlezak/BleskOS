@@ -22,7 +22,7 @@ void initalize_file_dialog(void) {
 
  file_dialog_number_of_files_on_screen = ((graphic_screen_y-PROGRAM_INTERFACE_TOP_LINE_HEIGTH-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH-24-8)/10);
  file_dialog_number_of_chars_of_file_name = ((graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-20)/8);
- file_dialog_scrollbar_heigth = (file_dialog_number_of_files_on_screen*10);
+ file_dialog_scrollbar_height = (file_dialog_number_of_files_on_screen*10);
 
  file_dialog_new_name_text_area = create_text_area(TEXT_AREA_INPUT_LINE, 29, graphic_screen_x_center-120, graphic_screen_y_center-5, 240, 10);
 }
@@ -228,9 +228,9 @@ void redraw_file_dialog(byte_t dialog_type) {
 
   //draw scrollbar
   if(file_dialog_folder_vertical_scrollbar_rider_size!=0) {
-   draw_vertical_scrollbar(graphic_screen_x-15, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, file_dialog_scrollbar_heigth, file_dialog_folder_vertical_scrollbar_position, file_dialog_folder_vertical_scrollbar_rider_size);
-   //TODO: program_interface_add_vertical_scrollbar(FILE_DIALOG_CLICK_ZONE_SCROLLBAR, ((dword_t)(&file_dialog_scrollbar_heigth)), ((dword_t)&file_dialog_folder_vertical_scrollbar_position), ((dword_t)&file_dialog_folder_vertical_scrollbar_rider_size), ((dword_t)&file_dialog_verticall_scrollbar_event));
-   add_zone_to_click_board(graphic_screen_x-15, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, 10, file_dialog_scrollbar_heigth, FILE_DIALOG_CLICK_ZONE_SCROLLBAR);
+   draw_vertical_scrollbar(graphic_screen_x-15, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, file_dialog_scrollbar_height, file_dialog_folder_vertical_scrollbar_position, file_dialog_folder_vertical_scrollbar_rider_size);
+   //TODO: program_interface_add_vertical_scrollbar(FILE_DIALOG_CLICK_ZONE_SCROLLBAR, ((dword_t)(&file_dialog_scrollbar_height)), ((dword_t)&file_dialog_folder_vertical_scrollbar_position), ((dword_t)&file_dialog_folder_vertical_scrollbar_rider_size), ((dword_t)&file_dialog_verticall_scrollbar_event));
+   add_zone_to_click_board(graphic_screen_x-15, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, 10, file_dialog_scrollbar_height, FILE_DIALOG_CLICK_ZONE_SCROLLBAR);
   }
 
   //draw back button
@@ -247,14 +247,15 @@ void redraw_file_dialog(byte_t dialog_type) {
 void file_dialog_show_progress(void) {
  draw_full_square(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, (graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8), 16, 0xFF6600);
  draw_full_square(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, ((graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8)*file_work_done_percents/100), 16, 0x000CFF);
+ dword_t printed_percents_string_x = 0;
  if(file_work_done_percents<10) {
-  print_var(file_work_done_percents, FILE_DIALOG_DEVICE_LIST_WIDTH+8+((graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8)/2), PROGRAM_INTERFACE_TOP_LINE_HEIGTH+28, BLACK);
-  draw_char('%', FILE_DIALOG_DEVICE_LIST_WIDTH+8+((graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8)/2)+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+28, BLACK);
+  printed_percents_string_x = (FILE_DIALOG_DEVICE_LIST_WIDTH+((graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8*5)/2));
  }
  else {
-  print_var(file_work_done_percents, FILE_DIALOG_DEVICE_LIST_WIDTH+8+((graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8)/2), PROGRAM_INTERFACE_TOP_LINE_HEIGTH+28, BLACK);
-  draw_char('%', FILE_DIALOG_DEVICE_LIST_WIDTH+8+((graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8)/2)+16, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+28, BLACK);
+  printed_percents_string_x = (FILE_DIALOG_DEVICE_LIST_WIDTH+((graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8*6)/2));
  }
+ print_var(file_work_done_percents, printed_percents_string_x, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+28, BLACK);
+ draw_char('%', printed_percents_string_x+16, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+28, BLACK);
  redraw_part_of_screen(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, (graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8), 16);
 }
 
@@ -273,9 +274,9 @@ void file_dialog_compute_number_of_files_in_directory(void) {
  }
  file_dialog_folder_number_of_entries = number_of_files;
  if(number_of_files!=0) {
-  file_dialog_folder_vertical_scrollbar_rider_size = calculate_scrollbar_rider_size(file_dialog_scrollbar_heigth, file_dialog_folder_number_of_entries, file_dialog_number_of_files_on_screen);
+  file_dialog_folder_vertical_scrollbar_rider_size = calculate_scrollbar_rider_size(file_dialog_scrollbar_height, file_dialog_folder_number_of_entries, file_dialog_number_of_files_on_screen);
   if(file_dialog_folder_vertical_scrollbar_rider_size!=0) {
-   file_dialog_folder_vertical_scrollbar_position = calculate_scrollbar_rider_position(file_dialog_scrollbar_heigth, file_dialog_folder_vertical_scrollbar_rider_size, file_dialog_folder_number_of_entries, file_dialog_number_of_files_on_screen, file_dialog_folder_first_showed_entry);
+   file_dialog_folder_vertical_scrollbar_position = calculate_scrollbar_rider_position(file_dialog_scrollbar_height, file_dialog_folder_vertical_scrollbar_rider_size, file_dialog_folder_number_of_entries, file_dialog_number_of_files_on_screen, file_dialog_folder_first_showed_entry);
   }
  }
  else {
@@ -386,7 +387,7 @@ void file_dialog_process_key_up_key_down(byte_t dialog_type, dword_t key) {
 
  //recalculate scrollbar
  if(file_dialog_folder_vertical_scrollbar_rider_size!=0) {
-  file_dialog_folder_vertical_scrollbar_rider_size = calculate_scrollbar_rider_position(file_dialog_scrollbar_heigth, file_dialog_folder_vertical_scrollbar_rider_size, file_dialog_folder_number_of_entries, file_dialog_number_of_files_on_screen, file_dialog_folder_first_showed_entry);
+  file_dialog_folder_vertical_scrollbar_rider_size = calculate_scrollbar_rider_position(file_dialog_scrollbar_height, file_dialog_folder_vertical_scrollbar_rider_size, file_dialog_folder_number_of_entries, file_dialog_number_of_files_on_screen, file_dialog_folder_first_showed_entry);
  }
  
  //redraw screen

@@ -26,7 +26,7 @@
 #define WEBPAGE_COMMAND_CHANGE_TEXT_COLOR 0xFFF4 // 0xFFF4 // color
 #define WEBPAGE_COMMAND_CHANGE_TEXT_COLOR_BYTE_OFFSET_COLOR 2
 
-#define WEBPAGE_COMMAND_DRAW_BOX 0xFFF5 // 0xFFF5 / width / heigth // background color / top border type / top border size // top border color / bottom border type / bottom border size // bottom border color / left border type / left border size // left border color / right border type / right border size // right border color
+#define WEBPAGE_COMMAND_DRAW_BOX 0xFFF5 // 0xFFF5 / width / height // background color / top border type / top border size // top border color / bottom border type / bottom border size // bottom border color / left border type / left border size // left border color / right border type / right border size // right border color
 #define WEBPAGE_COMMAND_DRAW_BOX_OFFSET_WIDTH 1
 #define WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGTH 2
 #define WEBPAGE_COMMAND_DRAW_BOX_BYTE_OFFSET_BACKGROUND_COLOR 6
@@ -43,7 +43,7 @@
 #define WEBPAGE_COMMAND_DRAW_BOX_OFFSET_RIGHT_BORDER_SIZE 18
 #define WEBPAGE_COMMAND_DRAW_BOX_BYTE_OFFSET_RIGHT_BORDER_COLOR 38
 
-#define WEBPAGE_COMMAND_DRAW_BORDER_LINE 0xFFF6 // 0xFFF6 / border type / border width / border heigth // border color
+#define WEBPAGE_COMMAND_DRAW_BORDER_LINE 0xFFF6 // 0xFFF6 / border type / border width / border height // border color
 #define WEBPAGE_COMMAND_DRAW_BORDER_LINE_OFFSET_BORDER_TYPE 1
 #define WEBPAGE_COMMAND_DRAW_BORDER_LINE_OFFSET_BORDER_WIDTH 2
 #define WEBPAGE_COMMAND_DRAW_BORDER_LINE_OFFSET_BORDER_HEIGTH 3
@@ -66,8 +66,8 @@
 
 dword_t ib_draw_column, ib_draw_line, ib_line_size;
 dword_t ib_font_size, ib_font_color, ib_font_emphasis, ib_font_spacing, ib_font_alignment;
-dword_t ib_square_x, ib_square_y, ib_square_width, ib_square_heigth, ib_square_draw_column, ib_square_draw_line;
+dword_t ib_square_x, ib_square_y, ib_square_width, ib_square_height, ib_square_draw_column, ib_square_draw_line;
 dword_t webpage_element_visibility, webpage_url_pointer_mem;
 
 void internet_browser_redraw_webpage(dword_t webpage_mem);
-void internet_browser_calculate_draw_square(dword_t column, dword_t line, dword_t width, dword_t heigth);
+void internet_browser_calculate_draw_square(dword_t column, dword_t line, dword_t width, dword_t height);

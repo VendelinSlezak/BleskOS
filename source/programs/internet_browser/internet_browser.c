@@ -14,10 +14,10 @@
 
 void initalize_internet_browser(void) {
  internet_browser_program_interface_memory = create_program_interface_memory();
- internet_browser_webpage_heigth = graphic_screen_y-20-INTERNET_BROWSER_WEBPAGE_START_LINE;
+ internet_browser_webpage_height = graphic_screen_y-20-INTERNET_BROWSER_WEBPAGE_START_LINE;
  internet_browser_webpage_width = graphic_screen_x-10;
  internet_browser_first_show_line = 0;
- internet_browser_last_show_line = (internet_browser_first_show_line+internet_browser_webpage_heigth);
+ internet_browser_last_show_line = (internet_browser_first_show_line+internet_browser_webpage_height);
  internet_browser_first_show_column = 0;
  internet_browser_last_show_column = (internet_browser_first_show_column+internet_browser_webpage_width);
  internet_browser_url_mem = malloc(2048);
@@ -143,15 +143,15 @@ void draw_internet_browser(void) {
   else if(file_status==FILE_TRANSFER_NO_ERROR) {
    //draw webpage
    internet_browser_first_show_line = get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE);
-   internet_browser_last_show_line = (internet_browser_first_show_line+internet_browser_webpage_heigth);
+   internet_browser_last_show_line = (internet_browser_first_show_line+internet_browser_webpage_height);
    internet_browser_redraw_webpage(get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_MEMORY));
 
    //draw scrollbar
-   draw_full_square(internet_browser_webpage_width, INTERNET_BROWSER_WEBPAGE_START_LINE, 10, internet_browser_webpage_heigth, 0x888888);
-   if(get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH)>internet_browser_webpage_heigth) {
-    draw_vertical_scrollbar(internet_browser_webpage_width, INTERNET_BROWSER_WEBPAGE_START_LINE, internet_browser_webpage_heigth, get_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION), get_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE));
-    program_interface_add_vertical_scrollbar(INTERNET_BROWSER_CLICK_ZONE_SCROLLBAR, ((dword_t)(&internet_browser_webpage_heigth)), get_position_of_file_memory()+INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION*4, get_position_of_file_memory()+INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE*4, ((dword_t)internet_browser_vertical_scrollbar_event));
-    add_zone_to_click_board(internet_browser_webpage_width, INTERNET_BROWSER_WEBPAGE_START_LINE, 10, internet_browser_webpage_heigth, INTERNET_BROWSER_CLICK_ZONE_SCROLLBAR);
+   draw_full_square(internet_browser_webpage_width, INTERNET_BROWSER_WEBPAGE_START_LINE, 10, internet_browser_webpage_height, 0x888888);
+   if(get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH)>internet_browser_webpage_height) {
+    draw_vertical_scrollbar(internet_browser_webpage_width, INTERNET_BROWSER_WEBPAGE_START_LINE, internet_browser_webpage_height, get_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION), get_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE));
+    program_interface_add_vertical_scrollbar(INTERNET_BROWSER_CLICK_ZONE_SCROLLBAR, ((dword_t)(&internet_browser_webpage_height)), get_position_of_file_memory()+INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION*4, get_position_of_file_memory()+INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE*4, ((dword_t)internet_browser_vertical_scrollbar_event));
+    add_zone_to_click_board(internet_browser_webpage_width, INTERNET_BROWSER_WEBPAGE_START_LINE, 10, internet_browser_webpage_height, INTERNET_BROWSER_CLICK_ZONE_SCROLLBAR);
    }
 
    //draw back button if there is page in history
@@ -210,13 +210,13 @@ void internet_browser_open_file(void) {
  set_file_value(INTERNET_BROWSER_FILE_STATUS, FILE_TRANSFER_NO_ERROR);
  set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_MEMORY, convert_html_to_bleskos_webpage(new_file_mem, file_dialog_file_size));
  set_file_value(INTERNET_BROWSER_FILE_HTML_MEMORY, new_file_mem);
- set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH, html_page_heigth);
+ set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH, html_page_height);
  set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE, 0);
  set_file_value(INTERNET_BROWSER_FILE_TEXT_AREA_MEMORY, create_text_area(TEXT_AREA_INPUT_LINE, 2048, 0, 20, graphic_screen_x, 10));
  text_area_disable_cursor(get_file_value(INTERNET_BROWSER_FILE_TEXT_AREA_MEMORY));
- if(html_page_heigth!=0) {
-  set_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE, calculate_scrollbar_rider_size(internet_browser_webpage_heigth, html_page_heigth, internet_browser_webpage_heigth));
-  set_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION, calculate_scrollbar_rider_position(internet_browser_webpage_heigth, get_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE), html_page_heigth, internet_browser_webpage_heigth, 0));
+ if(html_page_height!=0) {
+  set_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE, calculate_scrollbar_rider_size(internet_browser_webpage_height, html_page_height, internet_browser_webpage_height));
+  set_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION, calculate_scrollbar_rider_position(internet_browser_webpage_height, get_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE), html_page_height, internet_browser_webpage_height, 0));
  }
  else {
   set_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE, 0);
@@ -268,29 +268,29 @@ void internet_browser_close_file(void) {
 }
 
 void internet_browser_key_up_event(void) {
- if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0 && get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH)>internet_browser_webpage_heigth) {
+ if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0 && get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH)>internet_browser_webpage_height) {
   set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE, get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE)-100);
   if(get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE)>0x80000000) {
    set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE, 0);
   }
-  set_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION, calculate_scrollbar_rider_position(internet_browser_webpage_heigth, get_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE), get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH), internet_browser_webpage_heigth, get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE)));
+  set_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION, calculate_scrollbar_rider_position(internet_browser_webpage_height, get_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE), get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH), internet_browser_webpage_height, get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE)));
   program_interface_redraw();
  }
 }
 
 void internet_browser_key_down_event(void) {
- if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0 && get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH)>internet_browser_webpage_heigth) {
+ if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0 && get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH)>internet_browser_webpage_height) {
   set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE, get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE)+100);
-  if(get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE)>(get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH)-internet_browser_webpage_heigth)) {
-   set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE, (get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH)-internet_browser_webpage_heigth));
+  if(get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE)>(get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH)-internet_browser_webpage_height)) {
+   set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE, (get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH)-internet_browser_webpage_height));
   }
-  set_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION, calculate_scrollbar_rider_position(internet_browser_webpage_heigth, get_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE), get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH), internet_browser_webpage_heigth, get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE)));
+  set_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION, calculate_scrollbar_rider_position(internet_browser_webpage_height, get_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE), get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH), internet_browser_webpage_height, get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE)));
   program_interface_redraw();
  }
 }
 
 void internet_browser_key_home_event(void) {
- if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0 && get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH)>internet_browser_webpage_heigth) {
+ if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0 && get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH)>internet_browser_webpage_height) {
   set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE, 0);
   set_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION, 0);
   program_interface_redraw();
@@ -298,9 +298,9 @@ void internet_browser_key_home_event(void) {
 }
 
 void internet_browser_key_end_event(void) {
- if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0 && get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH)>internet_browser_webpage_heigth) {
-  set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE, (get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH)-internet_browser_webpage_heigth));
-  set_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION, (internet_browser_webpage_heigth-get_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE)));
+ if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0 && get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH)>internet_browser_webpage_height) {
+  set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE, (get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH)-internet_browser_webpage_height));
+  set_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION, (internet_browser_webpage_height-get_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE)));
   program_interface_redraw();
  }
 }
@@ -353,16 +353,16 @@ void internet_browser_key_p_event(void) {
 }
 
 void internet_browser_vertical_scrollbar_event(void) {
- if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0 && get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH)>internet_browser_webpage_heigth) {
-  set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE, get_scrollbar_rider_value(internet_browser_webpage_heigth, get_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE), get_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION), get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH), internet_browser_webpage_heigth));
+ if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0 && get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH)>internet_browser_webpage_height) {
+  set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE, get_scrollbar_rider_value(internet_browser_webpage_height, get_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE), get_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION), get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH), internet_browser_webpage_height));
   
   //redraw
   
-  draw_full_square(0, INTERNET_BROWSER_WEBPAGE_START_LINE, graphic_screen_x, internet_browser_webpage_heigth, WHITE);
+  draw_full_square(0, INTERNET_BROWSER_WEBPAGE_START_LINE, graphic_screen_x, internet_browser_webpage_height, WHITE);
   internet_browser_first_show_line = get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE);
-  internet_browser_last_show_line = (internet_browser_first_show_line+internet_browser_webpage_heigth);
+  internet_browser_last_show_line = (internet_browser_first_show_line+internet_browser_webpage_height);
   internet_browser_redraw_webpage(get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_MEMORY));
-  draw_vertical_scrollbar(internet_browser_webpage_width, INTERNET_BROWSER_WEBPAGE_START_LINE, internet_browser_webpage_heigth, get_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION), get_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE));
+  draw_vertical_scrollbar(internet_browser_webpage_width, INTERNET_BROWSER_WEBPAGE_START_LINE, internet_browser_webpage_height, get_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION), get_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE));
   redraw_screen();
  }
 }
@@ -457,11 +457,11 @@ void internet_browser_load_webpage_from_url_in_text_area(void) {
 
   //set file variabiles
   set_file_value(INTERNET_BROWSER_FILE_HTML_MEMORY, html_memory);
-  set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH, html_page_heigth);
+  set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH, html_page_height);
   set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE, 0);
-  if(html_page_heigth!=0) {
-   set_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE, calculate_scrollbar_rider_size(internet_browser_webpage_heigth, html_page_heigth, internet_browser_webpage_heigth));
-   set_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION, calculate_scrollbar_rider_position(internet_browser_webpage_heigth, get_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE), html_page_heigth, internet_browser_webpage_heigth, 0));
+  if(html_page_height!=0) {
+   set_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE, calculate_scrollbar_rider_size(internet_browser_webpage_height, html_page_height, internet_browser_webpage_height));
+   set_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION, calculate_scrollbar_rider_position(internet_browser_webpage_height, get_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE), html_page_height, internet_browser_webpage_height, 0));
   }
   else {
    set_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE, 0);

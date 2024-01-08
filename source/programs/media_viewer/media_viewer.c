@@ -586,7 +586,7 @@ void media_viewer_image_recalculate_zoom(void) {
  dword_t *image_info = (dword_t *) (get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY));
  dword_t zoom = get_file_value(MEDIA_VIEWER_FILE_IMAGE_ZOOM);
  
- //calculate width and heigth by zoom
+ //calculate width and height by zoom
  image_info[IMAGE_INFO_WIDTH]=(image_info[IMAGE_INFO_REAL_WIDTH]*zoom/100);
  image_info[IMAGE_INFO_HEIGTH]=(image_info[IMAGE_INFO_REAL_HEIGTH]*zoom/100);
  image_info[IMAGE_INFO_DRAW_WIDTH]=image_info[IMAGE_INFO_WIDTH];
