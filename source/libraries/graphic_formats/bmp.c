@@ -23,22 +23,22 @@ dword_t convert_bmp_to_image_data(dword_t bmp_memory) {
  
  //read informations about image
  dword_t width = bmp32[0];
- dword_t heigth = bmp32[1];
+ dword_t height = bmp32[1];
  dword_t bpp = (bmp16[0]/8);
  
- if(width==0 || heigth==0 || bpp<1 || bpp>4 || (width*heigth)>4096*4096) {
+ if(width==0 || height==0 || bpp<1 || bpp>4 || (width*height)>4096*4096) {
   log("BMP: not fitting\n");
   return STATUS_ERROR;
  }
  
  //convert image
- dword_t image_memory = create_image(width, heigth);
- dword_t *image_data = (dword_t *) (get_image_data_memory(image_memory)+(width*heigth*4)-(width*4));
+ dword_t image_memory = create_image(width, height);
+ dword_t *image_data = (dword_t *) (get_image_data_memory(image_memory)+(width*height*4)-(width*4));
  bmp32 = (dword_t *) (bmp_memory+10); //offset to image data
  if(bpp==4) {
   dword_t *bmp_data = (dword_t *) (bmp_memory+bmp32[0]); //bmp data
   
-  for(int line=0; line<heigth; line++) {
+  for(int line=0; line<height; line++) {
    for(int i=0; i<width; i++) {
     *image_data=*bmp_data;
     image_data++;
@@ -51,7 +51,7 @@ dword_t convert_bmp_to_image_data(dword_t bmp_memory) {
  else if(bpp==3) {
   byte_t *bmp_data = (byte_t *) (bmp_memory+bmp32[0]); //bmp data
   
-  for(int line=0; line<heigth; line++) {
+  for(int line=0; line<height; line++) {
    for(int i=0; i<width; i++) {
     *image_data=(bmp_data[0] | bmp_data[1]<<8 | bmp_data[2]<<16);
     image_data++;
@@ -64,7 +64,7 @@ dword_t convert_bmp_to_image_data(dword_t bmp_memory) {
  else if(bpp==2) {
   word_t *bmp_data = (word_t *) (bmp_memory+bmp32[0]); //bmp data
   
-  for(int line=0; line<heigth; line++) {
+  for(int line=0; line<height; line++) {
    for(int i=0; i<width; i++) {
     *image_data=((*bmp_data & 0x3F) | (((*bmp_data>>5) & 0x3F)<<8) | ((*bmp_data>>11)<<16));
     image_data++;
@@ -77,7 +77,7 @@ dword_t convert_bmp_to_image_data(dword_t bmp_memory) {
  else if(bpp==1) {
   byte_t *bmp_data = (byte_t *) (bmp_memory+bmp32[0]); //bmp data
   
-  for(int line=0; line<heigth; line++) {
+  for(int line=0; line<height; line++) {
    for(int i=0; i<width; i++) {
     *image_data=((*bmp_data << 16) | (*bmp_data << 8) | (*bmp_data));
     image_data++;
@@ -108,13 +108,13 @@ void convert_image_data_to_bmp(dword_t image_info_memory) {
  bmp_file32[2]=54; //offset to image data
  bmp_file32[3]=40; //size of extended header
  bmp_file32[4]=image_info[IMAGE_INFO_REAL_WIDTH]; //width of image
- bmp_file32[5]=image_info[IMAGE_INFO_REAL_HEIGTH]; //heigth of image
+ bmp_file32[5]=image_info[IMAGE_INFO_REAL_HEIGTH]; //height of image
  bmp_file16[0]=1; //number of color planes
  bmp_file16[1]=32; //4 bytes per pixel
  bmp_file32[7]=0; //no compression
  bmp_file32[8]=(bmp_file_size-54); //size of image
  bmp_file32[9]=image_info[IMAGE_INFO_REAL_WIDTH]; //width of image
- bmp_file32[10]=image_info[IMAGE_INFO_REAL_HEIGTH]; //heigth of image
+ bmp_file32[10]=image_info[IMAGE_INFO_REAL_HEIGTH]; //height of image
  bmp_file32[11]=0; //number of colors in pallete
  bmp_file32[12]=0; //number of important colors
  

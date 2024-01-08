@@ -29,5 +29,5 @@ void initalize_scalable_font(void);
 void set_scalable_char_size(dword_t size);
 void draw_scalable_char_without_emphasis(word_t char_val, dword_t x, dword_t y, dword_t color);
 void draw_scalable_char(word_t char_val, dword_t x, dword_t y, dword_t color);
-void draw_part_of_scalable_char(word_t char_val, dword_t x, dword_t y, dword_t char_column, dword_t char_line, dword_t char_width, dword_t char_heigth, dword_t color);
+void draw_part_of_scalable_char(word_t char_val, dword_t x, dword_t y, dword_t char_column, dword_t char_line, dword_t char_width, dword_t char_height, dword_t color);
 void scalable_font_print(byte_t *string, dword_t x, dword_t y, dword_t color);

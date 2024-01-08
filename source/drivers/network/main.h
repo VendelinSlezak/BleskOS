@@ -41,6 +41,7 @@ struct ethernet_card {
 struct ethernet_card ethernet_cards[10];
 byte_t ethernet_cards_pointer = 0;
 byte_t ethernet_selected_card = 0;
+byte_t ethernet_card_working_driver = STATUS_FALSE;
 
 byte_t mac_address[6];
 byte_t connected_to_network = STATUS_FALSE;

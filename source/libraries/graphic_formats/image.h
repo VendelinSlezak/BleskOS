@@ -25,13 +25,13 @@
 #define IMAGE_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE 12
 #define IMAGE_INFO_HORIZONTAL_SCROLLBAR_RIDER_POSITION 13
 
-dword_t image_resize_width_array_mem, image_resize_heigth_array_mem;
+dword_t image_resize_width_array_mem, image_resize_height_array_mem;
 dword_t image_mouse_x, image_mouse_y;
 
 void initalize_image_operations(void);
-void copy_raw_image_data(dword_t source_memory, dword_t source_width, dword_t source_x, dword_t source_y, dword_t image_width, dword_t image_heigth, dword_t dest_memory, dword_t dest_width, dword_t dest_x, dword_t dest_y);
-void copy_and_resize_raw_image_data(dword_t source_memory, dword_t source_width, dword_t source_heigth, dword_t resized_source_width, dword_t resized_source_heigth, dword_t source_x, dword_t source_y, dword_t image_width, dword_t image_heigth, dword_t dest_memory, dword_t dest_width, dword_t dest_x, dword_t dest_y);
-dword_t create_image(dword_t width, dword_t heigth);
+void copy_raw_image_data(dword_t source_memory, dword_t source_width, dword_t source_x, dword_t source_y, dword_t image_width, dword_t image_height, dword_t dest_memory, dword_t dest_width, dword_t dest_x, dword_t dest_y);
+void copy_and_resize_raw_image_data(dword_t source_memory, dword_t source_width, dword_t source_height, dword_t resized_source_width, dword_t resized_source_height, dword_t source_x, dword_t source_y, dword_t image_width, dword_t image_height, dword_t dest_memory, dword_t dest_width, dword_t dest_x, dword_t dest_y);
+dword_t create_image(dword_t width, dword_t height);
 void delete_image(dword_t image_info_mem);
 dword_t get_image_data_memory(dword_t image_info_mem);
 void draw_image(dword_t image_info_mem);

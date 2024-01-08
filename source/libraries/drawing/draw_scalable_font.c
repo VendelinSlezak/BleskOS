@@ -110,7 +110,7 @@ void draw_scalable_char(word_t char_val, dword_t x, dword_t y, dword_t color) {
  }
 }
 
-void draw_part_of_scalable_char(word_t char_val, dword_t x, dword_t y, dword_t char_column, dword_t char_line, dword_t char_width, dword_t char_heigth, dword_t color) {
+void draw_part_of_scalable_char(word_t char_val, dword_t x, dword_t y, dword_t char_column, dword_t char_line, dword_t char_width, dword_t char_height, dword_t color) {
  dword_t *char_board = (dword_t *) scalable_font_char_board_mem;
 
  screen_save_variabiles();
@@ -128,7 +128,7 @@ void draw_part_of_scalable_char(word_t char_val, dword_t x, dword_t y, dword_t c
  
  screen_restore_variables();
 
- copy_raw_image_data(scalable_font_char_board_mem, scalable_font_char_size, char_column, char_line, char_width, char_heigth, screen_mem, graphic_screen_x, x, y);
+ copy_raw_image_data(scalable_font_char_board_mem, scalable_font_char_size, char_column, char_line, char_width, char_height, screen_mem, graphic_screen_x, x, y);
 }
 
 void scalable_font_print(byte_t *string, dword_t x, dword_t y, dword_t color) { 

@@ -10,6 +10,12 @@
 
 byte_t patapi_send_packet_command(word_t base_port, word_t transfer_length) {
  //drive must be already selected
+
+ //reset drive from condition to stuck
+ if(inb(base_port + 7) & 0x88!=0x00) {
+  log("\nIDE ATAPI: reset");
+  ide_reset_controller(base_port, ide_cdrom_alt_base);
+ }
  
  //send command
  outb(base_port + 1, 0);
@@ -23,9 +29,12 @@ byte_t patapi_send_packet_command(word_t base_port, word_t transfer_length) {
  if(ide_wait_for_data(base_port, 50)==STATUS_ERROR) {
   wait(1);
   inb(base_port+7); //clear interrupt state
+  log("\nIDE ATAPI: packet can not be sended ");
+  log_hex_specific_size_with_space(inb(base_port+7), 2);
+  log_hex_specific_size(inb(base_port+1), 2);
   return STATUS_ERROR;
  }
- 
+
  return STATUS_GOOD;
 }
 
@@ -48,6 +57,7 @@ byte_t patapi_detect_disk(word_t base_port, word_t alt_base_port) {
 
  //wait for processing command
  if(ide_wait_drive_not_busy(base_port, 100)==STATUS_ERROR) {
+  log("\nIDE ATAPI: busy for TEST UNIT READY");
   return STATUS_ERROR;
  }
  
@@ -82,6 +92,7 @@ byte_t patapi_read_capabilites(word_t base_port, word_t alt_base_port) {
  
  //wait
  if(ide_wait_for_data(base_port, 200)==STATUS_ERROR) {
+  log("\nIDE ATAPI: busy for READ CAPABILITES");
   return STATUS_ERROR;
  }
  
@@ -116,49 +127,7 @@ byte_t patapi_eject_drive(word_t base_port, word_t alt_base_port) {
  return STATUS_GOOD;
 }
 
-byte_t patapi_read(word_t base_port, word_t alt_base_port, dword_t sector, byte_t number_of_sectors, dword_t memory) {
- word_t *mem = (word_t *) memory;
- word_t value;
-
- //clear any device output
- ide_clear_device_output(base_port);
-
- //reset controller
- ide_reset_controller(base_port, alt_base_port);
- 
- //send packet command
- if(patapi_send_packet_command(base_port, 2048)==STATUS_ERROR) {
-  return STATUS_ERROR;
- }
- 
- //send packet
- outw(base_port + 0, 0xA8); //read command
- value = (word_t)(sector>>16);
- outw(base_port + 0, BIG_ENDIAN(value));
- value = (word_t)sector;
- outw(base_port + 0, BIG_ENDIAN(value));
- outw(base_port + 0, 0);
- outw(base_port + 0, (number_of_sectors<<8)); //number of sectors
- outw(base_port + 0, 0);
-
- //transfer data
- for(int i=0; i<number_of_sectors; i++) {
-  //wait for drive to be ready
-  if(ide_wait_for_data(base_port, 2000)==STATUS_ERROR) { //max 4 seconds
-   return STATUS_ERROR;
-  }
-
-  //read data of sector
-  for(dword_t j=0; j<1024; j++) {
-   *mem = inw(base_port + 0);
-   mem++;
-  }
- }
- 
- return STATUS_GOOD;
-}
-
-byte_t patapi_read_audio_cd_toc(word_t base_port, word_t alt_base_port, dword_t memory) {
+byte_t patapi_read_cd_toc(word_t base_port, word_t alt_base_port, dword_t memory) {
  word_t *mem = (word_t *) memory;
  word_t value;
 
@@ -181,8 +150,11 @@ byte_t patapi_read_audio_cd_toc(word_t base_port, word_t alt_base_port, dword_t 
  outw(base_port + 0, 252); //read info max about 31 tracks TODO: what is right value to read more?
  outw(base_port + 0, 0);
  
- //wait max 4 seconds
- if(ide_wait_for_data(base_port, 200)==STATUS_ERROR) {
+ //wait max 2 seconds
+ if(ide_wait_for_data(base_port, 1000)==STATUS_ERROR) {
+  log("\nIDE ATAPI: error with reading TOC ");
+  log_hex_specific_size_with_space(inb(base_port+7), 2);
+  log_hex_specific_size(inb(base_port+1), 2);
   return STATUS_ERROR;
  }
  
@@ -203,7 +175,50 @@ byte_t patapi_read_audio_cd_toc(word_t base_port, word_t alt_base_port, dword_t 
  return STATUS_GOOD;
 }
 
-byte_t patapi_read_audio_cd_sector(word_t base_port, dword_t sector, byte_t number_of_sectors, dword_t memory) {
+byte_t patapi_read(word_t base_port, word_t alt_base_port, dword_t sector, byte_t number_of_sectors, dword_t memory) {
+ word_t *mem = (word_t *) memory;
+ word_t value;
+
+ //clear any device output
+ ide_clear_device_output(base_port);
+ 
+ //send packet command
+ if(patapi_send_packet_command(base_port, 2048)==STATUS_ERROR) {
+  return STATUS_ERROR;
+ }
+ 
+ //send packet
+ outw(base_port + 0, 0xA8); //read command
+ value = (word_t)(sector>>16);
+ outw(base_port + 0, BIG_ENDIAN(value));
+ value = (word_t)sector;
+ outw(base_port + 0, BIG_ENDIAN(value));
+ outw(base_port + 0, 0);
+ outw(base_port + 0, (number_of_sectors<<8)); //number of sectors
+ outw(base_port + 0, 0);
+
+ //transfer data
+ for(int i=0; i<number_of_sectors; i++) {
+  //wait for drive to be ready
+  if(ide_wait_for_data(base_port, 3000)==STATUS_ERROR) { //max 6 seconds
+   log("\nIDE ATAPI: error with reading sector ");
+   log_var_with_space(sector+i);
+   log_hex_specific_size_with_space(inb(base_port+7), 2);
+   log_hex_specific_size(inb(base_port+1), 2);
+   return STATUS_ERROR;
+  }
+
+  //read data of sector
+  for(dword_t j=0; j<1024; j++) {
+   *mem = inw(base_port + 0);
+   mem++;
+  }
+ }
+ 
+ return STATUS_GOOD;
+}
+
+byte_t patapi_read_audio_cd_sector(word_t base_port, word_t alt_base_port, dword_t sector, byte_t number_of_sectors, dword_t memory) {
  word_t *mem = (word_t *) memory;
  word_t value;
 
@@ -224,16 +239,23 @@ byte_t patapi_read_audio_cd_sector(word_t base_port, dword_t sector, byte_t numb
  outw(base_port + 0, 0);
  outw(base_port + 0, (0x1000 | number_of_sectors)); //number of sectors and we are reading User Data - 0x10
  outw(base_port + 0, 0);
- 
- //wait max 6 seconds
- if(ide_wait_for_data(base_port, 3000)==STATUS_ERROR) {
-  return STATUS_ERROR;
- }
- 
- //read data
- for(int i=0; i<(number_of_sectors*1176); i++) {
-  *mem = inw(base_port + 0);
-  mem++;
+
+ //transfer data
+ for(int i=0; i<number_of_sectors; i++) {
+  //wait for drive to be ready
+  if(ide_wait_for_data(base_port, 3000)==STATUS_ERROR) { //max 6 seconds
+   log("\nIDE ATAPI: error with reading audio sector ");
+   log_var_with_space(sector+i);
+   log_hex_specific_size_with_space(inb(base_port+7), 2);
+   log_hex_specific_size(inb(base_port+1), 2);
+   return STATUS_ERROR;
+  }
+
+  //read data of sector
+  for(dword_t j=0; j<1176; j++) {
+   *mem = inw(base_port + 0);
+   mem++;
+  }
  }
  
  return STATUS_GOOD;

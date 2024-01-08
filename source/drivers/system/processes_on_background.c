@@ -101,7 +101,7 @@ void run_processes_on_background(void) {
    draw_full_square(11, graphic_screen_y-59, ((graphic_screen_x-22)*get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)/get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)), 8, 0x0900FF);
    redraw_part_of_screen(10, graphic_screen_y-60, graphic_screen_x-20, 40);
 
-   set_file_value(MEDIA_VIEWER_FILE_SOUND_NEXT_UPDATE_MS, get_file_value(MEDIA_VIEWER_FILE_SOUND_NEXT_UPDATE_MS)+1000);
+   set_file_value(MEDIA_VIEWER_FILE_SOUND_NEXT_UPDATE_MS, get_file_value(MEDIA_VIEWER_FILE_SOUND_NEXT_UPDATE_MS)+200);
    if(get_file_value(MEDIA_VIEWER_FILE_SOUND_NEXT_UPDATE_MS)>get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)) {
     set_file_value(MEDIA_VIEWER_FILE_SOUND_NEXT_UPDATE_MS, get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS));
    }

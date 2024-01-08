@@ -14,5 +14,5 @@ dword_t click_board_memory = 0;
 
 void initalize_click_board(void);
 void clear_click_board(void);
-void add_zone_to_click_board(dword_t x, dword_t y, dword_t width, dword_t heigth, dword_t click_value);
+void add_zone_to_click_board(dword_t x, dword_t y, dword_t width, dword_t height, dword_t click_value);
 dword_t get_mouse_cursor_click_board_value(void);

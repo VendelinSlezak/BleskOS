@@ -19,7 +19,7 @@ dword_t css_background_color;
 
 dword_t css_font_size, css_font_color, css_font_alignment, css_font_emphasis, css_font_spacing;
 
-dword_t css_width, css_heigth, css_left_auto_margin, css_right_auto_margin;
+dword_t css_width, css_height, css_left_auto_margin, css_right_auto_margin;
 
 word_t *css;
 

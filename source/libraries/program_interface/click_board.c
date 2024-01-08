@@ -21,11 +21,11 @@ void clear_click_board(void) {
  }
 }
 
-void add_zone_to_click_board(dword_t x, dword_t y, dword_t width, dword_t heigth, dword_t click_value) {
+void add_zone_to_click_board(dword_t x, dword_t y, dword_t width, dword_t height, dword_t click_value) {
  dword_t first_line_pixel_pointer = (click_board_memory + (y*screen_bytes_per_line) + (x<<2));
  dword_t *click_board = (dword_t *) first_line_pixel_pointer;
  
- for(int i=0; i<heigth; i++) {
+ for(int i=0; i<height; i++) {
   for(int j=0; j<width; j++) {
    *click_board = click_value;
    click_board++;

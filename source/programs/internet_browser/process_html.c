@@ -118,7 +118,7 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
  //process tags before <body>
  html = (word_t *) html_in_unicode_mem;
  clear_memory(html_title_memory, 1000*2);
- html_page_heigth = 0; 
+ html_page_height = 0; 
  css_entries_tag_list_pointer = 0;
  css_entries_id_list_pointer = 0;
  css_entries_class_list_pointer = 0;
@@ -185,7 +185,7 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
  }
  
  //set variabiles for body
- html_page_heigth = 0;
+ html_page_height = 0;
  ib_line_width = internet_browser_webpage_width;
  ib_actual_line_width = 0;
  
@@ -234,15 +234,15 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
    css_right_border_type = WEBPAGE_BORDER_TYPE_NONE; css_right_border_size = 0; css_right_border_color = BLACK;
    css_padding_top = 0; css_padding_bottom = 0; css_padding_left = 0; css_padding_right = 0;
    css_background_color = WEBPAGE_EMPTY_ENTRY_32;
-   css_width = 0; css_heigth = 0;
+   css_width = 0; css_height = 0;
    
-   html_tag_heigth_calculation_type = HTML_TAG_CSS_ENTRY_HEIGTH_CALCULATION_ADD;
+   html_tag_height_calculation_type = HTML_TAG_CSS_ENTRY_HEIGTH_CALCULATION_ADD;
    
    //ENDING TAG
    if(html[1]=='/') {
     html++;
 
-    //if there is </body> tag, we just add heigth of last printed line and end processing of HTML
+    //if there is </body> tag, we just add height of last printed line and end processing of HTML
     if(is_tag_equal((word_t *)html, "body")==STATUS_TRUE) {
      html_tag_css_list = (dword_t *) html_tag_css_list_mem;     
      if(ib_actual_line_width!=0) {
@@ -253,15 +253,15 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
       }
      }
      
-     //if is page smaller than view, change heigth to view heigth
-     if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]<internet_browser_webpage_heigth) {
+     //if is page smaller than view, change height to view height
+     if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]<internet_browser_webpage_height) {
       if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_DRAW_BOX_MEM]!=0) {
        webpage16 = (word_t *) (html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_DRAW_BOX_MEM]);
-       webpage16[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGTH] = internet_browser_webpage_heigth;
+       webpage16[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGTH] = internet_browser_webpage_height;
       }
      }
      
-     html_page_heigth += html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]; //save heigth of page
+     html_page_height += html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]; //save height of page
      goto page_is_finished;
     }
     
@@ -311,7 +311,7 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
     ib_draw_column = html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_STARTING_COLUMN];
     ib_line_width = html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_PREVIOUS_LINE_WIDTH];
     
-    //add heigth of last printed line to ending tag
+    //add height of last printed line to ending tag
     if(ib_actual_line_width!=0) {
      html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH] += ib_line_biggest_spacing;
      
@@ -326,16 +326,16 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
      //move to next line 
      ib_draw_line = (html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_STARTING_LINE]+html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]+html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_TOP_AND_BOTTOM_SKIP_SIZE]);
       
-     //change heigth of all tags except for last one that is ending now
-     dword_t add_heigth = html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_BOTTOM_SKIP_SIZE];
+     //change height of all tags except for last one that is ending now
+     dword_t add_height = html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_BOTTOM_SKIP_SIZE];
      if(ib_actual_line_width!=0) {
-       add_heigth += ib_line_biggest_spacing;
+       add_height += ib_line_biggest_spacing;
      }
      for(int tag_entry=(html_tag_css_list_pointer-1); tag_entry>0; tag_entry--) {
       html_tag_css_list = (dword_t *) (html_tag_css_list_mem+(tag_entry-1)*HTML_TAG_CSS_ENTRY_SIZE);
     
       if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH_CALCULATION_TYPE]==HTML_TAG_CSS_ENTRY_HEIGTH_CALCULATION_ADD) {
-       html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH] += add_heigth;
+       html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH] += add_height;
      
        if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_DRAW_BOX_MEM]!=0) {
         webpage16 = (word_t *) (html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_DRAW_BOX_MEM]);
@@ -344,7 +344,7 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
       }
       else if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH_CALCULATION_TYPE]==HTML_TAG_CSS_ENTRY_HEIGTH_CALCULATION_COMPARE) {
        if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]<html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]) {
-        add_heigth = (html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]-html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]);
+        add_height = (html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]-html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]);
         html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH] = html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH];
        }
        else {
@@ -371,16 +371,16 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
       ib_draw_line = html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_STARTING_LINE];
       ib_draw_column = (html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_STARTING_COLUMN]+html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_WIDTH]+html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_LEFT_AND_RIGHT_SKIP_SIZE]);
       
-      //change heigth of all tags except for last one that is ending now
-      dword_t add_heigth = html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_BOTTOM_SKIP_SIZE];
+      //change height of all tags except for last one that is ending now
+      dword_t add_height = html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_BOTTOM_SKIP_SIZE];
       if(ib_actual_line_width!=0) {
-        add_heigth += ib_line_biggest_spacing;
+        add_height += ib_line_biggest_spacing;
       }
       for(int tag_entry=(html_tag_css_list_pointer-1); tag_entry>0; tag_entry--) {
        html_tag_css_list = (dword_t *) (html_tag_css_list_mem+(tag_entry-1)*HTML_TAG_CSS_ENTRY_SIZE);
     
        if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH_CALCULATION_TYPE]==HTML_TAG_CSS_ENTRY_HEIGTH_CALCULATION_ADD) {
-        html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH] += add_heigth;
+        html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH] += add_height;
       
         if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_DRAW_BOX_MEM]!=0) {
          webpage16 = (word_t *) (html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_DRAW_BOX_MEM]);
@@ -389,7 +389,7 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
        }
        else if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH_CALCULATION_TYPE]==HTML_TAG_CSS_ENTRY_HEIGTH_CALCULATION_COMPARE) {
         if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]<html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]) {
-         add_heigth = (html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]-html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]);
+         add_height = (html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]-html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]);
          html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH] = html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH];
         }
         else {
@@ -586,7 +586,7 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
    }
    else if(is_tag_equal((word_t *)html, "tr")==STATUS_TRUE) { //<tr>
     ib_tag_new_line = STATUS_TRUE;
-    html_tag_heigth_calculation_type = HTML_TAG_CSS_ENTRY_HEIGTH_CALCULATION_COMPARE;
+    html_tag_height_calculation_type = HTML_TAG_CSS_ENTRY_HEIGTH_CALCULATION_COMPARE;
     
     //calculate width of every table cell
     html_num_of_tags_to_skip = 0;
@@ -896,11 +896,11 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
    html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_BOTTOM_SKIP_SIZE] = (css_padding_bottom+css_bottom_border_size+css_margin_bottom);
    html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_TOP_AND_BOTTOM_SKIP_SIZE] = (css_margin_top+css_top_border_size+css_bottom_border_size+css_margin_bottom);
    html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_LEFT_AND_RIGHT_SKIP_SIZE] = (css_margin_left+css_left_border_size+css_padding_left+css_padding_right+css_right_border_size+css_margin_right);
-   html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH_CALCULATION_TYPE] = html_tag_heigth_calculation_type;
+   html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH_CALCULATION_TYPE] = html_tag_height_calculation_type;
    html_tag_css_list_pointer++;
    
    if(is_tag_equal((word_t *)html, "body")==STATUS_TRUE) { //<body>
-    html_page_heigth += (css_margin_top+css_top_border_size+css_bottom_border_size+css_margin_bottom);
+    html_page_height += (css_margin_top+css_top_border_size+css_bottom_border_size+css_margin_bottom);
    }
    
    if(html_table_cell_width!=0) {
@@ -959,20 +959,20 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
     }
     ib_draw_line += (css_margin_top+css_top_border_size+css_padding_top);
     
-    //change heigth of all tags, except for last tag, because heigth of last tag is 0 because it has no content now
+    //change height of all tags, except for last tag, because height of last tag is 0 because it has no content now
     dword_t tag_list_num_of_cycles = (html_tag_css_list_pointer-1);
     if(html_not_pair_tag==STATUS_TRUE) {
      tag_list_num_of_cycles++; //if last tag is not pair (like <br>), we will process all tags
     }
-    dword_t add_heigth = (css_margin_top+css_top_border_size+css_padding_top);
+    dword_t add_height = (css_margin_top+css_top_border_size+css_padding_top);
     if(ib_actual_line_width!=0) {
-      add_heigth += ib_line_biggest_spacing;
+      add_height += ib_line_biggest_spacing;
      }
     for(int tag_entry=tag_list_num_of_cycles; tag_entry>0; tag_entry--) {
      html_tag_css_list = (dword_t *) (html_tag_css_list_mem+(tag_entry-1)*HTML_TAG_CSS_ENTRY_SIZE);
     
      if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH_CALCULATION_TYPE]==HTML_TAG_CSS_ENTRY_HEIGTH_CALCULATION_ADD) {
-      html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH] += add_heigth;
+      html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH] += add_height;
      
       if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_DRAW_BOX_MEM]!=0) {
        webpage16 = (word_t *) (html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_DRAW_BOX_MEM]);
@@ -981,7 +981,7 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
      }
      else if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH_CALCULATION_TYPE]==HTML_TAG_CSS_ENTRY_HEIGTH_CALCULATION_COMPARE) {
       if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]<html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]) {
-       add_heigth = (html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]-html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]);
+       add_height = (html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]-html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]);
        html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH] = html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH];
       }
       else {
@@ -1136,13 +1136,13 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
    //skip line
    ib_draw_line += ib_line_biggest_spacing;
    
-   //change heigth of tags
-   dword_t add_heigth = ib_line_biggest_spacing;
+   //change height of tags
+   dword_t add_height = ib_line_biggest_spacing;
    for(int tag_entry=html_tag_css_list_pointer; tag_entry>0; tag_entry--) {
     html_tag_css_list = (dword_t *) (html_tag_css_list_mem+(tag_entry-1)*HTML_TAG_CSS_ENTRY_SIZE);
     
     if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH_CALCULATION_TYPE]==HTML_TAG_CSS_ENTRY_HEIGTH_CALCULATION_ADD) {
-     html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH] += add_heigth;
+     html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH] += add_height;
      
      if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_DRAW_BOX_MEM]!=0) {
       webpage16 = (word_t *) (html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_DRAW_BOX_MEM]);
@@ -1151,7 +1151,7 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
     }
     else if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH_CALCULATION_TYPE]==HTML_TAG_CSS_ENTRY_HEIGTH_CALCULATION_COMPARE) {
      if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]<html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]) {
-      add_heigth = (html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]-html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]);
+      add_height = (html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]-html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]);
       html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH] = html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH];
      }
      else {

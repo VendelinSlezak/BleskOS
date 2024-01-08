@@ -73,12 +73,13 @@ void isr_handler(dword_t isr_number) {
  clear_screen(RED);
  print("Serious error occured", 10, 10, BLACK);
  print("Error type: ISR", 10, 30, BLACK);
- if(isr_number==0) {
-  print("Division by zero", 10, 50, BLACK);
+ extern dword_t isr_string_array[32];
+ if(isr_number<19) {
+  print((byte_t *)(isr_string_array[isr_number]), 10, 50, BLACK);
  }
  else {
-  print("Error number:", 10, 50, BLACK);
-  print_var(isr_number, 10+14*8, 50, BLACK);
+  print("Reserved exception ", 10, 50, BLACK);
+  print_var(isr_number, 10+20*8, 50, BLACK);
  }
  redraw_screen();
 

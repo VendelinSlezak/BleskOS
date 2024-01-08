@@ -65,8 +65,8 @@ dword_t graphic_editor_pallette[64] = {
 0xE5CCFF, 0xCC99FF, 0xB266FF, 0x9933FF, 0x7F00FF, 0x6600CC, 0x4C0099, 0x330066,
 0xFFCCFF, 0xFF99FF, 0xFF66FF, 0xFF33FF, 0xFF00FF, 0xCC00CC, 0x990099, 0x660066 };
 
-dword_t graphic_editor_image_area_width = 0, graphic_editor_image_area_width_center = 0, graphic_editor_image_area_heigth = 0, graphic_editor_image_area_heigth_center = 0;
-dword_t graphic_editor_pen_size_text_area_info_memory = 0, graphic_editor_width_text_area_info_memory = 0, graphic_editor_heigth_text_area_info_memory = 0;
+dword_t graphic_editor_image_area_width = 0, graphic_editor_image_area_width_center = 0, graphic_editor_image_area_height = 0, graphic_editor_image_area_height_center = 0;
+dword_t graphic_editor_pen_size_text_area_info_memory = 0, graphic_editor_width_text_area_info_memory = 0, graphic_editor_height_text_area_info_memory = 0;
 dword_t graphic_editor_color = 0, graphic_editor_tool = 0, graphic_editor_tool_state = 0, graphic_editor_pen_size = 0;
 dword_t graphic_editor_program_interface_memory = 0;
 dword_t graphic_editor_mouse_cursor_previous_image_x = 0, graphic_editor_mouse_cursor_previous_image_y = 0;

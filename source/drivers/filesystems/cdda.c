@@ -29,11 +29,19 @@ dword_t cdda_read_file(dword_t sector, dword_t length_of_file_in_bytes) {
  dword_t number_of_sectors = (length_of_file_in_bytes/2352);
  dword_t full_number_of_sectors = number_of_sectors, number_of_readed_sectors = 0;
 
+ //show progress
  file_work_done_percents = 0;
  if(file_show_file_work_progress==1) {
   file_dialog_show_progress();
+  print("You can press ESC to stop reading", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8, BLACK);
+  redraw_part_of_screen(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8, 33*8, 8);
  }
 
+ //prepare for possibility of keyboard event
+ keyboard_value = 0;
+ usb_keyboard_value = 0;
+
+ //read file
  while(1) {
   //read 27 sectors, max value for one transfer request
   if(number_of_sectors>27) {
@@ -59,6 +67,13 @@ dword_t cdda_read_file(dword_t sector, dword_t length_of_file_in_bytes) {
   if(file_show_file_work_progress==1) {
    file_dialog_show_progress();
   }
+
+  //check if there is not request to cancel reading
+  if(keyboard_value==KEY_ESC || usb_keyboard_value==KEY_ESC) {
+   free(memory);
+   error_window("You cancelled reading");
+   return STATUS_ERROR;
+  }
  }
 }
 
@@ -75,10 +90,16 @@ dword_t cdda_read_file_skipping_errors(dword_t sector, dword_t length_of_file_in
   print("Number of readed sectors: 0", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8, BLACK);
   print("Number of bad sectors: 0", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8+16, BLACK);
   print("Number of all sectors:", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8+16+16, BLACK);
-  print_var(full_number_of_sectors, FILE_DIALOG_DEVICE_LIST_WIDTH+8+24*8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8+16+16, BLACK);
-  redraw_part_of_screen(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8, 40*8, 40);
+  print_var(full_number_of_sectors, FILE_DIALOG_DEVICE_LIST_WIDTH+8+23*8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8+16+16, BLACK);
+  print("You can press ESC to stop reading", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8+16+16+16, BLACK);
+  redraw_part_of_screen(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8, 40*8, 56);
  }
 
+ //prepare for possibility of keyboard event
+ keyboard_value = 0;
+ usb_keyboard_value = 0;
+
+ //read file
  for(dword_t i=0; i<number_of_sectors; i++) {
   //read one sector per request
   if(read_audio_cd(sector, 1, memory_pointer)==STATUS_ERROR) {
@@ -95,14 +116,19 @@ dword_t cdda_read_file_skipping_errors(dword_t sector, dword_t length_of_file_in
   file_work_done_percents = (100*number_of_readed_sectors/full_number_of_sectors);
   if(file_show_file_work_progress==1) {
    file_dialog_show_progress();
-   draw_full_square(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8, 40*8, 24, 0xFF6600);
-   print("Number of readed sectors:", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8, BLACK);
+   draw_full_square(FILE_DIALOG_DEVICE_LIST_WIDTH+8+26*8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8, 10*8, 8, 0xFF6600);
    print_var(number_of_readed_sectors, FILE_DIALOG_DEVICE_LIST_WIDTH+8+26*8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8, BLACK);
-   print("Number of bad sectors:", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8+16, BLACK);
+   redraw_part_of_screen(FILE_DIALOG_DEVICE_LIST_WIDTH+8+26*8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8, 10*8, 8);
+   draw_full_square(FILE_DIALOG_DEVICE_LIST_WIDTH+8+23*8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8+16, 10*8, 8, 0xFF6600);
    print_var(number_of_bad_sectors, FILE_DIALOG_DEVICE_LIST_WIDTH+8+23*8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8+16, BLACK);
-   print("Number of all sectors:", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8+16+16, BLACK);
-   print_var(full_number_of_sectors, FILE_DIALOG_DEVICE_LIST_WIDTH+8+23*8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8+16+16, BLACK);
-   redraw_part_of_screen(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8, 40*8, 40);
+   redraw_part_of_screen(FILE_DIALOG_DEVICE_LIST_WIDTH+8+23*8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8+16, 10*8, 8);
+  }
+
+  //check if there is not request to cancel reading
+  if(keyboard_value==KEY_ESC || usb_keyboard_value==KEY_ESC) {
+   free(memory);
+   error_window("You cancelled reading");
+   return STATUS_ERROR;
   }
  }
 

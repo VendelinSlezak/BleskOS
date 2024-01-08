@@ -12,7 +12,7 @@ void initalize_file_manager(void) {
  file_manager_program_interface_memory = create_program_interface_memory();
  file_manager_number_of_files_on_screen = ((graphic_screen_y-PROGRAM_INTERFACE_TOP_LINE_HEIGTH-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH-24-8)/10);
  file_manager_number_of_chars_of_file_name = ((graphic_screen_x-FILE_MANAGER_DEVICE_LIST_WIDTH-8-20)/8);
- file_manager_scrollbar_heigth = (file_manager_number_of_files_on_screen*10);
+ file_manager_scrollbar_height = (file_manager_number_of_files_on_screen*10);
  file_manager_copy_entry_memory = calloc(256);
  file_manager_copied_file_memory = 0;
  file_manager_file_copied = STATUS_FALSE;
@@ -301,9 +301,9 @@ void draw_file_manager(void) {
 
   //draw scrollbar
   if(get_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE)!=0) {
-   draw_vertical_scrollbar(graphic_screen_x-15, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, file_manager_scrollbar_heigth, get_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION), get_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE));
-   program_interface_add_vertical_scrollbar(FILE_MANAGER_CLICK_ZONE_SCROLLBAR, ((dword_t)(&file_manager_scrollbar_heigth)), get_position_of_file_memory()+FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION*4, get_position_of_file_memory()+FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE*4, ((dword_t)&file_manager_verticall_scrollbar_event));
-   add_zone_to_click_board(graphic_screen_x-15, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, 10, file_manager_scrollbar_heigth, FILE_MANAGER_CLICK_ZONE_SCROLLBAR);
+   draw_vertical_scrollbar(graphic_screen_x-15, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, file_manager_scrollbar_height, get_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION), get_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE));
+   program_interface_add_vertical_scrollbar(FILE_MANAGER_CLICK_ZONE_SCROLLBAR, ((dword_t)(&file_manager_scrollbar_height)), get_position_of_file_memory()+FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION*4, get_position_of_file_memory()+FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE*4, ((dword_t)&file_manager_verticall_scrollbar_event));
+   add_zone_to_click_board(graphic_screen_x-15, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, 10, file_manager_scrollbar_height, FILE_MANAGER_CLICK_ZONE_SCROLLBAR);
   }
 
   //draw back button
@@ -504,7 +504,7 @@ void file_manager_key_up_event(void) {
 
   //recalculate scrollbar
   if(get_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE)!=0) {
-   set_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION, calculate_scrollbar_rider_position(file_manager_scrollbar_heigth, get_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE), get_file_value(FILE_MANAGER_FILE_FOLDER_NUMBER_OF_ENTRIES), file_manager_number_of_files_on_screen, get_file_value(FILE_MANAGER_FILE_FOLDER_FIRST_SHOWED_ENTRY)));
+   set_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION, calculate_scrollbar_rider_position(file_manager_scrollbar_height, get_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE), get_file_value(FILE_MANAGER_FILE_FOLDER_NUMBER_OF_ENTRIES), file_manager_number_of_files_on_screen, get_file_value(FILE_MANAGER_FILE_FOLDER_FIRST_SHOWED_ENTRY)));
   }
   
   //redraw screen
@@ -531,7 +531,7 @@ void file_manager_key_down_event(void) {
 
   //recalculate scrollbar
   if(get_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE)!=0) {
-   set_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION, calculate_scrollbar_rider_position(file_manager_scrollbar_heigth, get_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE), get_file_value(FILE_MANAGER_FILE_FOLDER_NUMBER_OF_ENTRIES), file_manager_number_of_files_on_screen, get_file_value(FILE_MANAGER_FILE_FOLDER_FIRST_SHOWED_ENTRY)));
+   set_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION, calculate_scrollbar_rider_position(file_manager_scrollbar_height, get_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE), get_file_value(FILE_MANAGER_FILE_FOLDER_NUMBER_OF_ENTRIES), file_manager_number_of_files_on_screen, get_file_value(FILE_MANAGER_FILE_FOLDER_FIRST_SHOWED_ENTRY)));
   }
 
   //redraw screen
@@ -540,7 +540,7 @@ void file_manager_key_down_event(void) {
 }
 
 void file_manager_verticall_scrollbar_event(void) {
- set_file_value(FILE_MANAGER_FILE_FOLDER_FIRST_SHOWED_ENTRY, get_scrollbar_rider_value(file_manager_scrollbar_heigth, get_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE), get_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION), get_file_value(FILE_MANAGER_FILE_FOLDER_NUMBER_OF_ENTRIES), file_manager_number_of_files_on_screen));
+ set_file_value(FILE_MANAGER_FILE_FOLDER_FIRST_SHOWED_ENTRY, get_scrollbar_rider_value(file_manager_scrollbar_height, get_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE), get_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION), get_file_value(FILE_MANAGER_FILE_FOLDER_NUMBER_OF_ENTRIES), file_manager_number_of_files_on_screen));
  program_interface_redraw();
  program_interface_selected_element_number = 0; //select scrollbar
 }
@@ -560,9 +560,9 @@ void file_manager_compute_number_of_files_in_directory(void) {
  }
  set_file_value(FILE_MANAGER_FILE_FOLDER_NUMBER_OF_ENTRIES, number_of_files);
  if(number_of_files!=0) {
-  set_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE, calculate_scrollbar_rider_size(file_manager_scrollbar_heigth, get_file_value(FILE_MANAGER_FILE_FOLDER_NUMBER_OF_ENTRIES), file_manager_number_of_files_on_screen));
+  set_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE, calculate_scrollbar_rider_size(file_manager_scrollbar_height, get_file_value(FILE_MANAGER_FILE_FOLDER_NUMBER_OF_ENTRIES), file_manager_number_of_files_on_screen));
   if(get_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE)!=0) {
-   set_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION, calculate_scrollbar_rider_position(file_manager_scrollbar_heigth, get_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE), get_file_value(FILE_MANAGER_FILE_FOLDER_NUMBER_OF_ENTRIES), file_manager_number_of_files_on_screen, get_file_value(FILE_MANAGER_FILE_FOLDER_FIRST_SHOWED_ENTRY)));
+   set_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION, calculate_scrollbar_rider_position(file_manager_scrollbar_height, get_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE), get_file_value(FILE_MANAGER_FILE_FOLDER_NUMBER_OF_ENTRIES), file_manager_number_of_files_on_screen, get_file_value(FILE_MANAGER_FILE_FOLDER_FIRST_SHOWED_ENTRY)));
   }
  }
  else {

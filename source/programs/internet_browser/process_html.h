@@ -35,7 +35,7 @@
 
 dword_t html_title_memory = 0, webpage_last_line_command_pointer = 0;
 dword_t html_tag_css_list_mem = 0, html_tag_css_list_pointer = 0, *html_tag_css_list, *html_tag_css_list_2;
-dword_t html_not_pair_tag = 0, html_tag_heigth_calculation_type = 0, html_num_of_tags_to_skip = 0, html_page_heigth = 0;
+dword_t html_not_pair_tag = 0, html_tag_height_calculation_type = 0, html_num_of_tags_to_skip = 0, html_page_height = 0;
 dword_t html_table_cell_width_list_mem = 0, html_table_cell_width_list_pointer = 0, *html_table_cell_width_list, html_table_cell_width = 0, html_table_last_cell_tag_ending = 0;
 dword_t html_list_type_mem = 0, html_list_type_pointer = 0, *html_list_type, html_list_tag = 0, html_last_char_is_list_start = 0;
 dword_t ib_line_width = 0, ib_actual_line_width = 0, ib_tag_new_line = 0, ib_tag_new_column = 0, ib_line_biggest_spacing = 0;

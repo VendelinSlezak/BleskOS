@@ -8,9 +8,9 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-void draw_vertical_scrollbar(dword_t x, dword_t y, dword_t heigth, dword_t rider_position, dword_t rider_size) {
+void draw_vertical_scrollbar(dword_t x, dword_t y, dword_t height, dword_t rider_position, dword_t rider_size) {
  //draw background
- draw_full_square(x, y, 10, heigth, 0xDDDDDD);
+ draw_full_square(x, y, 10, height, 0xDDDDDD);
  
  //draw rider
  draw_full_square(x, y+rider_position, 10, rider_size, 0x888888);

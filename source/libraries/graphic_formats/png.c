@@ -12,7 +12,7 @@ dword_t convert_png_to_image_data(dword_t png_memory, dword_t png_file_length) {
  byte_t *png8 = (byte_t *) png_memory;
  word_t *png16 = (word_t *) png_memory;
  dword_t *png32 = (dword_t *) (png_memory+8);
- dword_t width, heigth, bpp, bits_per_channel;
+ dword_t width, height, bpp, bits_per_channel;
  dword_t image_memory = 0, palette_memory = 0;
  dword_t *image_data = (dword_t *) image_memory;
  dword_t deflate_compressed_data_memory = 0, deflate_compressed_data_memory_length = 0, deflate_decompressed_data_memory = 0;
@@ -28,7 +28,7 @@ dword_t convert_png_to_image_data(dword_t png_memory, dword_t png_file_length) {
    //size of image
    png8 = (byte_t *) ((dword_t)png32+8);
    width = (png8[0]<<24 | png8[1]<<16 | png8[2]<<8 | png8[3]);
-   heigth = (png8[4]<<24 | png8[5]<<16 | png8[6]<<8 | png8[7]);
+   height = (png8[4]<<24 | png8[5]<<16 | png8[6]<<8 | png8[7]);
    
    //bits per channel 
    //TODO: other values for bits per channel than 8
@@ -77,17 +77,17 @@ dword_t convert_png_to_image_data(dword_t png_memory, dword_t png_file_length) {
    }
    
    //test limits for image
-   if(width==0 || heigth==0 || bpp<1 || bpp>5 || (width*heigth)>4096*4096) {
+   if(width==0 || height==0 || bpp<1 || bpp>5 || (width*height)>4096*4096) {
     log("PNG: not fitting size\n");
     return STATUS_ERROR;
    }
    
    //create image
-   image_memory = create_image(width, heigth);
+   image_memory = create_image(width, height);
    image_data = (dword_t *) (get_image_data_memory(image_memory));
    deflate_compressed_data_memory = (calloc(png_file_length));
    deflate_compressed_data_memory_length = 0;
-   deflate_decompressed_data_memory = calloc((width*heigth*bpp+heigth));
+   deflate_decompressed_data_memory = calloc((width*height*bpp+height));
   }
   else if(png32[1]==0x45544C50) { //PLTE
    palette_memory = ((dword_t)png32+8);
@@ -122,9 +122,9 @@ dword_t convert_png_to_image_data(dword_t png_memory, dword_t png_file_length) {
      
    //decompress deflate
    png8 = (byte_t *) ((dword_t)png32);
-   dword_t expected_size_of_file = (width*heigth*bpp*(bits_per_channel/8)+heigth);
+   dword_t expected_size_of_file = (width*height*bpp*(bits_per_channel/8)+height);
    if(bpp==PNG_BPP_PALETTE_8_BITS) {
-    expected_size_of_file = (width*heigth*(bits_per_channel/8)+heigth);
+    expected_size_of_file = (width*height*(bits_per_channel/8)+height);
    }
    if(decode_deflate(deflate_compressed_data_memory+2, deflate_compressed_data_memory_length-6, deflate_decompressed_data_memory, expected_size_of_file)==STATUS_ERROR) {
     log("PNG: DEFLATE decompression error\n");
@@ -137,7 +137,7 @@ dword_t convert_png_to_image_data(dword_t png_memory, dword_t png_file_length) {
    if(decoded_stream_length!=expected_size_of_file) {
     log("PNG: DEFLATE did not decoded succesfully\n");
     log_var_with_space(width);
-    log_var_with_space(heigth);
+    log_var_with_space(height);
     log_var_with_space(bpp);
     log_var_with_space(bits_per_channel);
     log_var_with_space(expected_size_of_file);
@@ -157,7 +157,7 @@ dword_t convert_png_to_image_data(dword_t png_memory, dword_t png_file_length) {
    dword_t filtering_previous_line_b_memory = calloc(width);
    byte_t pixel_r, pixel_g, pixel_b, previous_pixel_r, previous_pixel_g, previous_pixel_b, previous_up_pixel_r, previous_up_pixel_g, previous_up_pixel_b;
    
-   for(int line=0; line<heigth; line++) {
+   for(int line=0; line<height; line++) {
     byte_t *filtering_previous_line_r = (byte_t *) filtering_previous_line_r_memory;
     byte_t *filtering_previous_line_g = (byte_t *) filtering_previous_line_g_memory;
     byte_t *filtering_previous_line_b = (byte_t *) filtering_previous_line_b_memory;

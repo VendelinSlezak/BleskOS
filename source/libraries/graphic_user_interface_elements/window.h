@@ -11,8 +11,8 @@
 dword_t system_message_background_mem;
 
 void draw_clear_window(byte_t *up_string, byte_t *down_string, dword_t background_color, dword_t border_color);
-void draw_message_window(dword_t width, dword_t heigth);
-void redraw_message_window(dword_t width, dword_t heigth);
+void draw_message_window(dword_t width, dword_t height);
+void redraw_message_window(dword_t width, dword_t height);
 void print_to_message_window(byte_t *string, dword_t line);
 void message_window(byte_t *message);
 void show_message_window(byte_t *message);
