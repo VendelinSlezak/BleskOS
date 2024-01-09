@@ -8,6 +8,10 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 7**
+- Further significant improvement of PATAPI driver
+- BleskOS on USB is on small partition, so you can format rest of USB to another filesystem
+
 **Update 6**
 - Significat improvement of PATAPI driver
 - You can stop reading from Audio CD by ESC
@@ -22,10 +26,6 @@ Here is info about most important improvements in several last updates.
 - Option to read as much as possible from Audio CD track
 - Now you can use BleskOS to save data from Audio CDs
 - Multiple minor fixes and improvements
-
-**Update 3**
-- Driver for Audio CD filesystem
-- Support for CDDA audio files
 
 ## How to try BleskOS
 
