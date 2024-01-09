@@ -33,8 +33,8 @@ dword_t cdda_read_file(dword_t sector, dword_t length_of_file_in_bytes) {
  file_work_done_percents = 0;
  if(file_show_file_work_progress==1) {
   file_dialog_show_progress();
-  print("You can press ESC to stop reading", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8, BLACK);
-  redraw_part_of_screen(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8, 33*8, 8);
+  print("You can hold ESC to stop reading", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8, BLACK);
+  redraw_part_of_screen(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8, 32*8, 8);
  }
 
  //prepare for possibility of keyboard event
@@ -46,8 +46,11 @@ dword_t cdda_read_file(dword_t sector, dword_t length_of_file_in_bytes) {
   //read 27 sectors, max value for one transfer request
   if(number_of_sectors>27) {
    if(read_audio_cd(sector, 27, memory_pointer)==STATUS_ERROR) {
-    free(memory);
-    return STATUS_ERROR;
+    //try read again
+    if(read_audio_cd(sector, 27, memory_pointer)==STATUS_ERROR) {
+     free(memory);
+     return STATUS_ERROR;
+    }
    }
    number_of_sectors-=27;
    sector+=27;
@@ -56,8 +59,11 @@ dword_t cdda_read_file(dword_t sector, dword_t length_of_file_in_bytes) {
   }
   else {
    if(read_audio_cd(sector, number_of_sectors, memory_pointer)==STATUS_ERROR) {
-    free(memory);
-    return STATUS_ERROR;
+    //try read again
+    if(read_audio_cd(sector, number_of_sectors, memory_pointer)==STATUS_ERROR) {
+     free(memory);
+     return STATUS_ERROR;
+    }
    }
    return memory;
   }
@@ -91,7 +97,7 @@ dword_t cdda_read_file_skipping_errors(dword_t sector, dword_t length_of_file_in
   print("Number of bad sectors: 0", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8+16, BLACK);
   print("Number of all sectors:", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8+16+16, BLACK);
   print_var(full_number_of_sectors, FILE_DIALOG_DEVICE_LIST_WIDTH+8+23*8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8+16+16, BLACK);
-  print("You can press ESC to stop reading", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8+16+16+16, BLACK);
+  print("You can hold ESC to stop reading", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8+16+16+16, BLACK);
   redraw_part_of_screen(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+16+8, 40*8, 56);
  }
 

@@ -54,6 +54,10 @@ void set_device_entry_list_name_value(dword_t offset, word_t value) {
 }
 
 void add_device_partition_to_device_list(dword_t device_type, dword_t device_number, dword_t partition_type, dword_t first_partition_sector) {
+ if(partition_type==STORAGE_BLESKOS_BOOTABLE) {
+  return; //we do not add this partition to device list
+ }
+ 
  for(device_list_selected_entry=0; device_list_selected_entry<DEVICE_LIST_NUMBER_OF_ENTRIES; device_list_selected_entry++) {
   if(get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_TYPE)==0) {
    //we found free entry

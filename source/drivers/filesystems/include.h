@@ -12,5 +12,7 @@
 #include "ext.h"
 #include "iso9660.h"
 #include "cdda.h"
+#include "bleskos_bootable.h"
+#include "virtual_filesystem.h"
 #include "device_list.h"
 #include "main.h"
