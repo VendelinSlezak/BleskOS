@@ -1,4 +1,4 @@
-;BleskOS bootloader v04/01/2024
+;BleskOS bootloader v09/01/2024
 
 ;;;;;
 ;; MIT License
@@ -21,6 +21,66 @@ start:
  mov ss, ax
  mov es, ax
  mov sp, 0x7C00
+
+ ;READ BOOTLOADER OF EXTENDED BOOTLOADER
+ mov ah, 0x2 ;read
+ mov al, 1 ;one sector
+ mov ch, 0
+ mov dh, 0
+ mov cl, 2
+ mov bx, 0x7E00 ;memory offset
+ int 13h
+ jnc bootloader_of_extended_bootloader
+ int 13h ;try second time
+ jnc bootloader_of_extended_bootloader
+ int 13h ;try third time
+ jnc bootloader_of_extended_bootloader
+ 
+ ;error during loading second stage of bootloader, print error message independently from BIOS
+ .error:
+ mov ax, 0xB800
+ mov es, ax
+ mov si, 0
+ mov cx, 80*25
+ .clear_screen:
+  mov word [es:si], 0x4020 ;clear screen with red background
+  add si, 2
+ loop .clear_screen
+
+ mov byte [es:0], 'E'
+ mov byte [es:2], 'r'
+ mov byte [es:4], 'r'
+ mov byte [es:6], 'o'
+ mov byte [es:8], 'r'
+ mov byte [es:12], '0'
+
+ ;halt forever
+ cli
+ .halt:
+  hlt
+ jmp .halt
+ 
+ ;MBR
+ times 0x1B4-($-$$) db 0
+ 
+ times 10 db 0 ;Disk ID
+ db 0x80 ;bootable partition
+ db 0, 2, 0 ;first sector in CHS (head/sector/cylinder)
+ db 0x01 ;partition type FAT12
+ db 1, 18, 80 ;last sector in CHS (head/sector/cylinder)
+ dd 1 ;LBA of first sector
+ dd 2880 ;sectors of this partition
+ times 16 db 0 ;second entry
+ times 16 db 0 ;thrid entry
+ times 16 db 0 ;fourth entry
+dw 0xAA55 ;bootable disk
+
+bootloader_of_extended_bootloader:
+ xor ax, ax
+ mov ds, ax
+ mov ss, ax
+ mov es, ax
+ mov sp, 0x7C00
  
  ;ENABLE A20
  in al, 0x92
@@ -32,8 +92,8 @@ start:
  mov al, 4 ;four sectors
  mov ch, 0
  mov dh, 0
- mov cl, 2
- mov bx, 0x7E00 ;memory offset
+ mov cl, 3 ;first sector is for MBR and second is bootloader of extended bootloader, extended bootloader itself starts from third sector
+ mov bx, 0x8000 ;memory offset
  int 13h
  jnc extended_bootloader
  int 13h ;try second time
@@ -65,20 +125,10 @@ start:
   hlt
  jmp .halt
  
- ;MBR
- times 0x1B4-($-$$) db 0
- 
- times 10 db 0 ;Disk ID
- db 0x80 ;bootable partition
- db 0, 1, 0 ;first sector in CHS (head/sector/cylinder)
- db 0x01 ;partition type FAT12
- db 1, 18, 80 ;last sector in CHS (head/sector/cylinder)
- dd 0 ;LBA of first sector
- dd 2880 ;sectors of this partition
- times 16 db 0 ;second entry
- times 16 db 0 ;thrid entry
- times 16 db 0 ;fourth entry
-dw 0xAA55
+ ;signature of BleskOS code partition
+ times 1000-($-$$) db 0
+ db 'BleskOS boot partition'
+dw 0xAA55 ;bootable partition
 
 extended_bootloader:
  mov byte [boot_drive], dl
@@ -693,23 +743,23 @@ load_bleskos:
  cmp byte [boot_drive], 0x80
  jae .hard_disk_boot
  
- ;load first 13 sectors to align reading from floppy
+ ;load first 12 sectors to align reading from floppy
  mov ch, 0 ;cylinder
  mov dh, 0 ;head
- mov cl, 6 ;sector
+ mov cl, 7 ;sector
  mov dl, byte [boot_drive]
  mov bx, 0x0000
  mov ax, 0x1000
  mov es, ax
  mov fs, ax
  mov ah, 0x2 ;read
- mov al, 13 ;13 sectors
+ mov al, 12 ;12 sectors
  pusha
  int 13h
  popa
  jc error_loading
  
- mov edi, 0x10000+13*512
+ mov edi, 0x10000+12*512
  mov esi, 0
  mov ch, 0 ;cylinder
  mov dh, 1 ;head
@@ -752,8 +802,8 @@ load_bleskos:
  jmp .floppy_load_cylinder
  
  .hard_disk_boot:
- mov dword [0xF008], 5
- mov edx, 5
+ mov dword [0xF008], 6 ;first sector of BleskOS code
+ mov edx, 6
  mov cx, 12 ;load 12x64 sectors = 384 KB
  mov ax, 0x10
  .load_bleskos_from_hard_disk:

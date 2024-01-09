@@ -281,13 +281,23 @@ void read_partition_info(void) {
    return;
   }
 
-  if(is_partition_iso9660(0)==STATUS_TRUE) {
-   partitions[0].type = STORAGE_ISO9660;
+  // if(is_partition_iso9660(0)==STATUS_TRUE) {
+  //  partitions[0].type = STORAGE_ISO9660;
+  //  partitions[0].first_sector = 0;
+  //  partitions[0].num_of_sectors = optical_disk_size;
+  // }
+  // else if(is_optical_disk_cdda()==STATUS_TRUE) {
+  //  partitions[0].type = STORAGE_CDDA;
+  //  partitions[0].first_sector = 0;
+  //  partitions[0].num_of_sectors = optical_disk_size;
+  // }
+  if(is_optical_disk_cdda()==STATUS_TRUE) {
+   partitions[0].type = STORAGE_CDDA;
    partitions[0].first_sector = 0;
    partitions[0].num_of_sectors = optical_disk_size;
   }
-  else if(is_optical_disk_cdda()==STATUS_TRUE) {
-   partitions[0].type = STORAGE_CDDA;
+  else if(is_partition_iso9660(0)==STATUS_TRUE) {
+   partitions[0].type = STORAGE_ISO9660;
    partitions[0].first_sector = 0;
    partitions[0].num_of_sectors = optical_disk_size;
   }
@@ -295,6 +305,9 @@ void read_partition_info(void) {
    partitions[0].type = STORAGE_FREE_SPACE;
    partitions[0].first_sector = 0;
    partitions[0].num_of_sectors = optical_disk_size;
+  }
+  else {
+   return;
   }
   
   goto log;
@@ -414,29 +427,36 @@ void read_partition_info(void) {
    else if(is_partition_ext(partitions[i].first_sector)==STATUS_TRUE) {
     partitions[i].type = STORAGE_EXT;
    }
+   else if(is_partition_bleskos_bootable(partitions[i].first_sector)==STATUS_TRUE) {
+    partitions[i].type = STORAGE_BLESKOS_BOOTABLE;
+   }
   }
  }
  
  log:
- log("\npartitions founded:\n");
+ log("\npartitions founded:");
  for(int i=0; i<8; i++) {
   if(partitions[i].type!=STORAGE_NO_PARTITION) {
+   log("\n");
    log_hex_with_space(partitions[i].first_sector);
    log_var_with_space(partitions[i].num_of_sectors);
    if(partitions[i].type==STORAGE_FAT) {
-    log("FAT\n");
+    log("FAT");
    }
    else if(partitions[i].type==STORAGE_EXT) {
-    log("Ext\n");
+    log("Ext");
    }
    else if(partitions[i].type==STORAGE_ISO9660) {
-    log("ISO9660\n");
+    log("ISO9660");
    }
    else if(partitions[i].type==STORAGE_CDDA) {
-    log("CDDA\n");
+    log("CDDA");
+   }
+   else if(partitions[i].type==STORAGE_BLESKOS_BOOTABLE) {
+    log("BleskOS bootable partition");
    }
    else {
-    log("unknown filesystem\n");
+    log("unknown filesystem");
    }
   }
  }
@@ -470,99 +490,6 @@ byte_t is_filesystem_read_write(byte_t filesystem_type) {
  }
  
  return STATUS_FALSE;
-}
-
-dword_t compare_file_extension(dword_t folder_mem, dword_t entry_number, dword_t extension_memory, dword_t extension_length) {
- word_t *folder16 = (word_t *) (folder_mem+entry_number*256+32);
- word_t *extension = (word_t *) extension_memory;
- word_t unicode_char;
- 
- //find extension
- for(int i=0; i<100; i++, folder16++) {
-  if(*folder16=='.') {
-   folder16++;
-   
-   //compare
-   for(int j=0; j<extension_length; j++) {
-    unicode_char=folder16[j];
-    
-    //convert from big to low chars
-    if(unicode_char>0x40 && unicode_char<0x5B) {
-     unicode_char += 0x20;
-    }
-   
-    if(unicode_char!=extension[j]) {
-     return STATUS_FALSE;
-    }
-   }
-   
-   return STATUS_TRUE;
-  }
- }
- 
- return STATUS_FALSE; //extension not founded
-}
-
-void get_file_extension(dword_t folder_mem, dword_t entry_number) {
- word_t *folder16 = (word_t *) (folder_mem+entry_number*256+32);
- 
- for(int i=0; i<10; i++) {
-  file_extension[i]=0;
- }
- 
- //find extension
- for(int i=0; i<100; i++, folder16++) {
-  if(*folder16=='.') {
-   folder16++;
-   
-   //compare
-   for(int j=0; j<10; j++) {
-    if(folder16[j]<0x5B && folder16[j]>0x40) {
-     file_extension[j]=(folder16[j]+0x20); //convert to small chars
-    }
-    else {
-     file_extension[j]=folder16[j];
-    }
-    if(file_extension[j]==0) {
-     return;
-    }
-   }
-  }
- }
-}
-
-word_t get_char_of_file_from_folder_entry_name(dword_t folder_mem, dword_t entry_number, dword_t char_offset) {
- word_t *folder16 = (word_t *) (folder_mem+entry_number*256+32+(char_offset*2));
- return *folder16;
-}
-
-void set_char_of_file_from_folder_entry_name(dword_t folder_mem, dword_t entry_number, dword_t char_offset, word_t char_value) {
- word_t *folder16 = (word_t *) (folder_mem+entry_number*256+32+(char_offset*2));
- *folder16 = char_value;
-}
-
-byte_t is_loaded_file_extension(byte_t *extension) {
- return are_equal_b_string_b_string((byte_t *)file_dialog_file_extension, extension);
-}
-
-dword_t get_file_attribute(dword_t folder_mem, dword_t entry_number) {
- byte_t *folder8 = (byte_t *) (folder_mem+entry_number*256);
- return folder8[11];
-}
-
-dword_t get_file_starting_entry(dword_t folder_mem, dword_t entry_number) {
- word_t *folder16 = (word_t *) (folder_mem+entry_number*256);
- return (folder16[10]<<16 | folder16[13]);
-}
-
-dword_t get_file_size(dword_t folder_mem, dword_t entry_number) {
- dword_t *folder32 = (dword_t *) (folder_mem+entry_number*256);
- return folder32[7];
-}
-
-void set_file_entry_size(dword_t folder_mem, dword_t entry_number, dword_t size) {
- dword_t *folder32 = (dword_t *) (folder_mem+entry_number*256);
- folder32[7]=size;
 }
 
 dword_t read_file(dword_t file_starting_entry, dword_t file_size) {

@@ -41,7 +41,8 @@ byte_t ebr_sector[512];
 byte_t partition_label[12];
 byte_t file_extension[10];
 dword_t file_work_done_percents, file_show_file_work_progress;
-dword_t hard_disk_size;
+dword_t hard_disk_size = 0;
+dword_t optical_disk_size = 0, optical_disk_sector_size = 0;
 
 struct table_of_content_entry {
  word_t unknown;
@@ -68,15 +69,6 @@ byte_t read_optical_disk_toc(void);
 void read_partition_info(void);
 void select_partition(byte_t partition_number);
 byte_t is_filesystem_read_write(byte_t filesystem_type);
-dword_t compare_file_extension(dword_t folder_mem, dword_t entry_number, dword_t extension_memory, dword_t extension_length);
-void get_file_extension(dword_t folder_mem, dword_t entry_number);
-word_t get_char_of_file_from_folder_entry_name(dword_t folder_mem, dword_t entry_number, dword_t char_offset);
-void set_char_of_file_from_folder_entry_name(dword_t folder_mem, dword_t entry_number, dword_t char_offset, word_t char_value);
-byte_t is_loaded_file_extension(byte_t *extension);
-dword_t get_file_attribute(dword_t folder_mem, dword_t entry_number);
-dword_t get_file_starting_entry(dword_t folder_mem, dword_t entry_number);
-dword_t get_file_size(dword_t folder_mem, dword_t entry_number);
-void set_file_entry_size(dword_t folder_mem, dword_t entry_number, dword_t size);
 dword_t read_file(dword_t file_starting_entry, dword_t file_size);
 dword_t create_file(dword_t file_mem, dword_t size_of_file);
 dword_t rewrite_file(dword_t file_starting_entry, dword_t file_size, dword_t file_mem, dword_t size_of_file);

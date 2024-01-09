@@ -100,8 +100,8 @@ byte_t ide_send_identify_drive(word_t base_port) {
  outb(base_port + 7, 0xEC);
 
  //test presence of drive
- wait(5); //wait for controller to process command
- if(inb(base_port + 7)==0x00 || inb(base_port + 7)==0xFF || inb(base_port + 7)==0x7F) {
+ ide_wait_for_data(base_port, 50); //wait for controller to process command
+ if(inb(base_port + 7)==0x00 || inb(base_port + 7)==0xFF || inb(base_port + 7)==0x7F) { //invalid state of status register
   return STATUS_ERROR;
  }
  
@@ -152,6 +152,10 @@ void initalize_ide_controllers(void) {
  word_t *ide_controllers_info = (word_t *) (ide_controllers_info_mem);
  dword_t *ide_controllers_info32 = (dword_t *) (ide_controllers_info_mem+8);
  for(dword_t i=0; i<ide_controllers_pointer; i++, ide_controllers_info += 8, ide_controllers_info32 += 4) {
+  if(inb(ide_controllers_info[0] + 7)==0xFF) {
+   continue; //there is invalid value in status register, this controller do not exist
+  }
+
   ide_reset_controller(ide_controllers_info[0], ide_controllers_info[1]);
   ide_select_drive(ide_controllers_info[0], PATA_MASTER);
   ide_send_identify_drive(ide_controllers_info[0]);
@@ -214,15 +218,18 @@ void initalize_ide_controllers(void) {
  ide_controllers_info = (word_t *) (ide_controllers_info_mem);
  ide_controllers_info32 = (dword_t *) (ide_controllers_info_mem+8);
  for(dword_t i=0; i<ide_controllers_pointer; i++, ide_controllers_info += 8, ide_controllers_info32 += 4) {
-  log("MASTER ");
-  log_hex_specific_size_with_space(ide_controllers_info[0], 4);
-  log_hex_specific_size_with_space(ide_controllers_info[2], 4);
-  log_var(ide_controllers_info32[0]);
   log("\n");
-  log("SLAVE ");
+  log_hex_specific_size_with_space(ide_controllers_info[0], 4);
   log_hex_specific_size_with_space(ide_controllers_info[1], 4);
+  log("MASTER ");
+  log_hex_specific_size_with_space(ide_controllers_info[2], 4);
+  log_var_with_space(ide_controllers_info32[0]);
+
+  log("\n");
+  log_hex_specific_size_with_space(ide_controllers_info[0], 4);
+  log_hex_specific_size_with_space(ide_controllers_info[1], 4);
+  log("SLAVE ");
   log_hex_specific_size_with_space(ide_controllers_info[3], 4);
   log_var(ide_controllers_info32[1]);
-  log("\n");
  }
 }

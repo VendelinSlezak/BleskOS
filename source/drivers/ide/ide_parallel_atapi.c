@@ -11,7 +11,7 @@
 byte_t patapi_send_packet_command(word_t base_port, word_t transfer_length) {
  //drive must be already selected
 
- //reset drive from condition to stuck
+ //reset drive from condition for stucking
  if(inb(base_port + 7) & 0x88!=0x00) {
   log("\nIDE ATAPI: reset");
   ide_reset_controller(base_port, ide_cdrom_alt_base);
@@ -27,11 +27,9 @@ byte_t patapi_send_packet_command(word_t base_port, word_t transfer_length) {
  
  //wait
  if(ide_wait_for_data(base_port, 50)==STATUS_ERROR) {
-  wait(1);
-  inb(base_port+7); //clear interrupt state
-  log("\nIDE ATAPI: packet can not be sended ");
+  log("\nIDE ATAPI: can not send packet ");
   log_hex_specific_size_with_space(inb(base_port+7), 2);
-  log_hex_specific_size(inb(base_port+1), 2);
+  log_hex_specific_size_with_space(inb(base_port+1), 2);
   return STATUS_ERROR;
  }
 
@@ -44,6 +42,7 @@ byte_t patapi_detect_disk(word_t base_port, word_t alt_base_port) {
 
  //send packet command
  if(patapi_send_packet_command(base_port, 0)==STATUS_ERROR) {
+  log("TEST UNIT READY");
   return STATUS_ERROR;
  }
  
@@ -73,18 +72,20 @@ byte_t patapi_detect_disk(word_t base_port, word_t alt_base_port) {
 byte_t patapi_read_capabilites(word_t base_port, word_t alt_base_port) {
  word_t response = 0;
  optical_disk_size = 0;
+ optical_disk_sector_size = 0;
 
  //reset controller
  ide_reset_controller(base_port, alt_base_port);
  
  //send packet command
  if(patapi_send_packet_command(base_port, 8)==STATUS_ERROR) {
+  log("READ CAPABILITES");
   return STATUS_ERROR;
  }
  
  //send packet
  outw(base_port + 0, 0x25); //READ CAPABILITES
- outw(base_port + 0, 0x1);
+ outw(base_port + 0, 0);
  outw(base_port + 0, 0);
  outw(base_port + 0, 0);
  outw(base_port + 0, 0);
@@ -101,8 +102,13 @@ byte_t patapi_read_capabilites(word_t base_port, word_t alt_base_port) {
  optical_disk_size = (BIG_ENDIAN(response)<<16);
  response = inw(base_port + 0);
  optical_disk_size |= BIG_ENDIAN(response);
- inw(base_port + 0);
- inw(base_port + 0);
+ response = inw(base_port + 0);
+ optical_disk_sector_size = (BIG_ENDIAN(response)<<16);
+ response = inw(base_port + 0);
+ optical_disk_sector_size |= BIG_ENDIAN(response);
+
+ //if this command leave drive in busy state, wait until it leaves it
+ ide_wait_drive_not_busy(base_port, 50);
  
  return STATUS_GOOD;
 }
@@ -113,6 +119,7 @@ byte_t patapi_eject_drive(word_t base_port, word_t alt_base_port) {
 
  //send packet command
  if(patapi_send_packet_command(base_port, 0)==STATUS_ERROR) {
+  log("EJECT");
   return STATUS_ERROR;
  }
  
@@ -139,6 +146,7 @@ byte_t patapi_read_cd_toc(word_t base_port, word_t alt_base_port, dword_t memory
  
  //send packet command
  if(patapi_send_packet_command(base_port, 252)==STATUS_ERROR) {
+  log("TABLE OF CONTENT");
   return STATUS_ERROR;
  }
  
@@ -152,7 +160,7 @@ byte_t patapi_read_cd_toc(word_t base_port, word_t alt_base_port, dword_t memory
  
  //wait max 2 seconds
  if(ide_wait_for_data(base_port, 1000)==STATUS_ERROR) {
-  log("\nIDE ATAPI: error with reading TOC ");
+  log("\nIDE ATAPI: error with reading TABLE OF CONTENT ");
   log_hex_specific_size_with_space(inb(base_port+7), 2);
   log_hex_specific_size(inb(base_port+1), 2);
   return STATUS_ERROR;
@@ -169,8 +177,8 @@ byte_t patapi_read_cd_toc(word_t base_port, word_t alt_base_port, dword_t memory
   }
  }
 
- //clear any device output
- ide_clear_device_output(base_port);
+ //if this command leave drive in busy state, wait until it leaves it
+ ide_wait_drive_not_busy(base_port, 50);
  
  return STATUS_GOOD;
 }
@@ -184,6 +192,7 @@ byte_t patapi_read(word_t base_port, word_t alt_base_port, dword_t sector, byte_
  
  //send packet command
  if(patapi_send_packet_command(base_port, 2048)==STATUS_ERROR) {
+  log("READ");
   return STATUS_ERROR;
  }
  
@@ -198,7 +207,7 @@ byte_t patapi_read(word_t base_port, word_t alt_base_port, dword_t sector, byte_
  outw(base_port + 0, 0);
 
  //transfer data
- for(int i=0; i<number_of_sectors; i++) {
+ for(int i=0; i<(number_of_sectors*1024); i++) {
   //wait for drive to be ready
   if(ide_wait_for_data(base_port, 3000)==STATUS_ERROR) { //max 6 seconds
    log("\nIDE ATAPI: error with reading sector ");
@@ -209,11 +218,12 @@ byte_t patapi_read(word_t base_port, word_t alt_base_port, dword_t sector, byte_
   }
 
   //read data of sector
-  for(dword_t j=0; j<1024; j++) {
-   *mem = inw(base_port + 0);
-   mem++;
-  }
+  *mem = inw(base_port + 0);
+  mem++;
  }
+
+ //if this command leave drive in busy state, wait until it leaves it
+ ide_wait_drive_not_busy(base_port, 50);
  
  return STATUS_GOOD;
 }
@@ -227,6 +237,7 @@ byte_t patapi_read_audio_cd_sector(word_t base_port, word_t alt_base_port, dword
  
  //send packet command
  if(patapi_send_packet_command(base_port, (number_of_sectors*2352))==STATUS_ERROR) {
+  log("READ CD");
   return STATUS_ERROR;
  }
  
@@ -241,7 +252,7 @@ byte_t patapi_read_audio_cd_sector(word_t base_port, word_t alt_base_port, dword
  outw(base_port + 0, 0);
 
  //transfer data
- for(int i=0; i<number_of_sectors; i++) {
+ for(int i=0; i<(number_of_sectors*1176); i++) {
   //wait for drive to be ready
   if(ide_wait_for_data(base_port, 3000)==STATUS_ERROR) { //max 6 seconds
    log("\nIDE ATAPI: error with reading audio sector ");
@@ -252,11 +263,12 @@ byte_t patapi_read_audio_cd_sector(word_t base_port, word_t alt_base_port, dword
   }
 
   //read data of sector
-  for(dword_t j=0; j<1176; j++) {
-   *mem = inw(base_port + 0);
-   mem++;
-  }
+  *mem = inw(base_port + 0);
+  mem++;
  }
+
+ //if this command leave drive in busy state, wait until it leaves it
+ ide_wait_drive_not_busy(base_port, 50);
  
  return STATUS_GOOD;
 }
