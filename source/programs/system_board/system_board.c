@@ -17,6 +17,8 @@ void system_board_redraw(void) {
  clear_screen(0xA04000);
 
  print("Hardware", 10, 10, BLACK);
+ draw_empty_square(10+28*8, graphic_screen_y-10-5-8-5, 29*8, 18, BLACK);
+ print("[P] Open performance rating", 10+29*8, graphic_screen_y-10-5-8, BLACK);
  draw_empty_square(graphic_screen_x-22*8, graphic_screen_y-10-5-8-5, 21*8, 18, BLACK);
  print("[L] Open system log", graphic_screen_x-21*8, graphic_screen_y-10-5-8, BLACK);
  draw_empty_square(10, graphic_screen_y-10-5-8-5, 27*8, 18, BLACK);
@@ -378,6 +380,11 @@ void system_board(void) {
 
   if(keyboard_value==KEY_L) {
    developer_program_log();
+   goto redraw;
+  }
+
+  if(keyboard_value==KEY_P) {
+   performance_rating();
    goto redraw;
   }
 
