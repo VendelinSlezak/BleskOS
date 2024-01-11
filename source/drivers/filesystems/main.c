@@ -226,6 +226,12 @@ void eject_optical_disk(void) {
  device_list_check_optical_drive();
 }
 
+void spin_down_optical_drive(void) {
+ if(ide_cdrom_base!=0) { //CDROM is connected to IDE port
+  patapi_spin_down_drive(ide_cdrom_base, ide_cdrom_alt_base);
+ }
+}
+
 void reset_optical_drive(void) {
  if(ide_cdrom_base!=0) { //CDROM is connected to IDE port
   ide_reset_controller(ide_cdrom_base, ide_cdrom_alt_base);
@@ -281,23 +287,13 @@ void read_partition_info(void) {
    return;
   }
 
-  // if(is_partition_iso9660(0)==STATUS_TRUE) {
-  //  partitions[0].type = STORAGE_ISO9660;
-  //  partitions[0].first_sector = 0;
-  //  partitions[0].num_of_sectors = optical_disk_size;
-  // }
-  // else if(is_optical_disk_cdda()==STATUS_TRUE) {
-  //  partitions[0].type = STORAGE_CDDA;
-  //  partitions[0].first_sector = 0;
-  //  partitions[0].num_of_sectors = optical_disk_size;
-  // }
-  if(is_optical_disk_cdda()==STATUS_TRUE) {
-   partitions[0].type = STORAGE_CDDA;
+  if(is_partition_iso9660(0)==STATUS_TRUE) {
+   partitions[0].type = STORAGE_ISO9660;
    partitions[0].first_sector = 0;
    partitions[0].num_of_sectors = optical_disk_size;
   }
-  else if(is_partition_iso9660(0)==STATUS_TRUE) {
-   partitions[0].type = STORAGE_ISO9660;
+  else if(is_optical_disk_cdda()==STATUS_TRUE) {
+   partitions[0].type = STORAGE_CDDA;
    partitions[0].first_sector = 0;
    partitions[0].num_of_sectors = optical_disk_size;
   }

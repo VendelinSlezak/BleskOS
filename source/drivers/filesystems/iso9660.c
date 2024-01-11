@@ -77,8 +77,12 @@ dword_t iso9660_read_file(dword_t sector, dword_t length_of_file_in_bytes) {
  while(file_sectors>0) {
   if(file_sectors>32) {
    if(read_storage_medium(sector, 32, write_file_mem)==STATUS_ERROR) {
-    free(file_mem);
-    return STATUS_ERROR;
+    //try read again
+    if(read_storage_medium(sector, 32, write_file_mem)==STATUS_ERROR) {
+     free(file_mem);
+     spin_down_optical_drive();
+     return STATUS_ERROR;
+    }
    }
    else {
     file_work_done_percents = (100*readed_sectors/number_of_file_sectors);
@@ -94,14 +98,19 @@ dword_t iso9660_read_file(dword_t sector, dword_t length_of_file_in_bytes) {
   }
   else {
    if(read_storage_medium(sector, file_sectors, write_file_mem)==STATUS_ERROR) {
-    free(file_mem);
-    return STATUS_ERROR;
+    //try read again
+    if(read_storage_medium(sector, file_sectors, write_file_mem)==STATUS_ERROR) {
+     free(file_mem);
+     spin_down_optical_drive();
+     return STATUS_ERROR;
+    }
    }
 
    break;
   }
  }
  
+ spin_down_optical_drive();
  return file_mem;
 }
 

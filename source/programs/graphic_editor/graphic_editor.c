@@ -9,7 +9,7 @@
 */
 
 void initalize_graphic_editor(void) {
- graphic_editor_program_interface_memory = create_program_interface_memory();
+ graphic_editor_program_interface_memory = create_program_interface_memory(((dword_t)&draw_graphic_editor), 0);
 
  graphic_editor_pen_size_text_area_info_memory = create_text_area(TEXT_AREA_NUMBER_INPUT, 3, 8, 0, 160, 10);
  graphic_editor_width_text_area_info_memory = create_text_area(TEXT_AREA_NUMBER_INPUT, 4, graphic_screen_x_center-24, graphic_screen_y_center-50+25, 48, 10);
@@ -29,7 +29,7 @@ void initalize_graphic_editor(void) {
 }
 
 void graphic_editor(void) {
- set_program_interface(graphic_editor_program_interface_memory, ((dword_t)&draw_graphic_editor));
+ set_program_interface(graphic_editor_program_interface_memory);
  program_interface_add_keyboard_event(KEY_F1, (dword_t)graphic_editor_open_file);
  program_interface_add_keyboard_event(KEY_F2, (dword_t)graphic_editor_save_file);
  program_interface_add_keyboard_event(KEY_F3, (dword_t)graphic_editor_new_file);
@@ -82,7 +82,7 @@ void graphic_editor(void) {
   move_mouse_cursor();
 
   //close program
-  if(keyboard_value==KEY_ESC || (mouse_drag_and_drop==MOUSE_CLICK && get_mouse_cursor_click_board_value()==CLICK_ZONE_BACK)) {
+  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && get_mouse_cursor_click_board_value()==CLICK_ZONE_BACK)) {
    return;
   }
 
@@ -91,12 +91,12 @@ void graphic_editor(void) {
   program_interface_process_mouse_event();
 
   //draw on image
-  if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES!=0)) {
-   if(mouse_drag_and_drop==MOUSE_NO_DRAG && graphic_editor_image_saved_to_preview==STATUS_FALSE) {
+  if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0) {
+   if(mouse_click_button_state==MOUSE_NO_DRAG && graphic_editor_image_saved_to_preview==STATUS_FALSE) {
     graphic_editor_copy_image_to_preview();
     graphic_editor_image_saved_to_preview = STATUS_TRUE;
    }
-   else if(mouse_drag_and_drop==MOUSE_CLICK && get_program_value(PROGRAM_INTERFACE_SELECTED_CLICK_ZONE)==GRAPHIC_EDITOR_CLICK_ZONE_IMAGE) {
+   else if(mouse_click_button_state==MOUSE_CLICK && get_program_value(PROGRAM_INTERFACE_SELECTED_CLICK_ZONE)==GRAPHIC_EDITOR_CLICK_ZONE_IMAGE) {
     //get and save mouse position
     get_mouse_coordinates_on_image(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
     graphic_editor_mouse_cursor_previous_image_x = image_mouse_x;
@@ -118,7 +118,7 @@ void graphic_editor(void) {
      graphic_editor_finish_drawing_by_tool();
     }
    }
-   else if(mouse_drag_and_drop==MOUSE_DRAG && get_program_value(PROGRAM_INTERFACE_SELECTED_CLICK_ZONE)==GRAPHIC_EDITOR_CLICK_ZONE_IMAGE) {
+   else if(mouse_click_button_state==MOUSE_DRAG && get_program_value(PROGRAM_INTERFACE_SELECTED_CLICK_ZONE)==GRAPHIC_EDITOR_CLICK_ZONE_IMAGE) {
     //get mouse position
     get_mouse_coordinates_on_image(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
     if(image_mouse_x==0xFFFFFFFF || image_mouse_y==0xFFFFFFFF) {
@@ -432,8 +432,7 @@ void graphic_editor_new_file(void) {
 
  //create dialog window
  clear_program_interface_before_drawing();
- 
-
+ set_program_value(PROGRAM_INTERFACE_FLAGS, (get_program_value(PROGRAM_INTERFACE_FLAGS) | PROGRAM_INTERFACE_FLAG_KEYBOARD_EVENTS_DISABLED));
  draw_message_window(64, 90);
 
  text_area_disable_cursor(graphic_editor_width_text_area_info_memory);
@@ -460,7 +459,8 @@ void graphic_editor_new_file(void) {
   move_mouse_cursor();
 
   //do not create new file
-  if(keyboard_value==KEY_ESC || (mouse_drag_and_drop==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center-50, graphic_screen_y_center+50, graphic_screen_x_center-32, graphic_screen_x_center+32)==STATUS_FALSE)) {
+  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center-50, graphic_screen_y_center+50, graphic_screen_x_center-32, graphic_screen_x_center+32)==STATUS_FALSE)) {
+   set_program_value(PROGRAM_INTERFACE_FLAGS, (get_program_value(PROGRAM_INTERFACE_FLAGS) & ~PROGRAM_INTERFACE_FLAG_KEYBOARD_EVENTS_DISABLED));
    return;
   }
 
@@ -469,11 +469,12 @@ void graphic_editor_new_file(void) {
   program_interface_process_mouse_event();
 
   //create file
-  if(keyboard_value==KEY_ENTER || (mouse_drag_and_drop==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center+20, graphic_screen_y_center+40, graphic_screen_x_center-24, graphic_screen_x_center+24)==STATUS_TRUE)) {
+  if(keyboard_value==KEY_ENTER || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center+20, graphic_screen_y_center+40, graphic_screen_x_center-24, graphic_screen_x_center+24)==STATUS_TRUE)) {
    //get image size
    width = convert_word_string_to_number(width_text_area[TEXT_AREA_INFO_MEMORY]);
    height = convert_word_string_to_number(height_text_area[TEXT_AREA_INFO_MEMORY]);
    if(width==0 || height==0) {
+    set_program_value(PROGRAM_INTERFACE_FLAGS, (get_program_value(PROGRAM_INTERFACE_FLAGS) & ~PROGRAM_INTERFACE_FLAG_KEYBOARD_EVENTS_DISABLED));
     return;
    }
    if(width>4000) {
@@ -501,6 +502,7 @@ void graphic_editor_new_file(void) {
  
    //calculate image dimensions, position on screen and scrollbars
    graphic_editor_image_recalculate_zoom();
+   set_program_value(PROGRAM_INTERFACE_FLAGS, (get_program_value(PROGRAM_INTERFACE_FLAGS) & ~PROGRAM_INTERFACE_FLAG_KEYBOARD_EVENTS_DISABLED));
    return;
   }
  }
@@ -543,7 +545,7 @@ void graphic_editor_key_f7_event(void) {
     goto finalize_image_action;
    }
 
-   if(mouse_drag_and_drop==MOUSE_CLICK) {
+   if(mouse_click_button_state==MOUSE_CLICK) {
     if(is_mouse_in_zone(graphic_screen_y-20-4*20, graphic_screen_y-20, 8+10*8+8, 8+10*8+8+200)==STATUS_TRUE) {
      dword_t selected_item = get_number_of_clicked_item_from_menu_list(4);
 
@@ -676,7 +678,7 @@ void graphic_editor_key_t_event(void) {
    return;
   }
 
-  if(mouse_drag_and_drop==MOUSE_CLICK || keyboard_value==KEY_ENTER) {
+  if(mouse_click_button_state==MOUSE_CLICK || keyboard_value==KEY_ENTER) {
    graphic_editor_color = new_color;
    program_interface_redraw();
    return;

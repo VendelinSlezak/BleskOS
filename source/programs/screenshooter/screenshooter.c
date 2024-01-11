@@ -42,12 +42,12 @@ void screenshooter(void) {
   dword_t click_value = get_mouse_cursor_click_board_value();
 
   //back
-  if(keyboard_value==KEY_ESC || (mouse_drag_and_drop==MOUSE_CLICK && click_value==SCREENSHOTER_CLICK_ZONE_BACK)) {
+  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && click_value==SCREENSHOTER_CLICK_ZONE_BACK)) {
    return;
   }
 
   //save
-  if(keyboard_value==KEY_F2 || (mouse_drag_and_drop==MOUSE_CLICK && click_value==SCREENSHOTER_CLICK_ZONE_SAVE)) {
+  if(keyboard_value==KEY_F2 || (mouse_click_button_state==MOUSE_CLICK && click_value==SCREENSHOTER_CLICK_ZONE_SAVE)) {
    file_dialog_save_set_extension("bmp");
    if(screenshot_is_cropped==STATUS_FALSE) {
     convert_image_data_to_bmp(screenshoot_image_info_mem);
@@ -62,7 +62,7 @@ void screenshooter(void) {
   }
 
   //crop
-  if(keyboard_value==KEY_SPACE || (mouse_drag_and_drop==MOUSE_CLICK && click_value==SCREENSHOTER_CLICK_ZONE_CROP)) {
+  if(keyboard_value==KEY_SPACE || (mouse_click_button_state==MOUSE_CLICK && click_value==SCREENSHOTER_CLICK_ZONE_CROP)) {
    //draw screenshot buffer on whole screen
    dword_t *screenshoot_image_info = (dword_t *) (screenshoot_image_info_mem);
    screenshoot_image_info[IMAGE_INFO_SCREEN_X] = 0;
@@ -71,7 +71,7 @@ void screenshooter(void) {
    screenshoot_image_info[IMAGE_INFO_HEIGTH] = screenshoot_image_info[IMAGE_INFO_REAL_HEIGTH];
    draw_image(screenshoot_image_info_mem);
    redraw_screen();
-   mouse_drag_and_drop = NO_CLICK;
+   mouse_click_button_state = NO_CLICK;
 
    //wait for click
    while(1) {
@@ -86,16 +86,16 @@ void screenshooter(void) {
      break;
     }
 
-    if(mouse_drag_and_drop==MOUSE_CLICK) {
+    if(mouse_click_button_state==MOUSE_CLICK) {
      screenshot_crop_x = mouse_cursor_x;
      screenshot_crop_y = mouse_cursor_y;
      screenshot_crop_width = 0;
      screenshot_crop_height = 0;
-     mouse_drag_and_drop = MOUSE_DRAG;
+     mouse_click_button_state = MOUSE_DRAG;
      break;
     }
    }
-   if(mouse_drag_and_drop!=MOUSE_DRAG) {
+   if(mouse_click_button_state!=MOUSE_DRAG) {
     redraw_screenshooter();
     continue; //ESC was pressed
    }
@@ -127,7 +127,7 @@ void screenshooter(void) {
     redraw_screen();
 
     //is crop area finished?
-    if(mouse_drag_and_drop==NO_CLICK && screenshot_crop_width!=0 && screenshot_crop_height!=0) {
+    if(mouse_click_button_state==NO_CLICK && screenshot_crop_width!=0 && screenshot_crop_height!=0) {
      break;
     }
    }
@@ -169,7 +169,7 @@ void screenshooter(void) {
   }
 
   //remove crop
-  if(keyboard_value==KEY_R || (mouse_drag_and_drop==MOUSE_CLICK && click_value==SCREENSHOTER_CLICK_ZONE_REMOVE_CROP)) {
+  if(keyboard_value==KEY_R || (mouse_click_button_state==MOUSE_CLICK && click_value==SCREENSHOTER_CLICK_ZONE_REMOVE_CROP)) {
    screenshot_is_cropped=STATUS_FALSE;
    redraw_screenshooter();
    continue;

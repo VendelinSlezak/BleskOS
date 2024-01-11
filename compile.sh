@@ -13,7 +13,7 @@ dd if=compile/bootloader.bin of=bleskos.img conv=notrunc seek=0
 dd if=compile/bleskos.bin of=bleskos.img conv=notrunc seek=6
 echo "Done"
 
-#echo "Creating iso image..."
-#mkdir iso
-#cp bleskos.img iso/bleskos.img
-#genisoimage -o bleskos.iso -b bleskos.img iso
+echo "Creating iso image..."
+mkdir iso
+cp bleskos.img iso/bleskos.img
+genisoimage -o bleskos.iso -b bleskos.img iso

@@ -16,9 +16,9 @@ void initalize_program_interface(void) {
  program_interface_num_of_elements = 0;
 }
 
-void set_program_interface(dword_t program_interface_mem, dword_t program_redraw_method) {
+void set_program_interface(dword_t program_interface_mem) {
  program_interface_memory_pointer = program_interface_mem;
- program_interface_draw_method_pointer = program_redraw_method;
+ program_interface_draw_method_pointer = get_program_value(PROGRAM_INTERFACE_DRAW_METHOD_POINTER);
  clear_memory(program_interface_keyboard_events_list_mem, 512*4);
  program_interface_num_of_click_zone_events = 0;
  program_interface_num_of_elements = 0;
@@ -95,7 +95,6 @@ void program_interface_add_text_area(dword_t click_zone, dword_t text_area_info_
 
 void program_interface_redraw(void) {
  extern void call(dword_t method);
-
  call(program_interface_draw_method_pointer);
  redraw_screen();
 }
@@ -125,6 +124,11 @@ void program_interface_process_keyboard_event(void) {
     redraw_mouse_cursor();
    }
   }
+ }
+
+ //test if keyboard events are not disabled
+ if((get_program_value(PROGRAM_INTERFACE_FLAGS) & PROGRAM_INTERFACE_FLAG_KEYBOARD_EVENTS_DISABLED)==PROGRAM_INTERFACE_FLAG_KEYBOARD_EVENTS_DISABLED) {
+  return;
  }
 
  //call method of keyboard event
@@ -221,11 +225,11 @@ void program_interface_process_mouse_event(void) {
  dword_t *keyboard_events = (dword_t *) (program_interface_keyboard_events_list_mem);
  dword_t click_zone = get_mouse_cursor_click_board_value();
 
- if(mouse_drag_and_drop==MOUSE_NO_EVENT) {
+ if(mouse_click_button_state==MOUSE_NO_EVENT) {
   program_interface_selected_element_number = 0xFFFFFFFF;
   program_interface_text_area_selected_scrollbar = 0;
  }
- else if(mouse_drag_and_drop==MOUSE_CLICK) {
+ else if(mouse_click_button_state==MOUSE_CLICK) {
   //unfocus text area
   if(program_interface_element_with_focus!=0xFFFFFFFF && (get_program_value(PROGRAM_INTERFACE_FLAGS) & PROGRAM_INTERFACE_FLAG_PERMANENT_FOCUS_ON_TEXT_AREA)==STATUS_FALSE) {
    dword_t *element = (dword_t *) (program_interface_elements_list_mem+program_interface_element_with_focus*32);
@@ -342,7 +346,7 @@ void program_interface_process_mouse_event(void) {
   }
 
  }
- else if(mouse_drag_and_drop==MOUSE_DRAG) {
+ else if(mouse_click_button_state==MOUSE_DRAG) {
   if(program_interface_text_area_selected_scrollbar!=0) {
    dword_t *text_area_info = (dword_t *) (program_interface_text_area_info_memory);
 
@@ -466,7 +470,7 @@ byte_t dialog_yes_no(byte_t *string) {
   else if(keyboard_value==KEY_ENTER) {
    return STATUS_TRUE;
   }
-  if(mouse_drag_and_drop==MOUSE_CLICK) {
+  if(mouse_click_button_state==MOUSE_CLICK) {
    if(is_mouse_in_zone(graphic_screen_y_center-38+2+16+7+16, graphic_screen_y_center-38+2+16+7+16+17, graphic_screen_x_center-10-80, graphic_screen_x_center-10)==STATUS_TRUE) {
     return STATUS_TRUE;
    }
@@ -485,7 +489,7 @@ void error_window(byte_t *string) {
   wait_for_user_input();
   move_mouse_cursor();
 
-  if(keyboard_value==KEY_ESC || keyboard_value==KEY_ENTER || mouse_drag_and_drop==MOUSE_CLICK) {
+  if(keyboard_value==KEY_ESC || keyboard_value==KEY_ENTER || mouse_click_button_state==MOUSE_CLICK) {
    return;
   }
  }

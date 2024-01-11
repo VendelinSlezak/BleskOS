@@ -130,16 +130,16 @@ void wait_for_user_input(void) {
   
   //drag and drop
   if((mouse_buttons & 0x1)==0x0) {
-   mouse_drag_and_drop = MOUSE_NO_DRAG;
+   mouse_click_button_state = MOUSE_NO_DRAG;
   }
   else {
-   if(mouse_drag_and_drop==MOUSE_NO_DRAG) {
-    mouse_drag_and_drop = MOUSE_CLICK;
+   if(mouse_click_button_state==MOUSE_NO_DRAG) {
+    mouse_click_button_state = MOUSE_CLICK;
     mouse_cursor_x_click = mouse_cursor_x;
     mouse_cursor_y_click = mouse_cursor_y;
    }
    else {
-    mouse_drag_and_drop = MOUSE_DRAG;
+    mouse_click_button_state = MOUSE_DRAG;
    }
   }
   
@@ -154,16 +154,16 @@ void wait_for_user_input(void) {
   
   //drag and drop
   if((mouse_buttons & 0x1)==0x0) {
-   mouse_drag_and_drop = MOUSE_NO_DRAG;
+   mouse_click_button_state = MOUSE_NO_DRAG;
   }
   else {
-   if(mouse_drag_and_drop==MOUSE_NO_DRAG) {
-    mouse_drag_and_drop = MOUSE_CLICK;
+   if(mouse_click_button_state==MOUSE_NO_DRAG) {
+    mouse_click_button_state = MOUSE_CLICK;
     mouse_cursor_x_click = mouse_cursor_x;
     mouse_cursor_y_click = mouse_cursor_y;
    }
    else {
-    mouse_drag_and_drop = MOUSE_DRAG;
+    mouse_click_button_state = MOUSE_DRAG;
    }
   }
   
