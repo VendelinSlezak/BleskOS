@@ -8,8 +8,8 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-void draw_button(byte_t *string, dword_t x, dword_t y, dword_t width, dword_t height) {
- draw_full_square(x, y, width, height, 0x0782D1);
+void draw_button_with_specific_color(byte_t *string, dword_t x, dword_t y, dword_t width, dword_t height, dword_t color) {
+ draw_full_square(x, y, width, height, color);
  
  byte_t string_length=0;
  for(int i=0; i<100; i++) {
@@ -20,6 +20,15 @@ void draw_button(byte_t *string, dword_t x, dword_t y, dword_t width, dword_t he
  }
  
  print(string, x+(width/2)-(string_length*4), y+((height-8)/2), BLACK);
+}
+
+void draw_button(byte_t *string, dword_t x, dword_t y, dword_t width, dword_t height) {
+ draw_button_with_specific_color(string, x, y, width, height, BUTTON_COLOR);
+}
+
+void draw_button_with_specific_color_and_click_zone(byte_t *string, dword_t x, dword_t y, dword_t width, dword_t height, dword_t color, dword_t click_zone) {
+ draw_button_with_specific_color(string, x, y, width, height, color);
+ add_zone_to_click_board(x, y, width, height, click_zone);
 }
 
 void draw_button_with_click_zone(byte_t *string, dword_t x, dword_t y, dword_t width, dword_t height, dword_t click_zone) {

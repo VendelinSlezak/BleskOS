@@ -618,12 +618,12 @@ byte_t file_dialog_save_file(byte_t dialog_type, dword_t new_file_memory, dword_
   move_mouse_cursor();
 
   //do not save
-  if(keyboard_value==KEY_ESC || (mouse_drag_and_drop==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center+15, graphic_screen_y_center+35, graphic_screen_x_center-100, graphic_screen_x_center-10)==STATUS_TRUE)) {
+  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center+15, graphic_screen_y_center+35, graphic_screen_x_center-100, graphic_screen_x_center-10)==STATUS_TRUE)) {
    return STATUS_ERROR;
   }
 
   //save file
-  if(keyboard_value==KEY_ENTER || (mouse_drag_and_drop==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center+15, graphic_screen_y_center+35, graphic_screen_x_center+10, graphic_screen_x_center+100)==STATUS_TRUE)) {
+  if(keyboard_value==KEY_ENTER || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center+15, graphic_screen_y_center+35, graphic_screen_x_center+10, graphic_screen_x_center+100)==STATUS_TRUE)) {
    if(text_area_file_name[0]==0 || text_area_file_name[0]=='.') { //TODO: more invalid characters
     error_window("Invalid file name");
     return STATUS_ERROR;
@@ -737,7 +737,7 @@ dword_t file_dialog(byte_t dialog_type, dword_t new_file_memory, dword_t new_fil
 
   //close file dialog
   dword_t click_zone = get_mouse_cursor_click_board_value();
-  if(keyboard_value==KEY_ESC || (mouse_drag_and_drop==MOUSE_CLICK && click_zone==CLICK_ZONE_BACK)) {
+  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && click_zone==CLICK_ZONE_BACK)) {
    return STATUS_ERROR;
   }
 
@@ -830,7 +830,7 @@ dword_t file_dialog(byte_t dialog_type, dword_t new_file_memory, dword_t new_fil
   }
 
   //process mouse event
-  if(mouse_drag_and_drop==MOUSE_CLICK) {
+  if(mouse_click_button_state==MOUSE_CLICK) {
    //refresh device list button
    if(click_zone==FILE_DIALOG_CLICK_ZONE_BUTTON_REFRESH_DEVICES) {
     device_list_check_optical_drive();

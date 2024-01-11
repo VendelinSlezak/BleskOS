@@ -9,7 +9,7 @@
 */
 
 void initalize_text_editor(void) {
- text_editor_program_interface_memory = create_program_interface_memory();
+ text_editor_program_interface_memory = create_program_interface_memory(((dword_t)&draw_text_editor), PROGRAM_INTERFACE_FLAG_PERMANENT_FOCUS_ON_TEXT_AREA);
  text_editor_find_function_text_area_info_mem = create_text_area(TEXT_AREA_INPUT_LINE, 1000, 4, graphic_screen_y-20-4-12, graphic_screen_x-24-160, 10);
  text_area_disable_cursor(text_editor_find_function_text_area_info_mem);
  text_editor_replace_function_text_area_mem = create_text_area(TEXT_AREA_INPUT_LINE, 1000, 4, graphic_screen_y-20-4-12, graphic_screen_x-24-160, 10);
@@ -20,8 +20,7 @@ void initalize_text_editor(void) {
 }
 
 void text_editor(void) {
- set_program_interface(text_editor_program_interface_memory, ((dword_t)&draw_text_editor));
- set_program_value(PROGRAM_INTERFACE_FLAGS, PROGRAM_INTERFACE_FLAG_PERMANENT_FOCUS_ON_TEXT_AREA);
+ set_program_interface(text_editor_program_interface_memory);
  program_interface_add_keyboard_event(KEY_F1, (dword_t)text_editor_open_file);
  program_interface_add_keyboard_event(KEY_F2, (dword_t)text_editor_save_file);
  program_interface_add_keyboard_event(KEY_F3, (dword_t)text_editor_new_file);
@@ -51,7 +50,7 @@ void text_editor(void) {
   move_mouse_cursor();
 
   //close program
-  if(keyboard_value==KEY_ESC || (mouse_drag_and_drop==MOUSE_CLICK && get_mouse_cursor_click_board_value()==CLICK_ZONE_BACK)) {
+  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && get_mouse_cursor_click_board_value()==CLICK_ZONE_BACK)) {
    text_editor_more_list_on_screen = STATUS_FALSE;
    return;
   }
@@ -298,12 +297,12 @@ void text_editor_key_f10_event(void) {
    wait_for_user_input();
    move_mouse_cursor();
 
-   if(keyboard_value==KEY_ESC || (mouse_drag_and_drop==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center-8-7-8, graphic_screen_y_center+12+8+12+8, graphic_screen_x_center-4*8, graphic_screen_x_center+4*8+2)==STATUS_FALSE)) {
+   if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center-8-7-8, graphic_screen_y_center+12+8+12+8, graphic_screen_x_center-4*8, graphic_screen_x_center+4*8+2)==STATUS_FALSE)) {
     program_interface_redraw();
-    mouse_drag_and_drop = MOUSE_DRAG;
+    mouse_click_button_state = MOUSE_DRAG;
     return;
    }
-   else if(keyboard_value==KEY_ENTER || (mouse_drag_and_drop==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center+12+8, graphic_screen_y_center+12+8+10, graphic_screen_x_center-24, graphic_screen_x_center-24+6*8+2)==STATUS_TRUE)) {
+   else if(keyboard_value==KEY_ENTER || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center+12+8, graphic_screen_y_center+12+8+10, graphic_screen_x_center-24, graphic_screen_x_center-24+6*8+2)==STATUS_TRUE)) {
     dword_t *text_area_info = (dword_t *) (get_file_value(TEXT_EDITOR_FILE_TEXT_AREA_MEMORY));
     word_t *text_area_data = (word_t *) (text_area_info[TEXT_AREA_INFO_MEMORY]);
     dword_t line = convert_word_string_to_number(number_text_area_info[TEXT_AREA_INFO_MEMORY]); //get number of line
@@ -324,7 +323,7 @@ void text_editor_key_f10_event(void) {
     text_area_info[TEXT_AREA_INFO_CURSOR_POSITION] = ((dword_t)text_area_data); //move cursor
     text_area_set_show_line_and_column((dword_t)text_area_info);
     program_interface_redraw();
-    mouse_drag_and_drop = MOUSE_DRAG;
+    mouse_click_button_state = MOUSE_DRAG;
     return;
    }
    else if(keyboard_value!=0) {
@@ -333,7 +332,7 @@ void text_editor_key_f10_event(void) {
     redraw_text_area(text_editor_go_to_line_text_area_mem);
    }
 
-   if(mouse_drag_and_drop==MOUSE_CLICK || mouse_drag_and_drop==MOUSE_DRAG) {
+   if(mouse_click_button_state==MOUSE_CLICK || mouse_click_button_state==MOUSE_DRAG) {
     text_area_mouse_event(text_editor_go_to_line_text_area_mem);
     draw_text_area(text_editor_go_to_line_text_area_mem);
     redraw_text_area(text_editor_go_to_line_text_area_mem);

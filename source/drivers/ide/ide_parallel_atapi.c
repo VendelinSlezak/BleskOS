@@ -124,12 +124,36 @@ byte_t patapi_eject_drive(word_t base_port, word_t alt_base_port) {
  }
  
  //send packet
- outw(base_port + 0, 0x1B); //eject command
+ outw(base_port + 0, 0x1B); //START-STOP command
  outw(base_port + 0, 0);
- outw(base_port + 0, 0x0002);
+ outw(base_port + 0, 0x2); //spin-down and eject
  outw(base_port + 0, 0);
  outw(base_port + 0, 0);
  outw(base_port + 0, 0);
+ 
+ return STATUS_GOOD;
+}
+
+byte_t patapi_spin_down_drive(word_t base_port, word_t alt_base_port) {
+ //reset controller
+ ide_reset_controller(base_port, alt_base_port);
+
+ //send packet command
+ if(patapi_send_packet_command(base_port, 0)==STATUS_ERROR) {
+  log("SPIN DOWN");
+  return STATUS_ERROR;
+ }
+ 
+ //send packet
+ outw(base_port + 0, 0x1B); //START-STOP command
+ outw(base_port + 0, 0);
+ outw(base_port + 0, 0x0); //spin-down
+ outw(base_port + 0, 0);
+ outw(base_port + 0, 0);
+ outw(base_port + 0, 0);
+
+ //wait for this command to be processed max 4 seconds
+ ide_wait_drive_not_busy(base_port, 2000);
  
  return STATUS_GOOD;
 }
@@ -211,7 +235,8 @@ byte_t patapi_read(word_t base_port, word_t alt_base_port, dword_t sector, byte_
   //wait for drive to be ready
   if(ide_wait_for_data(base_port, 3000)==STATUS_ERROR) { //max 6 seconds
    log("\nIDE ATAPI: error with reading sector ");
-   log_var_with_space(sector+i);
+   log_var_with_space(sector+(i/1024));
+   log_var_with_space(i);
    log_hex_specific_size_with_space(inb(base_port+7), 2);
    log_hex_specific_size(inb(base_port+1), 2);
    return STATUS_ERROR;
@@ -256,7 +281,8 @@ byte_t patapi_read_audio_cd_sector(word_t base_port, word_t alt_base_port, dword
   //wait for drive to be ready
   if(ide_wait_for_data(base_port, 3000)==STATUS_ERROR) { //max 6 seconds
    log("\nIDE ATAPI: error with reading audio sector ");
-   log_var_with_space(sector+i);
+   log_var_with_space(sector+(i/1176));
+   log_var_with_space(i);
    log_hex_specific_size_with_space(inb(base_port+7), 2);
    log_hex_specific_size(inb(base_port+1), 2);
    return STATUS_ERROR;
