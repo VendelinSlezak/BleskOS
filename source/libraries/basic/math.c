@@ -146,14 +146,14 @@ dword_t convert_hex_word_string_to_number(dword_t mem) {
 
 void covert_number_to_byte_string(dword_t number, dword_t mem) {
  byte_t *string = (byte_t *) mem;
- word_t number_string[10];
+ word_t number_string[11];
  dword_t number_digits = 0;
  
- for(int i=0; i<10; i++) {
+ for(int i=0; i<11; i++) {
   number_string[i]=0;
  }
  
- for(int i=9; i>0; i--) {
+ for(int i=10; i>0; i--) {
   number_string[i]=(number%10);
   number/=10;
   number_digits++;
@@ -162,25 +162,25 @@ void covert_number_to_byte_string(dword_t number, dword_t mem) {
   }
  }
  
- for(int i=0; i<10; i++) {
+ for(int i=0; i<11; i++) {
   number_string[i]+='0';
  }
  
  for(int i=0; i<number_digits; i++) {
-  string[i] = number_string[((10-number_digits)+i)];
+  string[i] = number_string[((11-number_digits)+i)];
  }
 }
 
 void covert_number_to_word_string(dword_t number, dword_t mem) {
  word_t *string = (word_t *) mem;
- word_t number_string[10];
+ word_t number_string[11];
  dword_t number_digits = 0;
  
- for(int i=0; i<10; i++) {
+ for(int i=0; i<11; i++) {
   number_string[i]=0;
  }
  
- for(int i=9; i>0; i--) {
+ for(int i=10; i>0; i--) {
   number_string[i]=(number%10);
   number/=10;
   number_digits++;
@@ -189,12 +189,12 @@ void covert_number_to_word_string(dword_t number, dword_t mem) {
   }
  }
  
- for(int i=0; i<10; i++) {
+ for(int i=0; i<11; i++) {
   number_string[i]+='0';
  }
  
  for(int i=0; i<number_digits; i++) {
-  string[i] = number_string[((10-number_digits)+i)];
+  string[i] = number_string[((11-number_digits)+i)];
  }
 }
 

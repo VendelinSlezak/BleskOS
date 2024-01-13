@@ -2,11 +2,14 @@
 
 BleskOS is 32-bit operating system written from scratch. One of main features is alternative graphic user interface that do not use windows, as classic operating systems do, but switches between programs on full screen. BleskOS is designed for older computers. Operating systems of today have very high hardware requirements that make computers even 10 years old completely unusable. Goal of BleskOS is to provide system, that could be installed on such computers and make them usable again.
 
-![Snímka obrazovky_2024-01-06_19-40-08](https://github.com/VendelinSlezak/BleskOS/assets/43180618/193a474b-e4f8-4b06-a600-bc3a2a610a7e)
+![Snímka obrazovky_2024-01-11_18-05-11](https://github.com/VendelinSlezak/BleskOS/assets/43180618/21eb9b61-d449-4c6c-9f65-8986915fbc3c)
 
 ## What is new
 
 Here is info about most important improvements in several last updates.
+
+**Update 8**
+- Tool Calculator
 
 **Update 7**
 - Further significant improvement of PATAPI driver
@@ -20,19 +23,14 @@ Here is info about most important improvements in several last updates.
 **Update 5**
 - Tool for making screenshots
 
-**Update 4**
-- Media Viewer can save sound files as WAV
-- Improved reading from Audio CD
-- Option to read as much as possible from Audio CD track
-- Now you can use BleskOS to save data from Audio CDs
-- Multiple minor fixes and improvements
-
 ## How to try BleskOS
 
 You can download image of last version here on github. Then you have two options:
 
 1. Run BleskOS on emulator - some of well-known are Virtualbox, QEMU, Bochs and so on. If you downloaded image .img, you should to connect it to emulator as floppy or hard disk, if you downloaded image .iso, you should connect it as optical disk.
-2. Run BleskOS on real computer - If you want to run BleskOS on your computer, you will need to create bootable medium. You can either burn .iso image on optical disk, or write .img image on USB flash. Do not just copy file! You need to write image right from start of USB flash. In linux, you can use program dd for this: `sudo dd if=bleskos_(actual version).img of=pathToYourUSB` For example if you have USB on /dev/sdg then you can write for example `sudo dd if=bleskos_2023u11.img of=/dev/sdg` Then insert optical disk/USB flash to your computer and boot it from your bootable medium. If you do not see your bootable medium, make sure that you are booting in legacy mode, because BleskOS do not support UEFI.
+2. Run BleskOS on real computer - If you want to run BleskOS on your computer, you will need to create bootable medium. You can either burn .iso image on optical disk, or write .img image on USB flash. Do not just copy file! You need to write image right from start of USB flash. In linux, you can use program dd for this: `sudo dd if=bleskos_(actual version).img of=pathToYourUSB` For example if you have USB on /dev/sdg then you can write for example `sudo dd if=bleskos_2024u8.img of=/dev/sdg` Then insert optical disk/USB flash to your computer and boot it from your bootable medium. If you do not see your bootable medium, make sure that you are booting in legacy mode, because BleskOS do not support UEFI.
+
+If you copied BleskOS image on USB flash, it creates one partition, so you can format rest of USB and use it for data. If you have such USB and you want to update BleskOS image without destroying other partitions, you need to skip first sector of BleskOS image and you need to skip first sector of USB flash and start rewriting from second sector. You can do this by following command: `sudo dd if=bleskos_(actual version).img skip=1 of=pathToYourUSB seek=1`
 
 ## How to use BleskOS
 

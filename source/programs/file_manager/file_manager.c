@@ -9,7 +9,7 @@
 */
 
 void initalize_file_manager(void) {
- file_manager_program_interface_memory = create_program_interface_memory();
+ file_manager_program_interface_memory = create_program_interface_memory(((dword_t)&draw_file_manager), PROGRAM_INTERFACE_FLAG_NO_OPEN_AND_SAVE_BUTTON);
  file_manager_number_of_files_on_screen = ((graphic_screen_y-PROGRAM_INTERFACE_TOP_LINE_HEIGTH-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH-24-8)/10);
  file_manager_number_of_chars_of_file_name = ((graphic_screen_x-FILE_MANAGER_DEVICE_LIST_WIDTH-8-20)/8);
  file_manager_scrollbar_height = (file_manager_number_of_files_on_screen*10);
@@ -21,8 +21,7 @@ void initalize_file_manager(void) {
 }
 
 void file_manager(void) {
- set_program_interface(file_manager_program_interface_memory, ((dword_t)&draw_file_manager));
- set_program_value(PROGRAM_INTERFACE_FLAGS, PROGRAM_INTERFACE_FLAG_NO_OPEN_AND_SAVE_BUTTON);
+ set_program_interface(file_manager_program_interface_memory);
  program_interface_add_keyboard_event(KEY_F3, (dword_t)file_manager_new_folder);
  program_interface_add_keyboard_event(KEY_F4, (dword_t)file_manager_close_folder);
  program_interface_add_keyboard_event(KEY_F8, (dword_t)file_manager_key_f8_event);
@@ -48,7 +47,7 @@ void file_manager(void) {
 
   //close program
   dword_t click_zone = get_mouse_cursor_click_board_value();
-  if(keyboard_value==KEY_ESC || (mouse_drag_and_drop==MOUSE_CLICK && click_zone==CLICK_ZONE_BACK)) {
+  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && click_zone==CLICK_ZONE_BACK)) {
    return;
   }
 
@@ -63,7 +62,7 @@ void file_manager(void) {
   }
 
   //process click on device
-  if(mouse_drag_and_drop==MOUSE_CLICK && click_zone!=FILE_MANAGER_CLICK_ZONE_SCROLLBAR) {
+  if(mouse_click_button_state==MOUSE_CLICK && click_zone!=FILE_MANAGER_CLICK_ZONE_SCROLLBAR) {
    if(click_zone>=FILE_MANAGER_CLICK_ZONE_DEVICE_ENTRY && click_zone<=FILE_MANAGER_CLICK_ZONE_DEVICE_LAST_ENTRY) {
     device_list_selected_entry = (click_zone-FILE_MANAGER_CLICK_ZONE_DEVICE_ENTRY);
 
@@ -669,8 +668,6 @@ void file_manager_rename_file(void) {
 
  //show message window
  clear_program_interface_before_drawing();
- 
-
  draw_message_window(270, 95);
 
  print("Write new name of file:", graphic_screen_x_center-120, graphic_screen_y_center-25, BLACK);
@@ -692,14 +689,14 @@ void file_manager_rename_file(void) {
   move_mouse_cursor();
 
   //do not rename
-  if(keyboard_value==KEY_ESC || (mouse_drag_and_drop==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center+15, graphic_screen_y_center+35, graphic_screen_x_center-100, graphic_screen_x_center-10)==STATUS_TRUE)) {
+  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center+15, graphic_screen_y_center+35, graphic_screen_x_center-100, graphic_screen_x_center-10)==STATUS_TRUE)) {
    file_manager_rename_window_showed = STATUS_FALSE;
    program_interface_redraw();
    return;
   }
 
   //rename
-  if(keyboard_value==KEY_ENTER || (mouse_drag_and_drop==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center+15, graphic_screen_y_center+35, graphic_screen_x_center+10, graphic_screen_x_center+100)==STATUS_TRUE)) {
+  if(keyboard_value==KEY_ENTER || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center+15, graphic_screen_y_center+35, graphic_screen_x_center+10, graphic_screen_x_center+100)==STATUS_TRUE)) {
    file_manager_rename_window_showed = STATUS_FALSE;
    if(text_area_data[0]==0 || text_area_data[0]=='.') { //TODO: more invalid characters
     error_window("Invalid file name");

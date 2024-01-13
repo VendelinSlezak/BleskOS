@@ -13,7 +13,7 @@
 #include "process_css.c"
 
 void initalize_internet_browser(void) {
- internet_browser_program_interface_memory = create_program_interface_memory();
+ internet_browser_program_interface_memory = create_program_interface_memory(((dword_t)&draw_internet_browser), (PROGRAM_INTERFACE_FLAG_NO_SAVE_BUTTON | PROGRAM_INTERFACE_FLAG_FOCUS_ON_TEXT_AREA_FROM_NEW_FILE_METHOD));
  internet_browser_webpage_height = graphic_screen_y-20-INTERNET_BROWSER_WEBPAGE_START_LINE;
  internet_browser_webpage_width = graphic_screen_x-10;
  internet_browser_first_show_line = 0;
@@ -51,8 +51,7 @@ void initalize_internet_browser(void) {
 }
 
 void internet_browser(void) {
- set_program_interface(internet_browser_program_interface_memory, ((dword_t)&draw_internet_browser));
- set_program_value(PROGRAM_INTERFACE_FLAGS, (PROGRAM_INTERFACE_FLAG_NO_SAVE_BUTTON | PROGRAM_INTERFACE_FLAG_FOCUS_ON_TEXT_AREA_FROM_NEW_FILE_METHOD));
+ set_program_interface(internet_browser_program_interface_memory);
  program_interface_add_keyboard_event(KEY_F1, (dword_t)internet_browser_open_file);
  program_interface_add_keyboard_event(KEY_F3, (dword_t)internet_browser_new_file);
  program_interface_add_keyboard_event(KEY_F4, (dword_t)internet_browser_close_file);
@@ -70,7 +69,7 @@ void internet_browser(void) {
   move_mouse_cursor();
 
   //close program
-  if(keyboard_value==KEY_ESC || (mouse_drag_and_drop==MOUSE_CLICK && get_mouse_cursor_click_board_value()==CLICK_ZONE_BACK)) {
+  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && get_mouse_cursor_click_board_value()==CLICK_ZONE_BACK)) {
    //disable text area
    if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0) {
     text_area_disable_cursor(get_file_value(INTERNET_BROWSER_FILE_TEXT_AREA_MEMORY));
@@ -84,7 +83,7 @@ void internet_browser(void) {
 
   //process click to link
   dword_t click_zone = get_mouse_cursor_click_board_value();
-  if(mouse_drag_and_drop==MOUSE_CLICK && click_zone>=0x100000) {
+  if(mouse_click_button_state==MOUSE_CLICK && click_zone>=0x100000) {
    //convert pointer to href="link" to URL
    convert_relative_url_to_full_url(click_zone);
    byte_t *url_output = (byte_t *) (url_output_mem);

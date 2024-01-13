@@ -9,7 +9,7 @@
 */
 
 void initalize_mouse(void) {
- mouse_drag_and_drop = MOUSE_NO_EVENT;
+ mouse_click_button_state = MOUSE_NO_EVENT;
  mouse_buttons = 0;
  mouse_movement_x = 0;
  mouse_movement_y = 0;

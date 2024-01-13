@@ -49,6 +49,7 @@ dword_t cdda_read_file(dword_t sector, dword_t length_of_file_in_bytes) {
     //try read again
     if(read_audio_cd(sector, 27, memory_pointer)==STATUS_ERROR) {
      free(memory);
+     spin_down_optical_drive();
      return STATUS_ERROR;
     }
    }
@@ -62,9 +63,12 @@ dword_t cdda_read_file(dword_t sector, dword_t length_of_file_in_bytes) {
     //try read again
     if(read_audio_cd(sector, number_of_sectors, memory_pointer)==STATUS_ERROR) {
      free(memory);
+     spin_down_optical_drive();
      return STATUS_ERROR;
     }
    }
+
+   spin_down_optical_drive();
    return memory;
   }
 
@@ -78,6 +82,7 @@ dword_t cdda_read_file(dword_t sector, dword_t length_of_file_in_bytes) {
   if(keyboard_value==KEY_ESC || usb_keyboard_value==KEY_ESC) {
    free(memory);
    error_window("You cancelled reading");
+   spin_down_optical_drive();
    return STATUS_ERROR;
   }
  }
@@ -134,10 +139,12 @@ dword_t cdda_read_file_skipping_errors(dword_t sector, dword_t length_of_file_in
   if(keyboard_value==KEY_ESC || usb_keyboard_value==KEY_ESC) {
    free(memory);
    error_window("You cancelled reading");
+   spin_down_optical_drive();
    return STATUS_ERROR;
   }
  }
 
+ spin_down_optical_drive();
  return memory;
 }
 

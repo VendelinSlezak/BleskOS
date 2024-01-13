@@ -374,7 +374,7 @@ void system_board(void) {
   wait_for_user_input();
   move_mouse_cursor();
 
-  if(keyboard_value==KEY_ESC || (mouse_drag_and_drop==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y-10-5-8-5, graphic_screen_y-10, 10, 10+27*8)==STATUS_TRUE)) {
+  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y-10-5-8-5, graphic_screen_y-10, 10, 10+27*8)==STATUS_TRUE)) {
    return;
   }
 
@@ -404,7 +404,7 @@ void system_board(void) {
    }
   }
 
-  if(mouse_drag_and_drop==MOUSE_CLICK) {
+  if(mouse_click_button_state==MOUSE_CLICK) {
    if(is_mouse_in_zone(graphic_screen_y-10-5-8-5, graphic_screen_y-10, graphic_screen_x-22*8, graphic_screen_x-8)==STATUS_TRUE) {
     developer_program_log();
     goto redraw;
@@ -481,7 +481,7 @@ void system_board(void) {
      wait_for_user_input();
      move_mouse_cursor();
 
-     if(keyboard_value==KEY_SPACE || keyboard_value==KEY_LEFT || keyboard_value==KEY_RIGHT || mouse_drag_and_drop==MOUSE_CLICK) {
+     if(keyboard_value==KEY_SPACE || keyboard_value==KEY_LEFT || keyboard_value==KEY_RIGHT || mouse_click_button_state==MOUSE_CLICK) {
       goto redraw;
      }
     }
