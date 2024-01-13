@@ -70,6 +70,8 @@ void text_area_calculate_number_of_lines_and_columns(dword_t text_area_info_mem)
 void text_area_keyboard_event(dword_t text_area_info_mem);
 void text_area_mouse_event(dword_t text_area_info_mem);
 void text_area_disable_cursor(dword_t text_area_info_mem);
+void text_area_move_cursor_to_start(dword_t text_area_info_mem);
 void text_area_add_change_to_list(dword_t text_area_info_mem, dword_t change_type, dword_t unicode_char, dword_t cursor_position);
 void text_area_undo(dword_t text_area_info_mem);
 void text_area_redo(dword_t text_area_info_mem);
+dword_t text_area_return_written_number_in_dword(dword_t text_area_info_mem);

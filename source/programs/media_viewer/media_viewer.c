@@ -9,13 +9,12 @@
 */
 
 void initalize_media_viewer(void) {
- media_viewer_program_interface_memory = create_program_interface_memory();
+ media_viewer_program_interface_memory = create_program_interface_memory(((dword_t)&draw_media_viewer), PROGRAM_INTERFACE_FLAG_NO_NEW_BUTTON);
  media_viewer_sound_state = MEDIA_VIEWER_SOUND_NO_FILE;
 }
 
 void media_viewer(void) {
- set_program_interface(media_viewer_program_interface_memory, ((dword_t)&draw_media_viewer));
- set_program_value(PROGRAM_INTERFACE_FLAGS, PROGRAM_INTERFACE_FLAG_NO_NEW_BUTTON);
+ set_program_interface(media_viewer_program_interface_memory);
  set_program_value(PROGRAM_INTERFACE_CHANGE_BETWEEN_FILES_METHOD_POINTER, (dword_t)media_viewer_change_between_files);
  program_interface_add_keyboard_event(KEY_F1, (dword_t)media_viewer_open_file);
  program_interface_add_keyboard_event(KEY_F2, (dword_t)media_viewer_save_file);
@@ -44,7 +43,7 @@ void media_viewer(void) {
   move_mouse_cursor();
 
   //close program
-  if(keyboard_value==KEY_ESC || (mouse_drag_and_drop==MOUSE_CLICK && get_mouse_cursor_click_board_value()==CLICK_ZONE_BACK)) {
+  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && get_mouse_cursor_click_board_value()==CLICK_ZONE_BACK)) {
    media_viewer_pause_sound();
    if(get_file_value(MEDIA_VIEWER_FILE_TYPE)==MEDIA_VIEWER_FILE_SOUND) {
     media_viewer_sound_state = MEDIA_VIEWER_SOUND_STATE_STOPPED;
@@ -61,7 +60,7 @@ void media_viewer(void) {
    dword_t *image_info = (dword_t *) (get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY));
 
    //move image by mouse dragging
-   if(mouse_drag_and_drop==MOUSE_DRAG && get_program_value(PROGRAM_INTERFACE_SELECTED_CLICK_ZONE)==MEDIA_VIEWER_CLICK_ZONE_IMAGE) {
+   if(mouse_click_button_state==MOUSE_DRAG && get_program_value(PROGRAM_INTERFACE_SELECTED_CLICK_ZONE)==MEDIA_VIEWER_CLICK_ZONE_IMAGE) {
     //move horizontally
     if(image_info[IMAGE_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE]!=0) {
      dword_t movement = (mouse_cursor_x_dnd-mouse_cursor_x_previous_dnd);

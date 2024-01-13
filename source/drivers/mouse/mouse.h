@@ -13,7 +13,7 @@
 #define MOUSE_CLICK 1
 #define MOUSE_DRAG 2
 
-byte_t mouse_drag_and_drop = MOUSE_NO_DRAG;
+byte_t mouse_click_button_state = MOUSE_NO_DRAG;
 dword_t mouse_buttons = 0, mouse_movement_x = 0, mouse_movement_y = 0, mouse_wheel = 0;
 
 void initalize_mouse(void);

@@ -857,7 +857,7 @@ void text_area_mouse_event(dword_t text_area_info_mem) {
  dword_t *text_area_info = (dword_t *) text_area_info_mem;
  
  //change cursor position
- if(mouse_drag_and_drop==MOUSE_CLICK) {
+ if(mouse_click_button_state==MOUSE_CLICK) {
   draw_text_area(text_area_info_mem); //get mouse cursor position
   word_t *text_area_data = (word_t *) (text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]);
   if(text_area_mouse_cursor_char_memory==text_area_info[TEXT_AREA_INFO_CURSOR_POSITION] && text_area_data[0]!=0) { //double click on word
@@ -883,7 +883,7 @@ void text_area_mouse_event(dword_t text_area_info_mem) {
   text_area_set_show_line_and_column(text_area_info_mem);
   text_area_info[TEXT_AREA_INFO_REDRAW_X] = 0xFFFFFFFF; //redraw whole text area
  }
- else if(mouse_drag_and_drop==MOUSE_DRAG) {
+ else if(mouse_click_button_state==MOUSE_DRAG) {
   draw_text_area(text_area_info_mem); //get mouse cursor position
   text_area_info[TEXT_AREA_INFO_CURSOR_POSITION] = text_area_mouse_cursor_char_memory;
   text_area_set_show_line_and_column(text_area_info_mem);
@@ -913,6 +913,13 @@ void text_area_disable_cursor(dword_t text_area_info_mem) {
  dword_t *text_area_info = (dword_t *) text_area_info_mem;
 
  text_area_info[TEXT_AREA_INFO_CURSOR_POSITION] = 0xFFFFFFFF;
+ text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER] = 0xFFFFFFFF;
+}
+
+void text_area_move_cursor_to_start(dword_t text_area_info_mem) {
+ dword_t *text_area_info = (dword_t *) text_area_info_mem;
+
+ text_area_info[TEXT_AREA_INFO_CURSOR_POSITION] = text_area_info[TEXT_AREA_INFO_MEMORY];
  text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER] = 0xFFFFFFFF;
 }
 
@@ -1085,4 +1092,9 @@ void text_area_redo(dword_t text_area_info_mem) {
   text_area_info[TEXT_AREA_INFO_REDRAW_X] = 0xFFFFFFFF;
   text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER] = 0xFFFFFFFF;
  }
+}
+
+dword_t text_area_return_written_number_in_dword(dword_t text_area_info_mem) {
+ dword_t *text_area_info = (dword_t *) (text_area_info_mem);
+ return convert_word_string_to_number(text_area_info[TEXT_AREA_INFO_MEMORY]);
 }

@@ -28,7 +28,7 @@ void developer_program_log(void) {
   wait_for_user_input();
   move_mouse_cursor();
   
-  if(keyboard_value==KEY_ESC || mouse_drag_and_drop==MOUSE_CLICK) {
+  if(keyboard_value==KEY_ESC || mouse_click_button_state==MOUSE_CLICK) {
    return;
   }
   else if(keyboard_value==KEY_F2) {

@@ -28,7 +28,7 @@ dword_t program_interface_memory_pointer = 0, program_interface_draw_method_poin
 dword_t program_interface_element_with_focus = 0, program_interface_selected_element_number = 0, program_interface_text_area_selected_scrollbar = 0;
 
 void initalize_program_interface(void);
-void set_program_interface(dword_t program_interface_mem, dword_t program_redraw_method);
+void set_program_interface(dword_t program_interface_mem);
 void clear_program_interface_before_drawing(void);
 void program_interface_add_keyboard_event(dword_t key, dword_t method);
 void program_interface_add_click_zone_event(dword_t click_zone, dword_t method);

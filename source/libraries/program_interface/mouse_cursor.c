@@ -51,13 +51,13 @@ void move_mouse_cursor(void) {
  mouse_movement_y = 0;
  
  //set mouse cursor variabiles
- if(mouse_drag_and_drop==MOUSE_NO_DRAG) {
+ if(mouse_click_button_state==MOUSE_NO_DRAG) {
   mouse_cursor_x_previous_dnd = mouse_cursor_x;
   mouse_cursor_y_previous_dnd = mouse_cursor_y;
   mouse_cursor_x_dnd = mouse_cursor_x;
   mouse_cursor_y_dnd = mouse_cursor_y;
  }
- else if(mouse_drag_and_drop==MOUSE_CLICK) {
+ else if(mouse_click_button_state==MOUSE_CLICK) {
   mouse_cursor_x_click = mouse_cursor_x;
   mouse_cursor_y_click = mouse_cursor_y;
   mouse_cursor_x_previous_dnd = mouse_cursor_x;
@@ -65,7 +65,7 @@ void move_mouse_cursor(void) {
   mouse_cursor_x_dnd = mouse_cursor_x;
   mouse_cursor_y_dnd = mouse_cursor_y;
  }
- else if(mouse_drag_and_drop==MOUSE_DRAG) {
+ else if(mouse_click_button_state==MOUSE_DRAG) {
   mouse_cursor_x_previous_dnd = mouse_cursor_x_dnd;
   mouse_cursor_y_previous_dnd = mouse_cursor_y_dnd;
   mouse_cursor_x_dnd = mouse_cursor_x;

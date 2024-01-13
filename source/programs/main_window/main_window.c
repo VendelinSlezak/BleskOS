@@ -112,6 +112,7 @@ void bleskos_main_window_redraw(void) {
 
  bleskos_main_window_drawing_line += 25;
  bleskos_main_window_print_item("Tools");
+ bleskos_main_window_draw_item("[c] Calculator", 0xFFE800, MW_CALCULATOR);
  bleskos_main_window_draw_item("[r] Screenshooter", 0xFFE800, MW_SCREENSHOOTER);
 
  bleskos_main_window_drawing_line += 25;
@@ -251,6 +252,11 @@ void bleskos_main_window(void) {
    file_manager();
    goto redraw;
   }
+  else if(keyboard_value==KEY_C) {
+   bleskos_main_window_time_redraw = 0;
+   calculator();
+   goto redraw;
+  }
   else if(keyboard_value==KEY_R) {
    bleskos_main_window_time_redraw = 0;
    screenshooter();
@@ -299,13 +305,13 @@ void bleskos_main_window(void) {
   }
   
   //click
-  if(mouse_drag_and_drop==MOUSE_CLICK) {   
+  if(mouse_click_button_state==MOUSE_CLICK) {   
    dword_t click_value = get_mouse_cursor_click_board_value();
    if(click_value==NO_CLICK) {
     continue;
    }
     
-   mouse_drag_and_drop = MOUSE_DRAG;
+   mouse_click_button_state = MOUSE_DRAG;
    if(click_value==MW_TEXT_EDITOR) {
     bleskos_main_window_time_redraw = 0;
     text_editor();
@@ -325,6 +331,10 @@ void bleskos_main_window(void) {
    else if(click_value==MW_FILE_MANAGER) {
     bleskos_main_window_time_redraw = 0;
     file_manager();
+   }
+   else if(click_value==MW_CALCULATOR) {
+    bleskos_main_window_time_redraw = 0;
+    calculator();
    }
    else if(click_value==MW_SCREENSHOOTER) {
     bleskos_main_window_time_redraw = 0;
@@ -362,7 +372,7 @@ void bleskos_main_window(void) {
   }
 
   //drag
-  if(mouse_drag_and_drop==MOUSE_DRAG) {
+  if(mouse_click_button_state==MOUSE_DRAG) {
    dword_t click_value = get_mouse_cursor_click_board_value();
    if(click_value==NO_CLICK) {
     continue;
@@ -418,13 +428,13 @@ void bleskos_main_window_change_keyboard_layout(void) {
    return;
   }
 
-  if(mouse_drag_and_drop==MOUSE_CLICK) {
+  if(mouse_click_button_state==MOUSE_CLICK) {
    dword_t click_value = get_mouse_cursor_click_board_value();
    if(click_value==NO_CLICK) {
     continue;
    }
     
-   mouse_drag_and_drop = MOUSE_DRAG;
+   mouse_click_button_state = MOUSE_DRAG;
    if(click_value==MW_KEYBOARD_LAYOUT_ENGLISH) {
     keyboard_layout_ptr = (word_t *) english_keyboard_layout;
     keyboard_shift_layout_ptr = (word_t *) english_shift_keyboard_layout;
