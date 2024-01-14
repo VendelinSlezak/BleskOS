@@ -41,6 +41,7 @@
 #include "programs/internet_browser/internet_browser.h"
 #include "programs/file_manager/file_manager.h"
 #include "programs/screenshooter/screenshooter.h"
+#include "programs/performance_rating/performance_rating.h"
 #include "programs/calculator/calculator.h"
 
 #include "drivers/system/include.c"
@@ -75,6 +76,7 @@
 #include "programs/internet_browser/internet_browser.c"
 #include "programs/file_manager/file_manager.c"
 #include "programs/screenshooter/screenshooter.c"
+#include "programs/performance_rating/performance_rating.c"
 #include "programs/calculator/calculator.c"
 
 void bleskos(void) {
@@ -147,6 +149,7 @@ void bleskos(void) {
  initalize_internet_browser();
  initalize_file_manager();
  initalize_screenshooter();
+ initalize_performance_rating();
  initalize_calculator();
  
  bleskos_redraw_starting_screen("Starting Graphic User Interface...", 100);
