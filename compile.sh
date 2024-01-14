@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "Compiling BleskOS..."
-mkdir -p compiler
+mkdir -p compile
 rm -f compile/*.bin
 
 nasm -f bin source/bootloader/bootloader.asm -o compile/bootloader.bin
@@ -31,4 +31,11 @@ then
 	mkdir -p iso
 	cp bleskos.img iso/bleskos.img
 	genisoimage -o bleskos.iso -b bleskos.img iso
+
+	RELEASE=$(grep -F 'print_to_message_window("Version' source/bleskos.c  | while IFS=' "' read A B C D E F; do echo bleskos_${C}u${E} ; done)
+	echo Release: $RELEASE
+	mv bleskos.img ${RELEASE}.img
+	zip ${RELEASE}_img.zip ${RELEASE}.img
+	mv bleskos.iso ${RELEASE}.iso
+	zip ${RELEASE}_iso.zip ${RELEASE}.iso
 fi
