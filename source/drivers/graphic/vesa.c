@@ -19,7 +19,7 @@ void vesa_init_graphic(void) {
  dword_t *vesa_mode_info_32 = (dword_t *) 0x3828;
  graphic_screen_lfb = (*vesa_mode_info_32);
  byte_t *vesa_info_block_8 = (byte_t *) (0x3005);
- if(*vesa_info_block_32==0x03) { //VBE 3
+ if(((vesa_info_block_32[1]>>8) & 0xFF)==0x03) { //VBE 3
   word_t *vesa_mode_info_16 = (word_t *) 0x3832;
   graphic_screen_bytes_per_line = ((dword_t)(*vesa_mode_info_16)); //in VBE 3 get bytes per line from here
  }

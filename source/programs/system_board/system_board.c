@@ -409,6 +409,10 @@ void system_board(void) {
     developer_program_log();
     goto redraw;
    }
+   else if(is_mouse_in_zone(graphic_screen_y-10-5-8-5,graphic_screen_y-10, 10+28*8, 10+28*8+29*8)==STATUS_TRUE) {
+    performance_rating();
+    goto redraw;
+   }
    else if(is_mouse_in_zone(30, graphic_screen_y-30, 10, 210)==STATUS_TRUE) {
     if(((mouse_cursor_y-30)/30)<system_board_num_of_items) {
      system_board_selected_item = ((mouse_cursor_y-30)/30);
