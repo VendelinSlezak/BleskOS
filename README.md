@@ -8,6 +8,9 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 9**
+- Tool Performance rating
+
 **Update 8**
 - Tool Calculator
 
@@ -19,9 +22,6 @@ Here is info about most important improvements in several last updates.
 - Significat improvement of PATAPI driver
 - You can stop reading from Audio CD by ESC
 - Multiple fixes of different things
-
-**Update 5**
-- Tool for making screenshots
 
 ## How to try BleskOS
 
