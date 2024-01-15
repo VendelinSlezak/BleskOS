@@ -8,6 +8,8 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#define PERFORMANCE_RATING_CLICK_ZONE_BACK 1
+
 #define srt(s) #s
 #define PERFORMANCE_RATING_RUN_COUNT 100
 #define PERFORMANCE_RATING_NBTASK 8
@@ -15,26 +17,27 @@
 dword_t PERFORMANCE_RATING_CURRENT_TASK=0;
 dword_t PERFORMANCE_RATING_CURRENT_PAGE=0;
 
-dword_t performance_rating_task0();
-dword_t performance_rating_task1();
-dword_t performance_rating_task2();
-dword_t performance_rating_task3();
-dword_t performance_rating_task4();
-dword_t performance_rating_task5();
-dword_t performance_rating_task6();
-dword_t performance_rating_task7();
+void performance_rating_task0();
+void performance_rating_task1();
+void performance_rating_task2();
+void performance_rating_task3();
+void performance_rating_task4();
+void performance_rating_task5();
+void performance_rating_task6();
+void performance_rating_task7();
 
-struct performance_rating_task { dword_t result; dword_t (*run)(void); byte_t name[100]; } performance_rating_tasks[PERFORMANCE_RATING_NBTASK] = {
-	{ 0, &performance_rating_task0, "Clear double buffer to 0x123456" },
-	{ 0, &performance_rating_task1, "Mouse move 100% visible" },
-	{ 0, &performance_rating_task2, "Mouse move 50% visible right" },
-	{ 0, &performance_rating_task3, "Mouse move 50% visible bottom" },
-	{ 0, &performance_rating_task4, "Redraw screen" },
-	{ 0, &performance_rating_task5, "Redraw part of screen 100% visible" },
-	{ 0, &performance_rating_task6, "Redraw part of screen 50% right visible" },
-	{ 0, &performance_rating_task7, "Redraw part of screen 50% bottom visible" }
+struct performance_rating_task { dword_t result_of_one_test_run; dword_t result; void (*run)(void); byte_t name[100]; } performance_rating_tasks[PERFORMANCE_RATING_NBTASK] = {
+	{ 0, 0, &performance_rating_task0, "Clear double buffer to 0x123456" },
+	{ 0, 0, &performance_rating_task1, "Mouse move 100% visible" },
+	{ 0, 0, &performance_rating_task2, "Mouse move 50% visible right" },
+	{ 0, 0, &performance_rating_task3, "Mouse move 50% visible bottom" },
+	{ 0, 0, &performance_rating_task4, "Redraw screen" },
+	{ 0, 0, &performance_rating_task5, "Redraw part of screen 100% visible" },
+	{ 0, 0, &performance_rating_task6, "Redraw part of screen 50% right visible" },
+	{ 0, 0, &performance_rating_task7, "Redraw part of screen 50% bottom visible" }
 };
 
 void initalize_performance_rating(void);
 void performance_rating(void);
 void redraw_performance_rating(void);
+void performance_rating_run_task(dword_t task_number);
