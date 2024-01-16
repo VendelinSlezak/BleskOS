@@ -8,6 +8,10 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 10**
+- More special boot options
+- Basic ZIP library that will be used for ZIP-packed files like DOCX, ODT...
+
 **Update 9**
 - Tool Performance rating
 
@@ -17,11 +21,6 @@ Here is info about most important improvements in several last updates.
 **Update 7**
 - Further significant improvement of PATAPI driver
 - BleskOS on USB is on small partition, so you can format rest of USB to another filesystem
-
-**Update 6**
-- Significat improvement of PATAPI driver
-- You can stop reading from Audio CD by ESC
-- Multiple fixes of different things
 
 ## How to try BleskOS
 
