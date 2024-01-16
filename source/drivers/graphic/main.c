@@ -63,8 +63,10 @@ void initalize_graphic(void) {
  }
 
  //initalize fonts
+ bleskos_boot_debug_top_screen_color(0xFFFFFF); //white top of screen
  binary_font_memory = (dword_t) &bleskos_font;
  initalize_scalable_font();
+ bleskos_boot_debug_top_screen_color(0x888888); //grey top of screen
 
  //initalize drawing
  set_pen_width(1);

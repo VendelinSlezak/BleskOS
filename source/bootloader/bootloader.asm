@@ -1,4 +1,4 @@
-;BleskOS bootloader v09/01/2024
+;BleskOS bootloader v15/01/2024
 
 ;;;;;
 ;; MIT License
@@ -89,7 +89,7 @@ bootloader_of_extended_bootloader:
  
  ;READ EXTENDED BOOTLOADER
  mov ah, 0x2 ;read
- mov al, 4 ;four sectors
+ mov al, 8 ;eigth sectors
  mov ch, 0
  mov dh, 0
  mov cl, 3 ;first sector is for MBR and second is bootloader of extended bootloader, extended bootloader itself starts from third sector
@@ -215,14 +215,17 @@ extended_bootloader_redraw:
  .enter:
   cmp word [selected_entry], 1
   je .special_boot
- .start_bleskos:
+  mov byte [boot_options], 0 ;classis boot without any boot options
+  .find_highest_graphic_mode_and_load_bleskos:
   call highest_graphic_mode
   jmp load_bleskos
   
  .special_boot:
+  cmp byte [manual_selecting_of_graphic_mode], 0
+  je .find_highest_graphic_mode_and_load_bleskos ;mode is not manually selected, it is highest possible mode, but we boot with boot options
   cmp word [selected_graphic_mode], 0
   jne .if_no_mode
-   mov word [selected_graphic_mode], 0x118
+   mov word [selected_graphic_mode], 0x118 ;default mode
   .if_no_mode:
   jmp load_bleskos
  
@@ -241,8 +244,35 @@ options:
  
  ;print strings
  mov dx, 0x0101
+ mov si, options_manual_selecting_of_graphic_mode_str
+ call print
+ mov dx, 0x0128
+ mov si, options_on
+ call print
+ cmp byte [manual_selecting_of_graphic_mode], 1
+ je .if_manual_selecting_of_graphic_mode_off
+  mov dx, 0x0128
+  mov si, options_off
+  call print
+ .if_manual_selecting_of_graphic_mode_off:
+
+ mov dx, 0x0301
  mov si, options_graphic_mode_str
  call print
+
+ mov dx, 0x0501
+ mov si, options_debug_messages_str
+ call print
+ mov dx, 0x0528
+ mov si, options_on
+ call print
+ mov al, byte [boot_options]
+ test al, 0x1
+ jnz .if_debug_messages_off
+  mov dx, 0x0528
+  mov si, options_off
+  call print
+ .if_debug_messages_off:
  
  .halt:
   mov ah, 0
@@ -256,7 +286,32 @@ options:
   
   cmp al, 'G'
   je select_graphic_mode
+
+  cmp al, 'm'
+  je change_manual_selecting_of_graphic_mode
+  
+  cmp al, 'M'
+  je change_manual_selecting_of_graphic_mode
+
+  cmp al, 'd'
+  je change_showing_of_debug_messages_during_boot
+  
+  cmp al, 'D'
+  je change_showing_of_debug_messages_during_boot
  jmp .halt
+
+change_manual_selecting_of_graphic_mode:
+ not byte [manual_selecting_of_graphic_mode]
+ and byte [manual_selecting_of_graphic_mode], 0x1
+ jmp options
+
+change_showing_of_debug_messages_during_boot:
+ mov al, byte [boot_options]
+ not al
+ and byte [boot_options], 0xFE
+ and al, 0x1
+ or byte [boot_options], al
+ jmp options
  
 select_graphic_mode:
  mov ax, 0x0E00
@@ -663,7 +718,11 @@ print_hex:
  boot_error_graphic_mode db 'Error during setting graphic mode', 0
  boot_error_floppy_boot db 'Floppy can not be readed by this version of bootloader', 0
 
+ options_manual_selecting_of_graphic_mode_str db '[m] Manual selecting of graphic mode', 0
  options_graphic_mode_str db '[g] Select graphic mode', 0
+ options_debug_messages_str db '[d] Debug messages during boot', 0
+ options_on db 'On', 0
+ options_off db 'Off', 0
  
  print_var_str db 0, 0, 0, 0, 0
 
@@ -679,6 +738,8 @@ print_hex:
  vesa_last_24_mode_x dw 0
  vesa_last_32_mode_x dw 0
  edid_best_x dw 0
+ manual_selecting_of_graphic_mode db 1
+ boot_options dd 0
 
 load_bleskos:
  ;print message
@@ -743,23 +804,23 @@ load_bleskos:
  cmp byte [boot_drive], 0x80
  jae .hard_disk_boot
  
- ;load first 12 sectors to align reading from floppy
+ ;load first 8 sectors to align reading from floppy
  mov ch, 0 ;cylinder
  mov dh, 0 ;head
- mov cl, 7 ;sector
+ mov cl, 11 ;sector
  mov dl, byte [boot_drive]
  mov bx, 0x0000
  mov ax, 0x1000
  mov es, ax
  mov fs, ax
  mov ah, 0x2 ;read
- mov al, 12 ;12 sectors
+ mov al, 8 ;8 sectors
  pusha
  int 13h
  popa
  jc error_loading
  
- mov edi, 0x10000+12*512
+ mov edi, 0x10000+8*512
  mov esi, 0
  mov ch, 0 ;cylinder
  mov dh, 1 ;head
@@ -802,8 +863,8 @@ load_bleskos:
  jmp .floppy_load_cylinder
  
  .hard_disk_boot:
- mov dword [0xF008], 6 ;first sector of BleskOS code
- mov edx, 6
+ mov dword [0xF008], 10 ;first sector of BleskOS code
+ mov edx, 10
  mov cx, 12 ;load 12x64 sectors = 384 KB
  mov ax, 0x10
  .load_bleskos_from_hard_disk:
@@ -877,6 +938,8 @@ load_bleskos:
  mov ss, ax
 
  mov esp, 0xFFF0 ;set stack pointer
+ mov eax, dword [boot_options]
+ push eax ;push value of boot option to stack for bleskos() method
  jmp 0x10000 ;execute BleskOS
 
  gdt:

@@ -14,6 +14,8 @@
 #define STATUS_FALSE 0
 #define BIG_ENDIAN(x) (((x & 0xFF)<<8) | ((x>>8) & 0xFF))
 
+#define BOOT_OPTION_DEBUG_MESSAGES 0x1
+
 typedef unsigned char byte_t;
 typedef unsigned short word_t;
 typedef unsigned int dword_t;
@@ -21,7 +23,10 @@ typedef unsigned long qword_t;
 
 byte_t value8;
 word_t value16;
-dword_t value32;
+dword_t value32, boot_options;
 dword_t converted_file_memory, converted_file_size;
 
+void bleskos(dword_t bootloader_passed_value);
 void bleskos_redraw_starting_screen(char *string, dword_t percent);
+void bleskos_boot_debug_top_screen_color(dword_t color);
+void bleskos_boot_debug_log_message(void);

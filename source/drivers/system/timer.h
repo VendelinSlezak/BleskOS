@@ -8,11 +8,7 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#define ZIP_FILE_NOT_FOUNDED 0xFFFFFFFF
-
-#define ZIP_NO_COMPRESSION 0
-#define ZIP_COMPRESSION_DEFLATE 8
-
-byte_t is_this_zip(dword_t zip_file_memory, dword_t zip_file_size);
-dword_t search_for_file_in_zip(dword_t zip_file_memory, dword_t zip_file_size, byte_t *file_name);
-dword_t zip_extract_file(dword_t zip_file_memory, dword_t zip_file_size, dword_t entry_number);
+void reset_timer(void);
+dword_t get_timer_value_in_microseconds(void);
+dword_t get_timer_value_in_miliseconds(void);
+void wait(dword_t miliseconds);

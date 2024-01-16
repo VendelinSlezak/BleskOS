@@ -30,14 +30,3 @@ void pit_handler(void) {
  //run processes that are on background of programs
  run_processes_on_background();
 }
-
-void wait(dword_t miliseconds) {
- //because interrupt is fired every 2 miliseconds, we need to convert number and add some extra time to be sure that we do not wait less
- miliseconds /= 2;
- miliseconds += 2;
-
- ticks = 0;
- while(ticks<miliseconds) {
-  asm("hlt");
- }
-}

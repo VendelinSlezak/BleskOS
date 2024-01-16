@@ -8,11 +8,44 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#define ZIP_FILE_NOT_FOUNDED 0xFFFFFFFF
+void reset_timer(void) {
+ if(hpet_base!=0) { //we use HPET
+  hpet_reset_counter();
+ }
+ else { //we use PIT
+  ticks = 0;
+  while(ticks==0) { //PIT interrupt will increase ticks value
+   asm("hlt");
+  }
+  ticks = 0;
+ }
+}
 
-#define ZIP_NO_COMPRESSION 0
-#define ZIP_COMPRESSION_DEFLATE 8
+dword_t get_timer_value_in_microseconds(void) {
+ if(hpet_base!=0) { //we use HPET
+  return hpet_return_time_in_microseconds();
+ }
+ else { //we use PIT
+  return (ticks*MILISECONDS_PER_ONE_PIT_TICK*1000);
+ }
+}
 
-byte_t is_this_zip(dword_t zip_file_memory, dword_t zip_file_size);
-dword_t search_for_file_in_zip(dword_t zip_file_memory, dword_t zip_file_size, byte_t *file_name);
-dword_t zip_extract_file(dword_t zip_file_memory, dword_t zip_file_size, dword_t entry_number);
+dword_t get_timer_value_in_miliseconds(void) {
+ if(hpet_base!=0) { //we use HPET
+  return (hpet_return_time_in_microseconds()/1000);
+ }
+ else { //we use PIT
+  return (ticks*MILISECONDS_PER_ONE_PIT_TICK);
+ }
+}
+
+void wait(dword_t miliseconds) {
+ //because PIT interrupt is fired every 2 miliseconds, we need to convert number and add some extra time to be sure that we do not wait less
+ miliseconds /= 2;
+ miliseconds += 2;
+
+ ticks = 0;
+ while(ticks<miliseconds) {
+  asm("hlt");
+ }
+}

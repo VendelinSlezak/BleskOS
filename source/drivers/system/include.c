@@ -16,3 +16,4 @@
 #include "acpi.c"
 #include "hpet.c"
 #include "processes_on_background.c"
+#include "timer.c"
