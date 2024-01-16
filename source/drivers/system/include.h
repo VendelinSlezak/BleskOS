@@ -16,3 +16,4 @@
 #include "acpi.h"
 #include "hpet.h"
 #include "processes_on_background.h"
+#include "timer.h"

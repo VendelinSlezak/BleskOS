@@ -14,4 +14,3 @@ dword_t ticks = 0;
 
 void set_pit(void);
 void pit_handler(void);
-void wait(dword_t miliseconds);

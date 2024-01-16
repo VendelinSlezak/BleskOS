@@ -74,45 +74,16 @@ void redraw_performance_rating(void) {
 	redraw_screen();
 }
 
-void performance_rating_run_task(dword_t task_number) {
- dword_t sum = 0;
-
- if(hpet_base!=0) { //we use HPET
-  //get average time of 1 run from 10 runs
-  for(dword_t i=0; i<10; i++) {
-   hpet_reset_counter();
-   performance_rating_tasks[task_number].run();
-   sum += hpet_return_time_in_microseconds();
-  }
-  performance_rating_tasks[task_number].result_of_one_test_run = (sum/10);
-  
-  //get time of 100 runs
-  performance_rating_tasks[task_number].result = 0;
-  for(dword_t i=0; i<PERFORMANCE_RATING_RUN_COUNT; i++) {
-   hpet_reset_counter();
-   performance_rating_tasks[task_number].run();
-   performance_rating_tasks[task_number].result += hpet_return_time_in_microseconds();
-  }
+void performance_rating_run_task(dword_t task_number) {  
+ //get time of 100 runs
+ reset_timer();
+ for(dword_t i=0; i<PERFORMANCE_RATING_RUN_COUNT; i++) {
+  performance_rating_tasks[task_number].run();
  }
- else { //we use PIT
-  //get average time of 1 run from 10 runs
-  for(dword_t i=0; i<10; i++) {
-   wait(1);
-   ticks = 0;
-   performance_rating_tasks[task_number].run();
-   sum += (ticks*MILISECONDS_PER_ONE_PIT_TICK*1000);
-  }
-  performance_rating_tasks[task_number].result_of_one_test_run = (sum/10);
-  
-  //get time of 100 runs
-  performance_rating_tasks[task_number].result = 0;
-  for(dword_t i=0; i<PERFORMANCE_RATING_RUN_COUNT; i++) {
-   wait(1);
-   ticks = 0;
-   performance_rating_tasks[task_number].run();
-   performance_rating_tasks[task_number].result += (ticks*MILISECONDS_PER_ONE_PIT_TICK*1000);
-  }
- }
+ performance_rating_tasks[task_number].result = get_timer_value_in_microseconds();
+ 
+ //calculate average time of one run
+ performance_rating_tasks[task_number].result_of_one_test_run = (performance_rating_tasks[task_number].result/100);
 }
 
 void performance_rating_task0() {
