@@ -16,6 +16,7 @@
 
 dword_t PERFORMANCE_RATING_CURRENT_TASK=0;
 dword_t PERFORMANCE_RATING_CURRENT_PAGE=0;
+dword_t PERFORMANCE_RATING_CURRENT_RUN=0;
 
 void performance_rating_task0();
 void performance_rating_task1();
