@@ -132,4 +132,20 @@ void performance_rating_task7() { // 25% screen half bottom
   redraw_part_of_framebuffer( graphic_screen_x_center>>1, graphic_screen_y_center+(graphic_screen_y_center>>1), graphic_screen_x>>1, graphic_screen_y>>1);
 }
 
+void performance_rating_task8() { // todo 
+}
+void performance_rating_task9() { // todo 
+}
+void performance_rating_task10() { // todo 
+}
+void performance_rating_task11() { // todo 
+}
+void performance_rating_task12() { // todo 
+}
+void performance_rating_task13() { // todo 
+}
+void performance_rating_task14() { // todo 
+}
+void performance_rating_task15() { // todo 
+}
 
