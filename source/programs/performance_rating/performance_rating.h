@@ -10,12 +10,12 @@
 
 #define PERFORMANCE_RATING_CLICK_ZONE_BACK 1
 
-#define srt(s) #s
 #define PERFORMANCE_RATING_RUN_COUNT 128
 #define PERFORMANCE_RATING_NBTASK 16
 
 dword_t PERFORMANCE_RATING_CURRENT_TASK=0;
 dword_t PERFORMANCE_RATING_CURRENT_PAGE=0;
+dword_t PERFORMANCE_RATING_CURRENT_RUN=0;
 
 void performance_rating_task0();
 void performance_rating_task1();
@@ -35,16 +35,16 @@ void performance_rating_task14();
 void performance_rating_task15();
 
 struct performance_rating_task { dword_t result; void (*run)(void); byte_t name[100]; } performance_rating_tasks[PERFORMANCE_RATING_NBTASK] = {
-	{ 0, &performance_rating_task0, "Clear double buffer to 0x123456" },
+	{ 0, &performance_rating_task0, "Clear double buffer with solif color 0x123456" },
 	{ 0, &performance_rating_task1, "Mouse move 100% visible" },
 	{ 0, &performance_rating_task2, "Mouse move 50% visible right" },
 	{ 0, &performance_rating_task3, "Mouse move 50% visible bottom" },
-	{ 0, &performance_rating_task4, "Redraw screen" },
-	{ 0, &performance_rating_task5, "Redraw part of screen 100% visible" },
-	{ 0, &performance_rating_task6, "Redraw part of screen 50% right visible" },
-	{ 0, &performance_rating_task7, "Redraw part of screen 50% bottom visible" },
-	{ 0, &performance_rating_task8, "todo" },
-	{ 0, &performance_rating_task9, "todo" },
+	{ 0, &performance_rating_task4, "Redraw screen from double buffer to framebuffer 32, 24 or 16bpp" },
+	{ 0, &performance_rating_task5, "Redraw 25% of screen 100% visible" },
+	{ 0, &performance_rating_task6, "Redraw 25% of screen 50% right visible" },
+	{ 0, &performance_rating_task7, "Redraw 25% of screen 50% bottom visible" },
+	{ 0, &performance_rating_task8, "Scalable font print" },
+	{ 0, &performance_rating_task9, "Bitmap font print" },
 	{ 0, &performance_rating_task10, "todo" },
 	{ 0, &performance_rating_task11, "todo" },
 	{ 0, &performance_rating_task12, "todo" },

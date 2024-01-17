@@ -34,28 +34,16 @@ void performance_rating(void) {
         redraw_performance_rating();
         break;
       case KEY_ENTER:
-        message_window("Running task...");
-        redraw_screen();
-        mouse_movement_x = graphic_screen_x - mouse_cursor_x - (MOUSE_CURSOR_WIDTH>>1);
-        mouse_movement_y = graphic_screen_y - mouse_cursor_y - (MOUSE_CURSOR_HEIGTH>>1);
-        move_mouse_cursor(); // mouse need to be on expected position
-        clear_screen(0x123456); // to make screen redraw visible
         performance_rating_run_task(PERFORMANCE_RATING_CURRENT_TASK);
         redraw_performance_rating();
         break;
       case KEY_A:
-        for (int i=0; i<PERFORMANCE_RATING_NBTASK; i++) {
-          PERFORMANCE_RATING_CURRENT_TASK=i;
+          PERFORMANCE_RATING_CURRENT_TASK=0;
           redraw_performance_rating();
-          message_window("Running tasks...");
-          redraw_screen();
-          mouse_movement_x = graphic_screen_x - mouse_cursor_x - (MOUSE_CURSOR_WIDTH>>1);
-          mouse_movement_y = graphic_screen_y - mouse_cursor_y - (MOUSE_CURSOR_HEIGTH>>1);
-          move_mouse_cursor(); // mouse need to be on expectedi position
-          clear_screen(0x123456); // to make screen redraw visible
-          performance_rating_run_task(i);
+        for (; PERFORMANCE_RATING_CURRENT_TASK<PERFORMANCE_RATING_NBTASK; PERFORMANCE_RATING_CURRENT_TASK++) {
+          performance_rating_run_task(PERFORMANCE_RATING_CURRENT_TASK);
+          redraw_performance_rating();
         }
-          redraw_performance_rating();
         break;
       case KEY_PAGE_UP:
         break;
@@ -85,15 +73,24 @@ void redraw_performance_rating(void) {
 }
 
 void performance_rating_run_task(dword_t task_number) {  // get time of 128 runs
+  message_window("Running tasks...");
+  redraw_screen();
+  mouse_movement_x = graphic_screen_x - mouse_cursor_x - (MOUSE_CURSOR_WIDTH>>1);
+  mouse_movement_y = graphic_screen_y - mouse_cursor_y - (MOUSE_CURSOR_HEIGTH>>1);
+  move_mouse_cursor(); // mouse need to be on expected position
+  clear_screen(0x123456); // to make screen redraw visible
   reset_timer();
-  for(dword_t i=0; i<PERFORMANCE_RATING_RUN_COUNT; i++) {
+
+  for(PERFORMANCE_RATING_CURRENT_RUN=0; PERFORMANCE_RATING_CURRENT_RUN<PERFORMANCE_RATING_RUN_COUNT; PERFORMANCE_RATING_CURRENT_RUN++) {
     performance_rating_tasks[task_number].run();
   }
   performance_rating_tasks[task_number].result = get_timer_value_in_microseconds();
 
+  redraw_screen();
   if(performance_rating_tasks[task_number].result < 1000000) {
     wait(1000);
   }
+    wait(1000);
 }
 
 void performance_rating_task0() {
@@ -132,7 +129,8 @@ void performance_rating_task7() { // 25% screen half bottom
   redraw_part_of_framebuffer( graphic_screen_x_center>>1, graphic_screen_y_center+(graphic_screen_y_center>>1), graphic_screen_x>>1, graphic_screen_y>>1);
 }
 
-void performance_rating_task8() { // todo 
+void performance_rating_task8() { //  Scalable font print
+  scalable_font_print("AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789", 10+PERFORMANCE_RATING_CURRENT_RUN, 10+PERFORMANCE_RATING_CURRENT_RUN, BLACK);  
 }
 void performance_rating_task9() { // todo 
 }
