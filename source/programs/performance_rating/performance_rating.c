@@ -36,18 +36,26 @@ void performance_rating(void) {
       case KEY_ENTER:
         message_window("Running task...");
         redraw_screen();
+        mouse_movement_x = graphic_screen_x - mouse_cursor_x - (MOUSE_CURSOR_WIDTH>>1);
+        mouse_movement_y = graphic_screen_y - mouse_cursor_y - (MOUSE_CURSOR_HEIGTH>>1);
+        move_mouse_cursor(); // mouse need to be on expected position
         clear_screen(0x123456); // to make screen redraw visible
         performance_rating_run_task(PERFORMANCE_RATING_CURRENT_TASK);
         redraw_performance_rating();
         break;
       case KEY_A:
         for (int i=0; i<PERFORMANCE_RATING_NBTASK; i++) {
+          PERFORMANCE_RATING_CURRENT_TASK=i;
+          redraw_performance_rating();
           message_window("Running tasks...");
           redraw_screen();
+          mouse_movement_x = graphic_screen_x - mouse_cursor_x - (MOUSE_CURSOR_WIDTH>>1);
+          mouse_movement_y = graphic_screen_y - mouse_cursor_y - (MOUSE_CURSOR_HEIGTH>>1);
+          move_mouse_cursor(); // mouse need to be on expectedi position
           clear_screen(0x123456); // to make screen redraw visible
           performance_rating_run_task(i);
         }
-        redraw_performance_rating();
+          redraw_performance_rating();
         break;
       case KEY_PAGE_UP:
         break;
@@ -82,6 +90,10 @@ void performance_rating_run_task(dword_t task_number) {  // get time of 128 runs
     performance_rating_tasks[task_number].run();
   }
   performance_rating_tasks[task_number].result = get_timer_value_in_microseconds();
+
+  if(performance_rating_tasks[task_number].result < 1000000) {
+    wait(1000);
+  }
 }
 
 void performance_rating_task0() {
@@ -89,20 +101,18 @@ void performance_rating_task0() {
 }
 
 void performance_rating_task1() { // on screen center
-  mouse_movement_x = graphic_screen_x_center - mouse_cursor_x;
-  mouse_movement_y = graphic_screen_y_center - mouse_cursor_y;
+  mouse_movement_x = -3;
+  mouse_movement_y = -3; 
   move_mouse_cursor();
 }
 
 void performance_rating_task2() { // on screen border rigth
-  mouse_movement_x = graphic_screen_x - mouse_cursor_x - (MOUSE_CURSOR_WIDTH>>1);
-  mouse_movement_y = graphic_screen_y_center - mouse_cursor_y;
+  mouse_movement_y = -3;
   move_mouse_cursor();
 }
 
 void performance_rating_task3() { //on screen border bottom
-  mouse_movement_x = graphic_screen_x_center - mouse_cursor_x;
-  mouse_movement_y = graphic_screen_y - mouse_cursor_y - (MOUSE_CURSOR_HEIGTH>>1);
+  mouse_movement_x = -3;
   move_mouse_cursor();
 }
 
@@ -111,15 +121,15 @@ void performance_rating_task4() { // full screen
 }
 
 void performance_rating_task5() { // 25% screen center
-  redraw_part_of_framebuffer(  graphic_screen_x_center>>1, graphic_screen_y_center>>1, graphic_screen_x>>1, graphic_screen_y>>1);
+  redraw_part_of_framebuffer( graphic_screen_x_center>>1, graphic_screen_y_center>>1, graphic_screen_x>>1, graphic_screen_y>>1);
 }
 
 void performance_rating_task6() { // 25% screen half rigth
-  redraw_part_of_framebuffer(  graphic_screen_x_center+(graphic_screen_x_center>>1), graphic_screen_y_center>>1, graphic_screen_x>>1, graphic_screen_y>>1);
+  redraw_part_of_framebuffer( graphic_screen_x_center+(graphic_screen_x_center>>1), graphic_screen_y_center>>1, graphic_screen_x>>1, graphic_screen_y>>1);
 }
 
 void performance_rating_task7() { // 25% screen half bottom
-  redraw_part_of_framebuffer(  graphic_screen_x_center>>1, graphic_screen_y_center+(graphic_screen_y_center>>1), graphic_screen_x>>1, graphic_screen_y>>1);
+  redraw_part_of_framebuffer( graphic_screen_x_center>>1, graphic_screen_y_center+(graphic_screen_y_center>>1), graphic_screen_x>>1, graphic_screen_y>>1);
 }
 
 
