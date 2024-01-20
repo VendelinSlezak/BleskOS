@@ -20,9 +20,9 @@ void performance_rating(void) {
     move_mouse_cursor();
 
     dword_t click_value = get_mouse_cursor_click_board_value();
-  if(mouse_click_button_state==MOUSE_CLICK && click_value==PERFORMANCE_RATING_CLICK_ZONE_BACK) {
-  return;
-  }
+    if(mouse_click_button_state==MOUSE_CLICK && click_value==PERFORMANCE_RATING_CLICK_ZONE_BACK) {
+      return;
+    }
 
     switch (keyboard_value) {
       case KEY_UP:
@@ -38,8 +38,8 @@ void performance_rating(void) {
         redraw_performance_rating();
         break;
       case KEY_A:
-          PERFORMANCE_RATING_CURRENT_TASK=0;
-          redraw_performance_rating();
+        PERFORMANCE_RATING_CURRENT_TASK=0;
+        redraw_performance_rating();
         for (; PERFORMANCE_RATING_CURRENT_TASK<PERFORMANCE_RATING_NBTASK; PERFORMANCE_RATING_CURRENT_TASK++) {
           performance_rating_run_task(PERFORMANCE_RATING_CURRENT_TASK);
           redraw_performance_rating();
@@ -79,18 +79,13 @@ void performance_rating_run_task(dword_t task_number) {  // get time of 128 runs
   mouse_movement_y = graphic_screen_y - mouse_cursor_y - (MOUSE_CURSOR_HEIGTH>>1);
   move_mouse_cursor(); // mouse need to be on expected position
   clear_screen(0x123456); // to make screen redraw visible
+  message_window("Running tasks...");
   reset_timer();
 
   for(PERFORMANCE_RATING_CURRENT_RUN=0; PERFORMANCE_RATING_CURRENT_RUN<PERFORMANCE_RATING_RUN_COUNT; PERFORMANCE_RATING_CURRENT_RUN++) {
     performance_rating_tasks[task_number].run();
   }
   performance_rating_tasks[task_number].result = get_timer_value_in_microseconds();
-
-  redraw_screen();
-  if(performance_rating_tasks[task_number].result < 1000000) {
-    wait(1000);
-  }
-    wait(1000);
 }
 
 void performance_rating_task0() {

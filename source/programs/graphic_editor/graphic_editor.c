@@ -403,7 +403,7 @@ void graphic_editor_open_file(void) {
   return;
  }
 
- //set variabiles
+ //set variables
  dword_t *image_info = (dword_t *) (get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
  set_file_value(GRAPHIC_EDITOR_FILE_IMAGE_ZOOM, 100);
  set_file_value(GRAPHIC_EDITOR_FILE_IMAGE_PREVIEW_MEMORY, malloc(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGTH]*4));
@@ -896,7 +896,7 @@ void graphic_editor_copy_preview_to_image(void) {
 
 void graphic_editor_prepare_drawing_by_tool_without_copying_preview(void) {
  //save monitor screen
- screen_save_variabiles();
+ screen_save_variables();
 
  //switch to image as screen
  dword_t *image_info = (dword_t *) (get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));

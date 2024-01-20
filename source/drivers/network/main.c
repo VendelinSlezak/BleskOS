@@ -150,7 +150,7 @@ void network_process_packet(dword_t memory, byte_t is_last_packet) {
      //process http reply
      process_http_reply((memory+ETHERNET_LAYER_LENGTH+IP_LAYER_LENGTH+tcp_header_length), (memory+ETHERNET_LAYER_LENGTH+IP_LAYER_LENGTH+tcp_header_length+packet_data_length));
      
-     //set variabiles for transferred file
+     //set variables for transferred file
      file_memory = calloc(1024*1024); //one MB TODO: more
      file_memory_pointer = file_memory;
      file_length = http_content_length;
@@ -201,7 +201,7 @@ void network_process_packet(dword_t memory, byte_t is_last_packet) {
       return;
      }
 
-     tcp_new_packet = 1; //this variabile is used in file_transfer.c methods
+     tcp_new_packet = 1; //this variable is used in file_transfer.c methods
      
      //TODO: receive more than 1 MB
      if((file_transferred_length+packet_data_length)>1024*1024) {

@@ -78,7 +78,7 @@ dword_t zip_extract_file(dword_t zip_file_memory, dword_t zip_file_size, dword_t
   zip_file_entry = (dword_t *) (((dword_t)zip_file_entry)+46+file_name_length+extra_field_length+file_comment_length);
  }
 
- //read variabiles
+ //read variables
  dword_t file_data_compressed_data_length = zip_file_entry[5];
  dword_t file_data_uncompressed_data_length = zip_file_entry[6];
 

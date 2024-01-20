@@ -35,11 +35,11 @@ void performance_rating_task14();
 void performance_rating_task15();
 
 struct performance_rating_task { dword_t result; void (*run)(void); byte_t name[100]; } performance_rating_tasks[PERFORMANCE_RATING_NBTASK] = {
-	{ 0, &performance_rating_task0, "Clear double buffer with solif color 0x123456" },
+	{ 0, &performance_rating_task0, "Clear double buffer with solid color 0x123456" },
 	{ 0, &performance_rating_task1, "Mouse move 100% visible" },
 	{ 0, &performance_rating_task2, "Mouse move 50% visible right" },
 	{ 0, &performance_rating_task3, "Mouse move 50% visible bottom" },
-	{ 0, &performance_rating_task4, "Redraw screen from double buffer to framebuffer 32, 24 or 16bpp" },
+	{ 0, &performance_rating_task4, "Redraw screen from double buffer to framebuffer" },
 	{ 0, &performance_rating_task5, "Redraw 25% of screen 100% visible" },
 	{ 0, &performance_rating_task6, "Redraw 25% of screen 50% right visible" },
 	{ 0, &performance_rating_task7, "Redraw 25% of screen 50% bottom visible" },
