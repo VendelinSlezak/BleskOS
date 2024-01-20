@@ -86,10 +86,10 @@ void system_board_redraw(void) {
   print("All actual free memory in MB:", graphic_screen_x_center, 70, BLACK);
   print_var(all_actual_free_memory_in_bytes/1024/1024, graphic_screen_x_center+30*8, 70, BLACK);
 
-  dword_t *memory_entries = (dword_t *) (mem_memory_entries+system_item_variabile*16);
+  dword_t *memory_entries = (dword_t *) (mem_memory_entries+system_item_variable*16);
   dword_t num_of_printed_items = 0, num_of_max_printable_items = ((graphic_screen_y-100)/10);
 
-  for(dword_t i=0; i<(0xFFFF-system_item_variabile) && num_of_printed_items<num_of_max_printable_items; i++) {
+  for(dword_t i=0; i<(0xFFFF-system_item_variable) && num_of_printed_items<num_of_max_printable_items; i++) {
    if(memory_entries[MEM_ENTRY_TYPE]==MEM_FREE_MEMORY) {
     print("Free memory", graphic_screen_x_center, 90+num_of_printed_items*10, BLACK);
     print_hex(memory_entries[MEM_ENTRY_START], graphic_screen_x_center+12*8, 90+num_of_printed_items*10, BLACK); //start of memory
@@ -109,10 +109,10 @@ void system_board_redraw(void) {
   }
  }
  else if(system_board_items_list[system_board_selected_item]==SYSTEM_BOARD_PCI) {
-  dword_t *pci_devices_array = (dword_t *) (pci_devices_array_mem+system_item_variabile*12);
+  dword_t *pci_devices_array = (dword_t *) (pci_devices_array_mem+system_item_variable*12);
   dword_t num_of_printed_items = 0, num_of_max_printable_items = ((graphic_screen_y-20)/10);
 
-  for(dword_t i=0; i<(pci_num_of_devices-system_item_variabile) && num_of_printed_items<num_of_max_printable_items; i++) {
+  for(dword_t i=0; i<(pci_num_of_devices-system_item_variable) && num_of_printed_items<num_of_max_printable_items; i++) {
    if(pci_devices_array[1]==0x020000) {
     print(("Ethernet card"), graphic_screen_x_center, 10+num_of_printed_items*10, BLACK); //device type
    }
@@ -364,7 +364,7 @@ void system_board_redraw(void) {
 
 void system_board(void) {
  system_board_selected_item = 0;
- system_item_variabile = 0;
+ system_item_variable = 0;
 
  redraw:
  system_board_redraw();
@@ -391,7 +391,7 @@ void system_board(void) {
   if(keyboard_value==KEY_UP) {
    if(system_board_selected_item>0) {
     system_board_selected_item--;
-    system_item_variabile = 0;
+    system_item_variable = 0;
     goto redraw;
    }
   }
@@ -399,7 +399,7 @@ void system_board(void) {
   if(keyboard_value==KEY_DOWN) {
    if(system_board_selected_item<(system_board_num_of_items-1)) {
     system_board_selected_item++;
-    system_item_variabile = 0;
+    system_item_variable = 0;
     goto redraw;
    }
   }
@@ -416,7 +416,7 @@ void system_board(void) {
    else if(is_mouse_in_zone(30, graphic_screen_y-30, 10, 210)==STATUS_TRUE) {
     if(((mouse_cursor_y-30)/30)<system_board_num_of_items) {
      system_board_selected_item = ((mouse_cursor_y-30)/30);
-     system_item_variabile = 0;
+     system_item_variable = 0;
      goto redraw;
     }
    }
@@ -424,18 +424,18 @@ void system_board(void) {
 
   //hardware specific things
   if(system_board_items_list[system_board_selected_item]==SYSTEM_BOARD_MEMORY) {
-   if((keyboard_value==KEY_LEFT || (mouse_wheel!=0 && mouse_wheel<0x80000000)) && system_item_variabile>0) {
-    system_item_variabile--;
+   if((keyboard_value==KEY_LEFT || (mouse_wheel!=0 && mouse_wheel<0x80000000)) && system_item_variable>0) {
+    system_item_variable--;
     goto redraw;
    }
-   else if((keyboard_value==KEY_RIGHT || (mouse_wheel!=0 && mouse_wheel>0x80000000)) && system_item_variabile<0xFFFF) {
-    system_item_variabile++;
+   else if((keyboard_value==KEY_RIGHT || (mouse_wheel!=0 && mouse_wheel>0x80000000)) && system_item_variable<0xFFFF) {
+    system_item_variable++;
     goto redraw;
    }
   }
   else if(system_board_items_list[system_board_selected_item]==SYSTEM_BOARD_PCI) {
    if(keyboard_value==KEY_SPACE) {
-    byte_t *pci_device = (byte_t *) (pci_devices_array_mem+system_item_variabile*12);
+    byte_t *pci_device = (byte_t *) (pci_devices_array_mem+system_item_variable*12);
 
     //draw info about device
     draw_full_square(graphic_screen_x_center, 10, graphic_screen_x_center-10, graphic_screen_y-20, 0xA04000);
@@ -491,12 +491,12 @@ void system_board(void) {
     }
    }
 
-   if(((mouse_wheel!=0 && mouse_wheel<0x80000000) || keyboard_value==KEY_LEFT) && system_item_variabile>0) {
-    system_item_variabile--;
+   if(((mouse_wheel!=0 && mouse_wheel<0x80000000) || keyboard_value==KEY_LEFT) && system_item_variable>0) {
+    system_item_variable--;
     goto redraw;
    }
-   else if(((mouse_wheel!=0 && mouse_wheel>0x80000000) || keyboard_value==KEY_RIGHT) && system_item_variabile<(pci_num_of_devices-1)) {
-    system_item_variabile++;
+   else if(((mouse_wheel!=0 && mouse_wheel>0x80000000) || keyboard_value==KEY_RIGHT) && system_item_variable<(pci_num_of_devices-1)) {
+    system_item_variable++;
     goto redraw;
    }
   }

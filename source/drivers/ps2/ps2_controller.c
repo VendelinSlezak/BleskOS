@@ -65,7 +65,7 @@ byte_t ps2_first_channel_wait_for_ack(void) {
 
 byte_t ps2_first_channel_wait_for_response(void) {
  ticks = 0;
- while(ticks<250) { //processing command, especially reset can took some time, so we wait 500 miliseconds
+ while(ticks<250) { //processing command, especially reset can took some time, so we wait 500 milliseconds
   if(ps2_first_channel_buffer_pointer>1) {
    wait(20); //when we receive first byte of response, we wait longer for receiving all bytes that device sends
    return STATUS_GOOD;
@@ -100,7 +100,7 @@ byte_t ps2_second_channel_wait_for_ack(void) {
 
 byte_t ps2_second_channel_wait_for_response(void) {
  ticks = 0;
- while(ticks<250) { //processing command, especially reset can took some time, so we wait 500 miliseconds
+ while(ticks<250) { //processing command, especially reset can took some time, so we wait 500 milliseconds
   if(ps2_second_channel_buffer_pointer>1) {
    wait(20); //when we receive first byte of response, we wait longer for receiving all bytes that device sends
    return STATUS_GOOD;
@@ -120,7 +120,7 @@ void initalize_ps2_controller(void) {
   log("\nPS/2 controller ");
  }
 
- //initaize variabiles
+ //initaize variables
  ps2_first_channel_present = DEVICE_PRESENCE_IS_NOT_KNOWN;
  ps2_first_channel_device = PS2_CHANNEL_NO_DEVICE_CONNECTED;
  ps2_first_channel_buffer_pointer = 0;
@@ -362,7 +362,7 @@ void ps2_first_channel_irq_handler(void) {
     }
    }
 
-   //reset variabiles
+   //reset variables
    ps2_first_channel_buffer_pointer = 0;
    ps2_mouse_wait = 0;
    return;
@@ -410,7 +410,7 @@ void ps2_second_channel_irq_handler(void) {
     }
    }
 
-   //reset variabiles
+   //reset variables
    ps2_second_channel_buffer_pointer = 0;
    ps2_mouse_wait = 0;
    return;

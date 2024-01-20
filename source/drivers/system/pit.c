@@ -21,10 +21,10 @@ void set_pit(void) {
 }
 
 void pit_handler(void) {
- //this variabile counts PIT interrupts
+ //this variable counts PIT interrupts
  ticks++;
 
- //this variabile is used for some processes on background and is defined in source/system/processes_on_background.h
+ //this variable is used for some processes on background and is defined in source/system/processes_on_background.h
  ticks_of_processes++;
  
  //run processes that are on background of programs

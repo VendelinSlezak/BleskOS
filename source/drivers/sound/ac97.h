@@ -11,7 +11,7 @@
 #define AC97_BUFFER_NOT_FILLED 1
 #define AC97_BUFFER_FILLED 0
 
-byte_t ac97_present = 0, ac97_variabile_sound_rate_present = 0, ac97_free_entry = 0, ac97_playing_state = AC97_BUFFER_FILLED;
+byte_t ac97_present = 0, ac97_variable_sound_rate_present = 0, ac97_free_entry = 0, ac97_playing_state = AC97_BUFFER_FILLED;
 word_t ac97_nam_base, ac97_nabm_base;
 dword_t ac97_buffer_entries_memory;
 dword_t ac97_sound_memory, ac97_sound_num_of_samples;

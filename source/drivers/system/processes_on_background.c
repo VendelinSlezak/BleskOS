@@ -50,7 +50,7 @@ void run_processes_on_background(void) {
  }
  
  if(media_viewer_sound_state==MEDIA_VIEWER_SOUND_STATE_PLAYING) {
-  //update counter of played miliseconds
+  //update counter of played milliseconds
   if(hda_playing_state==1) {
    set_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS, (get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)*((hda_bytes_on_output_for_stopping_sound+media_viewer_showed_square_length_of_skipped_data)/1024)/((hda_sound_length+media_viewer_showed_square_length_of_skipped_data)/1024)));
   }

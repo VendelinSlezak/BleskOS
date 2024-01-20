@@ -77,7 +77,7 @@ void draw_text_area(dword_t text_area_info_mem) {
   text_area_info[TEXT_AREA_INFO_Y]++;
  }
  
- //set variabiles
+ //set variables
  text_area_mouse_cursor_char_memory = text_area_info[TEXT_AREA_INFO_CURSOR_POSITION];
  char_drawing_line_up = 0;
  char_drawing_line_down = 10;

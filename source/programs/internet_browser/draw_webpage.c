@@ -12,7 +12,7 @@ void internet_browser_redraw_webpage(dword_t webpage_mem) {
  word_t *webpage = (word_t *) webpage_mem;
  dword_t *webpage32;
  
- //set starting variabiles
+ //set starting variables
  ib_draw_column = 0;
  ib_draw_line = 0;
  ib_font_size = 10;
@@ -242,7 +242,7 @@ void internet_browser_calculate_draw_square(dword_t column, dword_t line, dword_
   return; //not in screen
  }
  
- //calculate Y related variabiles
+ //calculate Y related variables
  if(line>internet_browser_first_show_line) {
   ib_square_y = INTERNET_BROWSER_WEBPAGE_START_LINE+(line-internet_browser_first_show_line);
   ib_square_draw_line = 0;
@@ -264,7 +264,7 @@ void internet_browser_calculate_draw_square(dword_t column, dword_t line, dword_
   }
  }
  
- //calculate X realted variabiles
+ //calculate X realted variables
  if(column>internet_browser_first_show_column) {
   ib_square_x = (column-internet_browser_first_show_column);
   ib_square_draw_column = 0;

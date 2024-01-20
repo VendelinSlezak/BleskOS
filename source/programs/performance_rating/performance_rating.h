@@ -36,7 +36,7 @@ void performance_rating_task14();
 void performance_rating_task15();
 
 struct performance_rating_task { dword_t result; void (*run)(void); byte_t name[100]; } performance_rating_tasks[PERFORMANCE_RATING_NBTASK] = {
-	{ 0, &performance_rating_task0, "Clear double buffer with solif color 0x123456" },
+	{ 0, &performance_rating_task0, "Clear double buffer with solid color 0x123456" },
 	{ 0, &performance_rating_task1, "Mouse move 100% visible" },
 	{ 0, &performance_rating_task2, "Mouse move 50% visible right" },
 	{ 0, &performance_rating_task3, "Mouse move 50% visible bottom" },

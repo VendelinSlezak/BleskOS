@@ -135,7 +135,7 @@ void screenshooter(void) {
    //crop
    copy_raw_image_data(get_image_data_memory(screenshoot_image_info_mem), graphic_screen_x, screenshot_crop_x, screenshot_crop_y, screenshot_crop_width, screenshot_crop_height, get_image_data_memory(cropped_image_info_mem), screenshot_crop_width, 0, 0);
 
-   //set variabiles for result image
+   //set variables for result image
    dword_t *cropped_image_info = (dword_t *) (cropped_image_info_mem);
    cropped_image_info[IMAGE_INFO_REAL_WIDTH] = screenshot_crop_width;
    cropped_image_info[IMAGE_INFO_DRAW_WIDTH] = screenshot_crop_width;

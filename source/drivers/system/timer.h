@@ -10,5 +10,5 @@
 
 void reset_timer(void);
 dword_t get_timer_value_in_microseconds(void);
-dword_t get_timer_value_in_miliseconds(void);
-void wait(dword_t miliseconds);
+dword_t get_timer_value_in_milliseconds(void);
+void wait(dword_t milliseconds);
