@@ -9,7 +9,7 @@
 */
 
 void initalize_performance_rating(void) {
-
+  PERFORMANCE_RATING_NBTASK_PER_PAGE=(graphic_screen_y-20)/10;
 }
 
 void performance_rating(void) {
@@ -60,15 +60,20 @@ void redraw_performance_rating(void) {
   clear_screen(0xbb00dd);
   clear_click_board();
 
-  for (int i=0; i<PERFORMANCE_RATING_NBTASK; i++) {
+  print("Results are time in microseconds for 1x run and 128x runs", 10, 10, BLACK);
+  print("x1", graphic_screen_x-10*8*2, 10, BLACK);
+  print("x128", graphic_screen_x-10*8, 10, BLACK);
+
+  if ( PERFORMANCE_RATING_CURRENT_TASK > PERFORMANCE_RATING_NBTASK_PER_PAGE ) { color=RED; } else { color=BLACK; }
+  for (int i=0; i<PERFORMANCE_RATING_NBTASK && i<PERFORMANCE_RATING_NBTASK_PER_PAGE ; i++) {
     if ( i == PERFORMANCE_RATING_CURRENT_TASK ) { color=RED; } else { color=BLACK; };
-    print(performance_rating_tasks[i].name, 20, 10+i*10, color);
-    print_var(performance_rating_tasks[i].result >> 7, graphic_screen_x_center, 10+i*10, color);
-    print_var(performance_rating_tasks[i].result, graphic_screen_x_center+10*8, 10+i*10, color);
+    print(performance_rating_tasks[i].name, 10, 20+i*10, color);
+    print_var(performance_rating_tasks[i].result >> 7, graphic_screen_x-10*8*2, 20+i*10, color);
+    print_var(performance_rating_tasks[i].result, graphic_screen_x-10*8, 20+i*10, color);
   }
-  print("Results are time in microseconds for 1x run and 128x runs", 20, 10+PERFORMANCE_RATING_NBTASK*10+10, BLACK);
-  print("[ESC] Quit | [ARROWS] Choose | [ENTER] Run | [A] Run all", 0, graphic_screen_y-8, BLACK);
-  add_zone_to_click_board(0, graphic_screen_y-8, 11*8, 8, PERFORMANCE_RATING_CLICK_ZONE_BACK);
+
+  print("[ESC] Quit | [ARROWS] Choose | [ENTER] Run | [A] Run all", 2, graphic_screen_y-10, BLACK);
+  add_zone_to_click_board(2, graphic_screen_y-10, 11*8, 8, PERFORMANCE_RATING_CLICK_ZONE_BACK);
   redraw_screen();
 }
 
