@@ -9,5 +9,5 @@
 */
 
 void set_interrupts(void);
-void set_irq_handler(dword_t irq, dword_t method);
+void set_irq_handler(dword_t irq, dword_t handler);
 void isr_handler(dword_t isr_number);
