@@ -140,7 +140,7 @@ byte_t ide_send_identify_drive(word_t base_port) {
 }
 
 void initalize_ide_controllers(void) {
- //initalize variabiles
+ //initalize variables
  ide_hdd_base = 0;
  ide_hdd_alt_base = 0;
  ide_hdd_drive = 0;

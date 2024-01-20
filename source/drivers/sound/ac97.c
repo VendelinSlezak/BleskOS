@@ -40,8 +40,8 @@ void initalize_ac97(void) {
  }
  outd(ac97_nabm_base + 0x10, ac97_buffer_entries_memory);
  
- //set variabiles
- ac97_variabile_sound_rate_present = (inw(ac97_nam_base + 0x28) & 0x1);
+ //set variables
+ ac97_variable_sound_rate_present = (inw(ac97_nam_base + 0x28) & 0x1);
  sound_volume = 100;
  ac97_free_entry = 0;
 }
@@ -61,7 +61,7 @@ void ac97_set_volume(byte_t volume) {
 }
 
 byte_t ac97_is_supported_sample_rate(word_t sample_rate) {
- if(ac97_variabile_sound_rate_present==0x1) {
+ if(ac97_variable_sound_rate_present==0x1) {
   if(sample_rate==48000 || sample_rate==44100) {
    return STATUS_GOOD;
   }
@@ -84,8 +84,8 @@ byte_t ac97_is_supported_sample_rate(word_t sample_rate) {
 }
 
 void ac97_set_sample_rate(word_t sample_rate) {
- if(ac97_variabile_sound_rate_present==0x1) {
-  outw(ac97_nam_base + 0x2A, 0x1); //enable variabile sample rate
+ if(ac97_variable_sound_rate_present==0x1) {
+  outw(ac97_nam_base + 0x2A, 0x1); //enable variable sample rate
   outw(ac97_nam_base + 0x2C, sample_rate);
   outw(ac97_nam_base + 0x2E, sample_rate);
   outw(ac97_nam_base + 0x30, sample_rate);

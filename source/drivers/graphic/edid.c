@@ -32,7 +32,7 @@ void parse_edid_informations(void) {
  vertical_sync_offset = ((edid8[10]>>4) | (((edid8[11]>>2) & 0x3)<<8));
  vertical_sync_pulse = ((edid8[10] & 0xF) | ((edid8[11] & 0x3)<<8));
  
- //calculate variabiles
+ //calculate variables
  mode_horizontal_active = horizontal_active;
  mode_horizontal_sync_start = (horizontal_active + horizontal_sync_offset);
  mode_horizontal_sync_end = (mode_horizontal_sync_start + horizontal_sync_pulse);

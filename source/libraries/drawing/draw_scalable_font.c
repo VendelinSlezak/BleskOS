@@ -16,28 +16,28 @@ void initalize_scalable_font(void) {
  set_scalable_char_size(10);
  scalable_font_char_emphasis = SF_EMPHASIS_NONE;
 
- //predraw scalable font in size 10 for speeding up performance of drawing
- scalable_font_predraw_size_10_mem = malloc(11*20*4*128);
+ // //predraw scalable font in size 10 for speeding up performance of drawing
+ // scalable_font_predraw_size_10_mem = malloc(11*20*4*128);
 
- //clear space
- dword_t *predraw8 = (dword_t *) (scalable_font_predraw_size_10_mem);
- for(int i=0; i<(11*20*128); i++) {
-  *predraw8 = TRANSPARENT_COLOR;
-  predraw8++;
- }
+ // //clear space
+ // dword_t *predraw8 = (dword_t *) (scalable_font_predraw_size_10_mem);
+ // for(int i=0; i<(11*20*128); i++) {
+ //  *predraw8 = TRANSPARENT_COLOR;
+ //  predraw8++;
+ // }
 
- //draw chars
- screen_save_variabiles();
- graphic_screen_x = 11;
- graphic_screen_y = 20*128;
- screen_bytes_per_line = 11*4;
- screen_mem = scalable_font_predraw_size_10_mem;
- scalable_font_char_size = 0; //draw_scalable_char_without_emphasis will not try to draw character from predrawed memory
- for(int i=32; i<128; i++) {
-  draw_scalable_char_without_emphasis(i, 0, i*20, BLACK);
- }
- scalable_font_char_size = 10;
- screen_restore_variables();
+ // //draw chars
+ // screen_save_variables();
+ // graphic_screen_x = 11;
+ // graphic_screen_y = 20*128;
+ // screen_bytes_per_line = 11*4;
+ // screen_mem = scalable_font_predraw_size_10_mem;
+ // scalable_font_char_size = 0; //draw_scalable_char_without_emphasis will not try to draw character from predrawed memory
+ // for(int i=32; i<128; i++) {
+ //  draw_scalable_char_without_emphasis(i, 0, i*20, BLACK);
+ // }
+ // scalable_font_char_size = 10;
+ // screen_restore_variables();
 }
 
 void set_scalable_char_size(dword_t size) {
@@ -62,11 +62,11 @@ void draw_scalable_char_without_emphasis(word_t char_val, dword_t x, dword_t y, 
   return;
  }
 
- if(scalable_font_char_size==10 && char_val<128) {
-  //we can draw char from predrawed memory
-  copy_raw_image_data(scalable_font_predraw_size_10_mem, 11, 0, char_val*20, 11, 15, screen_mem, graphic_screen_x, x, y);
-  return;
- }
+ // if(scalable_font_char_size==10 && char_val<128) {
+ //  //we can draw char from predrawed memory
+ //  copy_raw_image_data(scalable_font_predraw_size_10_mem, 11, 0, char_val*20, 11, 15, screen_mem, graphic_screen_x, x, y);
+ //  return;
+ // }
  
  byte_t *char_data = (byte_t *) ((dword_t)bleskos_scalable_font[char_val]);
  
@@ -113,7 +113,7 @@ void draw_scalable_char(word_t char_val, dword_t x, dword_t y, dword_t color) {
 void draw_part_of_scalable_char(word_t char_val, dword_t x, dword_t y, dword_t char_column, dword_t char_line, dword_t char_width, dword_t char_height, dword_t color) {
  dword_t *char_board = (dword_t *) scalable_font_char_board_mem;
 
- screen_save_variabiles();
+ screen_save_variables();
  for(int i=0; i<(scalable_font_char_size+scalable_font_char_size/2)*scalable_font_char_size; i++) {
   *char_board = TRANSPARENT_COLOR;
   char_board++;

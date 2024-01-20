@@ -64,7 +64,7 @@ void set_pixel_shape_circle(void) {
   return;
  }
  
- //save screen variabiles
+ //save screen variables
  save_lfb = screen_mem;
  save_x = graphic_screen_x;
  save_y = graphic_screen_y;
@@ -85,7 +85,7 @@ void set_pixel_shape_circle(void) {
  }
  pen_width = width;
  
- //restore screen variabiles
+ //restore screen variables
  screen_mem = save_lfb;
  graphic_screen_x = save_x;
  graphic_screen_y = save_y;
@@ -170,7 +170,7 @@ void draw_line(int x0, int y0, int x1, int y1, dword_t color) {
  }
 }
 
-//TODO: long variabiles do not work on some computers and some curves are not properly drawed
+//TODO: long variables do not work on some computers and some curves are not properly drawed
 void plotQuadBezierSeg(int x0, int y0, int x1, int y1, int x2, int y2) {                            
   int sx = x2-x1, sy = y2-y1;
   long xx = x0-x1, yy = y0-y1, xy;         /* relative values for checks */

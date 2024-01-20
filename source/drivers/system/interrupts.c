@@ -35,7 +35,7 @@ void set_interrupts(void) {
  outb(0x21, 0xFB);
  outb(0xA1, 0xFF);
  
- //disable all variabiles that affect IRQ0 routine
+ //disable all variables that affect IRQ0 routine
  ticks = 0;
  ticks_of_processes = 0;
  bleskos_main_window_time_redraw = 0;

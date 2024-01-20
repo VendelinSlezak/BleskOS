@@ -316,7 +316,7 @@ void hda_initalize_audio_function_group(dword_t sound_card_number, dword_t afg_n
    if(type_of_node==HDA_PIN_LINE_OUT) {
     log("Line Out");
 
-    //save this node, this variabile contain number of last alternative output
+    //save this node, this variable contain number of last alternative output
     pin_alternative_output_node_number = node;
    }
    else if(type_of_node==HDA_PIN_SPEAKER) {
@@ -363,31 +363,31 @@ void hda_initalize_audio_function_group(dword_t sound_card_number, dword_t afg_n
    else if(type_of_node==HDA_PIN_CD) {
     log("CD");
 
-    //save this node, this variabile contain number of last alternative output
+    //save this node, this variable contain number of last alternative output
     pin_alternative_output_node_number = node;
    }
    else if(type_of_node==HDA_PIN_SPDIF_OUT) {
     log("SPDIF Out");
 
-    //save this node, this variabile contain number of last alternative output
+    //save this node, this variable contain number of last alternative output
     pin_alternative_output_node_number = node;
    }
    else if(type_of_node==HDA_PIN_DIGITAL_OTHER_OUT) {
     log("Digital Other Out");
 
-    //save this node, this variabile contain number of last alternative output
+    //save this node, this variable contain number of last alternative output
     pin_alternative_output_node_number = node;
    }
    else if(type_of_node==HDA_PIN_MODEM_LINE_SIDE) {
     log("Modem Line Side");
 
-    //save this node, this variabile contain number of last alternative output
+    //save this node, this variable contain number of last alternative output
     pin_alternative_output_node_number = node;
    }
    else if(type_of_node==HDA_PIN_MODEM_HANDSET_SIDE) {
     log("Modem Handset Side");
 
-    //save this node, this variabile contain number of last alternative output
+    //save this node, this variable contain number of last alternative output
     pin_alternative_output_node_number = node;
    }
    else if(type_of_node==HDA_PIN_LINE_IN) {
@@ -506,7 +506,7 @@ void hda_initalize_output_pin(dword_t sound_card_number, dword_t pin_node_number
  log("\nInitalizing PIN ");
  log_var(pin_node_number);
 
- //reset variabiles
+ //reset variables
  hda_sound_cards[sound_card_number].audio_output_node_number = 0;
  hda_sound_cards[sound_card_number].audio_output_node_sample_capabilites = 0;
  hda_sound_cards[sound_card_number].audio_output_node_stream_format_capabilites = 0;

@@ -184,7 +184,7 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
   goto page_is_finished;
  }
  
- //set variabiles for body
+ //set variables for body
  html_page_height = 0;
  ib_line_width = internet_browser_webpage_width;
  ib_actual_line_width = 0;
@@ -221,7 +221,7 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
   }
  
   if(*html=='<') {
-   //reset variabiles for tag
+   //reset variables for tag
    html_not_pair_tag = STATUS_FALSE;
    html_list_tag = STATUS_FALSE;
    html_table_cell_width = 0;
@@ -1000,7 +1000,7 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
     webpage[WEBPAGE_COMMAND_MOVE_TO_LINE_OFFSET_LINE_SIZE] = 0;
     webpage += 6;
 
-    //change variabiles
+    //change variables
     if(html_not_pair_tag==STATUS_FALSE) {
      ib_line_width -= (css_margin_left+css_left_border_size+css_padding_left+css_padding_right+css_right_border_size+css_margin_right);
     }
@@ -1170,7 +1170,7 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
    webpage[WEBPAGE_COMMAND_MOVE_TO_LINE_OFFSET_LINE_SIZE] = 0;
    webpage += 6;
    
-   //set variabile
+   //set variable
    ib_actual_line_width = 0;
    ib_line_biggest_spacing = 0;
   }

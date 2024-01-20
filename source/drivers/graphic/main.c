@@ -37,7 +37,7 @@ void initalize_graphic(void) {
   }
  }
  
- //initalize variabiles of graphic mode
+ //initalize variables of graphic mode
  screen_mem = malloc(graphic_screen_x*graphic_screen_y*4);
  if(screen_mem==0) {
   memory_error_debug(0x0000FF);
@@ -153,7 +153,7 @@ void redraw_framebuffer_16_bpp(void) {
 
 void redraw_screen(void) {
  if(mouse_cursor_x<graphic_screen_x && mouse_cursor_y<graphic_screen_y) { //mouse is on screen
-  //initalize variabiles
+  //initalize variables
   dword_t *screen;
   dword_t first_line_pixel_pointer_start_value = (screen_mem + (mouse_cursor_y*screen_bytes_per_line) + (mouse_cursor_x<<2));
   dword_t first_line_pixel_pointer = first_line_pixel_pointer_start_value;
@@ -284,7 +284,7 @@ void redraw_part_of_framebuffer_16_bpp(dword_t x, dword_t y, dword_t width, dwor
 }
 
 void redraw_part_of_screen(dword_t x, dword_t y, dword_t width, dword_t height) {
- //calculate variabiles
+ //calculate variables
  if(x>graphic_screen_x || y>graphic_screen_y) {
   return;
  }
@@ -300,7 +300,7 @@ void redraw_part_of_screen(dword_t x, dword_t y, dword_t width, dword_t height) 
   (*redraw_part_of_framebuffer)(x, y, width, height);
  }
  else { //mouse is on redrawed part of screen
-  //initalize variabiles
+  //initalize variables
   dword_t *screen;
   dword_t first_line_pixel_pointer_start_value = (screen_mem + (mouse_cursor_y*screen_bytes_per_line) + (mouse_cursor_x<<2));
   dword_t first_line_pixel_pointer = first_line_pixel_pointer_start_value;
@@ -361,7 +361,7 @@ void redraw_part_of_screen(dword_t x, dword_t y, dword_t width, dword_t height) 
  }
 }
 
-void screen_save_variabiles(void) {
+void screen_save_variables(void) {
  save_screen_mem = screen_mem;
  save_screen_x = graphic_screen_x;
  save_screen_y = graphic_screen_y;

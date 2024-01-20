@@ -483,7 +483,7 @@ dword_t write_fat_file(dword_t file_mem, dword_t size_in_bytes, dword_t first_cl
   return STATUS_ERROR;
  }
  
- //initalize variabiles
+ //initalize variables
  dword_t clusters_of_file = (size_in_bytes/fat_cluster_length_in_bytes);
  if((size_in_bytes%fat_cluster_length_in_bytes)!=0) {
   clusters_of_file++;

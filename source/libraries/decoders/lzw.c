@@ -72,7 +72,7 @@ byte_t decode_lzw(dword_t init_number_of_values, dword_t input, dword_t input_le
     dictionary_entries = init_number_of_values+2;
     clear_memory(lzw_dictionary_memory, 4096*8);
     
-    //move output variabiles
+    //move output variables
     output_ptr++;
     decoded_stream_length++;
     
@@ -102,7 +102,7 @@ byte_t decode_lzw(dword_t init_number_of_values, dword_t input, dword_t input_le
    previous_code_length = 1;
    previous_code_last_value = value32;
    
-   //move output variabiles
+   //move output variables
    output_ptr++;
    decoded_stream_length++;
   }
@@ -120,14 +120,14 @@ byte_t decode_lzw(dword_t init_number_of_values, dword_t input, dword_t input_le
    previous_code_last_value = output_ptr[0];
    previous_code_length = (dictionary[value32*2+1] & 0xFFFF)+1;
    
-   //move output variabiles
+   //move output variables
    output_ptr += (dictionary[value32*2+1] & 0xFFFF);
    decoded_stream_length += (dictionary[value32*2+1] & 0xFFFF);
    
    //write last value to output
    *output_ptr = (dictionary[value32*2+1] >> 16);
    
-   //move output variabiles
+   //move output variables
    output_ptr++;
    decoded_stream_length++;
   }
@@ -149,7 +149,7 @@ byte_t decode_lzw(dword_t init_number_of_values, dword_t input, dword_t input_le
    //write last value to output
    *output_ptr = previous_code_last_value;
    
-   //move output variabiles
+   //move output variables
    output_ptr++;
    decoded_stream_length += previous_code_length;
   }
