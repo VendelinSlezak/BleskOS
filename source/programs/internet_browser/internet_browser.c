@@ -205,7 +205,7 @@ void internet_browser_open_file(void) {
  //add file entry
  add_file((word_t *)file_dialog_file_name, 0, 0, 0, 0, 0);
 
- //convert file and set file variabiles
+ //convert file and set file variables
  set_file_value(INTERNET_BROWSER_FILE_STATUS, FILE_TRANSFER_NO_ERROR);
  set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_MEMORY, convert_html_to_bleskos_webpage(new_file_mem, file_dialog_file_size));
  set_file_value(INTERNET_BROWSER_FILE_HTML_MEMORY, new_file_mem);
@@ -239,7 +239,7 @@ void internet_browser_new_file(void) {
  //add file entry
  add_file((word_t *)"N\0e\0w\0 \0t\0a\0b\0\0\0", 0, 0, 0, 0, 0);
 
- //set file variabiles
+ //set file variables
  set_file_value(INTERNET_BROWSER_FILE_STATUS, INTERNET_BROWSER_FILE_STATUS_NOTHING);
  set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_MEMORY, 0);
  set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH, 0);
@@ -376,7 +376,7 @@ void internet_browser_load_webpage_from_url_in_text_area(void) {
    free(get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_MEMORY));
   }
 
-  //prepare arrays and variabiles
+  //prepare arrays and variables
   dword_t *text_area_info = (dword_t *) (get_file_value(INTERNET_BROWSER_FILE_TEXT_AREA_MEMORY));
   word_t *text_area_data = (word_t *) (text_area_info[TEXT_AREA_INFO_MEMORY]);
   byte_t *url = (byte_t *) (internet_browser_url_mem);
@@ -454,7 +454,7 @@ void internet_browser_load_webpage_from_url_in_text_area(void) {
    set_char_of_file_name(8, 0);
   }
 
-  //set file variabiles
+  //set file variables
   set_file_value(INTERNET_BROWSER_FILE_HTML_MEMORY, html_memory);
   set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH, html_page_height);
   set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE, 0);

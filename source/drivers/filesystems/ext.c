@@ -33,7 +33,7 @@ void select_ext_partition(dword_t first_partition_sector) {
   return;
  }
 
- //read variabiles
+ //read variables
  ext_version = ext_one_sector[19];
 
  ext_size_of_block_in_bytes = (1024 << ext_one_sector[6]);

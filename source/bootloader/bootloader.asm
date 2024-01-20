@@ -462,7 +462,7 @@ highest_graphic_mode:
  mov gs, ax ;segment of array
  mov si, word [es:14] ;offset of array
 
- ;initalize variabiles
+ ;initalize variables
  mov word [vesa_last_24_mode_x], 0
  mov word [vesa_last_32_mode_x], 0
 

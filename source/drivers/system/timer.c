@@ -30,7 +30,7 @@ dword_t get_timer_value_in_microseconds(void) {
  }
 }
 
-dword_t get_timer_value_in_miliseconds(void) {
+dword_t get_timer_value_in_milliseconds(void) {
  if(hpet_base!=0) { //we use HPET
   return (hpet_return_time_in_microseconds()/1000);
  }
@@ -39,13 +39,13 @@ dword_t get_timer_value_in_miliseconds(void) {
  }
 }
 
-void wait(dword_t miliseconds) {
- //because PIT interrupt is fired every 2 miliseconds, we need to convert number and add some extra time to be sure that we do not wait less
- miliseconds /= 2;
- miliseconds += 2;
+void wait(dword_t milliseconds) {
+ //because PIT interrupt is fired every 2 milliseconds, we need to convert number and add some extra time to be sure that we do not wait less
+ milliseconds /= 2;
+ milliseconds += 2;
 
  ticks = 0;
- while(ticks<miliseconds) {
+ while(ticks<milliseconds) {
   asm("hlt");
  }
 }

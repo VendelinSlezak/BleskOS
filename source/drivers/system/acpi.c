@@ -14,7 +14,7 @@ void read_acpi_tables(void) {
  dword_t memory_pointer = 0xE0000, number_of_entries;
  byte_t checksum;
 
- //set variabiles
+ //set variables
  ps2_controller_present = DEVICE_PRESENT;
  acpi_pm1_control_register = 0;
  acpi_pm2_control_register = 0;

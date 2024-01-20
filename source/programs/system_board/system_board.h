@@ -22,7 +22,7 @@
 
 #define SYSTEM_BOARD_PERFORMANCE_RATING 100
 
-dword_t system_board_selected_item = 0, system_board_num_of_items = 0, system_board_draw_line = 0, system_item_variabile = 0;
+dword_t system_board_selected_item = 0, system_board_num_of_items = 0, system_board_draw_line = 0, system_item_variable = 0;
 byte_t system_board_items_list[100];
 
 void system_board_print_hardware_item(byte_t *string);

@@ -62,7 +62,7 @@ dword_t http_transfer_file(byte_t *url) { //TODO: another location
   }
 
   if(ticks>250) {
-   //connection not estabilished after 500 miliseconds, try again
+   //connection not estabilished after 500 milliseconds, try again
    send_tcp_handshake(webpage_ip, file_tcp_port);
    ticks=0;
    while(tcp_connection_status!=TCP_HANDSHAKE_COMPLETE) {

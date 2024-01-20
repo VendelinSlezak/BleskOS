@@ -296,7 +296,7 @@ void media_viewer_open_file(void) {
    return;
   }
 
-  //set variabiles
+  //set variables
   set_file_value(MEDIA_VIEWER_FILE_TYPE, MEDIA_VIEWER_FILE_IMAGE);
   set_file_value(MEDIA_VIEWER_FILE_IMAGE_ZOOM, 100);
   media_viewer_sound_state = MEDIA_VIEWER_SOUND_NO_FILE;
@@ -341,7 +341,7 @@ void media_viewer_open_file(void) {
   //set other values of file info
   set_file_value(MEDIA_VIEWER_FILE_TYPE, MEDIA_VIEWER_FILE_SOUND);
   set_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS, (sound_info[SOUND_INFO_LENGTH_OF_DATA]/sound_info[SOUND_INFO_NUMBER_OF_CHANNELS]/sound_info[SOUND_INFO_BYTES_PER_SAMPLE]/sound_info[SOUND_INFO_SAMPLE_RATE])*1000); //seconds
-  set_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS, get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)+((sound_info[SOUND_INFO_LENGTH_OF_DATA]/sound_info[SOUND_INFO_NUMBER_OF_CHANNELS]/sound_info[SOUND_INFO_BYTES_PER_SAMPLE])%sound_info[SOUND_INFO_SAMPLE_RATE])*1000/sound_info[SOUND_INFO_SAMPLE_RATE]); //miliseconds, we have to calculate them separately, because 32 bit can be easily overflowed
+  set_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS, get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)+((sound_info[SOUND_INFO_LENGTH_OF_DATA]/sound_info[SOUND_INFO_NUMBER_OF_CHANNELS]/sound_info[SOUND_INFO_BYTES_PER_SAMPLE])%sound_info[SOUND_INFO_SAMPLE_RATE])*1000/sound_info[SOUND_INFO_SAMPLE_RATE]); //milliseconds, we have to calculate them separately, because 32 bit can be easily overflowed
   set_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS, 0);
   set_file_value(MEDIA_VIEWER_FILE_SOUND_NEXT_UPDATE_MS, 0);
   
@@ -519,7 +519,7 @@ void media_viewer_key_space_event(void) {
     //play sound
     dword_t block_length = (sound_info[SOUND_INFO_BYTES_PER_SAMPLE]*sound_info[SOUND_INFO_NUMBER_OF_CHANNELS]);
     dword_t length_of_skipped_data = (block_length*sound_info[SOUND_INFO_SAMPLE_RATE]*(get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)/1000)); //seconds
-    length_of_skipped_data += (block_length*sound_info[SOUND_INFO_SAMPLE_RATE]*(get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)%1000))/1000; //miliseconds, we have to do calculate them alone, because together would overflow 32 bits
+    length_of_skipped_data += (block_length*sound_info[SOUND_INFO_SAMPLE_RATE]*(get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)%1000))/1000; //milliseconds, we have to do calculate them alone, because together would overflow 32 bits
     length_of_skipped_data &= 0xFFFFFFFE; //align
     media_viewer_showed_square_length_of_skipped_data = length_of_skipped_data;
     play_new_sound(get_sound_data_memory((dword_t)sound_info)+length_of_skipped_data, sound_info[SOUND_INFO_NUMBER_OF_CHANNELS], sound_info[SOUND_INFO_BITS_PER_SAMPLE], sound_info[SOUND_INFO_SAMPLE_RATE], (sound_info[SOUND_INFO_LENGTH_OF_DATA]-length_of_skipped_data)/sound_info[SOUND_INFO_BYTES_PER_SAMPLE]);
@@ -638,7 +638,7 @@ void media_viewer_click_on_sound_progress_square(void) {
   if(media_viewer_sound_state==MEDIA_VIEWER_SOUND_STATE_PLAYING) {
    dword_t block_length = (sound_info[SOUND_INFO_BYTES_PER_SAMPLE]*sound_info[SOUND_INFO_NUMBER_OF_CHANNELS]);
    dword_t length_of_skipped_data = (block_length*sound_info[SOUND_INFO_SAMPLE_RATE]*(get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)/1000)); //seconds
-   length_of_skipped_data += (block_length*sound_info[SOUND_INFO_SAMPLE_RATE]*(get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)%1000))/1000; //miliseconds, we have to do calculate them alone, because together would overflow 32 bits
+   length_of_skipped_data += (block_length*sound_info[SOUND_INFO_SAMPLE_RATE]*(get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)%1000))/1000; //milliseconds, we have to do calculate them alone, because together would overflow 32 bits
    length_of_skipped_data &= 0xFFFFFFFE; //align
    media_viewer_showed_square_length_of_skipped_data = length_of_skipped_data;
    play_new_sound(get_sound_data_memory((dword_t)sound_info)+length_of_skipped_data, sound_info[SOUND_INFO_NUMBER_OF_CHANNELS], sound_info[SOUND_INFO_BITS_PER_SAMPLE], sound_info[SOUND_INFO_SAMPLE_RATE], (sound_info[SOUND_INFO_LENGTH_OF_DATA]-length_of_skipped_data)/sound_info[SOUND_INFO_BYTES_PER_SAMPLE]);

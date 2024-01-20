@@ -9,14 +9,14 @@
 */
 
 void send_dns_query(byte_t *url) {
- dword_t dns_variabile_length = 0;
+ dword_t dns_variable_length = 0;
  for(int i=0; i<2048; i++) { //URL can not be longer than 2048 chars
   if(url[i]==0 || url[i]=='/') {
    break;
   }
-  dns_variabile_length++;
+  dns_variable_length++;
  }
- dns_variabile_length += 6;
+ dns_variable_length += 6;
  clear_memory(packet_memory, 1600);
  word_t *packet16 = (word_t *) (packet_memory+ETHERNET_LAYER_LENGTH+IP_LAYER_LENGTH+UDP_LAYER_LENGTH);
  byte_t *packet8_label_count = (byte_t *) (packet_memory+ETHERNET_LAYER_LENGTH+IP_LAYER_LENGTH+UDP_LAYER_LENGTH+DNS_BASIC_LAYER_LENGTH);
@@ -25,8 +25,8 @@ void send_dns_query(byte_t *url) {
  set_receiver_mac_as_router_mac();
  create_ethernet_layer(packet_memory, IP_LAYER_TYPE);
  receiver_ip_address = dns_server_ip;
- create_ip_layer(packet_memory, IP_LAYER_LENGTH + UDP_LAYER_LENGTH + DNS_BASIC_LAYER_LENGTH + dns_variabile_length, UDP_PROTOCOL_TYPE);
- create_udp_layer(packet_memory, (UDP_LAYER_LENGTH + DNS_BASIC_LAYER_LENGTH + dns_variabile_length), 50000, 53);
+ create_ip_layer(packet_memory, IP_LAYER_LENGTH + UDP_LAYER_LENGTH + DNS_BASIC_LAYER_LENGTH + dns_variable_length, UDP_PROTOCOL_TYPE);
+ create_udp_layer(packet_memory, (UDP_LAYER_LENGTH + DNS_BASIC_LAYER_LENGTH + dns_variable_length), 50000, 53);
  
  //DNS layer
  packet16[0]=0xCDAB; //transaction ID
@@ -59,9 +59,9 @@ void send_dns_query(byte_t *url) {
  packet8[3]=0x00;
  packet8[4]=0x01; //class IN
  
- calculate_udp_checksum(packet_memory, (UDP_LAYER_LENGTH + DNS_BASIC_LAYER_LENGTH + dns_variabile_length));
+ calculate_udp_checksum(packet_memory, (UDP_LAYER_LENGTH + DNS_BASIC_LAYER_LENGTH + dns_variable_length));
  
- (*network_send_packet)(packet_memory, (ETHERNET_LAYER_LENGTH + IP_LAYER_LENGTH + UDP_LAYER_LENGTH + DNS_BASIC_LAYER_LENGTH + dns_variabile_length));
+ (*network_send_packet)(packet_memory, (ETHERNET_LAYER_LENGTH + IP_LAYER_LENGTH + UDP_LAYER_LENGTH + DNS_BASIC_LAYER_LENGTH + dns_variable_length));
 }
 
 void process_dns_reply(dword_t memory) {

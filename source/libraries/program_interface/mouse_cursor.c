@@ -50,7 +50,7 @@ void move_mouse_cursor(void) {
  }
  mouse_movement_y = 0;
  
- //set mouse cursor variabiles
+ //set mouse cursor variables
  if(mouse_click_button_state==MOUSE_NO_DRAG) {
   mouse_cursor_x_previous_dnd = mouse_cursor_x;
   mouse_cursor_y_previous_dnd = mouse_cursor_y;

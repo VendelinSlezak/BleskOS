@@ -88,7 +88,7 @@ void convert_sound_data_to_wav(dword_t sound_info_mem) {
  //copy sound data
  copy_memory(get_sound_data_memory(sound_info_mem), wav_memory+44, sound_info[SOUND_INFO_LENGTH_OF_DATA]);
 
- //set variabiles
+ //set variables
  converted_file_memory = wav_memory;
  converted_file_size = (sound_info[SOUND_INFO_LENGTH_OF_DATA]+44);
 }
