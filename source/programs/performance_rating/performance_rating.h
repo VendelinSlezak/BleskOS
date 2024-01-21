@@ -46,10 +46,10 @@ struct performance_rating_task { dword_t result; void (*run)(void); byte_t name[
 	{ 0, &performance_rating_task7, "Redraw 25% of screen 50% bottom visible" },
 	{ 0, &performance_rating_task8, "Scalable font print" },
 	{ 0, &performance_rating_task9, "Bitmap font print" },
-	{ 0, &performance_rating_task10, "todo" },
-	{ 0, &performance_rating_task11, "todo" },
-	{ 0, &performance_rating_task12, "todo" },
-	{ 0, &performance_rating_task13, "todo" },
+	{ 0, &performance_rating_task10, "Numeric variable print" },
+	{ 0, &performance_rating_task11, "Unicode string print" },
+	{ 0, &performance_rating_task12, "Hexa number print" },
+	{ 0, &performance_rating_task13, "Ascii string print" },
 	{ 0, &performance_rating_task14, "todo" },
 	{ 0, &performance_rating_task15, "todo" }
 };
@@ -58,3 +58,4 @@ void initalize_performance_rating(void);
 void performance_rating(void);
 void redraw_performance_rating(void);
 void performance_rating_run_task(dword_t task_number);
+void performance_rating_inspect_task(dword_t task_number);
