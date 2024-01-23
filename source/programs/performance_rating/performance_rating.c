@@ -161,8 +161,9 @@ void performance_rating_task9() { // bitmap font print
 void performance_rating_task10() { // print numeric variable 
   print_var(3473898+(PERFORMANCE_RATING_CURRENT_RUN<<2), graphic_screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), graphic_screen_y-(PERFORMANCE_RATING_CURRENT_RUN<<1), BLACK);  
 }
-void performance_rating_task11() { // print unicode string 
-  print_unicode((word_t *)"ÀÁÂÃÄÅÈÉÊËÌÍÎÏÑÒÓÔÕÖÙÚÛÜÝßàáâãäåèéêëìíîïñòóôõöùúûüýÿčďěľňŕřšťž", graphic_screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), graphic_screen_y-(PERFORMANCE_RATING_CURRENT_RUN<<1), BLACK);  
+void performance_rating_task11() { // print unicode string ÀÁÂÃÄÅÈÉÊËÌÍÎÏÑÒÓÔÕÖÙÚÛÜÝßàáâãäåèéêëìíîïñòóôõöùúûüýÿčďěľňŕřšťž
+  print_unicode((word_t *)"\uc000\uc100\uc200\uc300\uc400\uc500\uc800\uc900\uca00\ucb00\ucc00\ucd00\uce00\ucf00\ud100\ud200\ud300\ud400\ud500\ud600\ud900\uda00\udb00\udc00\udd00\udf00\ue000\ue100\ue200\ue300\ue400\ue500\ue800\ue900\uea00\ueb00\uec00\ued00\uee00\uef00\uf100\uf200\uf300\uf400\uf500\uf600\uf900\ufa00\ufb00\ufc00\ufd00\uff00\u0d01\u0f01\u1b01\u3e01\u4801\u5501\u5901\u6101\u6501\u7e01",
+    graphic_screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), graphic_screen_y-(PERFORMANCE_RATING_CURRENT_RUN<<1), BLACK);  
 }
 void performance_rating_task12() { // print hexa number
   print_hex(3467423+(PERFORMANCE_RATING_CURRENT_RUN<<2), graphic_screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), graphic_screen_y-(PERFORMANCE_RATING_CURRENT_RUN<<1), BLACK);  
