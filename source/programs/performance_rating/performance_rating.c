@@ -26,11 +26,11 @@ void performance_rating(void) {
 
     switch (keyboard_value) {
       case KEY_UP:
-        if (PERFORMANCE_RATING_CURRENT_TASK > 0) { PERFORMANCE_RATING_CURRENT_TASK--; };
+        if (PERFORMANCE_RATING_CURRENT_TASK > 0) { PERFORMANCE_RATING_CURRENT_TASK--; }
         redraw_performance_rating();
         break;
       case KEY_DOWN:
-        if (PERFORMANCE_RATING_CURRENT_TASK < PERFORMANCE_RATING_NBTASK-1) { PERFORMANCE_RATING_CURRENT_TASK++; };
+        if (PERFORMANCE_RATING_CURRENT_TASK < PERFORMANCE_RATING_NBTASK-1) { PERFORMANCE_RATING_CURRENT_TASK++; }
         redraw_performance_rating();
         break;
       case KEY_ENTER:
@@ -47,14 +47,16 @@ void performance_rating(void) {
         for (; PERFORMANCE_RATING_CURRENT_TASK<PERFORMANCE_RATING_NBTASK; PERFORMANCE_RATING_CURRENT_TASK++) {
           performance_rating_run_task(PERFORMANCE_RATING_CURRENT_TASK);
           redraw_performance_rating();
-          wait_for_user_input();
-          move_mouse_cursor();
 			 if( keyboard_value == KEY_ESC ) {break;}
         }
         break;
       case KEY_PAGE_UP:
+        if (PERFORMANCE_RATING_CURRENT_TASK > 5) { PERFORMANCE_RATING_CURRENT_TASK-=5; } else { PERFORMANCE_RATING_CURRENT_TASK=0; }
+        redraw_performance_rating();
         break;
       case KEY_PAGE_DOWN:
+        if (PERFORMANCE_RATING_CURRENT_TASK < PERFORMANCE_RATING_NBTASK-5) { PERFORMANCE_RATING_CURRENT_TASK+=5; } else { PERFORMANCE_RATING_CURRENT_TASK=PERFORMANCE_RATING_NBTASK-1; }
+        redraw_performance_rating();
         break;
       case KEY_ESC:
         return;
@@ -68,6 +70,11 @@ void redraw_performance_rating(void) {
   clear_click_board();
 
   print("Results are time in microseconds for 1x run and 128x runs", 10, line, BLACK);
+  print_var( graphic_screen_x, 580, line, BLACK);
+  print("x", 630, line, BLACK);
+  print_var( graphic_screen_y, 640, line, BLACK);
+  print("x", 690, line, BLACK);
+  print_var( graphic_screen_bpp, 700, line, BLACK);
   print("x1", graphic_screen_x-10*8*2, line, BLACK);
   print("x128", graphic_screen_x-10*8, line, BLACK);
   draw_line(0,12,graphic_screen_x,12,BLACK);
@@ -103,21 +110,23 @@ void performance_rating_run_task(dword_t task_number) {  // get time of 128 runs
 }
 
 void performance_rating_inspect_task(dword_t task_number) {  // get time of 128 runs
-  message_window("Running tasks...");
+  message_window("Running tasks, [ESC] to quit...");
   redraw_screen();
   mouse_movement_x = graphic_screen_x - mouse_cursor_x - (MOUSE_CURSOR_WIDTH>>1);
   mouse_movement_y = graphic_screen_y - mouse_cursor_y - (MOUSE_CURSOR_HEIGTH>>1);
   move_mouse_cursor(); // mouse need to be on expected position
 
   for(PERFORMANCE_RATING_CURRENT_RUN=0; PERFORMANCE_RATING_CURRENT_RUN<PERFORMANCE_RATING_RUN_COUNT; PERFORMANCE_RATING_CURRENT_RUN++) {
-    clear_screen(0x123456+PERFORMANCE_RATING_CURRENT_RUN<<5); // to make screen redraw visible
     performance_rating_tasks[task_number].run();
+    draw_full_square(0, 0, 32, 10, BLACK);
+    print_var(PERFORMANCE_RATING_CURRENT_RUN,2,2,WHITE);
     redraw_screen();
+    if (keyboard_value == KEY_ESC) { break;}
   }
 }
 
-void performance_rating_task0() {
-  clear_screen(0x1234566+PERFORMANCE_RATING_CURRENT_RUN<<5);
+void performance_rating_task0() { // clear screen
+  clear_screen(PERFORMANCE_RATING_CURRENT_RUN<<1);
 }
 
 void performance_rating_task1() { // on screen center
@@ -161,8 +170,9 @@ void performance_rating_task9() { // bitmap font print
 void performance_rating_task10() { // print numeric variable 
   print_var(3473898+(PERFORMANCE_RATING_CURRENT_RUN<<2), graphic_screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), graphic_screen_y-(PERFORMANCE_RATING_CURRENT_RUN<<1), BLACK);  
 }
-void performance_rating_task11() { // print unicode string 
-  print_unicode((word_t *)"ÀÁÂÃÄÅÈÉÊËÌÍÎÏÑÒÓÔÕÖÙÚÛÜÝßàáâãäåèéêëìíîïñòóôõöùúûüýÿčďěľňŕřšťž", graphic_screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), graphic_screen_y-(PERFORMANCE_RATING_CURRENT_RUN<<1), BLACK);  
+void performance_rating_task11() { // print unicode string ÀÁÂÃÄÅÈÉÊËÌÍÎÏÑÒÓÔÕÖÙÚÛÜÝßàáâãäåèéêëìíîïñòóôõöùúûüýÿčďěľňŕřšťž
+  print_unicode((word_t *)"\u00c0\u00c1\u00c2\u00c3\u00c4\u00c5\u00c8\u00c9\u00ca\u00cb\u00cc\u00cd\u00ce\u00cf\u00d1\u00d2\u00d3\u00d4\u00d5\u00d6\u00d9\u00da\u00db\u00dc\u00dd\u00df\u00e0\u00e1\u00e2\u00e3\u00e4\u00e5\u00e8\u00e9\u00ea\u00eb\u00ec\u00ed\u00ee\u00ef\u00f1\u00f2\u00f3\u00f4\u00f5\u00f6\u00f9\u00fa\u00fb\u00fc\u00fd\u00ff\u010d\u010f\u011b\u013e\u0148\u0155\u0159\u0161\u0165\u017e",
+    graphic_screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), graphic_screen_y-(PERFORMANCE_RATING_CURRENT_RUN<<1), BLACK);  
 }
 void performance_rating_task12() { // print hexa number
   print_hex(3467423+(PERFORMANCE_RATING_CURRENT_RUN<<2), graphic_screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), graphic_screen_y-(PERFORMANCE_RATING_CURRENT_RUN<<1), BLACK);  
@@ -170,7 +180,53 @@ void performance_rating_task12() { // print hexa number
 void performance_rating_task13() { // print ascii
   print_ascii("AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789", graphic_screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), graphic_screen_y-(PERFORMANCE_RATING_CURRENT_RUN<<1), BLACK);  
 }
-void performance_rating_task14() { // todo 
+void performance_rating_task14() { // draw pixel
+  draw_pixel(graphic_screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), graphic_screen_y-(PERFORMANCE_RATING_CURRENT_RUN<<1));
 }
-void performance_rating_task15() { // todo 
+void performance_rating_task15() { // draw straigth line
+  draw_straigth_line(graphic_screen_x_center>>1, graphic_screen_y-(PERFORMANCE_RATING_CURRENT_RUN<<1), graphic_screen_x_center );
+}
+void performance_rating_task16() { // draw straigth column
+  draw_straigth_column(graphic_screen_x-(PERFORMANCE_RATING_CURRENT_RUN<<1), graphic_screen_y_center>>1, graphic_screen_y_center);
+}
+void performance_rating_task17() { // draw line
+  draw_line(0,(PERFORMANCE_RATING_CURRENT_RUN<<2), graphic_screen_x, graphic_screen_y-(PERFORMANCE_RATING_CURRENT_RUN<<2), BLACK);
+}
+void performance_rating_task18() { // draw quadratic bezier
+//  draw_quadratic_bezier(int x0, int y0, int x1, int y1, int x2, int y2, dword_t color);
+}
+void performance_rating_task19() { // draw empty square
+//  draw_empty_square(dword_t x, dword_t y, dword_t width, dword_t height, dword_t color);
+}
+void performance_rating_task20() { // draw full square
+//  draw_full_square(dword_t x, dword_t y, dword_t width, dword_t height, dword_t color);
+}
+void performance_rating_task21() { // draw empty circle point
+//  draw_empty_circle_point(dword_t x, dword_t y);
+}
+void performance_rating_task22() { // draw empty circle
+//  draw_empty_circle(dword_t x, dword_t y, dword_t radius, dword_t color);
+}
+void performance_rating_task23() { // draw full circle line
+//  draw_full_circle_line(dword_t x, dword_t y);
+}
+void performance_rating_task24() { // draw full circle
+//  draw_full_circle(dword_t x, dword_t y, dword_t radius, dword_t color);
+}
+void performance_rating_task25() { // draw empty ellipse
+//  draw_empty_ellipse(int x0, int y0, int x1, int y1, dword_t color);
+}
+void performance_rating_task26() { // draw part empty ellipse
+//  draw_parts_of_empty_ellipse(byte_t parts, int x0, int y0, int x1, int y1, dword_t color);
+}
+void performance_rating_task27() { // draw full ellipse
+//  draw_full_ellipse(int x0, int y0, int x1, int y1, dword_t color);
+}
+void performance_rating_task28() { //
+}
+void performance_rating_task29() { //
+}
+void performance_rating_task30() { //
+}
+void performance_rating_task31() { //
 }
