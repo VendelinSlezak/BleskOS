@@ -373,6 +373,7 @@ void graphic_editor_redraw_image(void) {
 void graphic_editor_open_file(void) {
  //open file
  file_dialog_open_file_extensions_clear_mem();
+ file_dialog_open_file_add_extension("qoi");
  file_dialog_open_file_add_extension("bmp");
  file_dialog_open_file_add_extension("png");
  file_dialog_open_file_add_extension("gif");
@@ -386,7 +387,10 @@ void graphic_editor_open_file(void) {
  add_file((word_t *)file_dialog_file_name, 0, 0, 0, 0, 0);
  
  //convert image
- if(is_loaded_file_extension("bmp")==STATUS_TRUE) {
+ if(is_loaded_file_extension("qoi")==STATUS_TRUE) {
+  set_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY, convert_qoi_to_image_data(new_file_mem));
+ }
+ else if(is_loaded_file_extension("bmp")==STATUS_TRUE) {
   set_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY, convert_bmp_to_image_data(new_file_mem));
  }
  else if(is_loaded_file_extension("png")==STATUS_TRUE) {
