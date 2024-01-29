@@ -12,3 +12,4 @@
 #include "png.c"
 #include "gif.c"
 #include "bmp.c"
+#include "qoi.c"
