@@ -420,8 +420,18 @@ void graphic_editor_open_file(void) {
 }
 
 void graphic_editor_save_file(void) {
- file_dialog_save_set_extension("bmp");
- convert_image_data_to_bmp(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
+ dword_t file_format_number = window_for_choosing_file_format(2, "[b] BMP\0[q] QOI");
+ if(file_format_number==0xFFFFFFFF) {
+  return;
+ }
+ else if(file_format_number==0) {
+  file_dialog_save_set_extension("bmp");
+  convert_image_data_to_bmp(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
+ }
+ else if(file_format_number==1) {
+  file_dialog_save_set_extension("qoi");
+  convert_image_data_to_qoi(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
+ }
  if(file_dialog_save(converted_file_memory, converted_file_size)==STATUS_GOOD) {
   set_file_value(PROGRAM_INTERFACE_FILE_FLAGS, (get_file_value(PROGRAM_INTERFACE_FILE_FLAGS) | PROGRAM_INTERFACE_FILE_FLAG_SAVED));
   set_file_name_from_file_dialog();

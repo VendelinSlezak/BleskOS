@@ -498,3 +498,46 @@ void error_window(byte_t *string) {
 dword_t get_number_of_clicked_item_from_menu_list(dword_t number_of_items) {
  return ((mouse_cursor_y-(graphic_screen_y-20-number_of_items*20))/20);
 }
+
+dword_t window_for_choosing_file_format(dword_t number_of_formats, byte_t *formats_string) {
+ //draw window
+ draw_message_window(200, 10+10+10+number_of_formats*20+10);
+ program_layout_set_dimensions_window(200, 10+10+10+number_of_formats*20+10);
+ print("Choose file format:", program_layout_draw_x, program_layout_draw_y, BLACK);
+ program_layout_add_text_line();
+ draw_list_background(program_layout_draw_x, program_layout_draw_y, program_layout_width, number_of_formats);
+ byte_t *format_strings_2 = formats_string;
+ for(dword_t i=0; i<number_of_formats; i++, format_strings_2+=(get_number_of_chars_in_ascii_string(format_strings_2)+1)) {
+  draw_list_item(format_strings_2);
+ }
+ redraw_screen();
+
+ //wait
+ while(1) {
+  wait_for_user_input();
+  move_mouse_cursor();
+
+  if(keyboard_value!=0) {
+   if(keyboard_value==KEY_ESC) {
+    return 0xFFFFFFFF;
+   }
+
+   keyboard_unicode = get_small_char_value(keyboard_unicode);
+   format_strings_2 = formats_string;
+   for(dword_t i=0; i<number_of_formats; i++, format_strings_2+=(get_number_of_chars_in_ascii_string(format_strings_2)+1)) {
+    if(keyboard_unicode==format_strings_2[1]) { //there is key for this format
+     return i;
+    }
+   }
+  }
+
+  if(mouse_click_button_state==MOUSE_CLICK) {
+   if(is_mouse_in_zone(graphic_screen_y_center-((10+10+10+number_of_formats*20+10)/2), graphic_screen_y_center+((10+10+10+number_of_formats*20+10)/2), graphic_screen_x_center-100, graphic_screen_x_center+100)==STATUS_FALSE) {
+    return 0xFFFFFFFF;
+   }
+   else if(is_mouse_in_zone(program_layout_draw_y, program_layout_draw_y+number_of_formats*20, program_layout_draw_x, program_layout_draw_x+program_layout_width)) {
+    return ((mouse_cursor_y-program_layout_draw_y)/20);
+   }
+  }
+ }
+}

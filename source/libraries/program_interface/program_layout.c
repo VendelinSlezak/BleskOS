@@ -8,7 +8,29 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-dword_t qoi_index_array[64];
+void program_layout_set_dimensions(dword_t x, dword_t y, dword_t width, dword_t height) {
+ program_layout_draw_x = program_layout_x = x;
+ program_layout_draw_y = program_layout_y = y;
+ program_layout_width = width;
+ program_layout_height = height;
+}
 
-dword_t convert_qoi_to_image_data(dword_t qoi_memory);
-void convert_image_data_to_qoi(dword_t image_info_memory);
+void program_layout_set_dimensions_window(dword_t width, dword_t height) {
+ program_layout_draw_x = program_layout_x = (graphic_screen_x_center-(width/2)+10);
+ program_layout_draw_y = program_layout_y = (graphic_screen_y_center-(height/2)+10);
+ program_layout_width = (width-20);
+ program_layout_height = (height-20);
+}
+
+void program_layout_add_element(dword_t height) {
+ program_layout_draw_x = program_layout_x;
+ program_layout_draw_y += (height+10);
+}
+
+void program_layout_add_text_line(void) {
+ program_layout_add_element(10);
+}
+
+void program_layout_add_button(void) {
+ program_layout_add_element(20);
+}

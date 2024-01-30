@@ -366,8 +366,18 @@ void media_viewer_save_file(void) {
  media_viewer_pause_sound();
 
  if(get_file_value(MEDIA_VIEWER_FILE_TYPE)==MEDIA_VIEWER_FILE_IMAGE) {
-  file_dialog_save_set_extension("bmp");
-  convert_image_data_to_bmp(get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY));
+  dword_t file_format_number = window_for_choosing_file_format(2, "[b] BMP\0[q] QOI");
+  if(file_format_number==0xFFFFFFFF) {
+   return;
+  }
+  else if(file_format_number==0) {
+   file_dialog_save_set_extension("bmp");
+   convert_image_data_to_bmp(get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY));
+  }
+  else if(file_format_number==1) {
+   file_dialog_save_set_extension("qoi");
+   convert_image_data_to_qoi(get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY));
+  }
   file_dialog_save(converted_file_memory, converted_file_size);
   free(converted_file_memory);
  }

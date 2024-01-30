@@ -13,3 +13,4 @@
 #include "program_memory.h"
 #include "mouse_cursor.h"
 #include "click_board.h"
+#include "program_layout.h"
