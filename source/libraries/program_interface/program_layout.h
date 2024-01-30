@@ -8,7 +8,10 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-dword_t qoi_index_array[64];
+dword_t program_layout_x = 0, program_layout_y = 0, program_layout_width = 0, program_layout_height = 0, program_layout_draw_x = 0, program_layout_draw_y = 0;
 
-dword_t convert_qoi_to_image_data(dword_t qoi_memory);
-void convert_image_data_to_qoi(dword_t image_info_memory);
+void program_layout_set_dimensions(dword_t x, dword_t y, dword_t width, dword_t height);
+void program_layout_set_dimensions_window(dword_t width, dword_t height);
+void program_layout_add_element(dword_t height);
+void program_layout_add_text_line(void);
+void program_layout_add_button(void);

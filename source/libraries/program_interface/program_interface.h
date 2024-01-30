@@ -41,3 +41,4 @@ void program_interface_process_mouse_event(void);
 byte_t dialog_yes_no(byte_t *string);
 void error_window(byte_t *string);
 dword_t get_number_of_clicked_item_from_menu_list(dword_t number_of_items);
+dword_t window_for_choosing_file_format(dword_t number_of_formats, byte_t *formats_string);

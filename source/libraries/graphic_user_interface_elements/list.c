@@ -14,6 +14,9 @@ void draw_list_background(dword_t x, dword_t y, dword_t item_width, dword_t num_
  for(int i=1; i<num_of_items; i+=2) {
   draw_full_square(x, y+i*20, item_width, 20, 0x888888);
  }
+
+ list_item_column = x;
+ list_item_line = y;
 }
 
 void draw_list_item(byte_t *item_string) {

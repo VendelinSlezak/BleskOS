@@ -85,6 +85,30 @@ byte_t is_hex_number(dword_t value) {
  return STATUS_FALSE;
 }
 
+word_t get_small_char_value(word_t value) {
+ if(value>='a' && value<='z') {
+  return value;
+ }
+ else if(value>='A' && value<='Z') {
+  return (value+0x20);
+ }
+ else {
+  return 0;
+ }
+}
+
+word_t get_big_char_value(word_t value) {
+ if(value>='A' && value<='Z') {
+  return value;
+ }
+ else if(value>='a' && value<='z') {
+  return (value-0x20);
+ }
+ else {
+  return 0;
+ }
+}
+
 word_t get_unicode_char_with_diacritic(word_t value, word_t diacritic) {
  if(diacritic==UNICODE_COMBINING_ACUTE) {
   if(value=='a') {

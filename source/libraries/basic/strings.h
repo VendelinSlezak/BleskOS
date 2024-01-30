@@ -18,6 +18,8 @@ byte_t are_equal_w_string_w_string(word_t *string1, word_t *string2);
 byte_t is_char(word_t value);
 byte_t is_number(dword_t value);
 byte_t is_hex_number(dword_t value);
+word_t get_small_char_value(word_t value);
+word_t get_big_char_value(word_t value);
 word_t get_unicode_char_with_diacritic(word_t value, word_t diacritic);
 dword_t get_number_of_chars_in_ascii_string(byte_t *string);
 dword_t get_number_of_chars_in_unicode_string(word_t *string);
