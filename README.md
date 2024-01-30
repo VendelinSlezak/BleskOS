@@ -8,6 +8,9 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 13**
+- Full support for QOI image format, so we can finally save images in compressed form, instead in BMP
+
 **Update 12**
 - Added read-only support for image format QOI
 - Improvement of Performance rating
@@ -18,9 +21,6 @@ Here is info about most important improvements in several last updates.
 **Update 10**
 - More special boot options
 - Basic ZIP library that will be used for ZIP-packed files like DOCX, ODT...
-
-**Update 9**
-- Tool Performance rating
 
 ## How to try BleskOS
 
@@ -82,7 +82,7 @@ Programs
 Supported file formats
 
 - TXT and all UTF-8 encoded text files
-- PNG (read-only), GIF (read-only), QOI (read-only), BMP
+- PNG (read-only), GIF (read-only), QOI, BMP
 - WAV, CDDA
 - HTML
 
