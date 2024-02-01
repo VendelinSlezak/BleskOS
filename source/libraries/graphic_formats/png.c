@@ -203,7 +203,7 @@ dword_t convert_png_to_image_data(dword_t png_memory, dword_t png_file_length) {
       }
      
       //write pixel      
-      *image_data = (pixel_r<<16 | pixel_g<<8 | pixel_b);
+      *image_data = (0xFF<<24 | pixel_r<<16 | pixel_g<<8 | pixel_b);
       
       //update values
       *filtering_previous_line_r = pixel_r;
@@ -258,7 +258,7 @@ dword_t convert_png_to_image_data(dword_t png_memory, dword_t png_file_length) {
       pixel_b += previous_pixel_b;
       
       //write pixel      
-      *image_data = (pixel_r<<16 | pixel_g<<8 | pixel_b);
+      *image_data = (0xFF<<24 | pixel_r<<16 | pixel_g<<8 | pixel_b);
       
       //update values
       previous_pixel_r = pixel_r;
@@ -316,7 +316,7 @@ dword_t convert_png_to_image_data(dword_t png_memory, dword_t png_file_length) {
       pixel_b += *filtering_previous_line_b;
             
       //write pixel      
-      *image_data = (pixel_r<<16 | pixel_g<<8 | pixel_b);
+      *image_data = (0xFF<<24 | pixel_r<<16 | pixel_g<<8 | pixel_b);
       
       //update values
       *filtering_previous_line_r = pixel_r;
@@ -371,7 +371,7 @@ dword_t convert_png_to_image_data(dword_t png_memory, dword_t png_file_length) {
       pixel_b += floor((previous_pixel_b+*filtering_previous_line_b)/2);
       
       //write pixel
-      *image_data = (pixel_r<<16 | pixel_g<<8 | pixel_b);
+      *image_data = (0xFF<<24 | pixel_r<<16 | pixel_g<<8 | pixel_b);
       
       //update values
       previous_pixel_r = pixel_r;
@@ -465,7 +465,7 @@ dword_t convert_png_to_image_data(dword_t png_memory, dword_t png_file_length) {
       }
       
       //write pixel
-      *image_data = (pixel_r<<16 | pixel_g<<8 | pixel_b);
+      *image_data = (0xFF<<24 | pixel_r<<16 | pixel_g<<8 | pixel_b);
       
       //update values
       previous_pixel_r = pixel_r;

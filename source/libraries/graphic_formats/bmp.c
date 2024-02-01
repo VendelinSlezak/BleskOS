@@ -53,7 +53,7 @@ dword_t convert_bmp_to_image_data(dword_t bmp_memory) {
   
   for(int line=0; line<height; line++) {
    for(int i=0; i<width; i++) {
-    *image_data=(bmp_data[0] | bmp_data[1]<<8 | bmp_data[2]<<16);
+    *image_data=(bmp_data[0] | bmp_data[1]<<8 | bmp_data[2]<<16 | 0xFF<<24);
     image_data++;
     bmp_data+=3;
    }
@@ -66,7 +66,7 @@ dword_t convert_bmp_to_image_data(dword_t bmp_memory) {
   
   for(int line=0; line<height; line++) {
    for(int i=0; i<width; i++) {
-    *image_data=((*bmp_data & 0x3F) | (((*bmp_data>>5) & 0x3F)<<8) | ((*bmp_data>>11)<<16));
+    *image_data=((*bmp_data & 0x3F) | (((*bmp_data>>5) & 0x3F)<<8) | ((*bmp_data>>11)<<16) | (0xFF<<24));
     image_data++;
     bmp_data++;
    }
@@ -79,7 +79,7 @@ dword_t convert_bmp_to_image_data(dword_t bmp_memory) {
   
   for(int line=0; line<height; line++) {
    for(int i=0; i<width; i++) {
-    *image_data=((*bmp_data << 16) | (*bmp_data << 8) | (*bmp_data));
+    *image_data=((0xFF<<24) | (*bmp_data << 16) | (*bmp_data << 8) | (*bmp_data));
     image_data++;
     bmp_data++;
    }
