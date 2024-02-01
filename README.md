@@ -8,6 +8,9 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 14**
+- Improvement of QOI library
+
 **Update 13**
 - Full support for QOI image format, so we can finally save images in compressed form, instead in BMP
 
