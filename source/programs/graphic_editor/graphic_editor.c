@@ -425,10 +425,12 @@ void graphic_editor_save_file(void) {
   return;
  }
  else if(file_format_number==0) {
+  show_message_window("Converting image...");
   file_dialog_save_set_extension("bmp");
   convert_image_data_to_bmp(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
  }
  else if(file_format_number==1) {
+  show_message_window("Converting image...");
   file_dialog_save_set_extension("qoi");
   convert_image_data_to_qoi(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
  }

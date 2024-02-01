@@ -133,7 +133,7 @@ dword_t convert_gif_to_image_data(dword_t gif_memory, dword_t gif_file_length) {
    byte_t *palette = (byte_t *) palette_memory;
    byte_t *image_decoded_data = (byte_t *) gif_image_decoded_data;
    for(int i=0; i<(width*height); i++) {    
-    *image_data = (palette[*image_decoded_data*3+0]<<16 | palette[*image_decoded_data*3+1]<<8 | palette[*image_decoded_data*3+2]);
+    *image_data = (0xFF<<24 | palette[*image_decoded_data*3+0]<<16 | palette[*image_decoded_data*3+1]<<8 | palette[*image_decoded_data*3+2]);
     image_data++;
     image_decoded_data++;
    }

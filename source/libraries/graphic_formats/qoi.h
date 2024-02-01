@@ -8,7 +8,9 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-dword_t qoi_index_array[64];
+dword_t qoi_index_array[256];
 
 dword_t convert_qoi_to_image_data(dword_t qoi_memory);
+dword_t convert_qoib_to_image_data(dword_t qoi_memory);
 void convert_image_data_to_qoi(dword_t image_info_memory);
+void convert_image_data_to_qoib(dword_t image_info_memory);
