@@ -8,6 +8,10 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 15**
+- Improvement of Performance rating
+- Start of coding Document editor, BleskOS equivalent of Office Word/Writer programs
+
 **Update 14**
 - Improvement of QOI library
 
@@ -20,10 +24,6 @@ Here is info about most important improvements in several last updates.
 
 **Update 11**
 - Improvement of Performance rating
-
-**Update 10**
-- More special boot options
-- Basic ZIP library that will be used for ZIP-packed files like DOCX, ODT...
 
 ## How to try BleskOS
 
