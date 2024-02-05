@@ -282,7 +282,7 @@ void draw_empty_circle_point(dword_t x, dword_t y) {
 }
 
 void draw_empty_circle(dword_t x, dword_t y, dword_t radius, dword_t color) {
- int z, z_right, z_right_down;
+ long z, z_right, z_right_down;
 
  draw_x = x;
  draw_y = y;
@@ -321,7 +321,7 @@ void draw_full_circle_line(dword_t x, dword_t y) {
 }
 
 void draw_full_circle(dword_t x, dword_t y, dword_t radius, dword_t color) {
- int z, z_right, z_right_down;
+ long z, z_right, z_right_down;
 
  draw_x = x;
  draw_y = y;
@@ -353,7 +353,7 @@ void draw_full_circle(dword_t x, dword_t y, dword_t radius, dword_t color) {
 }
 
 void draw_empty_ellipse(int x0, int y0, int x1, int y1, dword_t color) {
- int a = abs(x1-x0), b = abs(y1-y0), b1 = (b & 1);
+ long a = abs(x1-x0), b = abs(y1-y0), b1 = (b & 1);
  long dx = 4*(1-a)*b*b, dy = 4*(b1+1)*a*a, err = dx+dy+b1*a*a, e2;
  global_color = color;
 
@@ -397,7 +397,7 @@ void draw_empty_ellipse(int x0, int y0, int x1, int y1, dword_t color) {
 }
 
 void draw_parts_of_empty_ellipse(byte_t parts, int x0, int y0, int x1, int y1, dword_t color) {
- int a = abs(x1-x0), b = abs(y1-y0), b1 = (b & 1);
+ long a = abs(x1-x0), b = abs(y1-y0), b1 = (b & 1);
  long dx = 4*(1-a)*b*b, dy = 4*(b1+1)*a*a, err = dx+dy+b1*a*a, e2;
  global_color = color;
 
@@ -449,7 +449,7 @@ void draw_parts_of_empty_ellipse(byte_t parts, int x0, int y0, int x1, int y1, d
 }
 
 void draw_full_ellipse(int x0, int y0, int x1, int y1, dword_t color) {
- int a = abs(x1-x0), b = abs(y1-y0), b1 = (b & 1);
+ long a = abs(x1-x0), b = abs(y1-y0), b1 = (b & 1);
  long dx = 4*(1-a)*b*b, dy = 4*(b1+1)*a*a, err = dx+dy+b1*a*a, e2;
  global_color = color;
 

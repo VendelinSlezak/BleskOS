@@ -40,6 +40,7 @@
 #include "programs/media_viewer/media_viewer.h"
 #include "programs/internet_browser/internet_browser.h"
 #include "programs/file_manager/file_manager.h"
+#include "programs/document_editor/document_editor.h"
 #include "programs/screenshooter/screenshooter.h"
 #include "programs/performance_rating/performance_rating.h"
 #include "programs/calculator/calculator.h"
@@ -75,6 +76,7 @@
 #include "programs/media_viewer/media_viewer.c"
 #include "programs/internet_browser/internet_browser.c"
 #include "programs/file_manager/file_manager.c"
+#include "programs/document_editor/document_editor.c"
 #include "programs/screenshooter/screenshooter.c"
 #include "programs/performance_rating/performance_rating.c"
 #include "programs/calculator/calculator.c"
@@ -86,7 +88,7 @@ void bleskos(dword_t bootloader_passed_value) {
  bleskos_boot_debug_top_screen_color(0x00FF00); //green top of screen
  initalize_logging();
  bleskos_boot_debug_top_screen_color(0x0000FF); //blue top of screen
- log("BleskOS 2024 update 14\n\nPress F2 to save System log as TXT file\n\n");
+ log("BleskOS 2024 update 15\n\nPress F2 to save System log as TXT file\n\n");
  log_starting_memory();
  bleskos_boot_debug_top_screen_color(0xFFFF00); //yellow top of screen
  scan_pci();
@@ -98,7 +100,7 @@ void bleskos(dword_t bootloader_passed_value) {
  clear_screen(0x00C000);
  set_scalable_char_size(64);
  scalable_font_print("BleskOS", graphic_screen_x_center-(64*7/2), graphic_screen_y_center-92, BLACK);
- print_to_message_window("Version 2024 update 14", graphic_screen_y_center);
+ print_to_message_window("Version 2024 update 15", graphic_screen_y_center);
  draw_empty_square(graphic_screen_x_center-161, graphic_screen_y_center+30, 322, 15, BLACK);
  (*redraw_framebuffer)();
  
