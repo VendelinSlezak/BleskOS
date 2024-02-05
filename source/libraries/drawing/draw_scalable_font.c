@@ -41,6 +41,10 @@ void initalize_scalable_font(void) {
 }
 
 void set_scalable_char_size(dword_t size) {
+ if(size==scalable_font_char_size) {
+  return;
+ }
+ 
  scalable_font_char_size = size;
  
  free(scalable_font_char_mem);

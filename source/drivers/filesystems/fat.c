@@ -580,11 +580,11 @@ dword_t write_fat_file(dword_t file_mem, dword_t size_in_bytes, dword_t first_cl
    return STATUS_ERROR;
   }
  }
+
+ free(clusters_numbers_mem);
  if(save_fat_table_sector()==STATUS_ERROR) { //save changed values in last sector
   return STATUS_ERROR;
  }
- 
- free(clusters_numbers_mem);
  return first_cluster;
 }
 

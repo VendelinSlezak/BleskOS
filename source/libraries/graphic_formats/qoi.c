@@ -128,9 +128,89 @@ dword_t convert_qoib_to_image_data(dword_t qoi_memory) {
    byte_t chunk_type = *qoi_data;
    qoi_data++;
 
-   if(chunk_type==0xFC) { //long run of pixels
+   if((chunk_type & 0xC0)==0x00) { //pixel from index array
+    pixel = qoi_index_array[(chunk_type & 0x3F)];
+   }
+   else if((chunk_type & 0xC0)==0x40) { //pixel calculated by small difference
+    pixel8[0] += (((chunk_type >> 4) & 0x3)-2);
+    pixel8[1] += (((chunk_type >> 2) & 0x3)-2);
+    pixel8[2] += ((chunk_type & 0x3)-2);
+   }
+   else if((chunk_type & 0xC0)==0x80) { //pixel calculated by green difference
+    dword_t green_difference = ((chunk_type & 0x3F) - 32);
+    pixel8[1] += green_difference;
+    green_difference -= 8;
+    pixel8[0] += (green_difference + ((*qoi_data >> 4) & 0xF));
+    pixel8[2] += (green_difference + (*qoi_data & 0xF));
+    qoi_data++;
+   }
+   else if(chunk_type<0xF2) { //run of pixels
+    repeat = (chunk_type & 0x3F);
+   }
+   else if(chunk_type==0xF2) { //long run of pixels
     repeat = (qoi_data[0] | qoi_data[1]<<8 | qoi_data[2]<<16);
     qoi_data+=3;
+   }
+   else if(chunk_type==0xF3) { //RED AND GREEN DIFF
+    pixel8[0] = qoi_data[0];
+    pixel8[1] += ((qoi_data[1] & 0x3F)-32);
+    pixel8[2] += ((qoi_data[1] >> 6)-2);
+    qoi_data+=2;
+   }
+   else if(chunk_type==0xF4) { //RED AND BLUE DIFF
+    pixel8[0] = qoi_data[0];
+    pixel8[1] += ((qoi_data[1] >> 6)-2);
+    pixel8[2] += ((qoi_data[1] & 0x3F)-32);
+    qoi_data+=2;
+   }
+   else if(chunk_type==0xF5) { //GREEN AND RED DIFF
+    pixel8[0] += ((qoi_data[1] & 0x3F)-32);
+    pixel8[1] = qoi_data[0];
+    pixel8[2] += ((qoi_data[1] >> 6)-2);
+    qoi_data+=2;
+   }
+   else if(chunk_type==0xF6) { //GREEN AND BLUE DIFF
+    pixel8[0] += ((qoi_data[1] >> 6)-2);
+    pixel8[1] = qoi_data[0];
+    pixel8[2] += ((qoi_data[1] & 0x3F)-32);
+    qoi_data+=2;
+   }
+   else if(chunk_type==0xF7) { //BLUE AND RED DIFF
+    pixel8[0] += ((qoi_data[1] & 0x3F)-32);
+    pixel8[1] += ((qoi_data[1] >> 6)-2);
+    pixel8[2] = qoi_data[0];
+    qoi_data+=2;
+   }
+   else if(chunk_type==0xF8) { //BLUE AND GREEN DIFF
+    pixel8[0] += ((qoi_data[1] >> 6)-2);
+    pixel8[1] += ((qoi_data[1] & 0x3F)-32);
+    pixel8[2] = qoi_data[0];
+    qoi_data+=2;
+   }
+   else if(chunk_type==0xF9) { //RED AND DIFF
+    pixel8[0] = qoi_data[0];
+    pixel8[1] += ((qoi_data[1] & 0xF)-8);
+    pixel8[2] += (((qoi_data[1] >> 4) & 0xF)-8);
+    qoi_data+=2;
+   }
+   else if(chunk_type==0xFA) { //GREEN AND DIFF
+    pixel8[0] += ((qoi_data[1] & 0xF)-8);
+    pixel8[1] = qoi_data[0];
+    pixel8[2] += (((qoi_data[1] >> 4) & 0xF)-8);
+    qoi_data+=2;
+   }
+   else if(chunk_type==0xFB) { //BLUE AND DIFF
+    pixel8[0] += ((qoi_data[1] & 0xF)-8);
+    pixel8[1] += (((qoi_data[1] >> 4) & 0xF)-8);
+    pixel8[2] = qoi_data[0];
+    qoi_data+=2;
+   }
+   else if(chunk_type==0xFC) { //SMALL DIFF WITH ALPHA
+    pixel8[0] += ((qoi_data[0] & 0x3)-2);
+    pixel8[1] += (((qoi_data[0] >> 2) & 0x3)-2);
+    pixel8[2] += (((qoi_data[0] >> 4) & 0x3)-2);
+    pixel8[3] += (((qoi_data[0] >> 6) & 0x3)-2);
+    qoi_data++;
    }
    else if(chunk_type==0xFD) { //BIG DIFF chunk
     pixel8[0] += (((qoi_data[0] >> 4) & 0xF)-8);
@@ -148,25 +228,6 @@ dword_t convert_qoib_to_image_data(dword_t qoi_memory) {
     qoi_data_32 = (dword_t *) ((dword_t)qoi_data);
     pixel = (*qoi_data_32);
     qoi_data+=4;
-   }
-   else if((chunk_type & 0xC0)==0x00) { //pixel from index array
-    pixel = qoi_index_array[(chunk_type & 0x3F)];
-   }
-   else if((chunk_type & 0xC0)==0x40) { //pixel calculated by small difference
-    pixel8[0] += (((chunk_type >> 4) & 0x3)-2);
-    pixel8[1] += (((chunk_type >> 2) & 0x3)-2);
-    pixel8[2] += ((chunk_type & 0x3)-2);
-   }
-   else if((chunk_type & 0xC0)==0x80) { //pixel calculated by green difference
-    dword_t green_difference = ((chunk_type & 0x3F) - 32);
-    pixel8[1] += green_difference;
-    green_difference -= 8;
-    pixel8[0] += (green_difference + ((*qoi_data >> 4) & 0xF));
-    pixel8[2] += (green_difference + (*qoi_data & 0xF));
-    qoi_data++;
-   }
-   else { //run of pixels
-    repeat = (chunk_type & 0x3F);
    }
 
    //save pixel to index array
@@ -198,6 +259,9 @@ dword_t convert_qoib_to_image_data(dword_t qoi_memory) {
 }
 
 void convert_image_data_to_qoi(dword_t image_info_memory) {
+ // convert_image_data_to_qoib(image_info_memory);
+ // return;
+
  dword_t *image_info = (dword_t *) (image_info_memory);
  dword_t *image_data = (dword_t *) (get_image_data_memory(image_info_memory));
  dword_t qoi_file_memory = calloc(14+image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGTH]*4+8);
@@ -220,7 +284,7 @@ void convert_image_data_to_qoi(dword_t image_info_memory) {
   //convert 0x0RGB pixel to 0x0BGR
   image_pixel = *image_data;
   image_data++;
-  image_pixel = (image_pixel8[3]<<24 | image_pixel8[0]<<16 | image_pixel8[1]<<8 | image_pixel8[2]); //TODO: alpha color
+  image_pixel = (image_pixel8[3]<<24 | image_pixel8[0]<<16 | image_pixel8[1]<<8 | image_pixel8[2]);
 
   //RUN chunk
   if(image_pixel==previous_image_pixel) { //same pixels afterwards are comprimed
@@ -361,7 +425,7 @@ void convert_image_data_to_qoib(dword_t image_info_memory) {
   }
   else {
    if(run!=0) { //there is end of pixel line that is represented in RUN chunk
-    if(run<=60) {
+    if(run<=49) {
      //add RUN chunk
      qoi_image_data[0] = (0xC0 | (run-1));
      qoi_image_data++;
@@ -369,7 +433,7 @@ void convert_image_data_to_qoib(dword_t image_info_memory) {
     }
     else {
      //add LONG RUN chunk
-     qoi_image_data[0] = 0xFC;
+     qoi_image_data[0] = 0xF2;
      qoi_image_data[1] = ((run-1) & 0xFF);
      qoi_image_data[2] = (((run-1)>>8) & 0xFF);
      qoi_image_data[3] = (((run-1)>>16) & 0xFF);
@@ -394,11 +458,60 @@ void convert_image_data_to_qoib(dword_t image_info_memory) {
   }
 
   byte_t red_difference = (image_pixel8[0]-previous_image_pixel8[0]);
+  byte_t bits_for_red_diff = 0;
+  if(((red_difference+2) & 0xFF)<4) {
+   bits_for_red_diff = 2;
+  }
+  else if(((red_difference+8) & 0xFF)<16) {
+   bits_for_red_diff = 4;
+  }
+  else if(((red_difference+32) & 0xFF)<64) {
+   bits_for_red_diff = 6;
+  }
+  else {
+   bits_for_red_diff = 8;
+  }
   byte_t green_difference = (image_pixel8[1]-previous_image_pixel8[1]);
+  byte_t bits_for_green_diff = 0;
+  if(((green_difference+2) & 0xFF)<4) {
+   bits_for_green_diff = 2;
+  }
+  else if(((green_difference+8) & 0xFF)<16) {
+   bits_for_green_diff = 4;
+  }
+  else if(((green_difference+32) & 0xFF)<64) {
+   bits_for_green_diff = 6;
+  }
+  else {
+   bits_for_green_diff = 8;
+  }
   byte_t blue_difference = (image_pixel8[2]-previous_image_pixel8[2]);
+  byte_t bits_for_blue_diff = 0;
+  if(((blue_difference+2) & 0xFF)<4) {
+   bits_for_blue_diff = 2;
+  }
+  else if(((blue_difference+8) & 0xFF)<16) {
+   bits_for_blue_diff = 4;
+  }
+  else if(((blue_difference+32) & 0xFF)<64) {
+   bits_for_blue_diff = 6;
+  }
+  else {
+   bits_for_blue_diff = 8;
+  }
   byte_t alpha_difference = (image_pixel8[3]-previous_image_pixel8[3]);
+  byte_t bits_for_alpha_diff = 0;
+  if(((alpha_difference+2) & 0xFF)<4) {
+   bits_for_alpha_diff = 2;
+  }
+  else if(((alpha_difference+8) & 0xFF)<16) {
+   bits_for_alpha_diff = 4;
+  }
+  else {
+   bits_for_alpha_diff = 8;
+  }
   if(alpha_difference==0) { //alpha channel did not changed, use chunks for changing RGB channels
-   if((red_difference<=1 || red_difference>=0xFE) && (green_difference<=1 || green_difference>=0xFE) && (blue_difference<=1 || blue_difference>=0xFE)) {
+   if(bits_for_red_diff==2 && bits_for_green_diff==2 && bits_for_blue_diff==2) {
     //add DIFF chunk
     qoi_image_data[0] = (0x40 | (red_difference+2)<<4 | (green_difference+2)<<2 | (blue_difference+2));
     qoi_image_data++;
@@ -410,7 +523,7 @@ void convert_image_data_to_qoib(dword_t image_info_memory) {
     byte_t green_red_difference = (red_difference-green_difference);
     byte_t green_blue_difference = (blue_difference-green_difference);
 
-    if((green_red_difference<=7 || green_red_difference>=0xF8) && (green_blue_difference<=7 || green_blue_difference>=0xF8) && (green_difference<=31 || green_difference>=0xE0)) {
+    if((green_red_difference<=7 || green_red_difference>=0xF8) && (green_blue_difference<=7 || green_blue_difference>=0xF8) && bits_for_green_diff<=6) {
      //add LUMA chunk
      qoi_image_data[0] = (0x80 | (green_difference+32));
      qoi_image_data[1] = ((green_red_difference+8)<<4 | (green_blue_difference+8));
@@ -419,11 +532,101 @@ void convert_image_data_to_qoib(dword_t image_info_memory) {
 
      goto add_pixel_to_index_array;
     }
-    else if((red_difference<=7 || red_difference>=0xF8) && (green_difference<=7 || green_difference>=0xF8) && (blue_difference<=7 || blue_difference>=0xF8) && (alpha_difference<=7 || alpha_difference>=0xF8)) {
+    else if(bits_for_red_diff<=4 && bits_for_green_diff<=4 && bits_for_blue_diff<=4) {
      //add BIG DIFF chunk
      qoi_image_data[0] = 0xFD;
      qoi_image_data[1] = ((red_difference+8)<<4 | (green_difference+8));
      qoi_image_data[2] = ((blue_difference+8)<<4 | (alpha_difference+8));
+     qoi_image_data+=3;
+     qoi_file_length+=3;
+
+     goto add_pixel_to_index_array;
+    }
+    else if(bits_for_green_diff<=6 && bits_for_blue_diff==2) {
+     //add RED AND GREEN DIFF
+     qoi_image_data[0] = 0xF3;
+     qoi_image_data[1] = image_pixel8[0];
+     qoi_image_data[2] = ((blue_difference+2)<<6 | (green_difference+32));
+     qoi_image_data+=3;
+     qoi_file_length+=3;
+
+     goto add_pixel_to_index_array;
+    }
+    else if(bits_for_blue_diff<=6 && bits_for_green_diff==2) {
+     //add RED AND BLUE DIFF
+     qoi_image_data[0] = 0xF4;
+     qoi_image_data[1] = image_pixel8[0];
+     qoi_image_data[2] = ((green_difference+2)<<6 | (blue_difference+32));
+     qoi_image_data+=3;
+     qoi_file_length+=3;
+
+     goto add_pixel_to_index_array;
+    }
+    else if(bits_for_red_diff<=6 && bits_for_blue_diff==2) {
+     //add GREEN AND RED DIFF
+     qoi_image_data[0] = 0xF5;
+     qoi_image_data[1] = image_pixel8[1];
+     qoi_image_data[2] = ((blue_difference+2)<<6 | (red_difference+32));
+     qoi_image_data+=3;
+     qoi_file_length+=3;
+
+     goto add_pixel_to_index_array;
+    }
+    else if(bits_for_blue_diff<=6 && bits_for_red_diff==2) {
+     //add GREEN AND BLUE DIFF
+     qoi_image_data[0] = 0xF6;
+     qoi_image_data[1] = image_pixel8[1];
+     qoi_image_data[2] = ((red_difference+2)<<6 | (blue_difference+32));
+     qoi_image_data+=3;
+     qoi_file_length+=3;
+
+     goto add_pixel_to_index_array;
+    }
+    else if(bits_for_red_diff<=6 && bits_for_green_diff==2) {
+     //add BLUE AND RED DIFF
+     qoi_image_data[0] = 0xF7;
+     qoi_image_data[1] = image_pixel8[2];
+     qoi_image_data[2] = ((green_difference+2)<<6 | (red_difference+32));
+     qoi_image_data+=3;
+     qoi_file_length+=3;
+
+     goto add_pixel_to_index_array;
+    }
+    else if(bits_for_green_diff<=6 && bits_for_red_diff==2) {
+     //add BLUE AND RED DIFF
+     qoi_image_data[0] = 0xF8;
+     qoi_image_data[1] = image_pixel8[2];
+     qoi_image_data[2] = ((red_difference+2)<<6 | (green_difference+32));
+     qoi_image_data+=3;
+     qoi_file_length+=3;
+
+     goto add_pixel_to_index_array;
+    }
+    else if(bits_for_green_diff<=4 && bits_for_blue_diff<=4) {
+     //add RED AND DIFF
+     qoi_image_data[0] = 0xF9;
+     qoi_image_data[1] = image_pixel8[0];
+     qoi_image_data[2] = ((blue_difference+8)<<4 | (green_difference+8));
+     qoi_image_data+=3;
+     qoi_file_length+=3;
+
+     goto add_pixel_to_index_array;
+    }
+    else if(bits_for_red_diff<=4 && bits_for_blue_diff<=4) {
+     //add GREEN AND DIFF
+     qoi_image_data[0] = 0xFA;
+     qoi_image_data[1] = image_pixel8[1];
+     qoi_image_data[2] = ((blue_difference+8)<<4 | (red_difference+8));
+     qoi_image_data+=3;
+     qoi_file_length+=3;
+
+     goto add_pixel_to_index_array;
+    }
+    else if(bits_for_red_diff<=4 && bits_for_green_diff<=4) {
+     //add BLUE AND DIFF
+     qoi_image_data[0] = 0xFB;
+     qoi_image_data[1] = image_pixel8[2];
+     qoi_image_data[2] = ((green_difference+8)<<4 | (red_difference+8));
      qoi_image_data+=3;
      qoi_file_length+=3;
 
@@ -443,7 +646,16 @@ void convert_image_data_to_qoib(dword_t image_info_memory) {
    }
   }
   else {
-   if((red_difference<=7 || red_difference>=0xF8) && (green_difference<=7 || green_difference>=0xF8) && (blue_difference<=7 || blue_difference>=0xF8) && (alpha_difference<=7 || alpha_difference>=0xF8)) {
+   if(bits_for_red_diff==2 && bits_for_green_diff==2 && bits_for_blue_diff==2 && bits_for_alpha_diff==2) {
+    //add SMALL DIFF with alpha
+    qoi_image_data[0] = 0xFC;
+    qoi_image_data[1] = ((alpha_difference+2)<<6 | (blue_difference+2)<<4 | (green_difference+2)<<2 | (red_difference+2));
+    qoi_image_data+=2;
+    qoi_file_length+=2;
+
+    goto add_pixel_to_index_array;
+   }
+   else if(bits_for_red_diff<=4 && bits_for_green_diff<=4 && bits_for_blue_diff<=4 && bits_for_alpha_diff<=4) {
     //add BIG DIFF chunk
     qoi_image_data[0] = 0xFD;
     qoi_image_data[1] = ((red_difference+8)<<4 | (green_difference+8));
@@ -484,7 +696,7 @@ void convert_image_data_to_qoib(dword_t image_info_memory) {
   previous_image_pixel = image_pixel;
  }
  if(run!=0) {
-  if(run<=60) {
+  if(run<=49) {
    //add RUN chunk
    qoi_image_data[0] = (0xC0 | (run-1));
    qoi_image_data++;
@@ -492,7 +704,7 @@ void convert_image_data_to_qoib(dword_t image_info_memory) {
   }
   else {
    //add LONG RUN chunk
-   qoi_image_data[0] = 0xFC;
+   qoi_image_data[0] = 0xF2;
    qoi_image_data[1] = ((run-1) & 0xFF);
    qoi_image_data[2] = (((run-1)>>8) & 0xFF);
    qoi_image_data[3] = (((run-1)>>16) & 0xFF);
