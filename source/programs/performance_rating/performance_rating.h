@@ -18,48 +18,48 @@ dword_t PERFORMANCE_RATING_CURRENT_TASK=0;
 dword_t PERFORMANCE_RATING_CURRENT_PAGE=0;
 dword_t PERFORMANCE_RATING_CURRENT_RUN=0;
 
-void performance_rating_task0() ; // clear screen
-void performance_rating_task1() ; // on screen center
-void performance_rating_task2() ; // on screen border rigth
-void performance_rating_task3() ; //on screen border bottom
-void performance_rating_task4() ; // full screen
-void performance_rating_task5() ; // 25% screen center
-void performance_rating_task6() ; // 25% screen half rigth
-void performance_rating_task7() ; // 25% screen half bottom
-void performance_rating_task8() ; //  Scalable font print
-void performance_rating_task9() ; // bitmap font print
-void performance_rating_task10() ; // print numeric variable 
-void performance_rating_task11() ; // print unicode string ÀÁÂÃÄÅÈÉÊËÌÍÎÏÑÒÓÔÕÖÙÚÛÜÝßàáâãäåèéêëìíîïñòóôõöùúûüýÿčďěľňŕřšťž
-void performance_rating_task12() ; // print hexa number
-void performance_rating_task13() ; // print ascii
-void performance_rating_task14() ; // draw pixel
-void performance_rating_task15() ; // draw straigth line
-void performance_rating_task16() ; // draw straigth line
-void performance_rating_task17() ; // draw line
-void performance_rating_task18() ; // draw quadratic bezier
-void performance_rating_task19() ; // draw empty square
-void performance_rating_task20() ; // draw full square
-void performance_rating_task21() ; // draw empty circle point
-void performance_rating_task22() ; // draw empty circle
-void performance_rating_task23() ; // draw full circle line
-void performance_rating_task24() ; // draw full circle
-void performance_rating_task25() ; // draw empty ellipse
-void performance_rating_task26() ; // draw part empty ellipse
-void performance_rating_task27() ; // draw full ellipse
-void performance_rating_task28() ; //
-void performance_rating_task29() ; //
-void performance_rating_task30() ; //
-void performance_rating_task31() ; //
+void performance_rating_task0();
+void performance_rating_task1();
+void performance_rating_task2();
+void performance_rating_task3();
+void performance_rating_task4();
+void performance_rating_task5();
+void performance_rating_task6();
+void performance_rating_task7();
+void performance_rating_task8();
+void performance_rating_task9();
+void performance_rating_task10();
+void performance_rating_task11();
+void performance_rating_task12();
+void performance_rating_task13();
+void performance_rating_task14();
+void performance_rating_task15();
+void performance_rating_task16();
+void performance_rating_task17();
+void performance_rating_task18();
+void performance_rating_task19();
+void performance_rating_task20();
+void performance_rating_task21();
+void performance_rating_task22();
+void performance_rating_task23();
+void performance_rating_task24();
+void performance_rating_task25();
+void performance_rating_task26();
+void performance_rating_task27();
+void performance_rating_task28();
+void performance_rating_task29();
+void performance_rating_task30();
+void performance_rating_task31();
 
 struct performance_rating_task { dword_t result; void (*run)(void); byte_t name[100]; } performance_rating_tasks[PERFORMANCE_RATING_NBTASK] = {
 	{ 0, &performance_rating_task0, "Clear double buffer with solid color 0x000000 to 0x0000ff" },
 	{ 0, &performance_rating_task1, "Mouse move 100% visible" },
 	{ 0, &performance_rating_task2, "Mouse move 50% visible right" },
 	{ 0, &performance_rating_task3, "Mouse move 50% visible bottom" },
-	{ 0, &performance_rating_task4, "Redraw screen from double buffer to framebuffer" },
-	{ 0, &performance_rating_task5, "Redraw 25% of screen 100% visible" },
-	{ 0, &performance_rating_task6, "Redraw 25% of screen 50% right visible" },
-	{ 0, &performance_rating_task7, "Redraw 25% of screen 50% bottom visible" },
+   { 0, &performance_rating_task4, "Redraw full screen with mouse" },
+   { 0, &performance_rating_task5, "Redraw 25% screen with mouse 100% visible" },
+   { 0, &performance_rating_task6, "Redraw 25% screen with mouse 50% right visible" },
+   { 0, &performance_rating_task7, "Redraw 25% screen with mouse 50% bottom visible" },
 	{ 0, &performance_rating_task8, "Scalable font print" },
 	{ 0, &performance_rating_task9, "Bitmap font print" },
 	{ 0, &performance_rating_task10, "Numeric variable print" },
@@ -80,10 +80,10 @@ struct performance_rating_task { dword_t result; void (*run)(void); byte_t name[
    { 0, &performance_rating_task25, "draw empty ellipse" },
    { 0, &performance_rating_task26, "draw part empty ellipse" },
    { 0, &performance_rating_task27, "draw full ellipse" },
-   { 0, &performance_rating_task28, "todo" },
-   { 0, &performance_rating_task29, "todo" },
-   { 0, &performance_rating_task30, "todo" },
-   { 0, &performance_rating_task31, "todo" }
+	{ 0, &performance_rating_task28, "Redraw full framebuffer" },
+	{ 0, &performance_rating_task29, "Redraw 25% framebuffer 100% visible" },
+	{ 0, &performance_rating_task30, "Todo" },
+	{ 0, &performance_rating_task31, "Todo" }
 };
 
 void initalize_performance_rating(void);
