@@ -11,7 +11,7 @@
 #define BLACK 0x000000
 #define WHITE 0xFFFFFF
 #define RED 0xFF0000
-#define TRANSPARENT_COLOR 0xFF000000
+#define TRANSPARENT_COLOR 0x88000000
 
 dword_t screen_mem = 0;
 dword_t graphic_screen_lfb = 0;
