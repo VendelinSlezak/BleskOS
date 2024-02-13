@@ -169,6 +169,7 @@ void bleskos(dword_t bootloader_passed_value) {
  initalize_screenshooter();
  initalize_performance_rating();
  initalize_calculator();
+ initalize_document_editor();
  
  bleskos_redraw_starting_screen("Starting Graphic User Interface...", 100);
  log("\nEND OF BOOTING\n");

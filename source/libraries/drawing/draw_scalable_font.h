@@ -20,6 +20,8 @@
 #define SF_EMPHASIS_UNDERLINE 0x2
 #define SF_EMPHASIS_STRIKE 0x4
 
+#define SF_DOT_IN_MIDDLE_OF_LINE 127
+
 word_t *scalable_font_pixel_distance;
 
 dword_t scalable_font_pixel_distance_mem, scalable_font_char_mem, scalable_font_x, scalable_font_y, scalable_font_char_size, scalable_font_char_emphasis;
