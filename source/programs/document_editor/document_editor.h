@@ -10,3 +10,6 @@
 
 #include "document_llmf.h"
 #include "document_mf.h"
+#include "odt.h"
+
+void initalize_document_editor(void);

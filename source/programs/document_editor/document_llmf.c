@@ -103,9 +103,13 @@ void draw_dllmf(dword_t dllmf_mem) {
    document_data+=(DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES/4);
    document_data8+=DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES;
   }
+  if(*document_data==DLLMF_PAGE_CONTENT_END) {
+   document_data++;
+   document_data8+=4;
+  }
 
   //move variable value to next page with free space between
-  page_first_line+=(page_entries[DLLMF_PAGE_ENTRY_HEIGHT_OFFSET]+20);  
+  page_first_line+=(page_entries[DLLMF_PAGE_ENTRY_HEIGHT_OFFSET]+20);
  }
 }
 
