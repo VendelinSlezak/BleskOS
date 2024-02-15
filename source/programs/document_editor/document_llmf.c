@@ -53,6 +53,7 @@ void initalize_dllmf(void) {
  dllmf_screen_first_line = PROGRAM_INTERFACE_TOP_LINE_HEIGTH;
  dllmf_draw_width = graphic_screen_x;
  dllmf_draw_height = graphic_screen_y-PROGRAM_INTERFACE_TOP_LINE_HEIGTH-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH;
+
  dllmf_draw_first_line = 0;
  dllmf_draw_last_line = (dllmf_draw_first_line+dllmf_draw_height);
  dllmf_draw_first_column = 0;
@@ -63,7 +64,7 @@ void draw_dllmf(dword_t dllmf_mem) {
  dword_t *page_entries = (dword_t *) (dllmf_mem);
  dword_t *document_data = (dword_t *) (dllmf_mem+DLLMF_NUM_OF_PAGE_ENTRIES*DLLMF_PAGE_ENTRY_SIZE);
  byte_t *document_data8 = (byte_t *) (dllmf_mem+DLLMF_NUM_OF_PAGE_ENTRIES*DLLMF_PAGE_ENTRY_SIZE);
- dword_t page_first_column = 0, page_first_line = 0, page_screen_width = 0, page_screen_height = 0;
+ dword_t page_first_column = 0, page_first_line = DLLMF_SPACE_BETWEEN_DOCUMENTS, page_screen_width = 0, page_screen_height = 0;
 
  //draw pages
  for(dword_t i=0; i<DLLMF_NUM_OF_PAGE_ENTRIES; i++, page_entries+=2) {
@@ -81,14 +82,24 @@ void draw_dllmf(dword_t dllmf_mem) {
 
   //draw page background
   dllmf_calculate_draw_square(page_first_column, page_first_line, page_entries[DLLMF_PAGE_ENTRY_WIDTH_OFFSET], page_entries[DLLMF_PAGE_ENTRY_HEIGHT_OFFSET]);
-  draw_full_square(dllmf_square_x, dllmf_square_y, dllmf_square_width, dllmf_square_height, WHITE);
+  if(dllmf_square_height!=0) {
+   draw_full_square(dllmf_square_x, dllmf_square_y, dllmf_square_width, dllmf_square_height, WHITE);
+  }
 
   //draw page content
   while(*document_data!=DLLMF_PAGE_CONTENT_END && *document_data!=DLLMF_DOCUMENT_CONTENT_END) {
+   //basic test if we need to draw this char
+   if((page_first_line+document_data[DLLMF_CHAR_ENTRY_LINE_OFFSET])>dllmf_draw_last_line) {
+    return;
+   }
+   else if((page_first_line+document_data[DLLMF_CHAR_ENTRY_LINE_OFFSET]+document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]+(document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]/2))<dllmf_draw_first_line) {
+    goto move_to_next_char;
+   }
+
    //draw char
    set_scalable_char_size(document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]);
    scalable_font_char_emphasis = (document_data8[DLLMF_CHAR_ENTRY_EMPHASIS_OFFSET] & 0x7F);
-   dllmf_calculate_draw_square(page_first_column+document_data[DLLMF_CHAR_ENTRY_COLUMN_OFFSET], page_first_line+document_data[DLLMF_CHAR_ENTRY_LINE_OFFSET], document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET], document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]);
+   dllmf_calculate_draw_square(page_first_column+document_data[DLLMF_CHAR_ENTRY_COLUMN_OFFSET], page_first_line+document_data[DLLMF_CHAR_ENTRY_LINE_OFFSET], document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET], (document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]+(document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]/2)));
    if((document_data8[DLLMF_CHAR_ENTRY_EMPHASIS_OFFSET] & 0x80)==0x80) {
     draw_full_square(dllmf_square_x, dllmf_square_y, dllmf_square_width+1, dllmf_square_height+1, document_data[DLLMF_CHAR_ENTRY_BACKGROUND_COLOR_OFFSET]);
    }
@@ -100,6 +111,7 @@ void draw_dllmf(dword_t dllmf_mem) {
    }
 
    //move to next char
+   move_to_next_char:
    document_data+=(DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES/4);
    document_data8+=DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES;
   }
@@ -109,7 +121,7 @@ void draw_dllmf(dword_t dllmf_mem) {
   }
 
   //move variable value to next page with free space between
-  page_first_line+=(page_entries[DLLMF_PAGE_ENTRY_HEIGHT_OFFSET]+20);
+  page_first_line+=(page_entries[DLLMF_PAGE_ENTRY_HEIGHT_OFFSET]+DLLMF_SPACE_BETWEEN_DOCUMENTS);
  }
 }
 
@@ -149,15 +161,15 @@ void dllmf_calculate_draw_square(dword_t column, dword_t line, dword_t width, dw
  else {
   dllmf_square_y = dllmf_screen_first_line;
   dllmf_square_draw_line = (height-(line+height-dllmf_draw_first_line));
-  if((height-dllmf_square_draw_line)>=internet_browser_webpage_height) {
-   dllmf_square_height = internet_browser_webpage_height;
+  if((height-dllmf_square_draw_line)>=dllmf_draw_height) {
+   dllmf_square_height = dllmf_draw_height;
   }
   else {
    dllmf_square_height = (line+height-dllmf_draw_first_line);
   }
  }
  
- //calculate X realted variables
+ //calculate X related variables
  if(column>dllmf_draw_first_column) {
   dllmf_square_x = (column-dllmf_draw_first_column);
   dllmf_square_draw_column = 0;
@@ -173,4 +185,18 @@ void dllmf_calculate_draw_square(dword_t column, dword_t line, dword_t width, dw
   dllmf_square_width = (column+width-dllmf_draw_first_column);
   dllmf_square_draw_column = (width-dllmf_square_width);
  }
+}
+
+dword_t dllmf_get_document_height(dword_t dllmf_memory) {
+ dword_t *page_entries = (dword_t *) (dllmf_memory);
+ dword_t document_height = DLLMF_SPACE_BETWEEN_DOCUMENTS;
+
+ for(dword_t i=0; i<DLLMF_NUM_OF_PAGE_ENTRIES; i++, page_entries+=2) {
+  if(*page_entries==0) { //no more pages
+   break;
+  }
+  document_height += (page_entries[DLLMF_PAGE_ENTRY_HEIGHT_OFFSET]+DLLMF_SPACE_BETWEEN_DOCUMENTS);
+ }
+
+ return document_height;
 }

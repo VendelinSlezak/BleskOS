@@ -110,5 +110,6 @@ dword_t zip_extract_file(dword_t zip_file_memory, dword_t zip_file_size, dword_t
   }
  }
 
+ zip_extracted_file_size = file_data_uncompressed_data_length;
  return file_memory;
 }

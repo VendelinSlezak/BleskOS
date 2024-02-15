@@ -75,6 +75,7 @@ void convert_dmf_to_dllmf(dword_t dmf_memory, dword_t dllmf_memory) {
  dmf_character_emphasis = 0;
  dmf_character_color = 0;
  dmf_character_background_color = TRANSPARENT_COLOR;
+ dmf_paragraph_alignment = DMF_SFCH_PARAGRAPH_DESCRIPTION_ALIGNMENT_LEFT;
 
  while(*dmf!=0) {
   if(*dmf==DMF_SECTION_FORMAT_CHANGE_SIGNATURE) {
@@ -103,7 +104,10 @@ void convert_dmf_to_dllmf(dword_t dmf_memory, dword_t dllmf_memory) {
     dmf_page_actual_left_border = dmf_page_left_border;
     dmf_page_actual_right_border = dmf_page_right_border;
 
-    dmf_actual_x_position = dmf_page_actual_left_border;
+    if(dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET]!=DMF_SFCH_ENTRY_NO_CHANGE) {
+     dmf_character_size = dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET];
+    }
+    dmf_actual_x_position = dmf_get_first_column_of_line((dword_t)dmf, dmf_paragraph_alignment, dmf_character_size);
     dmf_actual_y_position = dmf_page_top_border;
    }
 
@@ -141,15 +145,15 @@ void convert_dmf_to_dllmf(dword_t dmf_memory, dword_t dllmf_memory) {
      dllmf_page_entries[DLLMF_PAGE_ENTRY_HEIGHT_OFFSET] = dmf_page_height;
      dllmf_page_entries = (dword_t *) (((dword_t)dllmf_page_entries)+DLLMF_PAGE_ENTRY_SIZE);
 
-     dmf_actual_x_position = (dmf_page_left_border+dmf[DMF_SFCH_PARAGRAPH_LEFT_BORDER_OFFSET]);
-     dmf_actual_y_position = dmf[DMF_SFCH_PARAGRAPH_TOP_BORDER_OFFSET];
+     dmf_page_actual_left_border = (dmf_page_left_border+dmf[DMF_SFCH_PARAGRAPH_LEFT_BORDER_OFFSET]);
+     dmf_actual_y_position = (dmf_page_top_border+dmf[DMF_SFCH_PARAGRAPH_TOP_BORDER_OFFSET]);
     }
     else {
-     dmf_actual_x_position = (dmf_page_left_border+dmf[DMF_SFCH_PARAGRAPH_LEFT_BORDER_OFFSET]);
+     dmf_page_actual_left_border = (dmf_page_left_border+dmf[DMF_SFCH_PARAGRAPH_LEFT_BORDER_OFFSET]);
      dmf_actual_y_position += (dmf_character_spacing+paragraph_how_many_space_skip);
     }
-    dmf_page_actual_left_border = dmf_actual_x_position;
     dmf_page_actual_right_border = (dmf_page_right_border-dmf[DMF_SFCH_PARAGRAPH_RIGHT_BORDER_OFFSET]);
+    dmf_actual_x_position = dmf_get_first_column_of_line((dword_t)dmf, dmf_paragraph_alignment, dmf_character_size);
 
     //print list entry
     if((dmf[DMF_SFCH_PARAGRAPH_DESCRIPTION_OFFSET] & DMF_SFCH_PARAGRAPH_DESCRIPTION_LIST_ENTRY)==DMF_SFCH_PARAGRAPH_DESCRIPTION_LIST_ENTRY) {
@@ -198,8 +202,7 @@ void convert_dmf_to_dllmf(dword_t dmf_memory, dword_t dllmf_memory) {
    dmf = (word_t *) (((dword_t)dmf)+dmf[DMF_SFCH_LENGTH_OFFSET_1]);
   }
   else { //normal character
-   //set position
-   if((dmf_actual_x_position+dmf_character_size)>dmf_page_actual_right_border) {
+   if((dmf_actual_x_position+dmf_character_size)>dmf_page_actual_right_border || *dmf==0xA) { //go to next line
     if((dmf_actual_y_position+dmf_character_spacing)>dmf_page_bottom_border) {
      //new page
      if(dmf_number_of_pages>=DLLMF_NUM_OF_PAGE_ENTRIES) {
@@ -213,32 +216,91 @@ void convert_dmf_to_dllmf(dword_t dmf_memory, dword_t dllmf_memory) {
      dllmf_page_entries[DLLMF_PAGE_ENTRY_HEIGHT_OFFSET] = dmf_page_height;
      dllmf_page_entries = (dword_t *) (((dword_t)dllmf_page_entries)+DLLMF_PAGE_ENTRY_SIZE);
 
-     dmf_actual_x_position = dmf_page_actual_left_border;
+     dmf_actual_x_position = dmf_get_first_column_of_line((dword_t)dmf, dmf_paragraph_alignment, dmf_character_size);
      dmf_actual_y_position = dmf_page_top_border;
     }
     else {
      //new line
-     dmf_actual_x_position = dmf_page_actual_left_border;
+     dmf_actual_x_position = dmf_get_first_column_of_line((dword_t)dmf, dmf_paragraph_alignment, dmf_character_size);
      dmf_actual_y_position += dmf_character_spacing;
     }
    }
 
-   //add char to DLLMF
-   dllmf_data[DLLMF_CHAR_ENTRY_CHAR_NUMBER_OFFSET] = *dmf;
-   dllmf_data[DLLMF_CHAR_ENTRY_COLUMN_OFFSET] = dmf_actual_x_position;
-   dllmf_data[DLLMF_CHAR_ENTRY_LINE_OFFSET] = dmf_actual_y_position;
-   dllmf_data[DLLMF_CHAR_ENTRY_COLOR_OFFSET] = ((dmf_character_color & 0xFFFFFF) | ((dmf_character_size)<<24));
-   dllmf_data[DLLMF_CHAR_ENTRY_BACKGROUND_COLOR_OFFSET] = ((dmf_character_background_color & 0xFFFFFF) | ((dmf_character_emphasis)<<24));
-   if(dmf_character_background_color!=TRANSPARENT_COLOR) {
-    dllmf_data[DLLMF_CHAR_ENTRY_BACKGROUND_COLOR_OFFSET] |= (1<<31);
-   }
-   dllmf_data = (dword_t *) (((dword_t)dllmf_data)+DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES);
+   if(*dmf!=0xA) {
+    //add char to DLLMF
+    dllmf_data[DLLMF_CHAR_ENTRY_CHAR_NUMBER_OFFSET] = *dmf;
+    dllmf_data[DLLMF_CHAR_ENTRY_COLUMN_OFFSET] = dmf_actual_x_position;
+    dllmf_data[DLLMF_CHAR_ENTRY_LINE_OFFSET] = dmf_actual_y_position;
+    dllmf_data[DLLMF_CHAR_ENTRY_COLOR_OFFSET] = ((dmf_character_color & 0xFFFFFF) | ((dmf_character_size)<<24));
+    dllmf_data[DLLMF_CHAR_ENTRY_BACKGROUND_COLOR_OFFSET] = ((dmf_character_background_color & 0xFFFFFF) | ((dmf_character_emphasis)<<24));
+    if(dmf_character_background_color!=TRANSPARENT_COLOR) {
+     dllmf_data[DLLMF_CHAR_ENTRY_BACKGROUND_COLOR_OFFSET] |= (1<<31);
+    }
+    dllmf_data = (dword_t *) (((dword_t)dllmf_data)+DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES);
 
-   //move position if same line
-   dmf_actual_x_position+=dmf_character_size;
+    //move position if same line
+    dmf_actual_x_position+=dmf_character_size;
+   }
 
    //skip
    dmf++;
   }
  }
+}
+
+dword_t dmf_get_first_column_of_line(dword_t dmf_memory, dword_t alignment, dword_t actual_char_size) {
+ if(alignment==DMF_SFCH_PARAGRAPH_DESCRIPTION_ALIGNMENT_LEFT) {
+  return dmf_page_actual_left_border;
+ }
+
+ word_t *dmf = (word_t *) (dmf_memory);
+ dword_t length_of_line = 0;
+ while(*dmf!=0) {
+  if(*dmf==DMF_SECTION_FORMAT_CHANGE_SIGNATURE) {
+   if(dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET]!=DMF_SFCH_ENTRY_NO_CHANGE) {
+    actual_char_size = dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET];
+   }
+  }
+  else {
+   if((length_of_line+actual_char_size)>dmf_page_actual_right_border) {
+    break;
+   }
+   length_of_line += actual_char_size;
+  }
+ }
+
+ if(alignment==DMF_SFCH_PARAGRAPH_DESCRIPTION_ALIGNMENT_CENTER) {
+  return dmf_page_actual_left_border+((dmf_page_actual_right_border-dmf_page_actual_left_border)/2)-(length_of_line/2);
+ }
+ if(alignment==DMF_SFCH_PARAGRAPH_DESCRIPTION_ALIGNMENT_RIGHT) {
+  return (dmf_page_actual_right_border-length_of_line);
+ }
+}
+
+void dmf_add_section_format_change(dword_t memory, dword_t description, dword_t size, dword_t emphasis, dword_t color, dword_t background_color) {
+ word_t *dmf = (word_t *) (memory);
+
+ dmf[DMF_SFCH_SIGNATURE_OFFSET_1] = DMF_SECTION_FORMAT_CHANGE_SIGNATURE;
+ dmf[DMF_SFCH_SIGNATURE_OFFSET_2] = DMF_SECTION_FORMAT_CHANGE_SIGNATURE;
+ dmf[DMF_SFCH_LENGTH_OFFSET_1] = DMF_SFCH_ENTRY_LENGTH_IN_BYTES;
+ dmf[DMF_SFCH_LENGTH_OFFSET_2] = DMF_SFCH_ENTRY_LENGTH_IN_BYTES;
+ dmf[DMF_SFCH_DESCRIPTION_OFFSET] = description;
+
+ dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET] = size;
+ dmf[DMF_SFCH_INLINE_CHANGE_EMPHASIS_OFFSET] = emphasis;
+ dmf[DMF_SFCH_INLINE_CHANGE_COLOR_OFFSET] = (color & 0xFFFF);
+ dmf[DMF_SFCH_INLINE_CHANGE_COLOR_OFFSET+1] = (color >> 16);
+ dmf[DMF_SFCH_INLINE_CHANGE_BACKGROUND_COLOR_OFFSET] = (background_color & 0xFFFF);
+ dmf[DMF_SFCH_INLINE_CHANGE_BACKGROUND_COLOR_OFFSET+1] = (background_color >> 16);
+}
+
+void dmf_add_section_paragraph_change(dword_t memory, dword_t description, dword_t top, dword_t bottom, dword_t left, dword_t right, dword_t list_entry) {
+ word_t *dmf = (word_t *) (memory);
+
+ dmf[DMF_SFCH_PARAGRAPH_DESCRIPTION_OFFSET] = description;
+ dmf[DMF_SFCH_PARAGRAPH_TOP_BORDER_OFFSET] = top;
+ dmf[DMF_SFCH_PARAGRAPH_BOTTOM_BORDER_OFFSET] = bottom;
+ dmf[DMF_SFCH_PARAGRAPH_LEFT_BORDER_OFFSET] = left;
+ dmf[DMF_SFCH_PARAGRAPH_RIGHT_BORDER_OFFSET] = right;
+ dmf[DMF_SFCH_PARAGRAPH_LIST_ENTRY_OFFSET] = list_entry;
 }

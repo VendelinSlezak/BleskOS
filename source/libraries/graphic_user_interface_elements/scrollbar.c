@@ -10,18 +10,18 @@
 
 void draw_vertical_scrollbar(dword_t x, dword_t y, dword_t height, dword_t rider_position, dword_t rider_size) {
  //draw background
- draw_full_square(x, y, 10, height, 0xDDDDDD);
+ draw_full_square(x, y, SCROLLBAR_SIZE, height, 0xDDDDDD);
  
  //draw rider
- draw_full_square(x, y+rider_position, 10, rider_size, 0x888888);
+ draw_full_square(x, y+rider_position, SCROLLBAR_SIZE, rider_size, 0x888888);
 }
 
 void draw_horizontal_scrollbar(dword_t x, dword_t y, dword_t width, dword_t rider_position, dword_t rider_size) {
  //draw background
- draw_full_square(x, y, width, 10, 0xDDDDDD);
+ draw_full_square(x, y, width, SCROLLBAR_SIZE, 0xDDDDDD);
  
  //draw rider
- draw_full_square(x+rider_position, y, rider_size, 10, 0x888888);
+ draw_full_square(x+rider_position, y, rider_size, SCROLLBAR_SIZE, 0x888888);
 }
 
 dword_t calculate_scrollbar_rider_position(dword_t scrollbar_size, dword_t rider_size, dword_t full_document_size, dword_t showed_document_size, dword_t showed_document_line) {
@@ -32,7 +32,11 @@ dword_t calculate_scrollbar_rider_size(dword_t scrollbar_size, dword_t full_docu
  if(full_document_size<=showed_document_size) {
   return 0;
  }
- return (scrollbar_size*showed_document_size/full_document_size);
+ dword_t rider_size = (scrollbar_size*showed_document_size/full_document_size);
+ if(rider_size==0) {
+  rider_size = 1;
+ }
+ return rider_size;
 }
 
 dword_t get_scrollbar_rider_value(dword_t scrollbar_size, dword_t rider_size, dword_t rider_position, dword_t full_document_size, dword_t showed_document_size) {

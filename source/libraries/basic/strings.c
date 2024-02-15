@@ -136,7 +136,7 @@ word_t get_unicode_char_with_diacritic(word_t value, word_t diacritic) {
    return 0x00FD;
   }
  }
- else if(diacritic==UNICODE_COMBINIG_CARON) {
+ else if(diacritic==UNICODE_COMBINING_CARON) {
   if(value=='c') {
    return 0x010D;
   }

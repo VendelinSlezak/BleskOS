@@ -64,7 +64,7 @@ void keyboard_process_code(dword_t code) {
  }
 
  //convert char with diacritic
- if(keyboard_unicode==UNICODE_COMBINING_ACUTE || keyboard_unicode==UNICODE_COMBINIG_CARON) {
+ if(keyboard_unicode==UNICODE_COMBINING_ACUTE || keyboard_unicode==UNICODE_COMBINING_CARON) {
   keyboard_diacritic = keyboard_unicode;
   keyboard_unicode = 0;
  }

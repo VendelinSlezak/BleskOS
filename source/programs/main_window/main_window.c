@@ -104,6 +104,7 @@ void bleskos_main_window_redraw(void) {
  bleskos_main_window_drawing_line = 40;
  bleskos_main_window_drawing_column = 20;
  bleskos_main_window_print_item("Programs");
+ bleskos_main_window_draw_item("[d] Document viewer", 0xFFE800, MW_DOCUMENT_EDITOR);
  bleskos_main_window_draw_item("[t] Text editor", 0xFFE800, MW_TEXT_EDITOR);
  bleskos_main_window_draw_item("[g] Graphic editor", 0xFFE800, MW_GRAPHIC_EDITOR);
  bleskos_main_window_draw_item("[m] Media viewer", 0xFFE800, MW_MEDIA_VIEWER);
@@ -227,7 +228,12 @@ void bleskos_main_window(void) {
    goto redraw;
   }
   
-  if(keyboard_value==KEY_T) {
+  if(keyboard_value==KEY_D) {
+   bleskos_main_window_time_redraw = 0;
+   document_editor();
+   goto redraw;
+  }
+  else if(keyboard_value==KEY_T) {
    bleskos_main_window_time_redraw = 0;
    text_editor();
    goto redraw;
@@ -312,7 +318,11 @@ void bleskos_main_window(void) {
    }
     
    mouse_click_button_state = MOUSE_DRAG;
-   if(click_value==MW_TEXT_EDITOR) {
+   if(click_value==MW_DOCUMENT_EDITOR) {
+    bleskos_main_window_time_redraw = 0;
+    document_editor();
+   }
+   else if(click_value==MW_TEXT_EDITOR) {
     bleskos_main_window_time_redraw = 0;
     text_editor();
    }

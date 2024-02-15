@@ -115,7 +115,134 @@ bleskos_scalable_font:
  dd bleskos_scalable_font_char_0x7D_right_curly_bracket ;}
  dd bleskos_scalable_font_char_0x7E_tilde ;~
  dd bleskos_scalable_font_char_circle
- times 128 dd bleskos_scalable_font_char_square
+ dd bleskos_scalable_font_char_square ; 0x0080
+ dd bleskos_scalable_font_char_square ; 0x0081
+ dd bleskos_scalable_font_char_square ; 0x0082
+ dd bleskos_scalable_font_char_square ; 0x0083
+ dd bleskos_scalable_font_char_square ; 0x0084
+ dd bleskos_scalable_font_char_square ; 0x0085
+ dd bleskos_scalable_font_char_square ; 0x0086
+ dd bleskos_scalable_font_char_square ; 0x0087
+ dd bleskos_scalable_font_char_square ; 0x0088
+ dd bleskos_scalable_font_char_square ; 0x0089
+ dd bleskos_scalable_font_char_square ; 0x008A
+ dd bleskos_scalable_font_char_square ; 0x008B
+ dd bleskos_scalable_font_char_square ; 0x008C
+ dd bleskos_scalable_font_char_square ; 0x008D
+ dd bleskos_scalable_font_char_square ; 0x008E
+ dd bleskos_scalable_font_char_square ; 0x008F
+ dd bleskos_scalable_font_char_square ; 0x0090
+ dd bleskos_scalable_font_char_square ; 0x0091
+ dd bleskos_scalable_font_char_square ; 0x0092
+ dd bleskos_scalable_font_char_square ; 0x0093
+ dd bleskos_scalable_font_char_square ; 0x0094
+ dd bleskos_scalable_font_char_square ; 0x0095
+ dd bleskos_scalable_font_char_square ; 0x0096
+ dd bleskos_scalable_font_char_square ; 0x0097
+ dd bleskos_scalable_font_char_square ; 0x0098
+ dd bleskos_scalable_font_char_square ; 0x0099
+ dd bleskos_scalable_font_char_square ; 0x009A
+ dd bleskos_scalable_font_char_square ; 0x009B
+ dd bleskos_scalable_font_char_square ; 0x009C
+ dd bleskos_scalable_font_char_square ; 0x009D
+ dd bleskos_scalable_font_char_square ; 0x009E
+ dd bleskos_scalable_font_char_square ; 0x009F
+ dd bleskos_scalable_font_char_square ; 0x00A0 non-breaking space
+ dd bleskos_scalable_font_char_square ; 0x00A1 ¡
+ dd bleskos_scalable_font_char_square ; 0x00A2 ¢
+ dd bleskos_scalable_font_char_square ; 0x00A3 £
+ dd bleskos_scalable_font_char_square ; 0x00A4 ¤
+ dd bleskos_scalable_font_char_square ; 0x00A5 ¥
+ dd bleskos_scalable_font_char_square ; 0x00A6 ¦
+ dd bleskos_scalable_font_char_square ; 0x00A7 §
+ dd bleskos_scalable_font_char_square ; 0x00A8 ¨
+ dd bleskos_scalable_font_char_square ; 0x00A9 ©
+ dd bleskos_scalable_font_char_square ; 0x00AA ª
+ dd bleskos_scalable_font_char_square ; 0x00AB «
+ dd bleskos_scalable_font_char_square ; 0x00AC ¬
+ dd bleskos_scalable_font_char_square ; 0x00AD ­
+ dd bleskos_scalable_font_char_square ; 0x00AE ®
+ dd bleskos_scalable_font_char_square ; 0x00AF ¯
+ dd bleskos_scalable_font_char_square ; 0x00B0 °
+ dd bleskos_scalable_font_char_square ; 0x00B1 ±
+ dd bleskos_scalable_font_char_square ; 0x00B2 ²
+ dd bleskos_scalable_font_char_square ; 0x00B3 ³
+ dd bleskos_scalable_font_char_square ; 0x00B4 ´
+ dd bleskos_scalable_font_char_square ; 0x00B5 µ
+ dd bleskos_scalable_font_char_square ; 0x00B6 ¶
+ dd bleskos_scalable_font_char_square ; 0x00B7 ·
+ dd bleskos_scalable_font_char_square ; 0x00B8 ¸
+ dd bleskos_scalable_font_char_square ; 0x00B9 ¹
+ dd bleskos_scalable_font_char_square ; 0x00BA º
+ dd bleskos_scalable_font_char_square ; 0x00BB »
+ dd bleskos_scalable_font_char_square ; 0x00BC ¼
+ dd bleskos_scalable_font_char_square ; 0x00BD ½
+ dd bleskos_scalable_font_char_square ; 0x00BE ¾
+ dd bleskos_scalable_font_char_square ; 0x00BF ¿
+ dd bleskos_scalable_font_char_square ; 0x00C0 À
+ dd bleskos_scalable_font_char_0xC1_A_with_acute
+ dd bleskos_scalable_font_char_square ; 0x00C2 Â
+ dd bleskos_scalable_font_char_square ; 0x00C3 Ã
+ dd bleskos_scalable_font_char_square ; 0x00C4 Ä
+ dd bleskos_scalable_font_char_square ; 0x00C5 Å
+ dd bleskos_scalable_font_char_square ; 0x00C6 Æ
+ dd bleskos_scalable_font_char_square ; 0x00C7 Ç
+ dd bleskos_scalable_font_char_square ; 0x00C8 È
+ dd bleskos_scalable_font_char_0xC9_E_with_acute
+ dd bleskos_scalable_font_char_square ; 0x00CA Ê
+ dd bleskos_scalable_font_char_square ; 0x00CB Ë
+ dd bleskos_scalable_font_char_square ; 0x00CC Ì
+ dd bleskos_scalable_font_char_0xCD_I_with_acute
+ dd bleskos_scalable_font_char_square ; 0x00CE Î
+ dd bleskos_scalable_font_char_square ; 0x00CF Ï
+ dd bleskos_scalable_font_char_square ; 0x00D0 Ð
+ dd bleskos_scalable_font_char_square ; 0x00D1 Ñ
+ dd bleskos_scalable_font_char_square ; 0x00D2 Ò
+ dd bleskos_scalable_font_char_0xD3_O_with_acute
+ dd bleskos_scalable_font_char_0xD4_O_with_circumflex
+ dd bleskos_scalable_font_char_square ; 0x00D5 Õ
+ dd bleskos_scalable_font_char_square ; 0x00D6 Ö
+ dd bleskos_scalable_font_char_square ; 0x00D7 ×
+ dd bleskos_scalable_font_char_square ; 0x00D8 Ø
+ dd bleskos_scalable_font_char_square ; 0x00D9 Ù
+ dd bleskos_scalable_font_char_0xDA_U_with_acute
+ dd bleskos_scalable_font_char_square ; 0x00DB Û
+ dd bleskos_scalable_font_char_square ; 0x00DC Ü
+ dd bleskos_scalable_font_char_0xDD_Y_with_acute
+ dd bleskos_scalable_font_char_square ; 0x00DE Þ
+ dd bleskos_scalable_font_char_square ; 0x00DF ß
+ dd bleskos_scalable_font_char_square ; 0x00E0 à
+ dd bleskos_scalable_font_char_0xE1_a_with_acute
+ dd bleskos_scalable_font_char_square ; 0x00E2 â
+ dd bleskos_scalable_font_char_square ; 0x00E3 ã
+ dd bleskos_scalable_font_char_square ; 0x00E4 ä
+ dd bleskos_scalable_font_char_square ; 0x00E5 å
+ dd bleskos_scalable_font_char_square ; 0x00E6 æ
+ dd bleskos_scalable_font_char_square ; 0x00E7 ç
+ dd bleskos_scalable_font_char_square ; 0x00E8 è
+ dd bleskos_scalable_font_char_0xE9_e_with_acute
+ dd bleskos_scalable_font_char_square ; 0x00EA ê
+ dd bleskos_scalable_font_char_square ; 0x00EB ë
+ dd bleskos_scalable_font_char_square ; 0x00EC ì
+ dd bleskos_scalable_font_char_0xED_i_with_acute
+ dd bleskos_scalable_font_char_square ; 0x00EE î
+ dd bleskos_scalable_font_char_square ; 0x00EF ï
+ dd bleskos_scalable_font_char_square ; 0x00F0 ð
+ dd bleskos_scalable_font_char_square ; 0x00F1 ñ
+ dd bleskos_scalable_font_char_square ; 0x00F2 ò
+ dd bleskos_scalable_font_char_0xF3_o_with_acute
+ dd bleskos_scalable_font_char_0xF4_o_with_circumflex
+ dd bleskos_scalable_font_char_square ; 0x00F5 õ
+ dd bleskos_scalable_font_char_square ; 0x00F6 ö
+ dd bleskos_scalable_font_char_square ; 0x00F7 ÷
+ dd bleskos_scalable_font_char_square ; 0x00F8 ø
+ dd bleskos_scalable_font_char_square ; 0x00F9 ù
+ dd bleskos_scalable_font_char_0xFA_u_with_acute
+ dd bleskos_scalable_font_char_square ; 0x00FB û
+ dd bleskos_scalable_font_char_square ; 0x00FC ü
+ dd bleskos_scalable_font_char_0xFD_y_with_acute
+ dd bleskos_scalable_font_char_square ; 0x00FE þ
+ dd bleskos_scalable_font_char_square ; 0x00FF ÿ
  dd bleskos_scalable_font_char_0x100_A_with_macron
  dd bleskos_scalable_font_char_0x101_a_with_macron
  dd bleskos_scalable_font_char_0x102_A_with_breve
@@ -144,7 +271,235 @@ bleskos_scalable_font:
  dd bleskos_scalable_font_char_0x119_e_with_ogonek
  dd bleskos_scalable_font_char_0x11A_E_with_caron
  dd bleskos_scalable_font_char_0x11B_e_with_caron
- times 256 dd bleskos_scalable_font_char_square
+ dd bleskos_scalable_font_char_square ; 0x011C Ĝ
+ dd bleskos_scalable_font_char_square ; 0x011D ĝ
+ dd bleskos_scalable_font_char_square ; 0x011E Ğ
+ dd bleskos_scalable_font_char_square ; 0x011F ğ
+ dd bleskos_scalable_font_char_square ; 0x0120 Ġ
+ dd bleskos_scalable_font_char_square ; 0x0121 ġ
+ dd bleskos_scalable_font_char_square ; 0x0122 Ģ
+ dd bleskos_scalable_font_char_square ; 0x0123 ģ
+ dd bleskos_scalable_font_char_square ; 0x0124 Ĥ
+ dd bleskos_scalable_font_char_square ; 0x0125 ĥ
+ dd bleskos_scalable_font_char_square ; 0x0126 Ħ
+ dd bleskos_scalable_font_char_square ; 0x0127 ħ
+ dd bleskos_scalable_font_char_square ; 0x0128 Ĩ
+ dd bleskos_scalable_font_char_square ; 0x0129 ĩ
+ dd bleskos_scalable_font_char_square ; 0x012A Ī
+ dd bleskos_scalable_font_char_square ; 0x012B ī
+ dd bleskos_scalable_font_char_square ; 0x012C Ĭ
+ dd bleskos_scalable_font_char_square ; 0x012D ĭ
+ dd bleskos_scalable_font_char_square ; 0x012E Į
+ dd bleskos_scalable_font_char_square ; 0x012F į
+ dd bleskos_scalable_font_char_square ; 0x0130 İ
+ dd bleskos_scalable_font_char_square ; 0x0131 ı
+ dd bleskos_scalable_font_char_square ; 0x0132 Ĳ
+ dd bleskos_scalable_font_char_square ; 0x0133 ĳ
+ dd bleskos_scalable_font_char_square ; 0x0134 Ĵ
+ dd bleskos_scalable_font_char_square ; 0x0135 ĵ
+ dd bleskos_scalable_font_char_square ; 0x0136 Ķ
+ dd bleskos_scalable_font_char_square ; 0x0137 ķ
+ dd bleskos_scalable_font_char_square ; 0x0138 ĸ
+ dd bleskos_scalable_font_char_square ; 0x0139 Ĺ
+ dd bleskos_scalable_font_char_square ; 0x013A ĺ
+ dd bleskos_scalable_font_char_square ; 0x013B Ļ
+ dd bleskos_scalable_font_char_square ; 0x013C ļ
+ dd bleskos_scalable_font_char_0x13D_L_with_caron
+ dd bleskos_scalable_font_char_0x13E_l_with_caron
+ dd bleskos_scalable_font_char_square ; 0x013F Ŀ
+ dd bleskos_scalable_font_char_square ; 0x0140 ŀ
+ dd bleskos_scalable_font_char_square ; 0x0141 Ł
+ dd bleskos_scalable_font_char_square ; 0x0142 ł
+ dd bleskos_scalable_font_char_square ; 0x0143 Ń
+ dd bleskos_scalable_font_char_square ; 0x0144 ń
+ dd bleskos_scalable_font_char_square ; 0x0145 Ņ
+ dd bleskos_scalable_font_char_square ; 0x0146 ņ
+ dd bleskos_scalable_font_char_0x147_N_with_caron
+ dd bleskos_scalable_font_char_0x148_n_with_caron
+ dd bleskos_scalable_font_char_square ; 0x0149 ŉ
+ dd bleskos_scalable_font_char_square ; 0x014A Ŋ
+ dd bleskos_scalable_font_char_square ; 0x014B ŋ
+ dd bleskos_scalable_font_char_square ; 0x014C Ō
+ dd bleskos_scalable_font_char_square ; 0x014D ō
+ dd bleskos_scalable_font_char_square ; 0x014E Ŏ
+ dd bleskos_scalable_font_char_square ; 0x014F ŏ
+ dd bleskos_scalable_font_char_square ; 0x0150 Ő
+ dd bleskos_scalable_font_char_square ; 0x0151 ő
+ dd bleskos_scalable_font_char_square ; 0x0152 Œ
+ dd bleskos_scalable_font_char_square ; 0x0153 œ
+ dd bleskos_scalable_font_char_square ; 0x0154 Ŕ
+ dd bleskos_scalable_font_char_square ; 0x0155 ŕ
+ dd bleskos_scalable_font_char_square ; 0x0156 Ŗ
+ dd bleskos_scalable_font_char_square ; 0x0157 ŗ
+ dd bleskos_scalable_font_char_square ; 0x0158 Ř
+ dd bleskos_scalable_font_char_square ; 0x0159 ř
+ dd bleskos_scalable_font_char_square ; 0x015A Ś
+ dd bleskos_scalable_font_char_square ; 0x015B ś
+ dd bleskos_scalable_font_char_square ; 0x015C Ŝ
+ dd bleskos_scalable_font_char_square ; 0x015D ŝ
+ dd bleskos_scalable_font_char_square ; 0x015E Ş
+ dd bleskos_scalable_font_char_square ; 0x015F ş
+ dd bleskos_scalable_font_char_0x160_S_with_caron
+ dd bleskos_scalable_font_char_0x161_s_with_caron
+ dd bleskos_scalable_font_char_square ; 0x0162 Ţ
+ dd bleskos_scalable_font_char_square ; 0x0163 ţ
+ dd bleskos_scalable_font_char_0x164_T_with_caron
+ dd bleskos_scalable_font_char_0x165_t_with_caron
+ dd bleskos_scalable_font_char_square ; 0x0166 Ŧ
+ dd bleskos_scalable_font_char_square ; 0x0167 ŧ
+ dd bleskos_scalable_font_char_square ; 0x0168 Ũ
+ dd bleskos_scalable_font_char_square ; 0x0169 ũ
+ dd bleskos_scalable_font_char_square ; 0x016A Ū
+ dd bleskos_scalable_font_char_square ; 0x016B ū
+ dd bleskos_scalable_font_char_square ; 0x016C Ŭ
+ dd bleskos_scalable_font_char_square ; 0x016D ŭ
+ dd bleskos_scalable_font_char_square ; 0x016E Ů
+ dd bleskos_scalable_font_char_square ; 0x016F ů
+ dd bleskos_scalable_font_char_square ; 0x0170 Ű
+ dd bleskos_scalable_font_char_square ; 0x0171 ű
+ dd bleskos_scalable_font_char_square ; 0x0172 Ų
+ dd bleskos_scalable_font_char_square ; 0x0173 ų
+ dd bleskos_scalable_font_char_square ; 0x0174 Ŵ
+ dd bleskos_scalable_font_char_square ; 0x0175 ŵ
+ dd bleskos_scalable_font_char_square ; 0x0176 Ŷ
+ dd bleskos_scalable_font_char_square ; 0x0177 ŷ
+ dd bleskos_scalable_font_char_square ; 0x0178 Ÿ
+ dd bleskos_scalable_font_char_square ; 0x0179 Ź
+ dd bleskos_scalable_font_char_square ; 0x017A ź
+ dd bleskos_scalable_font_char_square ; 0x017B Ż
+ dd bleskos_scalable_font_char_square ; 0x017C ż
+ dd bleskos_scalable_font_char_0x17D_Z_with_caron
+ dd bleskos_scalable_font_char_0x17E_z_with_caron
+ dd bleskos_scalable_font_char_square ; 0x017F ſ
+ dd bleskos_scalable_font_char_square ; 0x0180 ƀ
+ dd bleskos_scalable_font_char_square ; 0x0181 Ɓ
+ dd bleskos_scalable_font_char_square ; 0x0182 Ƃ
+ dd bleskos_scalable_font_char_square ; 0x0183 ƃ
+ dd bleskos_scalable_font_char_square ; 0x0184 Ƅ
+ dd bleskos_scalable_font_char_square ; 0x0185 ƅ
+ dd bleskos_scalable_font_char_square ; 0x0186 Ɔ
+ dd bleskos_scalable_font_char_square ; 0x0187 Ƈ
+ dd bleskos_scalable_font_char_square ; 0x0188 ƈ
+ dd bleskos_scalable_font_char_square ; 0x0189 Ɖ
+ dd bleskos_scalable_font_char_square ; 0x018A Ɗ
+ dd bleskos_scalable_font_char_square ; 0x018B Ƌ
+ dd bleskos_scalable_font_char_square ; 0x018C ƌ
+ dd bleskos_scalable_font_char_square ; 0x018D ƍ
+ dd bleskos_scalable_font_char_square ; 0x018E Ǝ
+ dd bleskos_scalable_font_char_square ; 0x018F Ə
+ dd bleskos_scalable_font_char_square ; 0x0190 Ɛ
+ dd bleskos_scalable_font_char_square ; 0x0191 Ƒ
+ dd bleskos_scalable_font_char_square ; 0x0192 ƒ
+ dd bleskos_scalable_font_char_square ; 0x0193 Ɠ
+ dd bleskos_scalable_font_char_square ; 0x0194 Ɣ
+ dd bleskos_scalable_font_char_square ; 0x0195 ƕ
+ dd bleskos_scalable_font_char_square ; 0x0196 Ɩ
+ dd bleskos_scalable_font_char_square ; 0x0197 Ɨ
+ dd bleskos_scalable_font_char_square ; 0x0198 Ƙ
+ dd bleskos_scalable_font_char_square ; 0x0199 ƙ
+ dd bleskos_scalable_font_char_square ; 0x019A ƚ
+ dd bleskos_scalable_font_char_square ; 0x019B ƛ
+ dd bleskos_scalable_font_char_square ; 0x019C Ɯ
+ dd bleskos_scalable_font_char_square ; 0x019D Ɲ
+ dd bleskos_scalable_font_char_square ; 0x019E ƞ
+ dd bleskos_scalable_font_char_square ; 0x019F Ɵ
+ dd bleskos_scalable_font_char_square ; 0x01A0 Ơ
+ dd bleskos_scalable_font_char_square ; 0x01A1 ơ
+ dd bleskos_scalable_font_char_square ; 0x01A2 Ƣ
+ dd bleskos_scalable_font_char_square ; 0x01A3 ƣ
+ dd bleskos_scalable_font_char_square ; 0x01A4 Ƥ
+ dd bleskos_scalable_font_char_square ; 0x01A5 ƥ
+ dd bleskos_scalable_font_char_square ; 0x01A6 Ʀ
+ dd bleskos_scalable_font_char_square ; 0x01A7 Ƨ
+ dd bleskos_scalable_font_char_square ; 0x01A8 ƨ
+ dd bleskos_scalable_font_char_square ; 0x01A9 Ʃ
+ dd bleskos_scalable_font_char_square ; 0x01AA ƪ
+ dd bleskos_scalable_font_char_square ; 0x01AB ƫ
+ dd bleskos_scalable_font_char_square ; 0x01AC Ƭ
+ dd bleskos_scalable_font_char_square ; 0x01AD ƭ
+ dd bleskos_scalable_font_char_square ; 0x01AE Ʈ
+ dd bleskos_scalable_font_char_square ; 0x01AF Ư
+ dd bleskos_scalable_font_char_square ; 0x01B0 ư
+ dd bleskos_scalable_font_char_square ; 0x01B1 Ʊ
+ dd bleskos_scalable_font_char_square ; 0x01B2 Ʋ
+ dd bleskos_scalable_font_char_square ; 0x01B3 Ƴ
+ dd bleskos_scalable_font_char_square ; 0x01B4 ƴ
+ dd bleskos_scalable_font_char_square ; 0x01B5 Ƶ
+ dd bleskos_scalable_font_char_square ; 0x01B6 ƶ
+ dd bleskos_scalable_font_char_square ; 0x01B7 Ʒ
+ dd bleskos_scalable_font_char_square ; 0x01B8 Ƹ
+ dd bleskos_scalable_font_char_square ; 0x01B9 ƹ
+ dd bleskos_scalable_font_char_square ; 0x01BA ƺ
+ dd bleskos_scalable_font_char_square ; 0x01BB ƻ
+ dd bleskos_scalable_font_char_square ; 0x01BC Ƽ
+ dd bleskos_scalable_font_char_square ; 0x01BD ƽ
+ dd bleskos_scalable_font_char_square ; 0x01BE ƾ
+ dd bleskos_scalable_font_char_square ; 0x01BF ƿ
+ dd bleskos_scalable_font_char_square ; 0x01C0 ǀ
+ dd bleskos_scalable_font_char_square ; 0x01C1 ǁ
+ dd bleskos_scalable_font_char_square ; 0x01C2 ǂ
+ dd bleskos_scalable_font_char_square ; 0x01C3 ǃ
+ dd bleskos_scalable_font_char_square ; 0x01C4 Ǆ
+ dd bleskos_scalable_font_char_square ; 0x01C5 ǅ
+ dd bleskos_scalable_font_char_square ; 0x01C6 ǆ
+ dd bleskos_scalable_font_char_square ; 0x01C7 Ǉ
+ dd bleskos_scalable_font_char_square ; 0x01C8 ǈ
+ dd bleskos_scalable_font_char_square ; 0x01C9 ǉ
+ dd bleskos_scalable_font_char_square ; 0x01CA Ǌ
+ dd bleskos_scalable_font_char_square ; 0x01CB ǋ
+ dd bleskos_scalable_font_char_square ; 0x01CC ǌ
+ dd bleskos_scalable_font_char_square ; 0x01CD Ǎ
+ dd bleskos_scalable_font_char_square ; 0x01CE ǎ
+ dd bleskos_scalable_font_char_square ; 0x01CF Ǐ
+ dd bleskos_scalable_font_char_square ; 0x01D0 ǐ
+ dd bleskos_scalable_font_char_square ; 0x01D1 Ǒ
+ dd bleskos_scalable_font_char_square ; 0x01D2 ǒ
+ dd bleskos_scalable_font_char_square ; 0x01D3 Ǔ
+ dd bleskos_scalable_font_char_square ; 0x01D4 ǔ
+ dd bleskos_scalable_font_char_square ; 0x01D5 Ǖ
+ dd bleskos_scalable_font_char_square ; 0x01D6 ǖ
+ dd bleskos_scalable_font_char_square ; 0x01D7 Ǘ
+ dd bleskos_scalable_font_char_square ; 0x01D8 ǘ
+ dd bleskos_scalable_font_char_square ; 0x01D9 Ǚ
+ dd bleskos_scalable_font_char_square ; 0x01DA ǚ
+ dd bleskos_scalable_font_char_square ; 0x01DB Ǜ
+ dd bleskos_scalable_font_char_square ; 0x01DC ǜ
+ dd bleskos_scalable_font_char_square ; 0x01DD ǝ
+ dd bleskos_scalable_font_char_square ; 0x01DE Ǟ
+ dd bleskos_scalable_font_char_square ; 0x01DF ǟ
+ dd bleskos_scalable_font_char_square ; 0x01E0 Ǡ
+ dd bleskos_scalable_font_char_square ; 0x01E1 ǡ
+ dd bleskos_scalable_font_char_square ; 0x01E2 Ǣ
+ dd bleskos_scalable_font_char_square ; 0x01E3 ǣ
+ dd bleskos_scalable_font_char_square ; 0x01E4 Ǥ
+ dd bleskos_scalable_font_char_square ; 0x01E5 ǥ
+ dd bleskos_scalable_font_char_square ; 0x01E6 Ǧ
+ dd bleskos_scalable_font_char_square ; 0x01E7 ǧ
+ dd bleskos_scalable_font_char_square ; 0x01E8 Ǩ
+ dd bleskos_scalable_font_char_square ; 0x01E9 ǩ
+ dd bleskos_scalable_font_char_square ; 0x01EA Ǫ
+ dd bleskos_scalable_font_char_square ; 0x01EB ǫ
+ dd bleskos_scalable_font_char_square ; 0x01EC Ǭ
+ dd bleskos_scalable_font_char_square ; 0x01ED ǭ
+ dd bleskos_scalable_font_char_square ; 0x01EE Ǯ
+ dd bleskos_scalable_font_char_square ; 0x01EF ǯ
+ dd bleskos_scalable_font_char_square ; 0x01F0 ǰ
+ dd bleskos_scalable_font_char_square ; 0x01F1 Ǳ
+ dd bleskos_scalable_font_char_square ; 0x01F2 ǲ
+ dd bleskos_scalable_font_char_square ; 0x01F3 ǳ
+ dd bleskos_scalable_font_char_square ; 0x01F4 Ǵ
+ dd bleskos_scalable_font_char_square ; 0x01F5 ǵ
+ dd bleskos_scalable_font_char_square ; 0x01F6 Ƕ
+ dd bleskos_scalable_font_char_square ; 0x01F7 Ƿ
+ dd bleskos_scalable_font_char_square ; 0x01F8 Ǹ
+ dd bleskos_scalable_font_char_square ; 0x01F9 ǹ
+ dd bleskos_scalable_font_char_square ; 0x01FA Ǻ
+ dd bleskos_scalable_font_char_square ; 0x01FB ǻ
+ dd bleskos_scalable_font_char_square ; 0x01FC Ǽ
+ dd bleskos_scalable_font_char_square ; 0x01FD ǽ
+ dd bleskos_scalable_font_char_square ; 0x01FE Ǿ
+ dd bleskos_scalable_font_char_square ; 0x01FF ǿ
+ dd bleskos_scalable_font_char_square ; 0x0200 Ȁ
  
 bleskos_scalable_font_char_0x21_exclamation:
  db SF_CHAR_LINE, 50, 0, 50, 70
@@ -921,7 +1276,173 @@ bleskos_scalable_font_char_E_with_diacritic:
  db SF_CHAR_LINE, 20, 60, 80, 60
  db SF_CHAR_LINE, 20, 100, 80, 100
  
- db SF_CHAR_END 
+ db SF_CHAR_END
+
+bleskos_scalable_font_char_I_with_diacritic:
+ db SF_CHAR_LINE, 50, 20, 50, 100
+ db SF_CHAR_LINE, 30, 20, 70, 20
+ db SF_CHAR_LINE, 30, 100, 70, 100
+
+ db SF_CHAR_END
+
+bleskos_scalable_font_char_L_with_diacritic:
+ db SF_CHAR_LINE, 20, 20, 20, 100
+ db SF_CHAR_LINE, 20, 100, 80, 100
+ 
+ db SF_CHAR_END
+
+bleskos_scalable_font_char_N_with_diacritic:
+ db SF_CHAR_LINE, 20, 20, 20, 100
+ db SF_CHAR_LINE, 20, 20, 80, 100
+ db SF_CHAR_LINE, 80, 100, 80, 20
+ 
+ db SF_CHAR_END
+
+bleskos_scalable_font_char_S_with_diacritic:
+ db SF_CHAR_BEZIER, 80, 30, 80, 20, 50, 20
+ db SF_CHAR_BEZIER, 50, 20, 20, 20, 20, 35
+ db SF_CHAR_BEZIER, 20, 35, 20, 60, 50, 60
+ db SF_CHAR_BEZIER, 50, 60, 80, 60, 80, 85
+ db SF_CHAR_BEZIER, 80, 85, 80, 100, 50, 100
+ db SF_CHAR_BEZIER, 50, 100, 20, 100, 20, 90
+ 
+ db SF_CHAR_END
+
+bleskos_scalable_font_char_O_with_diacritic:
+ db SF_CHAR_BEZIER, 20, 60, 20, 20, 60, 20
+ db SF_CHAR_BEZIER, 50, 20, 80, 20, 80, 60
+ db SF_CHAR_BEZIER, 80, 60, 80, 100, 60, 100
+ db SF_CHAR_BEZIER, 50, 100, 20, 100, 20, 60
+ 
+ db SF_CHAR_END
+
+bleskos_scalable_font_char_T_with_diacritic:
+ db SF_CHAR_LINE, 50, 20, 50, 100
+ db SF_CHAR_LINE, 20, 20, 80, 20
+ 
+ db SF_CHAR_END
+
+bleskos_scalable_font_char_U_with_diacritic:
+ db SF_CHAR_LINE, 20, 20, 20, 60
+ db SF_CHAR_LINE, 80, 20, 80, 60
+ db SF_CHAR_BEZIER, 80, 60, 80, 100, 50, 100
+ db SF_CHAR_BEZIER, 50, 100, 20, 100, 20, 60
+ 
+ db SF_CHAR_END
+
+bleskos_scalable_font_char_Y_with_diacritic:
+ db SF_CHAR_LINE, 20, 20, 50, 60
+ db SF_CHAR_LINE, 50, 60, 80, 20
+ db SF_CHAR_LINE, 50, 60, 50, 100
+ 
+ db SF_CHAR_END
+
+bleskos_scalable_font_char_Z_with_diacritic:
+ db SF_CHAR_LINE, 20, 20, 80, 20
+ db SF_CHAR_LINE, 80, 20, 20, 100
+ db SF_CHAR_LINE, 20, 100, 80, 100
+ 
+ db SF_CHAR_END
+
+bleskos_scalable_font_char_0xC1_A_with_acute:
+ ;acute
+ db SF_CHAR_LINE, 50, 10, 60, 0
+
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_A_with_diacritic
+
+bleskos_scalable_font_char_0xC9_E_with_acute:
+ ;acute
+ db SF_CHAR_LINE, 50, 10, 60, 0
+
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_E_with_diacritic
+
+bleskos_scalable_font_char_0xCD_I_with_acute:
+ ;acute
+ db SF_CHAR_LINE, 50, 10, 60, 0
+
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_I_with_diacritic
+
+bleskos_scalable_font_char_0xD3_O_with_acute:
+ ;acute
+ db SF_CHAR_LINE, 50, 10, 60, 0
+
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_O_with_diacritic
+
+bleskos_scalable_font_char_0xD4_O_with_circumflex:
+ ;circumflex
+ db SF_CHAR_LINE, 40, 10, 50, 0
+ db SF_CHAR_LINE, 50, 0, 60, 10
+
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_O_with_diacritic
+
+bleskos_scalable_font_char_0xDA_U_with_acute:
+ ;acute
+ db SF_CHAR_LINE, 50, 10, 60, 0
+
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_U_with_diacritic
+
+bleskos_scalable_font_char_0xDD_Y_with_acute:
+ ;acute
+ db SF_CHAR_LINE, 50, 10, 60, 0
+
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_Y_with_diacritic
+
+bleskos_scalable_font_char_0xE1_a_with_acute:
+ ;acute
+ db SF_CHAR_LINE, 50, 25, 65, 15
+
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_0x61_a
+
+bleskos_scalable_font_char_0xE9_e_with_acute:
+ ;acute
+ db SF_CHAR_LINE, 50, 25, 65, 15
+
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_0x65_e
+
+bleskos_scalable_font_char_0xED_i_with_acute:
+ ;acute
+ db SF_CHAR_LINE, 50, 25, 65, 15
+
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_0x69_i
+
+bleskos_scalable_font_char_0xF3_o_with_acute:
+ ;acute
+ db SF_CHAR_LINE, 50, 25, 65, 15
+
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_0x6F_o
+
+bleskos_scalable_font_char_0xF4_o_with_circumflex:
+ ;circumflex
+ db SF_CHAR_LINE, 40, 25, 50, 15
+ db SF_CHAR_LINE, 50, 15, 60, 25
+ 
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_0x6F_o
+
+bleskos_scalable_font_char_0xFA_u_with_acute:
+ ;acute
+ db SF_CHAR_LINE, 50, 25, 65, 15
+
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_0x75_u
+
+bleskos_scalable_font_char_0xFD_y_with_acute:
+ ;acute
+ db SF_CHAR_LINE, 50, 25, 65, 15
+
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_0x79_y
 
 bleskos_scalable_font_char_0x100_A_with_macron: 
  ;macron
@@ -1125,3 +1646,82 @@ bleskos_scalable_font_char_0x11B_e_with_caron:
 
  db SF_CHAR_JUMP
  dd bleskos_scalable_font_char_0x65_e
+
+bleskos_scalable_font_char_0x13D_L_with_caron:
+ ;caron
+ db SF_CHAR_LINE, 40, 0, 50, 15
+ db SF_CHAR_LINE, 50, 15, 60, 0
+
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_L_with_diacritic
+
+bleskos_scalable_font_char_0x13E_l_with_caron:
+ ;caron as line
+ db SF_CHAR_BEZIER, 70, 3, 75, 10, 65, 20
+
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_0x6C_l
+
+bleskos_scalable_font_char_0x147_N_with_caron:
+ ;caron
+ db SF_CHAR_LINE, 40, 0, 50, 15
+ db SF_CHAR_LINE, 50, 15, 60, 0
+
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_N_with_diacritic
+
+bleskos_scalable_font_char_0x148_n_with_caron:
+ ;caron
+ db SF_CHAR_LINE, 40, 15, 50, 30
+ db SF_CHAR_LINE, 50, 30, 60, 15
+
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_0x6E_n
+
+bleskos_scalable_font_char_0x160_S_with_caron:
+ ;caron
+ db SF_CHAR_LINE, 40, 0, 50, 15
+ db SF_CHAR_LINE, 50, 15, 60, 0
+
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_S_with_diacritic
+
+bleskos_scalable_font_char_0x161_s_with_caron:
+ ;caron
+ db SF_CHAR_LINE, 40, 15, 50, 30
+ db SF_CHAR_LINE, 50, 30, 60, 15
+
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_0x73_s
+
+bleskos_scalable_font_char_0x164_T_with_caron:
+ ;caron
+ db SF_CHAR_LINE, 40, 0, 50, 15
+ db SF_CHAR_LINE, 50, 15, 60, 0
+
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_T_with_diacritic
+
+bleskos_scalable_font_char_0x165_t_with_caron:
+ ;caron
+ db SF_CHAR_LINE, 40, 15, 50, 30
+ db SF_CHAR_LINE, 50, 30, 60, 15
+
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_0x74_t
+
+bleskos_scalable_font_char_0x17D_Z_with_caron:
+ ;caron
+ db SF_CHAR_LINE, 40, 0, 50, 15
+ db SF_CHAR_LINE, 50, 15, 60, 0
+
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_Z_with_diacritic
+
+bleskos_scalable_font_char_0x17E_z_with_caron:
+ ;caron
+ db SF_CHAR_LINE, 40, 15, 50, 30
+ db SF_CHAR_LINE, 50, 30, 60, 15
+
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_0x7A_z

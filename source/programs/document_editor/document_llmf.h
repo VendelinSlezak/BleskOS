@@ -25,9 +25,12 @@
 #define DLLMF_PAGE_CONTENT_END 0xFFFFFFFF
 #define DLLMF_DOCUMENT_CONTENT_END 0x00000000
 
+#define DLLMF_SPACE_BETWEEN_DOCUMENTS 20
+
 dword_t dllmf_screen_first_column = 0, dllmf_screen_first_line = 0;
 dword_t dllmf_draw_first_column = 0, dllmf_draw_last_column = 0, dllmf_draw_first_line = 0, dllmf_draw_last_line = 0, dllmf_draw_width = 0, dllmf_draw_height = 0;
 dword_t dllmf_square_x = 0, dllmf_square_y = 0, dllmf_square_width = 0, dllmf_square_height = 0, dllmf_square_draw_column = 0, dllmf_square_draw_line = 0;
 
 void draw_dllmf(dword_t dllmf_mem);
 void dllmf_calculate_draw_square(dword_t column, dword_t line, dword_t width, dword_t height);
+dword_t dllmf_get_document_height(dword_t dllmf_memory);
