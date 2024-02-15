@@ -2,11 +2,15 @@
 
 BleskOS is 32-bit operating system written from scratch. One of main features is alternative graphic user interface that do not use windows, as classic operating systems do, but switches between programs on full screen. BleskOS is designed for older computers. Operating systems of today have very high hardware requirements that make computers even 10 years old completely unusable. Goal of BleskOS is to provide system, that could be installed on such computers and make them usable again.
 
-![Snímka obrazovky_2024-01-11_18-05-11](https://github.com/VendelinSlezak/BleskOS/assets/43180618/21eb9b61-d449-4c6c-9f65-8986915fbc3c)
+![Snímka obrazovky_2024-02-15_17-48-49](https://github.com/VendelinSlezak/BleskOS/assets/43180618/35b483be-73c6-411f-be70-b2866301bb9e)
 
 ## What is new
 
 Here is info about most important improvements in several last updates.
+
+**Update 16**
+- Added program Document editor (now it is only Document viewer) that is capable to open ODT files in very, very simple way
+- More chars for BleskOS scalable font
 
 **Update 15**
 - Improvement of Performance rating
@@ -20,9 +24,6 @@ Here is info about most important improvements in several last updates.
 
 **Update 12**
 - Added read-only support for image format QOI
-- Improvement of Performance rating
-
-**Update 11**
 - Improvement of Performance rating
 
 ## How to try BleskOS
@@ -76,6 +77,7 @@ Drivers
 
 Programs
 
+- Document viewer
 - Text editor
 - Graphic editor
 - Media viewer
@@ -88,6 +90,7 @@ Supported file formats
 - PNG (read-only), GIF (read-only), QOI, BMP
 - WAV, CDDA
 - HTML
+- ODT (read-only in very simple way)
 
 ## I like this project, can I help you?
 
