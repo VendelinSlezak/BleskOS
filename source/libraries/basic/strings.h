@@ -9,7 +9,7 @@
 */
 
 #define UNICODE_COMBINING_ACUTE 0x0301
-#define UNICODE_COMBINIG_CARON 0x030C
+#define UNICODE_COMBINING_CARON 0x030C
 
 byte_t are_equal_b_string_b_string(byte_t *string1, byte_t *string2);
 byte_t are_equal_w_string_b_string(word_t *string1, byte_t *string2);

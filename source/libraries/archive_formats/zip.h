@@ -13,6 +13,8 @@
 #define ZIP_NO_COMPRESSION 0
 #define ZIP_COMPRESSION_DEFLATE 8
 
+dword_t zip_extracted_file_size = 0;
+
 byte_t is_this_zip(dword_t zip_file_memory, dword_t zip_file_size);
 dword_t search_for_file_in_zip(dword_t zip_file_memory, dword_t zip_file_size, byte_t *file_name);
 dword_t zip_extract_file(dword_t zip_file_memory, dword_t zip_file_size, dword_t entry_number);
