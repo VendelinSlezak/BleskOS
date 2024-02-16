@@ -19,6 +19,7 @@ ld -m elf_i386 --oformat=binary -T source/linker.ld -o compile/bleskos.bin compi
 if [ -f compile/bleskos.bin ] && [ -f compile/bootloader.bin ]
 then
 	echo "Creating image..."
+   rm -f bleskos.img
 	dd if=/dev/zero of=bleskos.img bs=1024 count=1440
 	dd if=compile/bootloader.bin of=bleskos.img conv=notrunc seek=0
 	dd if=compile/bleskos.bin of=bleskos.img conv=notrunc seek=10
@@ -35,6 +36,7 @@ then
 	RELEASE=$(grep -F 'print_to_message_window("Version' source/bleskos.c  | while IFS=' "' read A B C D E F; do echo bleskos_${C}u${E} ; done)
 	echo Release: $RELEASE
 	mv bleskos.img ${RELEASE}.img
+   ln -s ${RELEASE}.img bleskos.img
 	zip ${RELEASE}_img.zip ${RELEASE}.img
 	mv bleskos.iso ${RELEASE}.iso
 	zip ${RELEASE}_iso.zip ${RELEASE}.iso
