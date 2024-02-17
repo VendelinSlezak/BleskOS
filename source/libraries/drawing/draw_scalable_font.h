@@ -21,6 +21,7 @@
 #define SF_EMPHASIS_STRIKE 0x4
 
 #define SF_DOT_IN_MIDDLE_OF_LINE 127
+#define SF_NBSP 0xA0
 
 word_t *scalable_font_pixel_distance;
 

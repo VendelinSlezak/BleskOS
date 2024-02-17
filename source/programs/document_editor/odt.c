@@ -76,13 +76,13 @@ dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size) {
  dmf = (word_t *) (((dword_t)dmf)+DMF_SFCH_ENTRY_LENGTH_IN_BYTES);
 
  //convert ODT to DMF
- dword_t count = 0;
+ dword_t char_size = 10, char_emphasis = 0, char_color = BLACK, char_background_color = TRANSPARENT_COLOR;
  while(*content_xml!=0) {
   if(*content_xml=='<') { //tag
    content_xml++;
 
    if(are_equal_b_string_w_string("text:p", content_xml)==STATUS_TRUE) {
-    dmf_add_section_format_change(((dword_t)dmf), DMF_SFCH_DESCRIPTION_NEW_PARAGRAPH, 10, DMF_SFCH_ENTRY_NO_CHANGE, DMF_SFCH_COLOR_NO_CHANGE, DMF_SFCH_COLOR_NO_CHANGE);
+    dmf_add_section_format_change(((dword_t)dmf), DMF_SFCH_DESCRIPTION_NEW_PARAGRAPH, char_size, char_emphasis, char_color, char_background_color);
     dmf_add_section_paragraph_change(((dword_t)dmf), 0, 0, 0, 0, 0, 0);
     dmf = (word_t *) (((dword_t)dmf)+DMF_SFCH_ENTRY_LENGTH_IN_BYTES);
    }
@@ -101,7 +101,6 @@ dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size) {
    if(*content_xml>=32) { //skip unprintable characters
     *dmf = *content_xml;
     dmf++;
-    count++;
    }
    content_xml++;
   }
