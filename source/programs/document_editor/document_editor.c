@@ -44,6 +44,100 @@ void document_editor(void) {
   program_interface_process_keyboard_event();
   program_interface_process_mouse_event();
 
+  //process CTRL+C
+  if((keyboard_control_keys & KEYBOARD_CTRL)==KEYBOARD_CTRL && get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0) {
+   if(keyboard_value==KEY_C && get_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA)!=0) {
+    //release previous copied text
+    if(text_area_copy_memory!=0) {
+     free(text_area_copy_memory);
+    }
+
+    //calculate variables TODO: copy text to Document editor copy memory
+    dword_t first_character_memory = 0, last_character_memory = 0;
+    if(get_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA)<get_file_value(DOCUMENT_EDITOR_FILE_CURSOR)) {
+     first_character_memory = (get_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA));
+     last_character_memory = (get_file_value(DOCUMENT_EDITOR_FILE_CURSOR));
+    }
+    else {
+     first_character_memory = (get_file_value(DOCUMENT_EDITOR_FILE_CURSOR));
+     last_character_memory = (get_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA));
+    }
+
+    //copy text to text area copy memory
+    dword_t *dllmf = (dword_t *) (first_character_memory);
+    dword_t number_of_characters = 0;
+    while(((dword_t)dllmf)<last_character_memory) {
+     if(*dllmf==DLLMF_PAGE_CONTENT_END) {
+      dllmf++;
+     }
+     else {
+      if(*dllmf!=0xD) {
+       number_of_characters++;
+      }
+      dllmf+=(DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES/4);
+     }
+    }
+
+    text_area_copy_memory_length = (number_of_characters*2);
+    text_area_copy_memory = calloc(text_area_copy_memory_length);
+    dllmf = (dword_t *) (first_character_memory);
+    word_t *text_area_copy_memory_pointer = (word_t *) (text_area_copy_memory);
+    while(((dword_t)dllmf)<last_character_memory) {
+     if(*dllmf==DLLMF_PAGE_CONTENT_END) {
+      dllmf++;
+     }
+     else {
+      if(*dllmf!=0xD) {
+       *text_area_copy_memory_pointer = *dllmf;
+       text_area_copy_memory_pointer++;
+      }
+      dllmf+=(DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES/4);
+     }
+    }
+
+    continue;
+   }
+
+   if(keyboard_value==KEY_A) {
+    dword_t *dllmf = (dword_t *) (dllmf_get_data_memory(get_file_value(DOCUMENT_EDITOR_FILE_DLLMF_MEMORY)));
+    set_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA, ((dword_t)dllmf));
+    while(*dllmf!=0) {
+     if(*dllmf==DLLMF_PAGE_CONTENT_END) {
+      dllmf++;
+     }
+     else {
+      dllmf+=(DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES/4);
+     }
+    }
+    set_file_value(DOCUMENT_EDITOR_FILE_CURSOR, ((dword_t)dllmf));
+    program_interface_redraw();
+
+    continue;
+   }
+  }
+  
+
+  //process click in document
+  dword_t click_zone = get_mouse_cursor_click_board_value();
+  if(mouse_click_button_state==MOUSE_CLICK) {
+   if(click_zone>0x100000) {
+    set_file_value(DOCUMENT_EDITOR_FILE_CURSOR, click_zone);
+    set_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA, click_zone);
+    program_interface_redraw();
+   }
+   else if(click_zone==NO_CLICK) {
+    set_file_value(DOCUMENT_EDITOR_FILE_CURSOR, 0);
+    set_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA, 0);
+    program_interface_redraw();
+   }
+  }
+  else if(mouse_click_button_state==MOUSE_DRAG) {
+   if(click_zone>0x100000 && get_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA)!=0) {
+    set_file_value(DOCUMENT_EDITOR_FILE_CURSOR, click_zone);
+    program_interface_redraw();
+   }
+  }
+
   //process mouse wheel event
   if(mouse_wheel!=0) {
    if(mouse_wheel<0x80000000) {
@@ -66,6 +160,8 @@ void draw_document_editor(void) {
   dllmf_draw_last_line = (dllmf_draw_first_line+dllmf_draw_height);
   dllmf_draw_first_column = get_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_COLUMN);
   dllmf_draw_last_column = (dllmf_draw_first_column+dllmf_draw_width);
+  dllmf_cursor = get_file_value(DOCUMENT_EDITOR_FILE_CURSOR);
+  dllmf_selected_area = get_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA);
   draw_dllmf(get_file_value(DOCUMENT_EDITOR_FILE_DLLMF_MEMORY));
 
   //add vertical scrollbar
@@ -99,7 +195,7 @@ void document_editor_open_file(void) {
  }
 
  //convert DMF to DLLMF
- dword_t dllmf_memory = calloc(dmf_number_of_chars_in_document*DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES+4);
+ dword_t dllmf_memory = calloc((DLLMF_NUM_OF_PAGE_ENTRIES*(DLLMF_PAGE_ENTRY_SIZE+4))+((dmf_number_of_chars_in_document*2)*DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES));
  convert_dmf_to_dllmf(dmf_memory, dllmf_memory);
 
  //add file
@@ -109,6 +205,8 @@ void document_editor_open_file(void) {
  set_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_HEIGHT, dllmf_get_document_height(dllmf_memory));
  set_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_LINE, 0);
  set_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_COLUMN, 0);
+ set_file_value(DOCUMENT_EDITOR_FILE_CURSOR, (dllmf_memory+DLLMF_NUM_OF_PAGE_ENTRIES*DLLMF_PAGE_ENTRY_SIZE));
+ set_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA, 0);
  free(new_file_mem);
  document_editor_recalculate_scrollbars();
 }
@@ -213,6 +311,7 @@ void document_editor_vertical_scrollbar_event(void) {
  dllmf_draw_first_column = get_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_COLUMN);
  dllmf_draw_last_column = (dllmf_draw_first_column+dllmf_draw_width);
  draw_full_square(dllmf_screen_first_column, dllmf_screen_first_line, dllmf_draw_width, dllmf_draw_height, 0x555555);
+ add_zone_to_click_board(dllmf_screen_first_column, dllmf_screen_first_line, dllmf_draw_width, dllmf_draw_height, NO_CLICK);
  draw_dllmf(get_file_value(DOCUMENT_EDITOR_FILE_DLLMF_MEMORY));
  draw_vertical_scrollbar(graphic_screen_x-SCROLLBAR_SIZE, PROGRAM_INTERFACE_TOP_LINE_HEIGTH, document_editor_vertical_scrollbar_height, get_file_value(DOCUMENT_EDITOR_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION), get_file_value(DOCUMENT_EDITOR_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE));
  redraw_screen();
