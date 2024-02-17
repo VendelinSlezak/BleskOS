@@ -8,6 +8,10 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 17**
+- Improvements of Document editor
+- It is possible to copy content of viewed document by CTRL+C
+
 **Update 16**
 - Added program Document editor (now it is only Document viewer) that is capable to open ODT files in very, very simple way
 - More chars for BleskOS scalable font
@@ -18,13 +22,6 @@ Here is info about most important improvements in several last updates.
 
 **Update 14**
 - Improvement of QOI library
-
-**Update 13**
-- Full support for QOI image format, so we can finally save images in compressed form, instead in BMP
-
-**Update 12**
-- Added read-only support for image format QOI
-- Improvement of Performance rating
 
 ## How to try BleskOS
 
