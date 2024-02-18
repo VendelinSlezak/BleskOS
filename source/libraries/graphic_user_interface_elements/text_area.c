@@ -933,9 +933,17 @@ void text_area_add_change_to_list(dword_t text_area_info_mem, dword_t change_typ
   text_area_info[TEXT_AREA_INFO_CHANGES_LIST_POINTER]++;
  }
  else {
-  copy_memory(text_area_info[TEXT_AREA_INFO_CHANGES_LIST]+8, text_area_info[TEXT_AREA_INFO_CHANGES_LIST], (TEXT_AREA_MAX_NUMBER_OF_CHANGES_IN_LIST-1)*8);
-  text_area_change_list[-2] = (change_type | (unicode_char<<16));
-  text_area_change_list[-1] = cursor_position;
+  //TODO: do not erase all changes
+  clear_memory(text_area_info[TEXT_AREA_INFO_CHANGES_LIST], TEXT_AREA_MAX_NUMBER_OF_CHANGES_IN_LIST*8);
+  text_area_info[TEXT_AREA_INFO_CHANGES_LIST_POINTER] = 0;
+  text_area_change_list = (dword_t *) (text_area_info[TEXT_AREA_INFO_CHANGES_LIST]);
+  text_area_change_list[0] = (change_type | (unicode_char<<16));
+  text_area_change_list[1] = cursor_position;
+
+  //TODO: something faster than this:
+  // copy_memory(text_area_info[TEXT_AREA_INFO_CHANGES_LIST]+8, text_area_info[TEXT_AREA_INFO_CHANGES_LIST], (TEXT_AREA_MAX_NUMBER_OF_CHANGES_IN_LIST-1)*8);
+  // text_area_change_list[-2] = (change_type | (unicode_char<<16));
+  // text_area_change_list[-1] = cursor_position;
  }
 
  text_area_info[TEXT_AREA_INFO_CHANGES_LIST_LAST_ENTRY_POINTER]=text_area_info[TEXT_AREA_INFO_CHANGES_LIST_POINTER];
@@ -1016,6 +1024,8 @@ void text_area_undo(dword_t text_area_info_mem) {
 
   //redraw whole area
   text_area_info[TEXT_AREA_INFO_REDRAW_X] = 0xFFFFFFFF;
+
+  //unselect if something was selected
   text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER] = 0xFFFFFFFF;
  }
 }
@@ -1090,6 +1100,8 @@ void text_area_redo(dword_t text_area_info_mem) {
 
   //redraw whole area
   text_area_info[TEXT_AREA_INFO_REDRAW_X] = 0xFFFFFFFF;
+
+  //unselect if something was selected
   text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER] = 0xFFFFFFFF;
  }
 }

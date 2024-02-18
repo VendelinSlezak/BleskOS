@@ -17,6 +17,7 @@
 
  Every char have this format:
  dword = char number
+ dword = pointer to memory of DMF where is this char
  dword = column
  dword = line
  3 bytes = RGB color of char
@@ -26,7 +27,7 @@
  1 bit = 0 - tranparent background 1 - color background
 
  Char number DLLMF_PAGE_CONTENT_END mean this is end of page. Immediately after it continues content of next page.
- Char number DLLMF_DOCUMENT_CONTENT_END mean this is end of document.
+ Char number DLLMF_DOCUMENT_CONTENT_END mean this is end of document and points to end of DMF.
 */
 
 /*
@@ -39,6 +40,7 @@
 
  ;document data
  dd 'A'
+ dd 0x400036
  dd 20
  dd 20
  dd (10<<24) | (0x000000)
@@ -46,6 +48,11 @@
 
  ;end of document
  dd DLLMF_DOCUMENT_CONTENT_END
+ dd 0x400038
+ dd 30
+ dd 20
+ dd (10<<24) | (0x000000)
+ dd (0x00<<24) | (0x000000)
 */
 
 void initalize_dllmf(void) {
@@ -58,6 +65,8 @@ void initalize_dllmf(void) {
  dllmf_draw_last_line = (dllmf_draw_first_line+dllmf_draw_height);
  dllmf_draw_first_column = 0;
  dllmf_draw_last_column = (dllmf_draw_first_column+dllmf_draw_width);
+
+ dllmf_selected_area = 0;
 }
 
 void draw_dllmf(dword_t dllmf_mem) {
@@ -87,37 +96,104 @@ void draw_dllmf(dword_t dllmf_mem) {
   }
 
   //draw page content
-  while(*document_data!=DLLMF_PAGE_CONTENT_END && *document_data!=DLLMF_DOCUMENT_CONTENT_END) {
+  while(1) {
    //basic test if we need to draw this char
+   dword_t char_size_with_spacing = (document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]+(document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]/2));
    if((page_first_line+document_data[DLLMF_CHAR_ENTRY_LINE_OFFSET])>dllmf_draw_last_line) {
     return;
    }
-   else if((page_first_line+document_data[DLLMF_CHAR_ENTRY_LINE_OFFSET]+document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]+(document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]/2))<dllmf_draw_first_line) {
+   else if((page_first_line+document_data[DLLMF_CHAR_ENTRY_LINE_OFFSET]+char_size_with_spacing)<dllmf_draw_first_line) {
     goto move_to_next_char;
    }
 
-   //draw char
-   set_scalable_char_size(document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]);
-   scalable_font_char_emphasis = (document_data8[DLLMF_CHAR_ENTRY_EMPHASIS_OFFSET] & 0x7F);
-   dllmf_calculate_draw_square(page_first_column+document_data[DLLMF_CHAR_ENTRY_COLUMN_OFFSET], page_first_line+document_data[DLLMF_CHAR_ENTRY_LINE_OFFSET], document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET], (document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]+(document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]/2)));
-   if((document_data8[DLLMF_CHAR_ENTRY_EMPHASIS_OFFSET] & 0x80)==0x80) {
-    draw_full_square(dllmf_square_x, dllmf_square_y, dllmf_square_width+1, dllmf_square_height+1, document_data[DLLMF_CHAR_ENTRY_BACKGROUND_COLOR_OFFSET]);
+   //draw char entry
+   dllmf_calculate_draw_square(page_first_column+document_data[DLLMF_CHAR_ENTRY_COLUMN_OFFSET], page_first_line+document_data[DLLMF_CHAR_ENTRY_LINE_OFFSET], document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET], char_size_with_spacing);
+   if(document_data[DLLMF_CHAR_ENTRY_CHAR_NUMBER_OFFSET]>=32) { //skip unprintable characters
+    //set size
+    set_scalable_char_size(document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]);
+
+    //set emphasis
+    scalable_font_char_emphasis = (document_data8[DLLMF_CHAR_ENTRY_EMPHASIS_OFFSET] & 0x7F);
+
+    //draw background
+    if((document_data8[DLLMF_CHAR_ENTRY_EMPHASIS_OFFSET] & 0x80)==0x80) {
+     draw_full_square(dllmf_square_x, dllmf_square_y, dllmf_square_width+1, dllmf_square_height+1, document_data[DLLMF_CHAR_ENTRY_BACKGROUND_COLOR_OFFSET]);
+    }
+
+    //draw background if this char is selected
+    if(dllmf_selected_area!=0) { 
+     if(dllmf_selected_area<dllmf_cursor) {
+      if(((dword_t)document_data)>=dllmf_selected_area && ((dword_t)document_data)<dllmf_cursor) {
+       draw_full_square(dllmf_square_x, dllmf_square_y, dllmf_square_width+1, dllmf_square_height+1, 0x00A0FF);
+      }
+     }
+     else if(((dword_t)document_data)>=dllmf_cursor && ((dword_t)document_data)<dllmf_selected_area) {
+      draw_full_square(dllmf_square_x, dllmf_square_y, dllmf_square_width+1, dllmf_square_height+1, 0x00A0FF);
+     }
+    }
+
+    //draw char
+    if(dllmf_square_width==document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET] && dllmf_square_height==document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]) { 
+     draw_scalable_char((document_data[DLLMF_CHAR_ENTRY_CHAR_NUMBER_OFFSET] & 0xFFFF), dllmf_square_x, dllmf_square_y, (document_data[DLLMF_CHAR_ENTRY_COLOR_OFFSET] & 0xFFFFFF));
+    }
+    else {
+     draw_part_of_scalable_char((document_data[DLLMF_CHAR_ENTRY_CHAR_NUMBER_OFFSET] & 0xFFFF), dllmf_square_x, dllmf_square_y, dllmf_square_draw_column, dllmf_square_draw_line, dllmf_square_width, dllmf_square_height, (document_data[DLLMF_CHAR_ENTRY_COLOR_OFFSET] & 0xFFFFFF));
+    }
    }
-   if(dllmf_square_width==document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET] && dllmf_square_height==document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]) {
-    draw_scalable_char(document_data[DLLMF_CHAR_ENTRY_CHAR_NUMBER_OFFSET], dllmf_square_x, dllmf_square_y, (document_data[DLLMF_CHAR_ENTRY_COLOR_OFFSET] & 0xFFFFFF));
+
+   //draw cursor
+   if(((dword_t)document_data)==dllmf_cursor) {
+    global_color = BLACK;
+    draw_straigth_column(dllmf_square_x, dllmf_square_y, dllmf_square_height);
    }
-   else {
-    draw_part_of_scalable_char(document_data[DLLMF_CHAR_ENTRY_CHAR_NUMBER_OFFSET], dllmf_square_x, dllmf_square_y, dllmf_square_draw_column, dllmf_square_draw_line, dllmf_square_width, dllmf_square_height, (document_data[DLLMF_CHAR_ENTRY_COLOR_OFFSET] & 0xFFFFFF));
+
+   //add click zone
+   if(dllmf_square_draw_column<(document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]/2)) { //first half of character is visible
+    if(document_data[DLLMF_CHAR_ENTRY_CHAR_NUMBER_OFFSET]<32) { //end of line
+     add_zone_to_click_board(dllmf_square_x, dllmf_square_y, (dllmf_screen_first_column+dllmf_draw_width-dllmf_square_x), dllmf_square_height, ((dword_t)document_data));
+     if(((dword_t)document_data)==(dllmf_mem+DLLMF_NUM_OF_PAGE_ENTRIES*DLLMF_PAGE_ENTRY_SIZE)) { //and also start of line
+      add_zone_to_click_board(dllmf_screen_first_column, dllmf_square_y, (dllmf_square_x-dllmf_screen_first_column), dllmf_square_height, ((dword_t)document_data));
+     }
+     else if(document_data[-(DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES/4)]<32) { //and also start of line
+      add_zone_to_click_board(dllmf_screen_first_column, dllmf_square_y, (dllmf_square_x-dllmf_screen_first_column), dllmf_square_height, ((dword_t)document_data));
+     }
+    }
+    else { //middle of line
+     add_zone_to_click_board(dllmf_square_x, dllmf_square_y, ((document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]/2)-dllmf_square_draw_column), dllmf_square_height, ((dword_t)document_data));
+     if(((dword_t)document_data)==(dllmf_mem+DLLMF_NUM_OF_PAGE_ENTRIES*DLLMF_PAGE_ENTRY_SIZE)) { //start of line
+      add_zone_to_click_board(dllmf_screen_first_column, dllmf_square_y, (dllmf_square_x+dllmf_square_width-dllmf_screen_first_column), dllmf_square_height, ((dword_t)document_data));
+     }
+     else if(document_data[-(DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES/4)]<32) { //start of line
+      add_zone_to_click_board(dllmf_screen_first_column, dllmf_square_y, (dllmf_square_x+dllmf_square_width-dllmf_screen_first_column), dllmf_square_height, ((dword_t)document_data));
+     }
+     if(dllmf_square_width>=(document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]/2)) { //second half of character points to next char
+      add_zone_to_click_board(dllmf_square_x+((document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]/2)-dllmf_square_draw_column), dllmf_square_y, dllmf_square_width-((document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]/2)-dllmf_square_draw_column), dllmf_square_height, ((dword_t)document_data)+DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES);
+     }
+    }
+   }
+   else { //only second half of character is visible
+    if(document_data[DLLMF_CHAR_ENTRY_CHAR_NUMBER_OFFSET]<32) { //end of line
+     add_zone_to_click_board(dllmf_square_x, dllmf_square_y, (dllmf_screen_first_column+dllmf_draw_width-dllmf_square_x), dllmf_square_height, ((dword_t)document_data));
+    }
+    else { //middle of line
+     add_zone_to_click_board(dllmf_square_x, dllmf_square_y, dllmf_square_width, dllmf_square_height, ((dword_t)document_data)+DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES);
+    }
    }
 
    //move to next char
    move_to_next_char:
-   document_data+=(DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES/4);
-   document_data8+=DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES;
-  }
-  if(*document_data==DLLMF_PAGE_CONTENT_END) {
-   document_data++;
-   document_data8+=4;
+   if(*document_data==DLLMF_PAGE_CONTENT_END) {
+    document_data++;
+    document_data8+=4;
+    break;
+   }
+   else if(*document_data==DLLMF_DOCUMENT_CONTENT_END) {
+    return;
+   }
+   else {
+    document_data+=(DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES/4);
+    document_data8+=DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES;
+   }
   }
 
   //move variable value to next page with free space between
@@ -199,4 +275,8 @@ dword_t dllmf_get_document_height(dword_t dllmf_memory) {
  }
 
  return document_height;
+}
+
+dword_t dllmf_get_data_memory(dword_t dllmf_memory) {
+ return (dllmf_memory+DLLMF_NUM_OF_PAGE_ENTRIES*DLLMF_PAGE_ENTRY_SIZE);
 }
