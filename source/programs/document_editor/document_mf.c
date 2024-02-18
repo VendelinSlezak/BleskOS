@@ -41,8 +41,8 @@
 
  word = char size
  word = char emphasis
- dword = char color (DMF_SFCH_COLOR_NO_CHANGE = no change)
- dword = char background color (DMF_SFCH_COLOR_NO_CHANGE = no change)
+ dword = char color
+ dword = char background color
 
  word = length of section in bytes with signatures
  word = DMF_SECTION_FORMAT_CHANGE_SIGNATURE
@@ -53,7 +53,7 @@ void convert_dmf_to_dllmf(dword_t dmf_memory, dword_t dllmf_memory) {
  dword_t *dllmf_page_entries = (dword_t *) (dllmf_memory);
  dword_t *dllmf_data = (dword_t *) (dllmf_memory+DLLMF_NUM_OF_PAGE_ENTRIES*DLLMF_PAGE_ENTRY_SIZE);
 
- dword_t dmf_actual_x_position = 0, dmf_actual_y_position = 0, dmf_number_of_pages = 0;
+ dword_t dmf_actual_x_position = 0, dmf_actual_y_position = 0, dmf_number_of_pages = 0, dmf_was_last_character_char = STATUS_FALSE, dmf_go_to_next_line = STATUS_FALSE;
  dmf_page_width = 0;
  dmf_page_height = 0;
  dmf_page_top_border = 0;
@@ -72,6 +72,7 @@ void convert_dmf_to_dllmf(dword_t dmf_memory, dword_t dllmf_memory) {
 
  dmf_character_size = 0;
  dmf_character_spacing = 0;
+ dmf_bottom_line_of_characters = 0;
  dmf_character_emphasis = 0;
  dmf_character_color = 0;
  dmf_character_background_color = TRANSPARENT_COLOR;
@@ -104,15 +105,25 @@ void convert_dmf_to_dllmf(dword_t dmf_memory, dword_t dllmf_memory) {
     dmf_page_actual_left_border = dmf_page_left_border;
     dmf_page_actual_right_border = dmf_page_right_border;
 
-    if(dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET]!=DMF_SFCH_ENTRY_NO_CHANGE) {
-     dmf_character_size = dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET];
-    }
+    dmf_character_size = dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET];
     dmf_actual_x_position = dmf_get_first_column_of_line((dword_t)dmf, dmf_paragraph_alignment, dmf_character_size);
     dmf_actual_y_position = dmf_page_top_border;
+    dword_t biggest_char_size = dmf_get_biggest_char_size_of_line((dword_t)dmf, dmf_character_size);
+    dmf_character_spacing = (biggest_char_size+(biggest_char_size/2));
+    dmf_bottom_line_of_characters = (dmf_actual_y_position+biggest_char_size);
    }
 
    //ADD PARAGRAPH
    if((dmf[DMF_SFCH_DESCRIPTION_OFFSET] & DMF_SFCH_DESCRIPTION_NEW_PARAGRAPH)==DMF_SFCH_DESCRIPTION_NEW_PARAGRAPH) {
+    //add char to DLLMF
+    dllmf_data[DLLMF_CHAR_ENTRY_CHAR_NUMBER_OFFSET] = 0xA;
+    dllmf_data[DLLMF_CHAR_ENTRY_CHAR_DMF_MEMORY_POINTER_OFFSET] = ((dword_t)dmf);
+    dllmf_data[DLLMF_CHAR_ENTRY_COLUMN_OFFSET] = dmf_actual_x_position;
+    dllmf_data[DLLMF_CHAR_ENTRY_LINE_OFFSET] = (dmf_bottom_line_of_characters-dmf_character_size);
+    dllmf_data[DLLMF_CHAR_ENTRY_COLOR_OFFSET] = ((dmf_character_size)<<24);
+    dllmf_data[DLLMF_CHAR_ENTRY_BACKGROUND_COLOR_OFFSET] = 0;
+    dllmf_data = (dword_t *) (((dword_t)dllmf_data)+DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES);
+
     //calculate how many space to skip after previous paragraph
     dword_t paragraph_how_many_space_skip = (dmf_paragraph_bottom_border+dmf[DMF_SFCH_PARAGRAPH_TOP_BORDER_OFFSET]);
     if((dmf_actual_paragraph_description & DMF_SFCH_PARAGRAPH_DESCRIPTION_BOTTOM_BORDER_COLLAPSE)==DMF_SFCH_PARAGRAPH_DESCRIPTION_BOTTOM_BORDER_COLLAPSE || (dmf[DMF_SFCH_PARAGRAPH_DESCRIPTION_OFFSET] & DMF_SFCH_PARAGRAPH_DESCRIPTION_TOP_BORDER_COLLAPSE)==DMF_SFCH_PARAGRAPH_DESCRIPTION_TOP_BORDER_COLLAPSE) {
@@ -147,10 +158,16 @@ void convert_dmf_to_dllmf(dword_t dmf_memory, dword_t dllmf_memory) {
 
      dmf_page_actual_left_border = (dmf_page_left_border+dmf[DMF_SFCH_PARAGRAPH_LEFT_BORDER_OFFSET]);
      dmf_actual_y_position = (dmf_page_top_border+dmf[DMF_SFCH_PARAGRAPH_TOP_BORDER_OFFSET]);
+     dword_t biggest_char_size = dmf_get_biggest_char_size_of_line((dword_t)dmf, dmf_character_size);
+     dmf_character_spacing = (biggest_char_size+(biggest_char_size/2));
+     dmf_bottom_line_of_characters = (dmf_actual_y_position+biggest_char_size);
     }
     else {
      dmf_page_actual_left_border = (dmf_page_left_border+dmf[DMF_SFCH_PARAGRAPH_LEFT_BORDER_OFFSET]);
      dmf_actual_y_position += (dmf_character_spacing+paragraph_how_many_space_skip);
+     dword_t biggest_char_size = dmf_get_biggest_char_size_of_line((dword_t)dmf, dmf_character_size);
+     dmf_character_spacing = (biggest_char_size+(biggest_char_size/2));
+     dmf_bottom_line_of_characters = (dmf_actual_y_position+biggest_char_size);
     }
     dmf_page_actual_right_border = (dmf_page_right_border-dmf[DMF_SFCH_PARAGRAPH_RIGHT_BORDER_OFFSET]);
     dmf_actual_x_position = dmf_get_first_column_of_line((dword_t)dmf, dmf_paragraph_alignment, dmf_character_size);
@@ -160,7 +177,7 @@ void convert_dmf_to_dllmf(dword_t dmf_memory, dword_t dllmf_memory) {
      if(dmf[DMF_SFCH_PARAGRAPH_LIST_ENTRY_OFFSET]==DMF_SFCH_PARAGRAPH_LIST_ENTRY_DOT) { //unordered list
       dllmf_data[DLLMF_CHAR_ENTRY_CHAR_NUMBER_OFFSET] = SF_DOT_IN_MIDDLE_OF_LINE;
       dllmf_data[DLLMF_CHAR_ENTRY_COLUMN_OFFSET] = dmf_page_actual_left_border-10;
-      dllmf_data[DLLMF_CHAR_ENTRY_LINE_OFFSET] = dmf_actual_y_position;
+      dllmf_data[DLLMF_CHAR_ENTRY_LINE_OFFSET] = (dmf_bottom_line_of_characters-dmf_character_size);
       dllmf_data[DLLMF_CHAR_ENTRY_COLOR_OFFSET] = (BLACK | ((dmf_character_size)<<24));
       dllmf_data[DLLMF_CHAR_ENTRY_BACKGROUND_COLOR_OFFSET] = 0;
       dllmf_data = (dword_t *) (((dword_t)dllmf_data)+DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES);
@@ -174,7 +191,7 @@ void convert_dmf_to_dllmf(dword_t dmf_memory, dword_t dllmf_memory) {
       for(dword_t i=0; i<num_of_digits; i++) {
        dllmf_data[DLLMF_CHAR_ENTRY_CHAR_NUMBER_OFFSET] = number_string[i];
        dllmf_data[DLLMF_CHAR_ENTRY_COLUMN_OFFSET] = dmf_page_actual_left_border-10-((num_of_digits-i-1)*dmf_character_size);
-       dllmf_data[DLLMF_CHAR_ENTRY_LINE_OFFSET] = dmf_actual_y_position;
+       dllmf_data[DLLMF_CHAR_ENTRY_LINE_OFFSET] = (dmf_bottom_line_of_characters-dmf_character_size);
        dllmf_data[DLLMF_CHAR_ENTRY_COLOR_OFFSET] = (BLACK | ((dmf_character_size)<<24));
        dllmf_data[DLLMF_CHAR_ENTRY_BACKGROUND_COLOR_OFFSET] = 0;
        dllmf_data = (dword_t *) (((dword_t)dllmf_data)+DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES);
@@ -184,25 +201,51 @@ void convert_dmf_to_dllmf(dword_t dmf_memory, dword_t dllmf_memory) {
    }
 
    //INLINE CHARACTER CHANGE
-   if(dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET]!=DMF_SFCH_ENTRY_NO_CHANGE) {
-    dmf_character_size = dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET];
-    dmf_character_spacing = (dmf_character_size+(dmf_character_size/2));
-   }
-   if(dmf[DMF_SFCH_INLINE_CHANGE_EMPHASIS_OFFSET]!=DMF_SFCH_ENTRY_NO_CHANGE) {
-    dmf_character_emphasis = dmf[DMF_SFCH_INLINE_CHANGE_EMPHASIS_OFFSET];
-   }
-   if((dmf[DMF_SFCH_INLINE_CHANGE_COLOR_OFFSET] | (dmf[DMF_SFCH_INLINE_CHANGE_COLOR_OFFSET+1]<<16))!=DMF_SFCH_COLOR_NO_CHANGE) {
-    dmf_character_color = (dmf[DMF_SFCH_INLINE_CHANGE_COLOR_OFFSET] | (dmf[DMF_SFCH_INLINE_CHANGE_COLOR_OFFSET+1]<<16));
-   }
-   if((dmf[DMF_SFCH_INLINE_CHANGE_BACKGROUND_COLOR_OFFSET] | (dmf[DMF_SFCH_INLINE_CHANGE_BACKGROUND_COLOR_OFFSET+1]<<16))!=DMF_SFCH_COLOR_NO_CHANGE) {
-    dmf_character_background_color = (dmf[DMF_SFCH_INLINE_CHANGE_BACKGROUND_COLOR_OFFSET] | (dmf[DMF_SFCH_INLINE_CHANGE_BACKGROUND_COLOR_OFFSET+1]<<16));
-   }
+   dmf_character_size = dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET];
+   dmf_character_emphasis = dmf[DMF_SFCH_INLINE_CHANGE_EMPHASIS_OFFSET];
+   dmf_character_color = (dmf[DMF_SFCH_INLINE_CHANGE_COLOR_OFFSET] | (dmf[DMF_SFCH_INLINE_CHANGE_COLOR_OFFSET+1]<<16));
+   dmf_character_background_color = (dmf[DMF_SFCH_INLINE_CHANGE_BACKGROUND_COLOR_OFFSET] | (dmf[DMF_SFCH_INLINE_CHANGE_BACKGROUND_COLOR_OFFSET+1]<<16));
 
    //skip
    dmf = (word_t *) (((dword_t)dmf)+dmf[DMF_SFCH_LENGTH_OFFSET_1]);
   }
   else { //normal character
-   if((dmf_actual_x_position+dmf_character_size)>dmf_page_actual_right_border || *dmf==0xA) { //go to next line
+   //find if we need to go to next line
+   dmf_go_to_next_line = STATUS_FALSE;
+   if(*dmf!=0 && *dmf!=' ' && *dmf!=SF_NBSP) {
+    if(dmf_was_last_character_char==STATUS_FALSE) {
+     dmf_was_last_character_char = STATUS_TRUE;
+     if((dmf_actual_x_position+dmf_get_size_of_word(((dword_t)dmf), dmf_character_size))>dmf_page_actual_right_border) {
+      dmf_go_to_next_line = STATUS_TRUE;
+     }
+    }
+   }
+   else {
+    dmf_was_last_character_char = STATUS_FALSE;
+   }
+   if((dmf_actual_x_position+dmf_character_size)>dmf_page_actual_right_border) {
+    dmf_go_to_next_line = STATUS_TRUE;
+   }
+   if(*dmf==0xA) {
+    dmf_go_to_next_line = STATUS_TRUE;
+   }
+
+   //go to next line
+   if(dmf_go_to_next_line==STATUS_TRUE) {
+    //add end line char to DLLMF
+    if(*dmf==0xA || *dmf==' ') {
+     dllmf_data[DLLMF_CHAR_ENTRY_CHAR_NUMBER_OFFSET] = *dmf;
+    }
+    else {
+     dllmf_data[DLLMF_CHAR_ENTRY_CHAR_NUMBER_OFFSET] = 0xD;
+    }
+    dllmf_data[DLLMF_CHAR_ENTRY_CHAR_DMF_MEMORY_POINTER_OFFSET] = ((dword_t)dmf);
+    dllmf_data[DLLMF_CHAR_ENTRY_COLUMN_OFFSET] = dmf_actual_x_position;
+    dllmf_data[DLLMF_CHAR_ENTRY_LINE_OFFSET] = (dmf_bottom_line_of_characters-dmf_character_size);
+    dllmf_data[DLLMF_CHAR_ENTRY_COLOR_OFFSET] = ((dmf_character_size)<<24);
+    dllmf_data[DLLMF_CHAR_ENTRY_BACKGROUND_COLOR_OFFSET] = 0;
+    dllmf_data = (dword_t *) (((dword_t)dllmf_data)+DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES);
+
     if((dmf_actual_y_position+dmf_character_spacing)>dmf_page_bottom_border) {
      //new page
      if(dmf_number_of_pages>=DLLMF_NUM_OF_PAGE_ENTRIES) {
@@ -218,19 +261,32 @@ void convert_dmf_to_dllmf(dword_t dmf_memory, dword_t dllmf_memory) {
 
      dmf_actual_x_position = dmf_get_first_column_of_line((dword_t)dmf, dmf_paragraph_alignment, dmf_character_size);
      dmf_actual_y_position = dmf_page_top_border;
+     dword_t biggest_char_size = dmf_get_biggest_char_size_of_line((dword_t)dmf, dmf_character_size);
+     dmf_character_spacing = (biggest_char_size+(biggest_char_size/2));
+     dmf_bottom_line_of_characters = (dmf_actual_y_position+biggest_char_size);
     }
     else {
      //new line
      dmf_actual_x_position = dmf_get_first_column_of_line((dword_t)dmf, dmf_paragraph_alignment, dmf_character_size);
      dmf_actual_y_position += dmf_character_spacing;
+     dword_t biggest_char_size = dmf_get_biggest_char_size_of_line((dword_t)dmf, dmf_character_size);
+     dmf_character_spacing = (biggest_char_size+(biggest_char_size/2));
+     dmf_bottom_line_of_characters = (dmf_actual_y_position+biggest_char_size);
+    }
+
+    //if this is space at end of line, go to next character
+    if(*dmf==' ') {
+     dmf++;
+     continue;
     }
    }
 
    if(*dmf!=0xA) {
     //add char to DLLMF
     dllmf_data[DLLMF_CHAR_ENTRY_CHAR_NUMBER_OFFSET] = *dmf;
+    dllmf_data[DLLMF_CHAR_ENTRY_CHAR_DMF_MEMORY_POINTER_OFFSET] = ((dword_t)dmf);
     dllmf_data[DLLMF_CHAR_ENTRY_COLUMN_OFFSET] = dmf_actual_x_position;
-    dllmf_data[DLLMF_CHAR_ENTRY_LINE_OFFSET] = dmf_actual_y_position;
+    dllmf_data[DLLMF_CHAR_ENTRY_LINE_OFFSET] = (dmf_bottom_line_of_characters-dmf_character_size);
     dllmf_data[DLLMF_CHAR_ENTRY_COLOR_OFFSET] = ((dmf_character_color & 0xFFFFFF) | ((dmf_character_size)<<24));
     dllmf_data[DLLMF_CHAR_ENTRY_BACKGROUND_COLOR_OFFSET] = ((dmf_character_background_color & 0xFFFFFF) | ((dmf_character_emphasis)<<24));
     if(dmf_character_background_color!=TRANSPARENT_COLOR) {
@@ -246,6 +302,14 @@ void convert_dmf_to_dllmf(dword_t dmf_memory, dword_t dllmf_memory) {
    dmf++;
   }
  }
+
+ //add last zero char to DLLMF
+ dllmf_data[DLLMF_CHAR_ENTRY_CHAR_NUMBER_OFFSET] = DLLMF_DOCUMENT_CONTENT_END;
+ dllmf_data[DLLMF_CHAR_ENTRY_CHAR_DMF_MEMORY_POINTER_OFFSET] = ((dword_t)dmf);
+ dllmf_data[DLLMF_CHAR_ENTRY_COLUMN_OFFSET] = dmf_actual_x_position;
+ dllmf_data[DLLMF_CHAR_ENTRY_LINE_OFFSET] = (dmf_bottom_line_of_characters-dmf_character_size);
+ dllmf_data[DLLMF_CHAR_ENTRY_COLOR_OFFSET] = ((dmf_character_color & 0xFFFFFF) | ((dmf_character_size)<<24));
+ dllmf_data[DLLMF_CHAR_ENTRY_BACKGROUND_COLOR_OFFSET] = ((dmf_character_background_color & 0xFFFFFF) | ((dmf_character_emphasis)<<24));
 }
 
 dword_t dmf_get_first_column_of_line(dword_t dmf_memory, dword_t alignment, dword_t actual_char_size) {
@@ -257,15 +321,18 @@ dword_t dmf_get_first_column_of_line(dword_t dmf_memory, dword_t alignment, dwor
  dword_t length_of_line = 0;
  while(*dmf!=0) {
   if(*dmf==DMF_SECTION_FORMAT_CHANGE_SIGNATURE) {
-   if(dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET]!=DMF_SFCH_ENTRY_NO_CHANGE) {
-    actual_char_size = dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET];
-   }
+   actual_char_size = dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET];
+
+   dmf = (word_t *) (((dword_t)dmf)+dmf[DMF_SFCH_LENGTH_OFFSET_1]);
   }
   else {
-   if((length_of_line+actual_char_size)>dmf_page_actual_right_border) {
+   if((dmf_page_actual_left_border+length_of_line+actual_char_size)>dmf_page_actual_right_border) {
     break;
    }
+
    length_of_line += actual_char_size;
+
+   dmf++;
   }
  }
 
@@ -275,6 +342,51 @@ dword_t dmf_get_first_column_of_line(dword_t dmf_memory, dword_t alignment, dwor
  if(alignment==DMF_SFCH_PARAGRAPH_DESCRIPTION_ALIGNMENT_RIGHT) {
   return (dmf_page_actual_right_border-length_of_line);
  }
+}
+
+dword_t dmf_get_biggest_char_size_of_line(dword_t dmf_memory, dword_t actual_char_size) {
+ word_t *dmf = (word_t *) (dmf_memory);
+ dword_t length_of_line = 0, biggest_char_size = actual_char_size;
+ while(*dmf!=0) {
+  if(*dmf==DMF_SECTION_FORMAT_CHANGE_SIGNATURE) {
+   actual_char_size = dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET];
+   if(actual_char_size>biggest_char_size) {
+    biggest_char_size = actual_char_size;
+   }
+
+   dmf = (word_t *) (((dword_t)dmf)+dmf[DMF_SFCH_LENGTH_OFFSET_1]);
+  }
+  else {
+   if((dmf_page_actual_left_border+length_of_line+actual_char_size)>dmf_page_actual_right_border) {
+    break;
+   }
+
+   length_of_line += actual_char_size;
+
+   dmf++;
+  }
+ }
+
+ return biggest_char_size;
+}
+
+dword_t dmf_get_size_of_word(dword_t dmf_memory, dword_t actual_char_size) {
+ word_t *dmf = (word_t *) (dmf_memory);
+ dword_t length_of_word = 0;
+ while(*dmf!=' ' && *dmf!=0 && *dmf!=SF_NBSP) {
+  if(*dmf==DMF_SECTION_FORMAT_CHANGE_SIGNATURE) {
+   actual_char_size = dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET];
+
+   dmf = (word_t *) (((dword_t)dmf)+dmf[DMF_SFCH_LENGTH_OFFSET_1]);
+  }
+  else {
+   length_of_word += actual_char_size;
+
+   dmf++;
+  }
+ }
+
+ return length_of_word;
 }
 
 void dmf_add_section_format_change(dword_t memory, dword_t description, dword_t size, dword_t emphasis, dword_t color, dword_t background_color) {

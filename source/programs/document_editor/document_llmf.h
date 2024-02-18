@@ -13,14 +13,16 @@
 #define DLLMF_PAGE_ENTRY_WIDTH_OFFSET 0
 #define DLLMF_PAGE_ENTRY_HEIGHT_OFFSET 1
 
-#define DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES 20
+#define DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES 24
 #define DLLMF_CHAR_ENTRY_CHAR_NUMBER_OFFSET 0
-#define DLLMF_CHAR_ENTRY_COLUMN_OFFSET 1
-#define DLLMF_CHAR_ENTRY_LINE_OFFSET 2
-#define DLLMF_CHAR_ENTRY_COLOR_OFFSET 3
-#define DLLMF_CHAR_ENTRY_SIZE_OFFSET 15
-#define DLLMF_CHAR_ENTRY_BACKGROUND_COLOR_OFFSET 4
-#define DLLMF_CHAR_ENTRY_EMPHASIS_OFFSET 19
+ #define DLLMF_CHAR_ENTRY_CHAR_NUMBER_END_OF_LINE_BIT (1<<31)
+#define DLLMF_CHAR_ENTRY_CHAR_DMF_MEMORY_POINTER_OFFSET 1
+#define DLLMF_CHAR_ENTRY_COLUMN_OFFSET 2
+#define DLLMF_CHAR_ENTRY_LINE_OFFSET 3
+#define DLLMF_CHAR_ENTRY_COLOR_OFFSET 4
+#define DLLMF_CHAR_ENTRY_SIZE_OFFSET 19
+#define DLLMF_CHAR_ENTRY_BACKGROUND_COLOR_OFFSET 5
+#define DLLMF_CHAR_ENTRY_EMPHASIS_OFFSET 23
 
 #define DLLMF_PAGE_CONTENT_END 0xFFFFFFFF
 #define DLLMF_DOCUMENT_CONTENT_END 0x00000000
@@ -31,6 +33,9 @@ dword_t dllmf_screen_first_column = 0, dllmf_screen_first_line = 0;
 dword_t dllmf_draw_first_column = 0, dllmf_draw_last_column = 0, dllmf_draw_first_line = 0, dllmf_draw_last_line = 0, dllmf_draw_width = 0, dllmf_draw_height = 0;
 dword_t dllmf_square_x = 0, dllmf_square_y = 0, dllmf_square_width = 0, dllmf_square_height = 0, dllmf_square_draw_column = 0, dllmf_square_draw_line = 0;
 
+dword_t dllmf_cursor = 0, dllmf_selected_area = 0;
+
 void draw_dllmf(dword_t dllmf_mem);
 void dllmf_calculate_draw_square(dword_t column, dword_t line, dword_t width, dword_t height);
 dword_t dllmf_get_document_height(dword_t dllmf_memory);
+dword_t dllmf_get_data_memory(dword_t dllmf_memory);
