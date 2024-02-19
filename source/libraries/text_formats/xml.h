@@ -8,9 +8,16 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-dword_t create_huffman_table(dword_t number_of_entries);
-void reset_huffman_table(dword_t table_pointer);
-void huffman_table_add_entry(dword_t table_pointer, dword_t length, dword_t code, dword_t result);
-dword_t huffman_table_parse_one_value(dword_t table_pointer);
-dword_t huffman_table_parse_one_value_without_moving(dword_t table_pointer);
-void huffman_table_add_one_value(dword_t table_pointer, dword_t value);
+word_t *xml_tag_content_memory;
+word_t *xml_tag_attribute_content_memory;
+
+dword_t prepare_xml_file(dword_t raw_xml_memory, dword_t raw_xml_size);
+word_t xml_get_escape_sequence_character(word_t *xml_mem);
+byte_t xml_is_tag(word_t *xml_mem, byte_t *tag_name);
+byte_t xml_does_tag_have_pair(word_t *xml_mem);
+byte_t xml_find_tag_attribute(byte_t *attribute_name);
+byte_t xml_is_attribute(byte_t *attribute_content);
+byte_t xml_compare_attribute_and_attribute(word_t *attribute_1, word_t *attribute_2);
+dword_t xml_get_attribute_number(void);
+dword_t xml_get_attribute_number_in_px(void);
+dword_t xml_get_attribute_hex_number(void);

@@ -9,3 +9,4 @@
 */
 
 dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size);
+void odt_read_style(dword_t odt_style_memory);

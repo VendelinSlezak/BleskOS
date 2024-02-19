@@ -12,7 +12,6 @@
 #define UNICODE_COMBINING_CARON 0x030C
 
 byte_t are_equal_b_string_b_string(byte_t *string1, byte_t *string2);
-byte_t are_equal_w_string_b_string(word_t *string1, byte_t *string2);
 byte_t are_equal_b_string_w_string(byte_t *string1, word_t *string2);
 byte_t are_equal_w_string_w_string(word_t *string1, word_t *string2);
 byte_t is_char(word_t value);

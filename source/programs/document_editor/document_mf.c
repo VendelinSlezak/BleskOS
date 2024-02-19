@@ -105,10 +105,9 @@ void convert_dmf_to_dllmf(dword_t dmf_memory, dword_t dllmf_memory) {
     dmf_page_actual_left_border = dmf_page_left_border;
     dmf_page_actual_right_border = dmf_page_right_border;
 
-    dmf_character_size = dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET];
-    dmf_actual_x_position = dmf_get_first_column_of_line((dword_t)dmf, dmf_paragraph_alignment, dmf_character_size);
+    dmf_actual_x_position = dmf_get_first_column_of_line((dword_t)dmf, dmf_paragraph_alignment, dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET]);
     dmf_actual_y_position = dmf_page_top_border;
-    dword_t biggest_char_size = dmf_get_biggest_char_size_of_line((dword_t)dmf, dmf_character_size);
+    dword_t biggest_char_size = dmf_get_biggest_char_size_of_line((dword_t)dmf, dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET]);
     dmf_character_spacing = (biggest_char_size+(biggest_char_size/2));
     dmf_bottom_line_of_characters = (dmf_actual_y_position+biggest_char_size);
    }
@@ -158,19 +157,19 @@ void convert_dmf_to_dllmf(dword_t dmf_memory, dword_t dllmf_memory) {
 
      dmf_page_actual_left_border = (dmf_page_left_border+dmf[DMF_SFCH_PARAGRAPH_LEFT_BORDER_OFFSET]);
      dmf_actual_y_position = (dmf_page_top_border+dmf[DMF_SFCH_PARAGRAPH_TOP_BORDER_OFFSET]);
-     dword_t biggest_char_size = dmf_get_biggest_char_size_of_line((dword_t)dmf, dmf_character_size);
+     dword_t biggest_char_size = dmf_get_biggest_char_size_of_line((dword_t)dmf, dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET]);
      dmf_character_spacing = (biggest_char_size+(biggest_char_size/2));
      dmf_bottom_line_of_characters = (dmf_actual_y_position+biggest_char_size);
     }
     else {
      dmf_page_actual_left_border = (dmf_page_left_border+dmf[DMF_SFCH_PARAGRAPH_LEFT_BORDER_OFFSET]);
-     dmf_actual_y_position += (dmf_character_spacing+paragraph_how_many_space_skip);
-     dword_t biggest_char_size = dmf_get_biggest_char_size_of_line((dword_t)dmf, dmf_character_size);
+     dmf_actual_y_position += (dmf_character_spacing+paragraph_how_many_space_skip);     
+     dword_t biggest_char_size = dmf_get_biggest_char_size_of_line((dword_t)dmf, dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET]);
      dmf_character_spacing = (biggest_char_size+(biggest_char_size/2));
      dmf_bottom_line_of_characters = (dmf_actual_y_position+biggest_char_size);
     }
     dmf_page_actual_right_border = (dmf_page_right_border-dmf[DMF_SFCH_PARAGRAPH_RIGHT_BORDER_OFFSET]);
-    dmf_actual_x_position = dmf_get_first_column_of_line((dword_t)dmf, dmf_paragraph_alignment, dmf_character_size);
+    dmf_actual_x_position = dmf_get_first_column_of_line((dword_t)dmf, dmf_paragraph_alignment, dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET]);
 
     //print list entry
     if((dmf[DMF_SFCH_PARAGRAPH_DESCRIPTION_OFFSET] & DMF_SFCH_PARAGRAPH_DESCRIPTION_LIST_ENTRY)==DMF_SFCH_PARAGRAPH_DESCRIPTION_LIST_ENTRY) {
@@ -233,8 +232,11 @@ void convert_dmf_to_dllmf(dword_t dmf_memory, dword_t dllmf_memory) {
    //go to next line
    if(dmf_go_to_next_line==STATUS_TRUE) {
     //add end line char to DLLMF
-    if(*dmf==0xA || *dmf==' ') {
-     dllmf_data[DLLMF_CHAR_ENTRY_CHAR_NUMBER_OFFSET] = *dmf;
+    if(*dmf==0xA) {
+     dllmf_data[DLLMF_CHAR_ENTRY_CHAR_NUMBER_OFFSET] = 0xA;
+    }
+    else if(*dmf==' ') {
+     dllmf_data[DLLMF_CHAR_ENTRY_CHAR_NUMBER_OFFSET] = DLLMF_HIDDEN_SPACE;
     }
     else {
      dllmf_data[DLLMF_CHAR_ENTRY_CHAR_NUMBER_OFFSET] = 0xD;
@@ -318,7 +320,7 @@ dword_t dmf_get_first_column_of_line(dword_t dmf_memory, dword_t alignment, dwor
  }
 
  word_t *dmf = (word_t *) (dmf_memory);
- dword_t length_of_line = 0;
+ dword_t length_of_line = 0, dmf_was_last_character_char = 0;
  while(*dmf!=0) {
   if(*dmf==DMF_SECTION_FORMAT_CHANGE_SIGNATURE) {
    actual_char_size = dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET];
@@ -326,7 +328,22 @@ dword_t dmf_get_first_column_of_line(dword_t dmf_memory, dword_t alignment, dwor
    dmf = (word_t *) (((dword_t)dmf)+dmf[DMF_SFCH_LENGTH_OFFSET_1]);
   }
   else {
+   //find if we need to go to next line
+   if(*dmf!=0 && *dmf!=' ' && *dmf!=SF_NBSP) {
+    if(dmf_was_last_character_char==STATUS_FALSE) {
+     dmf_was_last_character_char = STATUS_TRUE;
+     if((dmf_page_actual_left_border+length_of_line+dmf_get_size_of_word(((dword_t)dmf), actual_char_size))>dmf_page_actual_right_border) {
+      break;
+     }
+    }
+   }
+   else {
+    dmf_was_last_character_char = STATUS_FALSE;
+   }
    if((dmf_page_actual_left_border+length_of_line+actual_char_size)>dmf_page_actual_right_border) {
+    break;
+   }
+   if(*dmf==0xA) {
     break;
    }
 
@@ -346,9 +363,15 @@ dword_t dmf_get_first_column_of_line(dword_t dmf_memory, dword_t alignment, dwor
 
 dword_t dmf_get_biggest_char_size_of_line(dword_t dmf_memory, dword_t actual_char_size) {
  word_t *dmf = (word_t *) (dmf_memory);
- dword_t length_of_line = 0, biggest_char_size = actual_char_size;
+ dword_t length_of_line = 0, biggest_char_size = actual_char_size, dmf_was_last_character_char = 0;
  while(*dmf!=0) {
   if(*dmf==DMF_SECTION_FORMAT_CHANGE_SIGNATURE) {
+   //find if this is last paragraph
+   if((dmf[DMF_SFCH_DESCRIPTION_OFFSET] & DMF_SFCH_DESCRIPTION_NEW_PAGE)==DMF_SFCH_DESCRIPTION_NEW_PAGE || (dmf[DMF_SFCH_DESCRIPTION_OFFSET] & DMF_SFCH_DESCRIPTION_NEW_PARAGRAPH)==DMF_SFCH_DESCRIPTION_NEW_PARAGRAPH) {
+    break;
+   }
+
+   //get actual size
    actual_char_size = dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET];
    if(actual_char_size>biggest_char_size) {
     biggest_char_size = actual_char_size;
@@ -357,7 +380,22 @@ dword_t dmf_get_biggest_char_size_of_line(dword_t dmf_memory, dword_t actual_cha
    dmf = (word_t *) (((dword_t)dmf)+dmf[DMF_SFCH_LENGTH_OFFSET_1]);
   }
   else {
+   //find if we need to go to next line
+   if(*dmf!=0 && *dmf!=' ' && *dmf!=SF_NBSP) {
+    if(dmf_was_last_character_char==STATUS_FALSE) {
+     dmf_was_last_character_char = STATUS_TRUE;
+     if((dmf_page_actual_left_border+length_of_line+dmf_get_size_of_word(((dword_t)dmf), actual_char_size))>dmf_page_actual_right_border) {
+      break;
+     }
+    }
+   }
+   else {
+    dmf_was_last_character_char = STATUS_FALSE;
+   }
    if((dmf_page_actual_left_border+length_of_line+actual_char_size)>dmf_page_actual_right_border) {
+    break;
+   }
+   if(*dmf==0xA) {
     break;
    }
 
