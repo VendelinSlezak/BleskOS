@@ -8,6 +8,9 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 18**
+- Multiple improvements of Document editor, now it can show ODT files with different font size, emphasis, color or background color. You can check actual state in thread https://github.com/VendelinSlezak/BleskOS/discussions/71
+
 **Update 17**
 - Improvements of Document editor
 - It is possible to copy content of viewed document by CTRL+C
@@ -19,9 +22,6 @@ Here is info about most important improvements in several last updates.
 **Update 15**
 - Improvement of Performance rating
 - Start of coding Document editor, BleskOS equivalent of Office Word/Writer programs
-
-**Update 14**
-- Improvement of QOI library
 
 ## How to try BleskOS
 
