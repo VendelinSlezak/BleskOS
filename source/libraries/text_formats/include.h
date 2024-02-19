@@ -9,3 +9,4 @@
 */
 
 #include "utf-8.h"
+#include "xml.h"

@@ -82,6 +82,30 @@ dword_t huffman_table_parse_one_value(dword_t table_pointer) {
  return 0;
 }
 
+dword_t huffman_table_parse_one_value_without_moving(dword_t table_pointer) {
+ dword_t *huffman_table = (dword_t *) table_pointer;
+ dword_t *bit_stream = (dword_t *) bit_stream_pointer;
+ 
+ if(huffman_table[0]<2) {
+  return 0; //this was not pointer to huffman table
+ }
+ 
+ //read data
+ dword_t value = (*bit_stream>>bit_stream_pointer_shift);
+ 
+ //find value in huffman table
+ dword_t huffman_table_entries=((huffman_table[0]-2)/2);
+ huffman_table += 2;
+ for(dword_t i=0; i<huffman_table_entries; i++, huffman_table+=2) {
+  if((value & bit_stream_mask[(huffman_table[0] & 0xFF)])==(huffman_table[0]>>8)) {
+   return huffman_table[1];
+  }
+ }
+ 
+ //value was not founded
+ return 0;
+}
+
 void huffman_table_add_one_value(dword_t table_pointer, dword_t value) {
  dword_t *huffman_table = (dword_t *) table_pointer;
 

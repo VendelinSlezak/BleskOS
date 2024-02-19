@@ -26,6 +26,24 @@
 
 #define DOCUMENT_EDITOR_CLICK_ZONE_VERTICAL_SCROLLBAR 1000
 
+#define DOCUMENT_EDITOR_NUMBER_OF_ENTRIES_IN_STYLE_STACK 10000
+struct document_editor_style_stack_entry {
+ dword_t character_size;
+ dword_t character_emphasis;
+ dword_t character_color;
+ dword_t character_background_color;
+};
+struct document_editor_style_stack_entry *document_editor_style_stack_pointer;
+dword_t document_editor_style_stack_number_of_entries = 0;
+
+#define DOCUMENT_EDITOR_NUMBER_OF_ENTRIES_IN_LIST_OF_STYLES 10000
+struct document_editor_list_of_styles_entry {
+ dword_t memory_of_style_name;
+ dword_t memory_of_style_content;
+};
+struct document_editor_list_of_styles_entry *document_editor_list_of_styles_pointer;
+dword_t document_editor_list_of_styles_number_of_entries = 0;
+
 dword_t document_editor_program_interface_memory = 0;
 dword_t document_editor_vertical_scrollbar_height = 0;
 
@@ -42,3 +60,6 @@ void document_editor_key_home_event(void);
 void document_editor_key_end_event(void);
 void document_editor_vertical_scrollbar_event(void);
 void document_editor_recalculate_scrollbars(void);
+void document_editor_add_style_to_stack(void);
+void document_editor_take_style_from_stack(void);
+void document_editor_add_style_to_list(dword_t memory_of_style_name, dword_t memory_of_style_content);

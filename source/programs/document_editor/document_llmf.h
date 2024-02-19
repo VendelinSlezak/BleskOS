@@ -29,6 +29,8 @@
 
 #define DLLMF_SPACE_BETWEEN_DOCUMENTS 20
 
+#define DLLMF_HIDDEN_SPACE 31
+
 dword_t dllmf_screen_first_column = 0, dllmf_screen_first_line = 0;
 dword_t dllmf_draw_first_column = 0, dllmf_draw_last_column = 0, dllmf_draw_first_line = 0, dllmf_draw_last_line = 0, dllmf_draw_width = 0, dllmf_draw_height = 0;
 dword_t dllmf_square_x = 0, dllmf_square_y = 0, dllmf_square_width = 0, dllmf_square_height = 0, dllmf_square_draw_column = 0, dllmf_square_draw_line = 0;

@@ -105,6 +105,7 @@ dword_t zip_extract_file(dword_t zip_file_memory, dword_t zip_file_size, dword_t
  }
  else if(compression_method==ZIP_COMPRESSION_DEFLATE) {
   if(decode_deflate(file_data_compressed_data_mem, file_data_compressed_data_length, file_memory, file_data_uncompressed_data_length)==STATUS_ERROR) {
+   log("\nZIP: DEFLATE error");
    free(file_memory);
    return STATUS_ERROR;
   }

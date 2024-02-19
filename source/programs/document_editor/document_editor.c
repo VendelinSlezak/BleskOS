@@ -16,6 +16,11 @@ void initalize_document_editor(void) {
  document_editor_program_interface_memory = create_program_interface_memory(((dword_t)&draw_document_editor), PROGRAM_INTERFACE_FLAG_NO_SAVE_BUTTON | PROGRAM_INTERFACE_FLAG_NO_NEW_BUTTON);
  document_editor_vertical_scrollbar_height = (graphic_screen_y-PROGRAM_INTERFACE_TOP_LINE_HEIGTH-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH);
 
+ document_editor_style_stack_pointer = (struct document_editor_style_stack_entry *) (calloc(sizeof(struct document_editor_style_stack_entry)*DOCUMENT_EDITOR_NUMBER_OF_ENTRIES_IN_STYLE_STACK));
+ document_editor_style_stack_number_of_entries = 0;
+ document_editor_list_of_styles_pointer = (struct document_editor_list_of_styles_entry *) (calloc(sizeof(struct document_editor_list_of_styles_entry)*DOCUMENT_EDITOR_NUMBER_OF_ENTRIES_IN_LIST_OF_STYLES));
+ document_editor_list_of_styles_number_of_entries = 0;
+
  initalize_dllmf();
 }
 
@@ -88,7 +93,12 @@ void document_editor(void) {
      }
      else {
       if(*dllmf!=0xD) {
-       *text_area_copy_memory_pointer = *dllmf;
+       if(*dllmf==DLLMF_HIDDEN_SPACE) {
+        *text_area_copy_memory_pointer = ' ';
+       }
+       else {
+        *text_area_copy_memory_pointer = *dllmf;
+       }
        text_area_copy_memory_pointer++;
       }
       dllmf+=(DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES/4);
@@ -320,4 +330,36 @@ void document_editor_vertical_scrollbar_event(void) {
 void document_editor_recalculate_scrollbars(void) {
  set_file_value(DOCUMENT_EDITOR_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE, calculate_scrollbar_rider_size(document_editor_vertical_scrollbar_height, get_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_HEIGHT), dllmf_draw_height));
  set_file_value(DOCUMENT_EDITOR_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION, calculate_scrollbar_rider_position(document_editor_vertical_scrollbar_height, get_file_value(DOCUMENT_EDITOR_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE), get_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_HEIGHT), dllmf_draw_height, get_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_LINE)));
+}
+
+void document_editor_add_style_to_stack(void) {
+ if(document_editor_style_stack_number_of_entries<DOCUMENT_EDITOR_NUMBER_OF_ENTRIES_IN_STYLE_STACK) {
+  document_editor_style_stack_pointer[document_editor_style_stack_number_of_entries].character_size = dmf_character_size;
+  document_editor_style_stack_pointer[document_editor_style_stack_number_of_entries].character_emphasis = dmf_character_emphasis;
+  document_editor_style_stack_pointer[document_editor_style_stack_number_of_entries].character_color = dmf_character_color;
+  document_editor_style_stack_pointer[document_editor_style_stack_number_of_entries].character_background_color = dmf_character_background_color;
+ }
+ if(document_editor_style_stack_number_of_entries<0xFFFFFFFF) {
+  document_editor_style_stack_number_of_entries++;
+ }
+}
+
+void document_editor_take_style_from_stack(void) {
+ if(document_editor_style_stack_number_of_entries>0) {
+  document_editor_style_stack_number_of_entries--;
+ }
+ if(document_editor_style_stack_number_of_entries<DOCUMENT_EDITOR_NUMBER_OF_ENTRIES_IN_STYLE_STACK) {
+  dmf_character_size = document_editor_style_stack_pointer[document_editor_style_stack_number_of_entries-1].character_size;
+  dmf_character_emphasis = document_editor_style_stack_pointer[document_editor_style_stack_number_of_entries-1].character_emphasis;
+  dmf_character_color = document_editor_style_stack_pointer[document_editor_style_stack_number_of_entries-1].character_color;
+  dmf_character_background_color = document_editor_style_stack_pointer[document_editor_style_stack_number_of_entries-1].character_background_color;
+ }
+}
+
+void document_editor_add_style_to_list(dword_t memory_of_style_name, dword_t memory_of_style_content) {
+ if(document_editor_list_of_styles_number_of_entries<DOCUMENT_EDITOR_NUMBER_OF_ENTRIES_IN_LIST_OF_STYLES) {
+  document_editor_list_of_styles_pointer[document_editor_list_of_styles_number_of_entries].memory_of_style_name = memory_of_style_name;
+  document_editor_list_of_styles_pointer[document_editor_list_of_styles_number_of_entries].memory_of_style_content = memory_of_style_content;
+  document_editor_list_of_styles_number_of_entries++;
+ }
 }

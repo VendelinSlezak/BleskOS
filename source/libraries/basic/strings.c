@@ -21,19 +21,6 @@ byte_t are_equal_b_string_b_string(byte_t *string1, byte_t *string2) {
  return STATUS_TRUE;
 }
 
-byte_t are_equal_w_string_b_string(word_t *string1, byte_t *string2) {
- while(*string1!=0 && *string2!=0) {
-  if(*string1!=*string2) {
-   return STATUS_FALSE;
-  }
-
-  string1++;
-  string2++;
- }
-
- return STATUS_TRUE;
-}
-
 byte_t are_equal_b_string_w_string(byte_t *string1, word_t *string2) {
  while(*string1!=0 && *string2!=0) {
   if(*string1!=*string2) {
