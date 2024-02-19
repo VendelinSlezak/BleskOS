@@ -26,7 +26,7 @@ then
 	echo "Done"
 fi
 
-if $( echo $@ | grep -Fiq iso) 
+if $( echo $@ | grep -Fiq release) 
 then
 	echo "Creating iso image..."
 	mkdir -p iso
@@ -40,4 +40,10 @@ then
 	zip ${RELEASE}_img.zip ${RELEASE}.img
 	mv bleskos.iso ${RELEASE}.iso
 	zip ${RELEASE}_iso.zip ${RELEASE}.iso
+
+ rm -r compile
+ rm -r iso
+
+ qemu-system-i386 -hda ${RELEASE}.img
+ qemu-system-i386 -cdrom ${RELEASE}.iso
 fi
