@@ -105,9 +105,9 @@ void convert_dmf_to_dllmf(dword_t dmf_memory, dword_t dllmf_memory) {
     dmf_page_actual_left_border = dmf_page_left_border;
     dmf_page_actual_right_border = dmf_page_right_border;
 
-    dmf_actual_x_position = dmf_get_first_column_of_line((dword_t)dmf, dmf_paragraph_alignment, dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET]);
+    dmf_actual_x_position = dmf_get_first_column_of_line(((dword_t)dmf+DMF_SFCH_ENTRY_LENGTH_IN_BYTES), dmf_paragraph_alignment, dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET]);
     dmf_actual_y_position = dmf_page_top_border;
-    dword_t biggest_char_size = dmf_get_biggest_char_size_of_line((dword_t)dmf, dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET]);
+    dword_t biggest_char_size = dmf_get_biggest_char_size_of_line(((dword_t)dmf+DMF_SFCH_ENTRY_LENGTH_IN_BYTES), dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET]);
     dmf_character_spacing = (biggest_char_size+(biggest_char_size/2));
     dmf_bottom_line_of_characters = (dmf_actual_y_position+biggest_char_size);
    }
@@ -157,19 +157,19 @@ void convert_dmf_to_dllmf(dword_t dmf_memory, dword_t dllmf_memory) {
 
      dmf_page_actual_left_border = (dmf_page_left_border+dmf[DMF_SFCH_PARAGRAPH_LEFT_BORDER_OFFSET]);
      dmf_actual_y_position = (dmf_page_top_border+dmf[DMF_SFCH_PARAGRAPH_TOP_BORDER_OFFSET]);
-     dword_t biggest_char_size = dmf_get_biggest_char_size_of_line((dword_t)dmf, dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET]);
+     dword_t biggest_char_size = dmf_get_biggest_char_size_of_line(((dword_t)dmf+DMF_SFCH_ENTRY_LENGTH_IN_BYTES), dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET]);
      dmf_character_spacing = (biggest_char_size+(biggest_char_size/2));
      dmf_bottom_line_of_characters = (dmf_actual_y_position+biggest_char_size);
     }
     else {
      dmf_page_actual_left_border = (dmf_page_left_border+dmf[DMF_SFCH_PARAGRAPH_LEFT_BORDER_OFFSET]);
      dmf_actual_y_position += (dmf_character_spacing+paragraph_how_many_space_skip);     
-     dword_t biggest_char_size = dmf_get_biggest_char_size_of_line((dword_t)dmf, dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET]);
+     dword_t biggest_char_size = dmf_get_biggest_char_size_of_line(((dword_t)dmf+DMF_SFCH_ENTRY_LENGTH_IN_BYTES), dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET]);
      dmf_character_spacing = (biggest_char_size+(biggest_char_size/2));
      dmf_bottom_line_of_characters = (dmf_actual_y_position+biggest_char_size);
     }
     dmf_page_actual_right_border = (dmf_page_right_border-dmf[DMF_SFCH_PARAGRAPH_RIGHT_BORDER_OFFSET]);
-    dmf_actual_x_position = dmf_get_first_column_of_line((dword_t)dmf, dmf_paragraph_alignment, dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET]);
+    dmf_actual_x_position = dmf_get_first_column_of_line(((dword_t)dmf+DMF_SFCH_ENTRY_LENGTH_IN_BYTES), dmf_paragraph_alignment, dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET]);
 
     //print list entry
     if((dmf[DMF_SFCH_PARAGRAPH_DESCRIPTION_OFFSET] & DMF_SFCH_PARAGRAPH_DESCRIPTION_LIST_ENTRY)==DMF_SFCH_PARAGRAPH_DESCRIPTION_LIST_ENTRY) {
