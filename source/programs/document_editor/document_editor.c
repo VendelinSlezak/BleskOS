@@ -360,6 +360,16 @@ void document_editor_take_style_from_stack(void) {
  }
 }
 
+void document_editor_take_style_from_stack_wihout_moving(void) {
+ if(document_editor_style_stack_number_of_entries<DOCUMENT_EDITOR_NUMBER_OF_ENTRIES_IN_STYLE_STACK) {
+  dmf_paragraph_alignment = document_editor_style_stack_pointer[document_editor_style_stack_number_of_entries-1].paragraph_alignment;
+  dmf_character_size = document_editor_style_stack_pointer[document_editor_style_stack_number_of_entries-1].character_size;
+  dmf_character_emphasis = document_editor_style_stack_pointer[document_editor_style_stack_number_of_entries-1].character_emphasis;
+  dmf_character_color = document_editor_style_stack_pointer[document_editor_style_stack_number_of_entries-1].character_color;
+  dmf_character_background_color = document_editor_style_stack_pointer[document_editor_style_stack_number_of_entries-1].character_background_color;
+ }
+}
+
 void document_editor_add_style_to_list(dword_t memory_of_style_name, dword_t memory_of_style_content) {
  if(document_editor_list_of_styles_number_of_entries<DOCUMENT_EDITOR_NUMBER_OF_ENTRIES_IN_LIST_OF_STYLES) {
   document_editor_list_of_styles_pointer[document_editor_list_of_styles_number_of_entries].memory_of_style_name = memory_of_style_name;

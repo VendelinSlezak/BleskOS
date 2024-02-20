@@ -76,6 +76,7 @@ void convert_dmf_to_dllmf(dword_t dmf_memory, dword_t dllmf_memory) {
  dmf_character_color = 0;
  dmf_character_background_color = TRANSPARENT_COLOR;
  dmf_paragraph_alignment = DMF_SFCH_PARAGRAPH_DESCRIPTION_ALIGNMENT_LEFT;
+ dmf_paragaph_list_entry = 0;
 
  while(*dmf!=0) {
   if(*dmf==DMF_SECTION_FORMAT_CHANGE_SIGNATURE) {
