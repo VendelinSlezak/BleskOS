@@ -44,6 +44,6 @@ then
  rm -r compile
  rm -r iso
 
- qemu-system-i386 -hda ${RELEASE}.img
- qemu-system-i386 -cdrom ${RELEASE}.iso
+ qemu-system-i386 -hda ${RELEASE}.img -accel kvm
+ qemu-system-i386 -cdrom ${RELEASE}.iso -accel kvm
 fi

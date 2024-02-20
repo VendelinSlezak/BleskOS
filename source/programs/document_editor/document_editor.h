@@ -28,6 +28,7 @@
 
 #define DOCUMENT_EDITOR_NUMBER_OF_ENTRIES_IN_STYLE_STACK 10000
 struct document_editor_style_stack_entry {
+ dword_t paragraph_alignment;
  dword_t character_size;
  dword_t character_emphasis;
  dword_t character_color;
@@ -43,6 +44,16 @@ struct document_editor_list_of_styles_entry {
 };
 struct document_editor_list_of_styles_entry *document_editor_list_of_styles_pointer;
 dword_t document_editor_list_of_styles_number_of_entries = 0;
+
+#define DOCUMENT_EDITOR_LIST_UNORDERED 0
+#define DOCUMENT_EDITOR_LIST_ORDERED 1
+#define DOCUMENT_EDITOR_NUMBER_OF_ENTRIES_IN_STACK_OF_LISTS 1000
+struct document_editor_stack_of_lists_entry {
+ dword_t type_of_list;
+ dword_t number;
+};
+struct document_editor_stack_of_lists_entry *document_editor_stack_of_lists_pointer;
+dword_t document_editor_stack_of_lists_number_of_entries = 0;
 
 dword_t document_editor_program_interface_memory = 0;
 dword_t document_editor_vertical_scrollbar_height = 0;

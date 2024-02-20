@@ -26,29 +26,44 @@ dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size) {
  dword_t content_xml_file_memory = prepare_xml_file(content_raw_xml_file_memory, zip_extracted_file_size);
  free(content_raw_xml_file_memory);
 
- //count how many memory we will need for DMF
+ //count how many memory we will need for DMF and find all available styles
  word_t *content_xml = (word_t *) (content_xml_file_memory);
+ word_t *odt_body_tag = (word_t *) (0);
  dword_t dmf_size = DMF_SFCH_ENTRY_LENGTH_IN_BYTES;
  dmf_number_of_chars_in_document = 0;
  document_editor_list_of_styles_number_of_entries = 0;
  while(*content_xml!=0) {
   if(*content_xml=='<') { //tag
    if(xml_is_tag(content_xml, "text:p")==STATUS_TRUE || xml_is_tag(content_xml, "/text:p")==STATUS_TRUE) {
-    dmf_size+=DMF_SFCH_ENTRY_LENGTH_IN_BYTES;
+    dmf_size+=(DMF_SFCH_ENTRY_LENGTH_IN_BYTES*2);
+   }
+   else if(xml_is_tag(content_xml, "text:h")==STATUS_TRUE || xml_is_tag(content_xml, "/text:h")==STATUS_TRUE) {
+    dmf_size+=(DMF_SFCH_ENTRY_LENGTH_IN_BYTES*2);
    }
    else if(xml_is_tag(content_xml, "text:span")==STATUS_TRUE || xml_is_tag(content_xml, "/text:span")==STATUS_TRUE) {
-    dmf_size+=DMF_SFCH_ENTRY_LENGTH_IN_BYTES;
+    dmf_size+=(DMF_SFCH_ENTRY_LENGTH_IN_BYTES*2);
    }
    else if(xml_is_tag(content_xml, "text:line-break")==STATUS_TRUE) {
     dmf_size+=2; //0xA
    }
    else if(xml_is_tag(content_xml, "style:style")==STATUS_TRUE) {
     if(xml_find_tag_attribute("style:name")==STATUS_TRUE) {
-     while(content_xml[0]!='>' && content_xml[1]!=0) {
+     while(content_xml[0]!='>' && content_xml[1]!=0) { //skip tag
       content_xml++;
      }
      document_editor_add_style_to_list((dword_t)xml_tag_attribute_content_memory, ((dword_t)content_xml)+2); //+2 = skip char >
     }
+   }
+   else if(xml_is_tag(content_xml, "text:list-style")==STATUS_TRUE) {
+    if(xml_find_tag_attribute("style:name")==STATUS_TRUE) {
+     while(content_xml[0]!='>' && content_xml[1]!=0) { //skip tag
+      content_xml++;
+     }
+     document_editor_add_style_to_list((dword_t)xml_tag_attribute_content_memory, ((dword_t)content_xml)+2); //+2 = skip char >
+    }
+   }
+   else if(xml_is_tag(content_xml, "office:body")==STATUS_TRUE) {
+    odt_body_tag = content_xml;
    }
 
    //skip tag
@@ -63,28 +78,28 @@ dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size) {
    dmf_number_of_chars_in_document++;
   }
  }
+ if(((dword_t)odt_body_tag)==0) {
+  log("\nODT: no <office:body>");
+  free(content_xml_file_memory);
+  return STATUS_ERROR;
+ }
 
  //allocate memory for DMF
  dmf_size+=2;
  dword_t dmf_memory = calloc(dmf_size);
 
  //add start entry
- content_xml = (word_t *) (content_xml_file_memory);
  word_t *dmf = (word_t *) (dmf_memory);
- dmf_add_section_format_change(((dword_t)dmf), (DMF_SFCH_DESCRIPTION_NEW_PAGE), 0, 0, BLACK, TRANSPARENT_COLOR);
- //A4
- dmf[DMF_SFCH_NEW_PAGE_WIDTH_OFFSET] = 794; //21 cm
- dmf[DMF_SFCH_NEW_PAGE_HEIGHT_OFFSET] = 1123; //29.7 cm
- dmf[DMF_SFCH_NEW_PAGE_TOP_BORDER_OFFSET] = 75; //2 cm
- dmf[DMF_SFCH_NEW_PAGE_BOTTOM_BORDER_OFFSET] = 75; //2 cm
- dmf[DMF_SFCH_NEW_PAGE_LEFT_BORDER_OFFSET] = 75; //2 cm
- dmf[DMF_SFCH_NEW_PAGE_RIGHT_BORDER_OFFSET] = 75; //2 cm
+ dmf_add_section_format_change(((dword_t)dmf), 0, 0, BLACK, TRANSPARENT_COLOR);
+ dmf_add_section_new_page(((dword_t)dmf), 794, 1123, 75, 75, 75, 75); //A4 with 2 cm margins
  dmf = (word_t *) (((dword_t)dmf)+DMF_SFCH_ENTRY_LENGTH_IN_BYTES);
 
  //convert ODT to DMF
+ content_xml = odt_body_tag;
  document_editor_style_stack_number_of_entries = 0;
- dmf_character_size = 10, dmf_character_emphasis = 0, dmf_character_color = BLACK, dmf_character_background_color = TRANSPARENT_COLOR;
+ dmf_character_size = 9, dmf_character_emphasis = 0, dmf_character_color = BLACK, dmf_character_background_color = TRANSPARENT_COLOR;
  document_editor_add_style_to_stack();
+ byte_t is_this_paragraph_list_entry = STATUS_FALSE;
  while(*content_xml!=0) {
   if(*content_xml=='<') { //tag
    if(content_xml[1]=='/') { //ending tag
@@ -95,17 +110,57 @@ dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size) {
      document_editor_take_style_from_stack();
 
      //write output to DMF
-     dmf_add_section_format_change(((dword_t)dmf), 0, dmf_character_size, dmf_character_emphasis, dmf_character_color, dmf_character_background_color);
-     dmf = (word_t *) (((dword_t)dmf)+DMF_SFCH_ENTRY_LENGTH_IN_BYTES);
+     if(dmf[-1]==DMF_SECTION_FORMAT_CHANGE_SIGNATURE && dmf_is_section_format_change_only_span_change(((dword_t)dmf)-DMF_SFCH_ENTRY_LENGTH_IN_BYTES)==STATUS_TRUE) {
+      //we can rewrite format change section
+      dmf_add_section_format_change(((dword_t)dmf)-DMF_SFCH_ENTRY_LENGTH_IN_BYTES, dmf_character_size, dmf_character_emphasis, dmf_character_color, dmf_character_background_color);
+     }
+     else {
+      //new format change section
+      dmf_add_section_format_change(((dword_t)dmf), dmf_character_size, dmf_character_emphasis, dmf_character_color, dmf_character_background_color);
+      dmf = (word_t *) (((dword_t)dmf)+DMF_SFCH_ENTRY_LENGTH_IN_BYTES);
+     }
     }
-    //TAG </text:p>
+    //TAG </text:h>
+    else if(xml_is_tag(content_xml, "text:h")==STATUS_TRUE) {
+     //take style from stack
+     document_editor_take_style_from_stack();
+
+     //write output to DMF
+     if(dmf[-1]==DMF_SECTION_FORMAT_CHANGE_SIGNATURE && dmf_is_section_format_change_only_span_change(((dword_t)dmf)-DMF_SFCH_ENTRY_LENGTH_IN_BYTES)==STATUS_TRUE) {
+      //we can rewrite format change section
+      dmf_add_section_format_change(((dword_t)dmf)-DMF_SFCH_ENTRY_LENGTH_IN_BYTES, dmf_character_size, dmf_character_emphasis, dmf_character_color, dmf_character_background_color);
+     }
+     else {
+      //new format change section
+      dmf_add_section_format_change(((dword_t)dmf), dmf_character_size, dmf_character_emphasis, dmf_character_color, dmf_character_background_color);
+      dmf = (word_t *) (((dword_t)dmf)+DMF_SFCH_ENTRY_LENGTH_IN_BYTES);
+     }
+    }
+    //TAG </text:span>
     else if(xml_is_tag(content_xml, "text:span")==STATUS_TRUE) {
      //take style from stack
      document_editor_take_style_from_stack();
 
      //write output to DMF
-     dmf_add_section_format_change(((dword_t)dmf), 0, dmf_character_size, dmf_character_emphasis, dmf_character_color, dmf_character_background_color);
-     dmf = (word_t *) (((dword_t)dmf)+DMF_SFCH_ENTRY_LENGTH_IN_BYTES);
+     if(dmf[-1]==DMF_SECTION_FORMAT_CHANGE_SIGNATURE && dmf_is_section_format_change_only_span_change(((dword_t)dmf)-DMF_SFCH_ENTRY_LENGTH_IN_BYTES)==STATUS_TRUE) {
+      //we can rewrite format change section
+      dmf_add_section_format_change(((dword_t)dmf)-DMF_SFCH_ENTRY_LENGTH_IN_BYTES, dmf_character_size, dmf_character_emphasis, dmf_character_color, dmf_character_background_color);
+     }
+     else {
+      //new format change section
+      dmf_add_section_format_change(((dword_t)dmf), dmf_character_size, dmf_character_emphasis, dmf_character_color, dmf_character_background_color);
+      dmf = (word_t *) (((dword_t)dmf)+DMF_SFCH_ENTRY_LENGTH_IN_BYTES);
+     }
+    }
+    //TAG </text:list-item>
+    else if(xml_is_tag(content_xml, "text:list-item")==STATUS_TRUE) {
+     is_this_paragraph_list_entry = STATUS_FALSE;
+    }
+    //TAG </text:list>
+    else if(xml_is_tag(content_xml, "text:list")==STATUS_TRUE) {
+     if(document_editor_stack_of_lists_number_of_entries>0) {
+      document_editor_stack_of_lists_number_of_entries--;
+     }
     }
    }
    else { //normal tag
@@ -113,18 +168,105 @@ dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size) {
     if(xml_is_tag(content_xml, "text:p")==STATUS_TRUE) {
      //read attributes
      if(xml_find_tag_attribute("text:style-name")==STATUS_TRUE) {
-      //try to find style in style list
-      for(dword_t i=0; i<document_editor_list_of_styles_number_of_entries; i++) {
-       if(xml_compare_attribute_and_attribute((word_t *)(document_editor_list_of_styles_pointer[i].memory_of_style_name), xml_tag_attribute_content_memory)==STATUS_TRUE) {
-        odt_read_style(document_editor_list_of_styles_pointer[i].memory_of_style_content); //read style
+      dmf_actual_paragraph_description = (dmf_paragraph_alignment<<DMF_SFCH_PARAGRAPH_DESCRIPTION_ALIGNMENT_SHIFT);
+      dmf_paragraph_top_border = 0, dmf_paragraph_bottom_border = 0, dmf_paragraph_left_border = 0, dmf_paragraph_right_border = 0, dmf_paragaph_list_entry = 0;
+      dmf_page_break = STATUS_FALSE;
+
+      if(xml_is_attribute("Standard")==STATUS_TRUE) {
+       dmf_character_size = 9;
+       dmf_character_emphasis = 0;
+       dmf_character_color = BLACK;
+       dmf_character_background_color = TRANSPARENT_COLOR;
+      }
+      else {
+       //try to find style in style list
+       for(dword_t i=0; i<document_editor_list_of_styles_number_of_entries; i++) {
+        if(xml_compare_attribute_and_attribute((word_t *)(document_editor_list_of_styles_pointer[i].memory_of_style_name), xml_tag_attribute_content_memory)==STATUS_TRUE) {
+         odt_read_style(document_editor_list_of_styles_pointer[i].memory_of_style_content); //read style
+        }
        }
+      }
+
+      dmf_paragraph_left_border += (document_editor_stack_of_lists_number_of_entries*DMF_LIST_ENTRY_LEFT_MARGIN);
+      dmf_paragraph_alignment = ((dmf_actual_paragraph_description>>DMF_SFCH_PARAGRAPH_DESCRIPTION_ALIGNMENT_SHIFT) & 0b11);
+      if(is_this_paragraph_list_entry==STATUS_TRUE) {
+       dmf_actual_paragraph_description |= DMF_SFCH_PARAGRAPH_DESCRIPTION_LIST_ENTRY;
+       if(document_editor_stack_of_lists_pointer[document_editor_stack_of_lists_number_of_entries-1].type_of_list==DOCUMENT_EDITOR_LIST_UNORDERED) {
+        dmf_paragaph_list_entry = DMF_SFCH_PARAGRAPH_LIST_ENTRY_DOT;
+       }
+       else {
+        dmf_paragaph_list_entry = document_editor_stack_of_lists_pointer[document_editor_stack_of_lists_number_of_entries-1].number;
+        document_editor_stack_of_lists_pointer[document_editor_stack_of_lists_number_of_entries-1].number++;
+       }
+       is_this_paragraph_list_entry = STATUS_FALSE;
       }
      }
 
      //write output to DMF
-     dmf_add_section_format_change(((dword_t)dmf), DMF_SFCH_DESCRIPTION_NEW_PARAGRAPH, dmf_character_size, dmf_character_emphasis, dmf_character_color, dmf_character_background_color);
-     dmf_add_section_paragraph_change(((dword_t)dmf), 0, 0, 0, 0, 0, 0);
-     dmf = (word_t *) (((dword_t)dmf)+DMF_SFCH_ENTRY_LENGTH_IN_BYTES);
+     if(dmf_page_break==STATUS_TRUE) {
+      dmf_add_section_page_break(((dword_t)dmf));
+      dmf = (word_t *) (((dword_t)dmf)+DMF_SFCH_ENTRY_LENGTH_IN_BYTES);
+     }
+     if(dmf[-1]==DMF_SECTION_FORMAT_CHANGE_SIGNATURE && dmf_is_section_format_change_only_span_change(((dword_t)dmf)-DMF_SFCH_ENTRY_LENGTH_IN_BYTES)==STATUS_TRUE) {
+      //we can rewrite format change section
+      dmf_add_section_format_change(((dword_t)dmf)-DMF_SFCH_ENTRY_LENGTH_IN_BYTES, dmf_character_size, dmf_character_emphasis, dmf_character_color, dmf_character_background_color);
+      dmf_add_section_new_paragraph(((dword_t)dmf)-DMF_SFCH_ENTRY_LENGTH_IN_BYTES, dmf_actual_paragraph_description, dmf_paragraph_top_border, dmf_paragraph_bottom_border, dmf_paragraph_left_border, dmf_paragraph_right_border, dmf_paragaph_list_entry);
+     }
+     else {
+      //new format change section
+      dmf_add_section_format_change(((dword_t)dmf), dmf_character_size, dmf_character_emphasis, dmf_character_color, dmf_character_background_color);
+      dmf_add_section_new_paragraph(((dword_t)dmf), dmf_actual_paragraph_description, dmf_paragraph_top_border, dmf_paragraph_bottom_border, dmf_paragraph_left_border, dmf_paragraph_right_border, dmf_paragaph_list_entry);
+      dmf = (word_t *) (((dword_t)dmf)+DMF_SFCH_ENTRY_LENGTH_IN_BYTES);
+     }
+
+     //add style to stack
+     if(xml_does_tag_have_pair(content_xml)==STATUS_TRUE) {
+      document_editor_add_style_to_stack();
+     }
+    }
+    //TAG <text:h>
+    else if(xml_is_tag(content_xml, "text:h")==STATUS_TRUE) {
+     //read attributes
+     if(xml_find_tag_attribute("text:style-name")==STATUS_TRUE) {
+      dmf_actual_paragraph_description = (dmf_paragraph_alignment<<DMF_SFCH_PARAGRAPH_DESCRIPTION_ALIGNMENT_SHIFT);
+      dmf_paragraph_top_border = 0, dmf_paragraph_bottom_border = 0, dmf_paragraph_left_border = 0, dmf_paragraph_right_border = 0;
+      dmf_page_break = STATUS_FALSE;
+
+      if(xml_is_attribute("Standard")==STATUS_TRUE) {
+       dmf_character_size = 9;
+       dmf_character_emphasis = 0;
+       dmf_character_color = BLACK;
+       dmf_character_background_color = TRANSPARENT_COLOR;
+      }
+      else {
+       //try to find style in style list
+       for(dword_t i=0; i<document_editor_list_of_styles_number_of_entries; i++) {
+        if(xml_compare_attribute_and_attribute((word_t *)(document_editor_list_of_styles_pointer[i].memory_of_style_name), xml_tag_attribute_content_memory)==STATUS_TRUE) {
+         odt_read_style(document_editor_list_of_styles_pointer[i].memory_of_style_content); //read style
+        }
+       }
+      }
+
+      dmf_paragraph_left_border += (document_editor_stack_of_lists_number_of_entries*DMF_LIST_ENTRY_LEFT_MARGIN);
+      dmf_paragraph_alignment = ((dmf_actual_paragraph_description>>DMF_SFCH_PARAGRAPH_DESCRIPTION_ALIGNMENT_SHIFT) & 0b11);
+     }
+
+     //write output to DMF
+     if(dmf_page_break==STATUS_TRUE) {
+      dmf_add_section_page_break(((dword_t)dmf));
+      dmf = (word_t *) (((dword_t)dmf)+DMF_SFCH_ENTRY_LENGTH_IN_BYTES);
+     }
+     if(dmf[-1]==DMF_SECTION_FORMAT_CHANGE_SIGNATURE && dmf_is_section_format_change_only_span_change(((dword_t)dmf)-DMF_SFCH_ENTRY_LENGTH_IN_BYTES)==STATUS_TRUE) {
+      //we can rewrite format change section
+      dmf_add_section_format_change(((dword_t)dmf)-DMF_SFCH_ENTRY_LENGTH_IN_BYTES, dmf_character_size, dmf_character_emphasis, dmf_character_color, dmf_character_background_color);
+      dmf_add_section_new_paragraph(((dword_t)dmf)-DMF_SFCH_ENTRY_LENGTH_IN_BYTES, dmf_actual_paragraph_description, dmf_paragraph_top_border, dmf_paragraph_bottom_border, dmf_paragraph_left_border, dmf_paragraph_right_border, 0);
+     }
+     else {
+      //new format change section
+      dmf_add_section_format_change(((dword_t)dmf), dmf_character_size, dmf_character_emphasis, dmf_character_color, dmf_character_background_color);
+      dmf_add_section_new_paragraph(((dword_t)dmf), dmf_actual_paragraph_description, dmf_paragraph_top_border, dmf_paragraph_bottom_border, dmf_paragraph_left_border, dmf_paragraph_right_border, 0);
+      dmf = (word_t *) (((dword_t)dmf)+DMF_SFCH_ENTRY_LENGTH_IN_BYTES);
+     }
 
      //add style to stack
      if(xml_does_tag_have_pair(content_xml)==STATUS_TRUE) {
@@ -135,17 +277,32 @@ dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size) {
     else if(xml_is_tag(content_xml, "text:span")==STATUS_TRUE) {
      //read attributes
      if(xml_find_tag_attribute("text:style-name")==STATUS_TRUE) {
-      //try to find style in style list
-      for(dword_t i=0; i<document_editor_list_of_styles_number_of_entries; i++) {
-       if(xml_compare_attribute_and_attribute((word_t *)(document_editor_list_of_styles_pointer[i].memory_of_style_name), xml_tag_attribute_content_memory)==STATUS_TRUE) {
-        odt_read_style(document_editor_list_of_styles_pointer[i].memory_of_style_content); //read style
+      if(xml_is_attribute("Standard")==STATUS_TRUE) {
+       dmf_character_size = 9;
+       dmf_character_emphasis = 0;
+       dmf_character_color = BLACK;
+       dmf_character_background_color = TRANSPARENT_COLOR;
+      }
+      else {
+       //try to find style in style list
+       for(dword_t i=0; i<document_editor_list_of_styles_number_of_entries; i++) {
+        if(xml_compare_attribute_and_attribute((word_t *)(document_editor_list_of_styles_pointer[i].memory_of_style_name), xml_tag_attribute_content_memory)==STATUS_TRUE) {
+         odt_read_style(document_editor_list_of_styles_pointer[i].memory_of_style_content); //read style
+        }
        }
       }
      }
 
      //write output to DMF
-     dmf_add_section_format_change(((dword_t)dmf), 0, dmf_character_size, dmf_character_emphasis, dmf_character_color, dmf_character_background_color);
-     dmf = (word_t *) (((dword_t)dmf)+DMF_SFCH_ENTRY_LENGTH_IN_BYTES);
+     if(dmf[-1]==DMF_SECTION_FORMAT_CHANGE_SIGNATURE && dmf_is_section_format_change_only_span_change(((dword_t)dmf)-DMF_SFCH_ENTRY_LENGTH_IN_BYTES)==STATUS_TRUE) {
+      //we can rewrite format change section
+      dmf_add_section_format_change(((dword_t)dmf)-DMF_SFCH_ENTRY_LENGTH_IN_BYTES, dmf_character_size, dmf_character_emphasis, dmf_character_color, dmf_character_background_color);
+     }
+     else {
+      //new format change section
+      dmf_add_section_format_change(((dword_t)dmf), dmf_character_size, dmf_character_emphasis, dmf_character_color, dmf_character_background_color);
+      dmf = (word_t *) (((dword_t)dmf)+DMF_SFCH_ENTRY_LENGTH_IN_BYTES);
+     }
 
      //add style to stack
      if(xml_does_tag_have_pair(content_xml)==STATUS_TRUE) {
@@ -156,6 +313,47 @@ dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size) {
     else if(xml_is_tag(content_xml, "text:line-break")==STATUS_TRUE) {
      *dmf = 0xA;
      dmf++;
+    }
+    //TAG <text:list-item>
+    else if(xml_is_tag(content_xml, "text:list-item")==STATUS_TRUE) {
+     is_this_paragraph_list_entry = STATUS_TRUE;
+    }
+    //TAG <text:list>
+    else if(xml_is_tag(content_xml, "text:list")==STATUS_TRUE) {
+     if(document_editor_stack_of_lists_number_of_entries<DOCUMENT_EDITOR_NUMBER_OF_ENTRIES_IN_STACK_OF_LISTS) {
+      if(document_editor_stack_of_lists_number_of_entries==0) {
+       dmf_paragaph_list_entry = 1; //ordered list is default for first list
+      }
+      else {
+       //otherwise default is previous list type
+       if(document_editor_stack_of_lists_pointer[document_editor_stack_of_lists_number_of_entries-1].type_of_list==DOCUMENT_EDITOR_LIST_UNORDERED) {
+        dmf_paragaph_list_entry = DMF_SFCH_PARAGRAPH_LIST_ENTRY_DOT;
+       }
+       else if(document_editor_stack_of_lists_pointer[document_editor_stack_of_lists_number_of_entries-1].type_of_list==DOCUMENT_EDITOR_LIST_ORDERED) {
+        dmf_paragaph_list_entry = 1;
+       }
+      }
+
+      //read attributes
+      if(xml_find_tag_attribute("text:style-name")==STATUS_TRUE) {
+       //try to find style in style list
+       for(dword_t i=0; i<document_editor_list_of_styles_number_of_entries; i++) {
+        if(xml_compare_attribute_and_attribute((word_t *)(document_editor_list_of_styles_pointer[i].memory_of_style_name), xml_tag_attribute_content_memory)==STATUS_TRUE) {
+         odt_read_style(document_editor_list_of_styles_pointer[i].memory_of_style_content); //read style
+        }
+       }
+      }
+
+      //add to list
+      if(dmf_paragaph_list_entry==DMF_SFCH_PARAGRAPH_LIST_ENTRY_DOT) {
+       document_editor_stack_of_lists_pointer[document_editor_stack_of_lists_number_of_entries].type_of_list = DOCUMENT_EDITOR_LIST_UNORDERED;
+      }
+      else if(dmf_paragaph_list_entry==1) {
+       document_editor_stack_of_lists_pointer[document_editor_stack_of_lists_number_of_entries].type_of_list = DOCUMENT_EDITOR_LIST_ORDERED;
+       document_editor_stack_of_lists_pointer[document_editor_stack_of_lists_number_of_entries].number = 1;
+      }
+      document_editor_stack_of_lists_number_of_entries++;
+     }
     }
    }
 
@@ -186,14 +384,18 @@ dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size) {
   }
  }
 
+ free(content_xml_file_memory);
  return dmf_memory;
 }
 
 void odt_read_style(dword_t odt_style_memory) {
  word_t *content_xml = (word_t *) (odt_style_memory);
+ if(content_xml[-1]=='>' && content_xml[-2]=='/') { //style with no tags
+  return;
+ }
  while(*content_xml!=0) {
   if(*content_xml=='<') { //tag
-   if(xml_is_tag(content_xml, "/style:style")==STATUS_TRUE) { //end of style section
+   if(xml_is_tag(content_xml, "/style:style")==STATUS_TRUE || xml_is_tag(content_xml, "/text:list-style")==STATUS_TRUE) { //end of style section
     return;
    }
    else if(xml_is_tag(content_xml, "style:text-properties")==STATUS_TRUE) { //text properties
@@ -204,7 +406,7 @@ void odt_read_style(dword_t odt_style_memory) {
 
     //font emphasis
     if(xml_find_tag_attribute("fo:font-weight")==STATUS_TRUE) {
-     if(xml_is_attribute("none")==STATUS_TRUE) {
+     if(xml_is_attribute("none")==STATUS_TRUE || xml_is_attribute("normal")==STATUS_TRUE) {
       dmf_character_emphasis &= ~SF_EMPHASIS_BOLD;
      }
      else {
@@ -242,6 +444,48 @@ void odt_read_style(dword_t odt_style_memory) {
       dmf_character_background_color = xml_get_attribute_hex_number();
      }
     }
+   }
+   else if(xml_is_tag(content_xml, "style:paragraph-properties")==STATUS_TRUE) { //paragraph properties
+    //paragraph alignment
+    if(xml_find_tag_attribute("fo:text-align")==STATUS_TRUE) {
+     dmf_paragraph_alignment = DMF_SFCH_PARAGRAPH_DESCRIPTION_ALIGNMENT_LEFT; //"start" "left"
+     if(xml_is_attribute("center")==STATUS_TRUE) {
+      dmf_paragraph_alignment = DMF_SFCH_PARAGRAPH_DESCRIPTION_ALIGNMENT_CENTER;
+     }
+     else if(xml_is_attribute("end")==STATUS_TRUE || xml_is_attribute("right")==STATUS_TRUE) {
+      dmf_paragraph_alignment = DMF_SFCH_PARAGRAPH_DESCRIPTION_ALIGNMENT_RIGHT;
+     }
+     //TODO: "justify"
+
+     dmf_actual_paragraph_description |= (dmf_paragraph_alignment<<DMF_SFCH_PARAGRAPH_DESCRIPTION_ALIGNMENT_SHIFT);
+    }
+
+    //paragraph margin
+    if(xml_find_tag_attribute("fo:margin-top")==STATUS_TRUE) {
+     dmf_paragraph_top_border = xml_get_attribute_number_in_px();
+    }
+    if(xml_find_tag_attribute("fo:margin-bottom")==STATUS_TRUE) {
+     dmf_paragraph_bottom_border = xml_get_attribute_number_in_px();
+    }
+    if(xml_find_tag_attribute("fo:margin-left")==STATUS_TRUE) {
+     dmf_paragraph_left_border = xml_get_attribute_number_in_px();
+    }
+    if(xml_find_tag_attribute("fo:margin-right")==STATUS_TRUE) {
+     dmf_paragraph_right_border = xml_get_attribute_number_in_px();
+    }
+
+    //break
+    if(xml_find_tag_attribute("fo:break-before")==STATUS_TRUE) {
+     if(xml_is_attribute("page")==STATUS_TRUE) {
+      dmf_page_break = STATUS_TRUE;
+     }
+    }
+   }
+   else if(xml_is_tag(content_xml, "text:list-level-style-bullet")==STATUS_TRUE) {
+    dmf_paragaph_list_entry = DMF_SFCH_PARAGRAPH_LIST_ENTRY_DOT;
+   }
+   else if(xml_is_tag(content_xml, "text:list-level-style-number")==STATUS_TRUE) {
+    dmf_paragaph_list_entry = 1;
    }
   }
   content_xml++;

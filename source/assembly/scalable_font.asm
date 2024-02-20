@@ -301,7 +301,7 @@ bleskos_scalable_font:
  dd bleskos_scalable_font_char_square ; 0x0137 ķ
  dd bleskos_scalable_font_char_square ; 0x0138 ĸ
  dd bleskos_scalable_font_char_square ; 0x0139 Ĺ
- dd bleskos_scalable_font_char_square ; 0x013A ĺ
+ dd bleskos_scalable_font_char_0x13A_l_with_acute
  dd bleskos_scalable_font_char_square ; 0x013B Ļ
  dd bleskos_scalable_font_char_square ; 0x013C ļ
  dd bleskos_scalable_font_char_0x13D_L_with_caron
@@ -328,7 +328,7 @@ bleskos_scalable_font:
  dd bleskos_scalable_font_char_square ; 0x0152 Œ
  dd bleskos_scalable_font_char_square ; 0x0153 œ
  dd bleskos_scalable_font_char_square ; 0x0154 Ŕ
- dd bleskos_scalable_font_char_square ; 0x0155 ŕ
+ dd bleskos_scalable_font_char_0x155_r_with_acute
  dd bleskos_scalable_font_char_square ; 0x0156 Ŗ
  dd bleskos_scalable_font_char_square ; 0x0157 ŗ
  dd bleskos_scalable_font_char_square ; 0x0158 Ř
@@ -1647,6 +1647,13 @@ bleskos_scalable_font_char_0x11B_e_with_caron:
  db SF_CHAR_JUMP
  dd bleskos_scalable_font_char_0x65_e
 
+bleskos_scalable_font_char_0x13A_l_with_acute:
+ ;acute
+ db SF_CHAR_LINE, 70, 25, 90, 0
+
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_0x6C_l
+
 bleskos_scalable_font_char_0x13D_L_with_caron:
  ;caron
  db SF_CHAR_LINE, 40, 0, 50, 15
@@ -1677,6 +1684,13 @@ bleskos_scalable_font_char_0x148_n_with_caron:
 
  db SF_CHAR_JUMP
  dd bleskos_scalable_font_char_0x6E_n
+
+bleskos_scalable_font_char_0x155_r_with_acute:
+ ;acute
+ db SF_CHAR_LINE, 50, 25, 65, 15
+
+ db SF_CHAR_JUMP
+ dd bleskos_scalable_font_char_0x72_r
 
 bleskos_scalable_font_char_0x160_S_with_caron:
  ;caron
