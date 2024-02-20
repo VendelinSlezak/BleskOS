@@ -1,1 +1,1 @@
-qemu-system-i386 -fda ./bleskos.img -hda ./testing/data_x.img -accel kvm -boot order=a
+qemu-system-i386 -fda ./bleskos.img -hda ./testing/disk.img -accel kvm -boot order=a
