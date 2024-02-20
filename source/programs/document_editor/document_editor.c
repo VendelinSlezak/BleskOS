@@ -20,6 +20,8 @@ void initalize_document_editor(void) {
  document_editor_style_stack_number_of_entries = 0;
  document_editor_list_of_styles_pointer = (struct document_editor_list_of_styles_entry *) (calloc(sizeof(struct document_editor_list_of_styles_entry)*DOCUMENT_EDITOR_NUMBER_OF_ENTRIES_IN_LIST_OF_STYLES));
  document_editor_list_of_styles_number_of_entries = 0;
+ document_editor_stack_of_lists_pointer = (struct document_editor_stack_of_lists_entry *) (calloc(sizeof(struct document_editor_stack_of_lists_entry)*DOCUMENT_EDITOR_NUMBER_OF_ENTRIES_IN_STACK_OF_LISTS));
+ document_editor_stack_of_lists_number_of_entries = 0;
 
  initalize_dllmf();
 }
@@ -334,6 +336,7 @@ void document_editor_recalculate_scrollbars(void) {
 
 void document_editor_add_style_to_stack(void) {
  if(document_editor_style_stack_number_of_entries<DOCUMENT_EDITOR_NUMBER_OF_ENTRIES_IN_STYLE_STACK) {
+  document_editor_style_stack_pointer[document_editor_style_stack_number_of_entries].paragraph_alignment = dmf_paragraph_alignment;
   document_editor_style_stack_pointer[document_editor_style_stack_number_of_entries].character_size = dmf_character_size;
   document_editor_style_stack_pointer[document_editor_style_stack_number_of_entries].character_emphasis = dmf_character_emphasis;
   document_editor_style_stack_pointer[document_editor_style_stack_number_of_entries].character_color = dmf_character_color;
@@ -349,6 +352,7 @@ void document_editor_take_style_from_stack(void) {
   document_editor_style_stack_number_of_entries--;
  }
  if(document_editor_style_stack_number_of_entries<DOCUMENT_EDITOR_NUMBER_OF_ENTRIES_IN_STYLE_STACK) {
+  dmf_paragraph_alignment = document_editor_style_stack_pointer[document_editor_style_stack_number_of_entries-1].paragraph_alignment;
   dmf_character_size = document_editor_style_stack_pointer[document_editor_style_stack_number_of_entries-1].character_size;
   dmf_character_emphasis = document_editor_style_stack_pointer[document_editor_style_stack_number_of_entries-1].character_emphasis;
   dmf_character_color = document_editor_style_stack_pointer[document_editor_style_stack_number_of_entries-1].character_color;

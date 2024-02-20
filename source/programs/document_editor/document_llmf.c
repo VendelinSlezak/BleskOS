@@ -117,18 +117,18 @@ void draw_dllmf(dword_t dllmf_mem) {
 
     //draw background
     if((document_data8[DLLMF_CHAR_ENTRY_EMPHASIS_OFFSET] & 0x80)==0x80) {
-     draw_full_square(dllmf_square_x, dllmf_square_y, dllmf_square_width+1, dllmf_square_height+1, document_data[DLLMF_CHAR_ENTRY_BACKGROUND_COLOR_OFFSET]);
+     draw_full_square(dllmf_square_x, dllmf_square_y, dllmf_square_width+1, dllmf_square_height, document_data[DLLMF_CHAR_ENTRY_BACKGROUND_COLOR_OFFSET]);
     }
 
     //draw background if this char is selected
     if(dllmf_selected_area!=0) { 
      if(dllmf_selected_area<dllmf_cursor) {
       if(((dword_t)document_data)>=dllmf_selected_area && ((dword_t)document_data)<dllmf_cursor) {
-       draw_full_square(dllmf_square_x, dllmf_square_y, dllmf_square_width+1, dllmf_square_height+1, 0x00A0FF);
+       draw_full_square(dllmf_square_x, dllmf_square_y, dllmf_square_width+1, dllmf_square_height, 0x00A0FF);
       }
      }
      else if(((dword_t)document_data)>=dllmf_cursor && ((dword_t)document_data)<dllmf_selected_area) {
-      draw_full_square(dllmf_square_x, dllmf_square_y, dllmf_square_width+1, dllmf_square_height+1, 0x00A0FF);
+      draw_full_square(dllmf_square_x, dllmf_square_y, dllmf_square_width+1, dllmf_square_height, 0x00A0FF);
      }
     }
 

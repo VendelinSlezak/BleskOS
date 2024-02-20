@@ -16,28 +16,28 @@ void initalize_scalable_font(void) {
  set_scalable_char_size(10);
  scalable_font_char_emphasis = SF_EMPHASIS_NONE;
 
- // //predraw scalable font in size 10 for speeding up performance of drawing
- // scalable_font_predraw_size_10_mem = malloc(11*20*4*128);
+ //predraw scalable font in size 10 for speeding up performance of drawing
+ scalable_font_predraw_size_10_mem = malloc(11*20*4*128);
 
- // //clear space
- // dword_t *predraw8 = (dword_t *) (scalable_font_predraw_size_10_mem);
- // for(int i=0; i<(11*20*128); i++) {
- //  *predraw8 = TRANSPARENT_COLOR;
- //  predraw8++;
- // }
+ //clear space
+ dword_t *predraw8 = (dword_t *) (scalable_font_predraw_size_10_mem);
+ for(int i=0; i<(11*20*128); i++) {
+  *predraw8 = TRANSPARENT_COLOR;
+  predraw8++;
+ }
 
- // //draw chars
- // screen_save_variables();
- // graphic_screen_x = 11;
- // graphic_screen_y = 20*128;
- // screen_bytes_per_line = 11*4;
- // screen_mem = scalable_font_predraw_size_10_mem;
- // scalable_font_char_size = 0; //draw_scalable_char_without_emphasis will not try to draw character from predrawed memory
- // for(int i=32; i<128; i++) {
- //  draw_scalable_char_without_emphasis(i, 0, i*20, BLACK);
- // }
- // scalable_font_char_size = 10;
- // screen_restore_variables();
+ //draw chars
+ screen_save_variables();
+ graphic_screen_x = 11;
+ graphic_screen_y = 20*128;
+ screen_bytes_per_line = 11*4;
+ screen_mem = scalable_font_predraw_size_10_mem;
+ scalable_font_char_size = 0; //draw_scalable_char_without_emphasis will not try to draw character from predrawed memory
+ for(int i=32; i<128; i++) {
+  draw_scalable_char_without_emphasis(i, 0, i*20, BLACK);
+ }
+ scalable_font_char_size = 10;
+ screen_restore_variables();
 }
 
 void set_scalable_char_size(dword_t size) {
@@ -66,11 +66,11 @@ void draw_scalable_char_without_emphasis(word_t char_val, dword_t x, dword_t y, 
   return;
  }
 
- // if(scalable_font_char_size==10 && char_val<128) {
- //  //we can draw char from predrawed memory
- //  copy_raw_image_data(scalable_font_predraw_size_10_mem, 11, 0, char_val*20, 11, 15, screen_mem, graphic_screen_x, x, y);
- //  return;
- // }
+ if(scalable_font_char_size==10 && char_val<128) {
+  //we can draw char from predrawed memory
+  copy_raw_image_data(scalable_font_predraw_size_10_mem, 11, 0, char_val*20, 11, 15, screen_mem, graphic_screen_x, x, y);
+  return;
+ }
  
  byte_t *char_data = (byte_t *) ((dword_t)bleskos_scalable_font[char_val]);
  
@@ -84,11 +84,25 @@ void draw_scalable_char_without_emphasis(word_t char_val, dword_t x, dword_t y, 
    char_data += 7;
   }
   else if(*char_data==SF_CHAR_FULL_ELLIPSE) {
-   draw_full_ellipse(x+scalable_font_pixel_distance[char_data[1]], y+scalable_font_pixel_distance[char_data[2]], x+scalable_font_pixel_distance[char_data[1]]+scalable_font_pixel_distance[char_data[3]], y+scalable_font_pixel_distance[char_data[2]]+scalable_font_pixel_distance[char_data[4]], color);
+   dword_t x1 = (x+scalable_font_pixel_distance[char_data[1]]), y1 = y+scalable_font_pixel_distance[char_data[2]], x2 = (x1+scalable_font_pixel_distance[char_data[3]]), y2 = (y1+scalable_font_pixel_distance[char_data[4]]);
+   if(x1==x2) {
+    x2++;
+   }
+   if(y1==y2) {
+    y2++;
+   }
+   draw_full_ellipse(x1, y1, x2, y2, color);
    char_data += 5;
   }
   else if(*char_data==SF_CHAR_EMPTY_ELLIPSE) {
-   draw_full_ellipse(x+scalable_font_pixel_distance[char_data[1]], y+scalable_font_pixel_distance[char_data[2]], x+scalable_font_pixel_distance[char_data[1]]+scalable_font_pixel_distance[char_data[3]], y+scalable_font_pixel_distance[char_data[2]]+scalable_font_pixel_distance[char_data[4]], color);
+   dword_t x1 = (x+scalable_font_pixel_distance[char_data[1]]), y1 = y+scalable_font_pixel_distance[char_data[2]], x2 = (x1+scalable_font_pixel_distance[char_data[3]]), y2 = (y1+scalable_font_pixel_distance[char_data[4]]);
+   if(x1==x2) {
+    x2++;
+   }
+   if(y1==y2) {
+    y2++;
+   }
+   draw_empty_ellipse(x1, y1, x2, y2, color);
    char_data += 5;
   }
   else if(*char_data==SF_CHAR_JUMP) {

@@ -214,10 +214,23 @@ dword_t xml_get_attribute_number_in_px(void) {
 
  //recalculate number to px
  if(xml_tag_attribute_content[0]=='p' && xml_tag_attribute_content[1]=='t') {
-  number = (96*number/72);
+  number = (72*number/96);
+ }
+ else if(xml_tag_attribute_content[0]=='i' && xml_tag_attribute_content[1]=='n') {
+  number *= 96;
+ }
+ else if(xml_tag_attribute_content[0]=='c' && xml_tag_attribute_content[1]=='m') {
+  number = (number*378/10);
  }
  //TODO: more
- return number;
+
+ //round result
+ if((number-((dword_t)number))<0.5) {
+  return ((dword_t)number);
+ }
+ else {
+  return (((dword_t)number)+1);
+ }
 }
 
 dword_t xml_get_attribute_hex_number(void) {

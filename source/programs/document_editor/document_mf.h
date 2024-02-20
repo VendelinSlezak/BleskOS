@@ -16,8 +16,9 @@
 #define DMF_SFCH_SIGNATURE_OFFSET_2 22
 
 #define DMF_SFCH_DESCRIPTION_OFFSET 2
- #define DMF_SFCH_DESCRIPTION_NEW_PAGE 0x1
- #define DMF_SFCH_DESCRIPTION_NEW_PARAGRAPH 0x2
+ #define DMF_SFCH_DESCRIPTION_PAGE_BREAK 0x1
+ #define DMF_SFCH_DESCRIPTION_NEW_PAGE 0x2
+ #define DMF_SFCH_DESCRIPTION_NEW_PARAGRAPH 0x4
 
 #define DMF_SFCH_NEW_PAGE_WIDTH_OFFSET 3
 #define DMF_SFCH_NEW_PAGE_HEIGHT_OFFSET 4
@@ -27,10 +28,8 @@
 #define DMF_SFCH_NEW_PAGE_RIGHT_BORDER_OFFSET 8
 
 #define DMF_SFCH_PARAGRAPH_DESCRIPTION_OFFSET 9
- #define DMF_SFCH_PARAGRAPH_DESCRIPTION_TOP_BORDER_COLLAPSE 0x1
- #define DMF_SFCH_PARAGRAPH_DESCRIPTION_BOTTOM_BORDER_COLLAPSE 0x2
- #define DMF_SFCH_PARAGRAPH_DESCRIPTION_LIST_ENTRY 0x4
- #define DMF_SFCH_PARAGRAPH_DESCRIPTION_ALIGNMENT_SHIFT 3
+ #define DMF_SFCH_PARAGRAPH_DESCRIPTION_LIST_ENTRY 0x1
+ #define DMF_SFCH_PARAGRAPH_DESCRIPTION_ALIGNMENT_SHIFT 1
   #define DMF_SFCH_PARAGRAPH_DESCRIPTION_ALIGNMENT_LEFT 0b00
   #define DMF_SFCH_PARAGRAPH_DESCRIPTION_ALIGNMENT_CENTER 0b01
   #define DMF_SFCH_PARAGRAPH_DESCRIPTION_ALIGNMENT_RIGHT 0b10
@@ -46,16 +45,23 @@
 #define DMF_SFCH_INLINE_CHANGE_COLOR_OFFSET 17
 #define DMF_SFCH_INLINE_CHANGE_BACKGROUND_COLOR_OFFSET 19
 
+#define DMF_LIST_ENTRY_LEFT_MARGIN 30
+
 dword_t dmf_page_width = 0, dmf_page_height = 0, dmf_page_top_border = 0, dmf_page_bottom_border = 0, dmf_page_left_border = 0, dmf_page_right_border = 0;
 dword_t dmf_page_actual_left_border = 0, dmf_page_actual_right_border = 0;
-dword_t dmf_actual_paragraph_description = 0, dmf_paragraph_top_border = 0, dmf_paragraph_bottom_border = 0, dmf_paragraph_left_border = 0, dmf_paragraph_right_border = 0, dmf_paragraph_alignment = 0;
+dword_t dmf_actual_paragraph_description = 0, dmf_paragraph_top_border = 0, dmf_paragraph_bottom_border = 0, dmf_paragraph_left_border = 0, dmf_paragraph_right_border = 0, dmf_paragraph_alignment = 0, dmf_paragaph_list_entry = 0;
 dword_t dmf_character_size = 0, dmf_character_spacing = 0, dmf_bottom_line_of_characters = 0, dmf_character_emphasis = 0, dmf_character_color = 0, dmf_character_background_color = 0;
 
 dword_t dmf_number_of_chars_in_document = 0;
+
+byte_t dmf_page_break = STATUS_FALSE;
 
 void convert_dmf_to_dllmf(dword_t dmf_memory, dword_t dllmf_memory);
 dword_t dmf_get_first_column_of_line(dword_t dmf_memory, dword_t alignment, dword_t actual_char_size);
 dword_t dmf_get_biggest_char_size_of_line(dword_t dmf_memory, dword_t actual_char_size);
 dword_t dmf_get_size_of_word(dword_t dmf_memory, dword_t actual_char_size);
-void dmf_add_section_format_change(dword_t memory, dword_t description, dword_t size, dword_t emphasis, dword_t color, dword_t background_color);
-void dmf_add_section_paragraph_change(dword_t memory, dword_t description, dword_t top, dword_t bottom, dword_t left, dword_t right, dword_t list_entry);
+void dmf_add_section_format_change(dword_t memory, dword_t size, dword_t emphasis, dword_t color, dword_t background_color);
+void dmf_add_section_page_break(dword_t memory);
+void dmf_add_section_new_page(dword_t memory, dword_t width, dword_t height, dword_t top, dword_t bottom, dword_t left, dword_t right);
+void dmf_add_section_new_paragraph(dword_t memory, dword_t description, dword_t top, dword_t bottom, dword_t left, dword_t right, dword_t list_entry);
+byte_t dmf_is_section_format_change_only_span_change(dword_t memory);
