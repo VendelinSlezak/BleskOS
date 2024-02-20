@@ -97,8 +97,13 @@ dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size) {
  //convert ODT to DMF
  content_xml = odt_body_tag;
  document_editor_style_stack_number_of_entries = 0;
+ document_editor_stack_of_lists_number_of_entries = 0;
+
  dmf_character_size = 9, dmf_character_emphasis = 0, dmf_character_color = BLACK, dmf_character_background_color = TRANSPARENT_COLOR;
+ dmf_paragraph_alignment = DMF_SFCH_PARAGRAPH_DESCRIPTION_ALIGNMENT_LEFT;
+ dmf_paragaph_list_entry = 0;
  document_editor_add_style_to_stack();
+
  byte_t is_this_paragraph_list_entry = STATUS_FALSE;
  while(*content_xml!=0) {
   if(*content_xml=='<') { //tag
@@ -223,6 +228,10 @@ dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size) {
      if(xml_does_tag_have_pair(content_xml)==STATUS_TRUE) {
       document_editor_add_style_to_stack();
      }
+     else {
+      //get values before this paragraph
+      document_editor_take_style_from_stack_wihout_moving();
+     }
     }
     //TAG <text:h>
     else if(xml_is_tag(content_xml, "text:h")==STATUS_TRUE) {
@@ -272,6 +281,10 @@ dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size) {
      if(xml_does_tag_have_pair(content_xml)==STATUS_TRUE) {
       document_editor_add_style_to_stack();
      }
+     else {
+      //get values before this heading
+      document_editor_take_style_from_stack_wihout_moving();
+     }
     }
     //TAG <text:span>
     else if(xml_is_tag(content_xml, "text:span")==STATUS_TRUE) {
@@ -307,6 +320,10 @@ dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size) {
      //add style to stack
      if(xml_does_tag_have_pair(content_xml)==STATUS_TRUE) {
       document_editor_add_style_to_stack();
+     }
+     else {
+      //get values before this span
+      document_editor_take_style_from_stack_wihout_moving();
      }
     }
     //TAG <text:line-break>

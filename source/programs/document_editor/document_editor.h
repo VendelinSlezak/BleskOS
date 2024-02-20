@@ -73,4 +73,5 @@ void document_editor_vertical_scrollbar_event(void);
 void document_editor_recalculate_scrollbars(void);
 void document_editor_add_style_to_stack(void);
 void document_editor_take_style_from_stack(void);
+void document_editor_take_style_from_stack_wihout_moving(void);
 void document_editor_add_style_to_list(dword_t memory_of_style_name, dword_t memory_of_style_content);
