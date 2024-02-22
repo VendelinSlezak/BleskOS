@@ -827,7 +827,7 @@ load_bleskos:
  mov cl, 1 ;sector
  
  .floppy_load_cylinder:
-  cmp ch, 20 ;load 20x36 sectors = 360 KB
+  cmp ch, 22 ;load 22x36 sectors = 396 KB
   ja .select_graphic_mode
   
   ;load

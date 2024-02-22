@@ -35,12 +35,11 @@ void redraw_file_dialog(byte_t dialog_type) {
  clear_screen(0xFF6600);
 
  //draw borders
- global_color = BLACK;
  draw_full_square(0, 0, graphic_screen_x, 20, 0x00C000);
- draw_straigth_line(0, 20, graphic_screen_x);
+ draw_straigth_line(0, 20, graphic_screen_x, BLACK);
  print("File dialog", 8, 6, BLACK);
  draw_full_square(0, graphic_screen_y-19, graphic_screen_x, 19, 0x00C000);
- draw_straigth_line(0, graphic_screen_y-20, graphic_screen_x);
+ draw_straigth_line(0, graphic_screen_y-20, graphic_screen_x, BLACK);
  if(dialog_type==FILE_DIALOG_TYPE_SAVE) {
   dword_t number_of_chars_in_extension = get_number_of_chars_in_unicode_string(file_dialog_file_extension);
   print("Save file with extension:", graphic_screen_x-8-(number_of_chars_in_extension*8)-8-(25*8), 6, BLACK);
@@ -49,13 +48,13 @@ void redraw_file_dialog(byte_t dialog_type) {
 
  //draw "BACK" button
  print("[esc] Back", 8, graphic_screen_y-6-7, BLACK);
- draw_straigth_column(8+10*8+8, graphic_screen_y-20, 20);
+ draw_straigth_column(8+10*8+8, graphic_screen_y-20, 20, BLACK);
  add_zone_to_click_board(0, graphic_screen_y-20, 8+10*8+8, 20, CLICK_ZONE_BACK);
 
  //draw "SAVE" button
  if(dialog_type==FILE_DIALOG_TYPE_SAVE && file_dialog_folder_memory!=0 && is_filesystem_read_write(file_dialog_folder_device_partition_type)==STATUS_TRUE) {
   print("[s] Save", graphic_screen_x-72, graphic_screen_y-6-7, BLACK);
-  draw_straigth_column(graphic_screen_x-80, graphic_screen_y-20, 20);
+  draw_straigth_column(graphic_screen_x-80, graphic_screen_y-20, 20, BLACK);
   add_zone_to_click_board(graphic_screen_x-80, graphic_screen_y-20, 80, 20, FILE_DIALOG_CLICK_ZONE_SAVE_BUTTON);
  }
 
@@ -451,7 +450,7 @@ dword_t file_dialog_double_click_on_file(byte_t dialog_type, dword_t new_file_me
      dword_t allowed_extension = STATUS_FALSE;
 
      for(dword_t i=0; i<file_dialog_number_of_allowed_extensions; i++) {
-      if(compare_file_extension(file_dialog_folder_memory, file_dialog_folder_selected_entry, file_dialog_array_of_allowed_extension_mem+i*FILE_DIALOG_MAX_FILE_EXTENSION_LENGTH, get_number_of_chars_in_ascii_string((byte_t *)(file_dialog_array_of_allowed_extension_mem+i*FILE_DIALOG_MAX_FILE_EXTENSION_LENGTH)))==STATUS_GOOD) {
+      if(compare_file_extension(file_dialog_folder_memory, file_dialog_folder_selected_entry, file_dialog_array_of_allowed_extension_mem+i*FILE_DIALOG_MAX_FILE_EXTENSION_LENGTH, get_number_of_chars_in_unicode_string((word_t *)(file_dialog_array_of_allowed_extension_mem+i*FILE_DIALOG_MAX_FILE_EXTENSION_LENGTH)))==STATUS_GOOD) {
        allowed_extension = STATUS_TRUE;
        break;
       }

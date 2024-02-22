@@ -46,7 +46,6 @@ void initalize_graphic(void) {
  graphic_screen_x_center = (graphic_screen_x>>1);
  graphic_screen_y_center = (graphic_screen_y>>1);
  debug_line = 0;
- global_color = BLACK;
 
  //initalize functions of graphic mode
  if(graphic_screen_bpp==32) {
@@ -69,7 +68,7 @@ void initalize_graphic(void) {
  bleskos_boot_debug_top_screen_color(0x888888); //grey top of screen
 
  //initalize drawing
- set_pen_width(1);
+ set_pen_width(1, BLACK);
  fill_first_stack = malloc((graphic_screen_x*2+graphic_screen_y*2)*32+8);
  fill_second_stack = malloc((graphic_screen_x*2+graphic_screen_y*2)*32+8);
 

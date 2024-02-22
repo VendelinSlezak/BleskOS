@@ -40,4 +40,5 @@ dword_t dllmf_cursor = 0, dllmf_selected_area = 0;
 void draw_dllmf(dword_t dllmf_mem);
 void dllmf_calculate_draw_square(dword_t column, dword_t line, dword_t width, dword_t height);
 dword_t dllmf_get_document_height(dword_t dllmf_memory);
+dword_t dllmf_get_document_width(dword_t dllmf_memory);
 dword_t dllmf_get_data_memory(dword_t dllmf_memory);

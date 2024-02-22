@@ -45,7 +45,7 @@
 #define DMF_SFCH_INLINE_CHANGE_COLOR_OFFSET 17
 #define DMF_SFCH_INLINE_CHANGE_BACKGROUND_COLOR_OFFSET 19
 
-#define DMF_LIST_ENTRY_LEFT_MARGIN 30
+#define DMF_LIST_ENTRY_LEFT_MARGIN 45
 
 dword_t dmf_page_width = 0, dmf_page_height = 0, dmf_page_top_border = 0, dmf_page_bottom_border = 0, dmf_page_left_border = 0, dmf_page_right_border = 0;
 dword_t dmf_page_actual_left_border = 0, dmf_page_actual_right_border = 0;
@@ -65,3 +65,4 @@ void dmf_add_section_page_break(dword_t memory);
 void dmf_add_section_new_page(dword_t memory, dword_t width, dword_t height, dword_t top, dword_t bottom, dword_t left, dword_t right);
 void dmf_add_section_new_paragraph(dword_t memory, dword_t description, dword_t top, dword_t bottom, dword_t left, dword_t right, dword_t list_entry);
 byte_t dmf_is_section_format_change_only_span_change(dword_t memory);
+byte_t dmf_is_section_with_new_paragraph(dword_t memory);

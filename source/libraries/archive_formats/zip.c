@@ -48,16 +48,21 @@ dword_t search_for_file_in_zip(dword_t zip_file_memory, dword_t zip_file_size, b
  for(dword_t i=0; i<zip_num_of_files; i++) {
   byte_t *file_name = (byte_t *) (((dword_t)zip_file_entry)+46);
   dword_t file_name_length = (zip_file_entry[7] & 0xFFFF), extra_field_length = (zip_file_entry[7]>>16), file_comment_length = (zip_file_entry[8] & 0xFFFF);
-  
+
   //compare file names
   if(searched_file_name_length==file_name_length) {
+   byte_t file_founded = STATUS_TRUE;
+
    for(dword_t j=0; j<file_name_length; j++) {
     if(file_name[j]!=searched_file_name[j]) {
+     file_founded = STATUS_FALSE;
      break;
     }
    }
 
-   return i; //this entry is searched file
+   if(file_founded==STATUS_TRUE) {
+    return i; //this entry is file we are searching for
+   }
   }
 
   //next entry

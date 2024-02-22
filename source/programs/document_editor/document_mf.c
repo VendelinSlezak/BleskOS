@@ -443,6 +443,12 @@ dword_t dmf_get_size_of_word(dword_t dmf_memory, dword_t actual_char_size) {
  dword_t length_of_word = 0;
  while(*dmf!=' ' && *dmf!=0 && *dmf!=SF_NBSP) {
   if(*dmf==DMF_SECTION_FORMAT_CHANGE_SIGNATURE) {
+   //find if this is end of line
+   if((dmf[DMF_SFCH_DESCRIPTION_OFFSET] & DMF_SFCH_DESCRIPTION_NEW_PAGE)==DMF_SFCH_DESCRIPTION_NEW_PAGE || (dmf[DMF_SFCH_DESCRIPTION_OFFSET] & DMF_SFCH_DESCRIPTION_NEW_PARAGRAPH)==DMF_SFCH_DESCRIPTION_NEW_PARAGRAPH) {
+    break;
+   }
+
+   //get actual size
    actual_char_size = dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET];
 
    dmf = (word_t *) (((dword_t)dmf)+dmf[DMF_SFCH_LENGTH_OFFSET_1]);
@@ -513,6 +519,17 @@ byte_t dmf_is_section_format_change_only_span_change(dword_t memory) {
  word_t *dmf = (word_t *) (memory);
 
  if((dmf[DMF_SFCH_DESCRIPTION_OFFSET] & DMF_SFCH_DESCRIPTION_PAGE_BREAK)==DMF_SFCH_DESCRIPTION_PAGE_BREAK || (dmf[DMF_SFCH_DESCRIPTION_OFFSET] & DMF_SFCH_DESCRIPTION_NEW_PAGE)==DMF_SFCH_DESCRIPTION_NEW_PAGE || (dmf[DMF_SFCH_DESCRIPTION_OFFSET] & DMF_SFCH_DESCRIPTION_NEW_PARAGRAPH)==DMF_SFCH_DESCRIPTION_NEW_PARAGRAPH) {
+  return STATUS_FALSE;
+ }
+ else {
+  return STATUS_TRUE;
+ }
+}
+
+byte_t dmf_is_section_with_new_paragraph(dword_t memory) {
+ word_t *dmf = (word_t *) (memory);
+
+ if((dmf[DMF_SFCH_DESCRIPTION_OFFSET] & DMF_SFCH_DESCRIPTION_NEW_PARAGRAPH)==DMF_SFCH_DESCRIPTION_NEW_PARAGRAPH) {
   return STATUS_FALSE;
  }
  else {
