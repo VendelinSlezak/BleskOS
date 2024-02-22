@@ -90,9 +90,16 @@ dword_t convert_docx_to_dmf(dword_t docx_memory, dword_t docx_size) {
  dmf_paragraph_alignment = DMF_SFCH_PARAGRAPH_DESCRIPTION_ALIGNMENT_LEFT;
  document_editor_add_style_to_stack();
 
- //list variables
+ //set variables
  byte_t is_this_paragraph_list_entry = STATUS_FALSE;
  dmf_paragaph_list_entry = 0;
+ dmf_actual_paragraph_description = 0;
+ dmf_paragraph_top_border = 0;
+ dmf_paragraph_bottom_border = 0;
+ dmf_paragraph_left_border = 0;
+ dmf_paragraph_right_border = 0;
+ dmf_paragaph_list_entry = 0;
+ dmf_page_break = STATUS_FALSE;
 
  while(*document_xml!=0) {
   if(*document_xml=='<') { //tag
