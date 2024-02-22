@@ -11,6 +11,7 @@
 #include "document_llmf.c"
 #include "document_mf.c"
 #include "odt.c"
+#include "docx.c"
 
 void initalize_document_editor(void) {
  document_editor_program_interface_memory = create_program_interface_memory(((dword_t)&draw_document_editor), PROGRAM_INTERFACE_FLAG_NO_SAVE_BUTTON | PROGRAM_INTERFACE_FLAG_NO_NEW_BUTTON);
@@ -32,6 +33,8 @@ void document_editor(void) {
  program_interface_add_keyboard_event(KEY_F4, (dword_t)document_editor_close_file);
  program_interface_add_keyboard_event(KEY_UP, (dword_t)document_editor_key_up_event);
  program_interface_add_keyboard_event(KEY_DOWN, (dword_t)document_editor_key_down_event);
+ program_interface_add_keyboard_event(KEY_LEFT, (dword_t)document_editor_key_left_event);
+ program_interface_add_keyboard_event(KEY_RIGHT, (dword_t)document_editor_key_right_event);
  program_interface_add_keyboard_event(KEY_PAGE_UP, (dword_t)document_editor_key_page_up_event);
  program_interface_add_keyboard_event(KEY_PAGE_DOWN, (dword_t)document_editor_key_page_down_event);
  program_interface_add_keyboard_event(KEY_HOME, (dword_t)document_editor_key_home_event);
@@ -167,27 +170,39 @@ void draw_document_editor(void) {
  draw_program_interface("Document viewer", "", 0x00C0FF, 0x555555);
 
  if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0) {
-  //draw document
-  dllmf_draw_first_line = get_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_LINE);
-  dllmf_draw_last_line = (dllmf_draw_first_line+dllmf_draw_height);
-  dllmf_draw_first_column = get_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_COLUMN);
-  dllmf_draw_last_column = (dllmf_draw_first_column+dllmf_draw_width);
-  dllmf_cursor = get_file_value(DOCUMENT_EDITOR_FILE_CURSOR);
-  dllmf_selected_area = get_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA);
-  draw_dllmf(get_file_value(DOCUMENT_EDITOR_FILE_DLLMF_MEMORY));
+  document_editor_draw_document();
+ }
+}
 
-  //add vertical scrollbar
-  if(get_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_HEIGHT)>dllmf_draw_height) {
-   draw_vertical_scrollbar(graphic_screen_x-SCROLLBAR_SIZE, PROGRAM_INTERFACE_TOP_LINE_HEIGTH, document_editor_vertical_scrollbar_height, get_file_value(DOCUMENT_EDITOR_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION), get_file_value(DOCUMENT_EDITOR_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE));
-   add_zone_to_click_board(graphic_screen_x-SCROLLBAR_SIZE, PROGRAM_INTERFACE_TOP_LINE_HEIGTH, SCROLLBAR_SIZE, document_editor_vertical_scrollbar_height, DOCUMENT_EDITOR_CLICK_ZONE_VERTICAL_SCROLLBAR);
-   program_interface_add_vertical_scrollbar(DOCUMENT_EDITOR_CLICK_ZONE_VERTICAL_SCROLLBAR, ((dword_t)&document_editor_vertical_scrollbar_height), get_position_of_file_memory()+DOCUMENT_EDITOR_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION*4, get_position_of_file_memory()+DOCUMENT_EDITOR_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE*4, ((dword_t)&document_editor_vertical_scrollbar_event));
-  }
+void document_editor_draw_document(void) {
+ //draw document
+ dllmf_draw_first_line = get_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_LINE);
+ dllmf_draw_last_line = (dllmf_draw_first_line+dllmf_draw_height);
+ dllmf_draw_first_column = get_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_COLUMN);
+ dllmf_draw_last_column = (dllmf_draw_first_column+dllmf_draw_width);
+ dllmf_cursor = get_file_value(DOCUMENT_EDITOR_FILE_CURSOR);
+ dllmf_selected_area = get_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA);
+ draw_dllmf(get_file_value(DOCUMENT_EDITOR_FILE_DLLMF_MEMORY));
+
+ //add vertical scrollbar
+ if(get_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_HEIGHT)>dllmf_draw_height) {
+  draw_vertical_scrollbar(graphic_screen_x-SCROLLBAR_SIZE, PROGRAM_INTERFACE_TOP_LINE_HEIGTH, document_editor_vertical_scrollbar_height, get_file_value(DOCUMENT_EDITOR_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION), get_file_value(DOCUMENT_EDITOR_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE));
+  add_zone_to_click_board(graphic_screen_x-SCROLLBAR_SIZE, PROGRAM_INTERFACE_TOP_LINE_HEIGTH, SCROLLBAR_SIZE, document_editor_vertical_scrollbar_height, DOCUMENT_EDITOR_CLICK_ZONE_VERTICAL_SCROLLBAR);
+  program_interface_add_vertical_scrollbar(DOCUMENT_EDITOR_CLICK_ZONE_VERTICAL_SCROLLBAR, ((dword_t)&document_editor_vertical_scrollbar_height), get_position_of_file_memory()+DOCUMENT_EDITOR_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION*4, get_position_of_file_memory()+DOCUMENT_EDITOR_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE*4, ((dword_t)&document_editor_vertical_scrollbar_event));
+ }
+
+ //add horizontal scrollbar
+ if(get_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_WIDTH)>dllmf_draw_width) {
+  draw_horizontal_scrollbar(0, graphic_screen_y-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH-SCROLLBAR_SIZE, document_editor_horizontal_scrollbar_width, get_file_value(DOCUMENT_EDITOR_FILE_HORIZONTAL_SCROLLBAR_RIDER_POSITION), get_file_value(DOCUMENT_EDITOR_FILE_HORIZONTAL_SCROLLBAR_RIDER_SIZE));
+  add_zone_to_click_board(0, graphic_screen_y-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH-SCROLLBAR_SIZE, document_editor_horizontal_scrollbar_width, SCROLLBAR_SIZE, DOCUMENT_EDITOR_CLICK_ZONE_HORIZONTAL_SCROLLBAR);
+  program_interface_add_horizontal_scrollbar(DOCUMENT_EDITOR_CLICK_ZONE_HORIZONTAL_SCROLLBAR, ((dword_t)&document_editor_horizontal_scrollbar_width), get_position_of_file_memory()+DOCUMENT_EDITOR_FILE_HORIZONTAL_SCROLLBAR_RIDER_POSITION*4, get_position_of_file_memory()+DOCUMENT_EDITOR_FILE_HORIZONTAL_SCROLLBAR_RIDER_SIZE*4, ((dword_t)&document_editor_horizontal_scrollbar_event));
  }
 }
 
 void document_editor_open_file(void) {
  //open file
  file_dialog_open_file_extensions_clear_mem();
+ file_dialog_open_file_add_extension("docx");
  file_dialog_open_file_add_extension("odt");
  dword_t new_file_mem = file_dialog_open();
  if(new_file_mem==0) {
@@ -197,7 +212,10 @@ void document_editor_open_file(void) {
  //convert file to DMF format
  show_message_window("Opening file...");
  dword_t dmf_memory = 0;
- if(is_loaded_file_extension("odt")==STATUS_TRUE) {
+ if(is_loaded_file_extension("docx")==STATUS_TRUE) {
+  dmf_memory = convert_docx_to_dmf(new_file_mem, file_dialog_file_size);
+ }
+ else if(is_loaded_file_extension("odt")==STATUS_TRUE) {
   dmf_memory = convert_odt_to_dmf(new_file_mem, file_dialog_file_size);
  }
  if(dmf_memory==STATUS_ERROR) { //error during converting file
@@ -215,6 +233,7 @@ void document_editor_open_file(void) {
  set_file_value(DOCUMENT_EDITOR_FILE_DMF_MEMORY, dmf_memory);
  set_file_value(DOCUMENT_EDITOR_FILE_DLLMF_MEMORY, dllmf_memory);
  set_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_HEIGHT, dllmf_get_document_height(dllmf_memory));
+ set_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_WIDTH, dllmf_get_document_width(dllmf_memory));
  set_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_LINE, 0);
  set_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_COLUMN, 0);
  set_file_value(DOCUMENT_EDITOR_FILE_CURSOR, (dllmf_memory+DLLMF_NUM_OF_PAGE_ENTRIES*DLLMF_PAGE_ENTRY_SIZE));
@@ -246,15 +265,55 @@ void document_editor_key_up_event(void) {
 }
 
 void document_editor_key_down_event(void) {
- if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0) {
+ if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0 && (get_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_HEIGHT)>dllmf_draw_height)) {
   if(get_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_LINE)==(get_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_HEIGHT)-dllmf_draw_height)) {
    return;
   }
-  else if(get_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_LINE)>=((get_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_HEIGHT)-dllmf_draw_height)-50)) {
+  else if((get_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_HEIGHT)-dllmf_draw_height-50)>0x80000000) {
+   set_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_LINE, (get_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_HEIGHT)-dllmf_draw_height));
+  }
+  else if(get_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_LINE)>=(get_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_HEIGHT)-dllmf_draw_height-50)) {
    set_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_LINE, (get_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_HEIGHT)-dllmf_draw_height));
   }
   else {
    set_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_LINE, get_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_LINE)+50);
+  }
+  
+  document_editor_recalculate_scrollbars();
+  program_interface_redraw();
+ }
+}
+
+void document_editor_key_left_event(void) {
+ if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0) {
+  if(get_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_COLUMN)==0) {
+   return;
+  }
+  else if(get_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_COLUMN)<=50) {
+   set_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_COLUMN, 0);
+  }
+  else {
+   set_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_COLUMN, get_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_COLUMN)-50);
+  }
+  
+  document_editor_recalculate_scrollbars();
+  program_interface_redraw();
+ }
+}
+
+void document_editor_key_right_event(void) {
+ if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0 && (get_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_WIDTH)+40)>dllmf_draw_width) {
+  if(get_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_COLUMN)==(get_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_WIDTH)-dllmf_draw_width)) {
+   return;
+  }
+  else if((get_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_WIDTH)-dllmf_draw_width-50)>0x80000000) {
+   set_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_COLUMN, (get_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_WIDTH)-dllmf_draw_width));
+  }
+  else if(get_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_COLUMN)>=(get_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_WIDTH)-dllmf_draw_width-50)) {
+   set_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_COLUMN, (get_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_WIDTH)-dllmf_draw_width));
+  }
+  else {
+   set_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_COLUMN, get_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_COLUMN)+50);
   }
   
   document_editor_recalculate_scrollbars();
@@ -318,20 +377,37 @@ void document_editor_key_end_event(void) {
 
 void document_editor_vertical_scrollbar_event(void) {
  set_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_LINE, get_scrollbar_rider_value(document_editor_vertical_scrollbar_height, get_file_value(DOCUMENT_EDITOR_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE), get_file_value(DOCUMENT_EDITOR_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION), get_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_HEIGHT), dllmf_draw_height));
- dllmf_draw_first_line = get_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_LINE);
- dllmf_draw_last_line = (dllmf_draw_first_line+dllmf_draw_height);
- dllmf_draw_first_column = get_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_COLUMN);
- dllmf_draw_last_column = (dllmf_draw_first_column+dllmf_draw_width);
+  
+ //draw document
  draw_full_square(dllmf_screen_first_column, dllmf_screen_first_line, dllmf_draw_width, dllmf_draw_height, 0x555555);
- add_zone_to_click_board(dllmf_screen_first_column, dllmf_screen_first_line, dllmf_draw_width, dllmf_draw_height, NO_CLICK);
- draw_dllmf(get_file_value(DOCUMENT_EDITOR_FILE_DLLMF_MEMORY));
- draw_vertical_scrollbar(graphic_screen_x-SCROLLBAR_SIZE, PROGRAM_INTERFACE_TOP_LINE_HEIGTH, document_editor_vertical_scrollbar_height, get_file_value(DOCUMENT_EDITOR_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION), get_file_value(DOCUMENT_EDITOR_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE));
+ document_editor_draw_document();
+
+ //redraw screen
+ redraw_screen();
+}
+
+void document_editor_horizontal_scrollbar_event(void) {
+ set_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_COLUMN, get_scrollbar_rider_value(document_editor_horizontal_scrollbar_width, get_file_value(DOCUMENT_EDITOR_FILE_HORIZONTAL_SCROLLBAR_RIDER_SIZE), get_file_value(DOCUMENT_EDITOR_FILE_HORIZONTAL_SCROLLBAR_RIDER_POSITION), get_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_WIDTH), dllmf_draw_width));
+ 
+ //draw document
+ draw_full_square(dllmf_screen_first_column, dllmf_screen_first_line, dllmf_draw_width, dllmf_draw_height, 0x555555);
+ document_editor_draw_document();
+
+ //redraw screen
  redraw_screen();
 }
 
 void document_editor_recalculate_scrollbars(void) {
  set_file_value(DOCUMENT_EDITOR_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE, calculate_scrollbar_rider_size(document_editor_vertical_scrollbar_height, get_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_HEIGHT), dllmf_draw_height));
  set_file_value(DOCUMENT_EDITOR_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION, calculate_scrollbar_rider_position(document_editor_vertical_scrollbar_height, get_file_value(DOCUMENT_EDITOR_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE), get_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_HEIGHT), dllmf_draw_height, get_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_LINE)));
+ if(get_file_value(DOCUMENT_EDITOR_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE)==0) {
+  document_editor_horizontal_scrollbar_width = (dllmf_draw_width);
+ }
+ else {
+  document_editor_horizontal_scrollbar_width = (dllmf_draw_width-SCROLLBAR_SIZE);
+ }
+ set_file_value(DOCUMENT_EDITOR_FILE_HORIZONTAL_SCROLLBAR_RIDER_SIZE, calculate_scrollbar_rider_size(document_editor_horizontal_scrollbar_width, get_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_WIDTH), dllmf_draw_width));
+ set_file_value(DOCUMENT_EDITOR_FILE_HORIZONTAL_SCROLLBAR_RIDER_POSITION, calculate_scrollbar_rider_position(document_editor_horizontal_scrollbar_width, get_file_value(DOCUMENT_EDITOR_FILE_HORIZONTAL_SCROLLBAR_RIDER_SIZE), get_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_WIDTH), dllmf_draw_width, get_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_COLUMN)));
 }
 
 void document_editor_add_style_to_stack(void) {

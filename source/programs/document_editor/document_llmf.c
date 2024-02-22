@@ -82,11 +82,11 @@ void draw_dllmf(dword_t dllmf_mem) {
   }
 
   //center page
-  if(page_entries[DLLMF_PAGE_ENTRY_WIDTH_OFFSET]<dllmf_draw_width) {
+  if(page_entries[DLLMF_PAGE_ENTRY_WIDTH_OFFSET]<(dllmf_draw_width-DLLMF_SPACE_BETWEEN_DOCUMENTS*2)) {
    page_first_column = (dllmf_screen_first_column+(dllmf_draw_width/2)-(page_entries[DLLMF_PAGE_ENTRY_WIDTH_OFFSET]/2));
   }
   else {
-   page_first_column = dllmf_screen_first_column;
+   page_first_column = (dllmf_screen_first_column+DLLMF_SPACE_BETWEEN_DOCUMENTS);
   }
 
   //draw page background
@@ -142,9 +142,12 @@ void draw_dllmf(dword_t dllmf_mem) {
    }
 
    //draw cursor
+   dword_t cursor_draw_height = dllmf_square_height;
+   if(cursor_draw_height>(document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]+2)) {
+    cursor_draw_height = (document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]+2);
+   }
    if(((dword_t)document_data)==dllmf_cursor) {
-    global_color = BLACK;
-    draw_straigth_column(dllmf_square_x, dllmf_square_y, dllmf_square_height);
+    draw_straigth_column(dllmf_square_x, dllmf_square_y, cursor_draw_height, BLACK);
    }
 
    //add click zone
@@ -257,9 +260,14 @@ void dllmf_calculate_draw_square(dword_t column, dword_t line, dword_t width, dw
   }
  }
  else {
-  dllmf_square_x = 0;
-  dllmf_square_width = (column+width-dllmf_draw_first_column);
-  dllmf_square_draw_column = (width-dllmf_square_width);
+  dllmf_square_x = dllmf_screen_first_column;
+  dllmf_square_draw_column = (width-(column+width-dllmf_draw_first_column));
+  if((width-dllmf_square_draw_column)>=dllmf_draw_width) {
+   dllmf_square_width = dllmf_draw_width;
+  }
+  else {
+   dllmf_square_width = (column+width-dllmf_draw_first_column);
+  }
  }
 }
 
@@ -275,6 +283,22 @@ dword_t dllmf_get_document_height(dword_t dllmf_memory) {
  }
 
  return document_height;
+}
+
+dword_t dllmf_get_document_width(dword_t dllmf_memory) {
+ dword_t *page_entries = (dword_t *) (dllmf_memory);
+ dword_t document_width = 0;
+
+ for(dword_t i=0; i<DLLMF_NUM_OF_PAGE_ENTRIES; i++, page_entries+=2) {
+  if(*page_entries==0) { //no more pages
+   break;
+  }
+  if((page_entries[DLLMF_PAGE_ENTRY_WIDTH_OFFSET]+DLLMF_SPACE_BETWEEN_DOCUMENTS*2)>document_width) {
+   document_width = (page_entries[DLLMF_PAGE_ENTRY_WIDTH_OFFSET]+DLLMF_SPACE_BETWEEN_DOCUMENTS*2);
+  }
+ }
+
+ return document_width;
 }
 
 dword_t dllmf_get_data_memory(dword_t dllmf_memory) {

@@ -24,7 +24,7 @@ void internet_browser_redraw_webpage(dword_t webpage_mem) {
  webpage_url_pointer_mem = 0;
  
  //set font
- set_pen_width(1);
+ set_pen_width(1, BLACK);
  set_scalable_char_size(ib_font_size);
 
  //clear click board
@@ -276,8 +276,13 @@ void internet_browser_calculate_draw_square(dword_t column, dword_t line, dword_
   }
  }
  else {
-  ib_square_x = 0;
-  ib_square_width = (column+width-internet_browser_first_show_column);
-  ib_square_draw_column = (width-ib_square_width);
+  ib_square_x = INTERNET_BROWSER_WEBPAGE_START_COLUMN;
+  ib_square_draw_column = (width-(column+width-internet_browser_first_show_column));
+  if((width-ib_square_draw_column)>=internet_browser_webpage_width) {
+   ib_square_width = internet_browser_webpage_width;
+  }
+  else {
+   ib_square_width = (column+width-internet_browser_first_show_column);
+  }
  }
 }

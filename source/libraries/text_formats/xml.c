@@ -106,17 +106,27 @@ word_t xml_get_escape_sequence_character(word_t *xml_mem) {
 byte_t xml_is_tag(word_t *xml_mem, byte_t *tag_name) {
  //*xml_mem points to <
  xml_mem++;
- if(are_equal_b_string_w_string(tag_name, xml_mem)==STATUS_FALSE) {
+
+ //compare
+ word_t *xml_mem_2 = xml_mem;
+ while(*tag_name!=0) {
+  if(*tag_name!=*xml_mem_2) {
+   return STATUS_FALSE;
+  }
+
+  tag_name++;
+  xml_mem_2++;
+ }
+ if(*xml_mem_2!=' ' && *xml_mem_2!='>' && *xml_mem_2!='/') {
   return STATUS_FALSE;
  }
- else {
-  //find tag content
-  while(*xml_mem>' ' && *xml_mem!='>' && *xml_mem!=SF_NBSP) {
-   xml_mem++;
-  }
-  xml_tag_content_memory = xml_mem;
-  return STATUS_TRUE;
+
+ //find tag content
+ while(*xml_mem>' ' && *xml_mem!='>' && *xml_mem!=SF_NBSP) {
+  xml_mem++;
  }
+ xml_tag_content_memory = xml_mem;
+ return STATUS_TRUE;
 }
 
 byte_t xml_does_tag_have_pair(word_t *xml_mem) {
@@ -255,4 +265,34 @@ dword_t xml_get_attribute_hex_number(void) {
   xml_tag_attribute_content++;
  }
  return hex_number;
+}
+
+dword_t xml_get_attribute_color_number(void) {
+ if(xml_is_attribute("red")==STATUS_TRUE) {
+  return 0xFF0000;
+ }
+ else if(xml_is_attribute("green")==STATUS_TRUE) {
+  return 0x00FF00;
+ }
+ else if(xml_is_attribute("blue")==STATUS_TRUE) {
+  return 0x0000FF;
+ }
+ else if(xml_is_attribute("yellow")==STATUS_TRUE) {
+  return 0xFFFF00;
+ }
+ else if(xml_is_attribute("magneta")==STATUS_TRUE) {
+  return 0xFF00FF;
+ }
+ else if(xml_is_attribute("cyan")==STATUS_TRUE) {
+  return 0x00FFFF;
+ }
+ else if(xml_is_attribute("white")==STATUS_TRUE) {
+  return 0xFFFFFF;
+ }
+ else if(xml_is_attribute("black")==STATUS_TRUE) {
+  return 0x000000;
+ }
+ else {
+  return xml_get_attribute_hex_number();
+ }
 }

@@ -14,8 +14,7 @@ void initalize_performance_rating(void) {
 
 void performance_rating(void) {
   redraw_performance_rating();
-  set_pen_width(1);
-  global_color=WHITE;
+  set_pen_width(1, BLACK);
 
   while(1) {
     wait_for_user_input();
@@ -179,14 +178,13 @@ void performance_rating_task13() { // print ascii
   print_ascii("AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789", graphic_screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), graphic_screen_y_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);  
 }
 void performance_rating_task14() { // draw pixel
-  global_color=WHITE;
-  draw_pixel(graphic_screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), graphic_screen_y_center-(PERFORMANCE_RATING_CURRENT_RUN<<1));
+  draw_pixel(graphic_screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), graphic_screen_y_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);
 }
 void performance_rating_task15() { // draw straigth line
-  draw_straigth_line(graphic_screen_x_center>>1, graphic_screen_y_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), graphic_screen_x_center );
+  draw_straigth_line(graphic_screen_x_center>>1, graphic_screen_y_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), graphic_screen_x_center, BLACK);
 }
 void performance_rating_task16() { // draw straigth column
-  draw_straigth_column(graphic_screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), graphic_screen_y_center>>1, graphic_screen_y_center);
+  draw_straigth_column(graphic_screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), graphic_screen_y_center>>1, graphic_screen_y_center, BLACK);
 }
 void performance_rating_task17() { // draw line
   draw_line(0,(PERFORMANCE_RATING_CURRENT_RUN<<2), graphic_screen_x, graphic_screen_y-(PERFORMANCE_RATING_CURRENT_RUN<<2), WHITE);
@@ -201,13 +199,13 @@ void performance_rating_task20() { // draw full square
   draw_full_square(PERFORMANCE_RATING_CURRENT_RUN,PERFORMANCE_RATING_CURRENT_RUN, graphic_screen_x-(PERFORMANCE_RATING_CURRENT_RUN<<1), graphic_screen_y-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);
 }
 void performance_rating_task21() { // draw empty circle point
-  draw_empty_circle_point((PERFORMANCE_RATING_CURRENT_RUN<<2),(PERFORMANCE_RATING_CURRENT_RUN<<1));
+  draw_empty_circle_point((PERFORMANCE_RATING_CURRENT_RUN<<2),(PERFORMANCE_RATING_CURRENT_RUN<<1), BLACK);
 }
 void performance_rating_task22() { // draw empty circle
   draw_empty_circle((PERFORMANCE_RATING_CURRENT_RUN<<2),(PERFORMANCE_RATING_CURRENT_RUN<<1),(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);
 }
 void performance_rating_task23() { // draw full circle line
-  draw_full_circle_line((PERFORMANCE_RATING_CURRENT_RUN<<1),(PERFORMANCE_RATING_CURRENT_RUN<<2));
+  draw_full_circle_line((PERFORMANCE_RATING_CURRENT_RUN<<1),(PERFORMANCE_RATING_CURRENT_RUN<<2), BLACK);
 }
 void performance_rating_task24() { // draw full circle
   draw_full_circle((PERFORMANCE_RATING_CURRENT_RUN<<2),(PERFORMANCE_RATING_CURRENT_RUN<<1),(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);

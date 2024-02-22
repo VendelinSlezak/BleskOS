@@ -9,25 +9,18 @@
 */
 
 dword_t compare_file_extension(dword_t folder_mem, dword_t entry_number, dword_t extension_memory, dword_t extension_length) {
- word_t *folder16 = (word_t *) (folder_mem+entry_number*256+32);
  word_t *extension = (word_t *) extension_memory;
- word_t unicode_char;
  
  //find extension
- for(int i=0; i<100; i++, folder16++) {
+ dword_t file_name_length = get_number_of_chars_in_unicode_string((word_t *)(folder_mem+entry_number*256+32));
+ word_t *folder16 = (word_t *) (folder_mem+entry_number*256+32+file_name_length*2); //search from end of file name to find .
+ for(int i=0; i<file_name_length; i++, folder16--) {
   if(*folder16=='.') {
    folder16++;
    
    //compare
    for(int j=0; j<extension_length; j++) {
-    unicode_char=folder16[j];
-    
-    //convert from big to low chars
-    if(unicode_char>0x40 && unicode_char<0x5B) {
-     unicode_char += 0x20;
-    }
-   
-    if(unicode_char!=extension[j]) {
+    if(get_small_char_value(folder16[j])!=extension[j]) {
      return STATUS_FALSE;
     }
    }

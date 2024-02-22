@@ -18,7 +18,7 @@ void draw_clear_window(byte_t *up_string, byte_t *down_string, dword_t backgroun
 
 void draw_message_window(dword_t width, dword_t height) {
  draw_full_square(graphic_screen_x_center-(width/2), graphic_screen_y_center-(height/2), width, height, 0xFF7000);
- set_pen_width(1);
+ set_pen_width(1, BLACK);
  draw_empty_square(graphic_screen_x_center-(width/2), graphic_screen_y_center-(height/2), width, height, BLACK);
 }
 

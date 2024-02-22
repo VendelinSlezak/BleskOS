@@ -108,8 +108,7 @@ void graphic_editor(void) {
     //process tool drawing
     if(graphic_editor_tool==GRAPHIC_EDITOR_TOOL_PEN) {
      graphic_editor_prepare_drawing_by_tool();
-     global_color = graphic_editor_color;
-     draw_pixel(image_mouse_x, image_mouse_y);
+     draw_pixel(image_mouse_x, image_mouse_y, graphic_editor_color);
      graphic_editor_finish_drawing_by_tool();
     }
     else if(graphic_editor_tool==GRAPHIC_EDITOR_TOOL_FILL) {
@@ -922,7 +921,7 @@ void graphic_editor_prepare_drawing_by_tool_without_copying_preview(void) {
  screen_bytes_per_line = (graphic_screen_x*4);
 
  //set pen size
- set_pen_width(graphic_editor_pen_size);
+ set_pen_width(graphic_editor_pen_size, graphic_editor_color);
 }
 
 void graphic_editor_prepare_drawing_by_tool(void) {
@@ -935,7 +934,7 @@ void graphic_editor_prepare_drawing_by_tool(void) {
 
 void graphic_editor_finish_drawing_by_tool(void) {
  //restore pen size
- set_pen_width(1);
+ set_pen_width(1, graphic_editor_color);
 
  //switch back to monitor screen
  screen_restore_variables();

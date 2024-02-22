@@ -11,20 +11,23 @@
 #include "document_llmf.h"
 #include "document_mf.h"
 #include "odt.h"
+#include "docx.h"
 
 #define DOCUMENT_EDITOR_FILE_DMF_MEMORY (PROGRAM_INTERFACE_FILE_PROGRAM_AREA+0)
 #define DOCUMENT_EDITOR_FILE_DLLMF_MEMORY (PROGRAM_INTERFACE_FILE_PROGRAM_AREA+1)
 #define DOCUMENT_EDITOR_FILE_DOCUMENT_HEIGHT (PROGRAM_INTERFACE_FILE_PROGRAM_AREA+2)
-#define DOCUMENT_EDITOR_FILE_FIRST_SHOW_LINE (PROGRAM_INTERFACE_FILE_PROGRAM_AREA+3)
-#define DOCUMENT_EDITOR_FILE_FIRST_SHOW_COLUMN (PROGRAM_INTERFACE_FILE_PROGRAM_AREA+4)
-#define DOCUMENT_EDITOR_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION (PROGRAM_INTERFACE_FILE_PROGRAM_AREA+5)
-#define DOCUMENT_EDITOR_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE (PROGRAM_INTERFACE_FILE_PROGRAM_AREA+6)
-#define DOCUMENT_EDITOR_FILE_HORIZONTAL_SCROLLBAR_RIDER_POSITION (PROGRAM_INTERFACE_FILE_PROGRAM_AREA+7)
-#define DOCUMENT_EDITOR_FILE_HORIZONTAL_SCROLLBAR_RIDER_SIZE (PROGRAM_INTERFACE_FILE_PROGRAM_AREA+8)
-#define DOCUMENT_EDITOR_FILE_CURSOR (PROGRAM_INTERFACE_FILE_PROGRAM_AREA+9)
-#define DOCUMENT_EDITOR_FILE_SELECTED_AREA (PROGRAM_INTERFACE_FILE_PROGRAM_AREA+10)
+#define DOCUMENT_EDITOR_FILE_DOCUMENT_WIDTH (PROGRAM_INTERFACE_FILE_PROGRAM_AREA+3)
+#define DOCUMENT_EDITOR_FILE_FIRST_SHOW_LINE (PROGRAM_INTERFACE_FILE_PROGRAM_AREA+4)
+#define DOCUMENT_EDITOR_FILE_FIRST_SHOW_COLUMN (PROGRAM_INTERFACE_FILE_PROGRAM_AREA+5)
+#define DOCUMENT_EDITOR_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION (PROGRAM_INTERFACE_FILE_PROGRAM_AREA+6)
+#define DOCUMENT_EDITOR_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE (PROGRAM_INTERFACE_FILE_PROGRAM_AREA+7)
+#define DOCUMENT_EDITOR_FILE_HORIZONTAL_SCROLLBAR_RIDER_POSITION (PROGRAM_INTERFACE_FILE_PROGRAM_AREA+8)
+#define DOCUMENT_EDITOR_FILE_HORIZONTAL_SCROLLBAR_RIDER_SIZE (PROGRAM_INTERFACE_FILE_PROGRAM_AREA+9)
+#define DOCUMENT_EDITOR_FILE_CURSOR (PROGRAM_INTERFACE_FILE_PROGRAM_AREA+10)
+#define DOCUMENT_EDITOR_FILE_SELECTED_AREA (PROGRAM_INTERFACE_FILE_PROGRAM_AREA+11)
 
 #define DOCUMENT_EDITOR_CLICK_ZONE_VERTICAL_SCROLLBAR 1000
+#define DOCUMENT_EDITOR_CLICK_ZONE_HORIZONTAL_SCROLLBAR 1001
 
 #define DOCUMENT_EDITOR_NUMBER_OF_ENTRIES_IN_STYLE_STACK 10000
 struct document_editor_style_stack_entry {
@@ -56,20 +59,24 @@ struct document_editor_stack_of_lists_entry *document_editor_stack_of_lists_poin
 dword_t document_editor_stack_of_lists_number_of_entries = 0;
 
 dword_t document_editor_program_interface_memory = 0;
-dword_t document_editor_vertical_scrollbar_height = 0;
+dword_t document_editor_vertical_scrollbar_height = 0, document_editor_horizontal_scrollbar_width = 0;
 
 void initalize_document_editor(void);
 void document_editor(void);
 void draw_document_editor(void);
+void document_editor_draw_document(void);
 void document_editor_open_file(void);
 void document_editor_close_file(void);
 void document_editor_key_up_event(void);
 void document_editor_key_down_event(void);
+void document_editor_key_left_event(void);
+void document_editor_key_right_event(void);
 void document_editor_key_page_up_event(void);
 void document_editor_key_page_down_event(void);
 void document_editor_key_home_event(void);
 void document_editor_key_end_event(void);
 void document_editor_vertical_scrollbar_event(void);
+void document_editor_horizontal_scrollbar_event(void);
 void document_editor_recalculate_scrollbars(void);
 void document_editor_add_style_to_stack(void);
 void document_editor_take_style_from_stack(void);

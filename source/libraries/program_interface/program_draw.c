@@ -14,12 +14,11 @@ void draw_program_interface(byte_t *program_name, byte_t *down_string, dword_t b
 
  //draw background
  clear_screen(background_color);
- global_color = BLACK;
- set_pen_width(1);
+ set_pen_width(1, BLACK);
 
  //draw top border
  draw_full_square(0, 0, graphic_screen_x, 20, border_color);
- draw_straigth_line(0, 20, graphic_screen_x);
+ draw_straigth_line(0, 20, graphic_screen_x, BLACK);
 
  //draw program name
  print(program_name, 8, 6, BLACK);
@@ -37,9 +36,9 @@ void draw_program_interface(byte_t *program_name, byte_t *down_string, dword_t b
  //draw "NEW" button
  dword_t draw_column = graphic_screen_x;
  if((get_program_value(PROGRAM_INTERFACE_FLAGS) & PROGRAM_INTERFACE_FLAG_NO_NEW_BUTTON)==STATUS_FALSE) {
-  draw_straigth_line(graphic_screen_x-2-15, 10, 15);
-  draw_straigth_column(graphic_screen_x-2-8, 2, 16);
-  draw_straigth_column(graphic_screen_x-20, 0, 20);
+  draw_straigth_line(graphic_screen_x-2-15, 10, 15, BLACK);
+  draw_straigth_column(graphic_screen_x-2-8, 2, 16, BLACK);
+  draw_straigth_column(graphic_screen_x-20, 0, 20, BLACK);
   add_zone_to_click_board(graphic_screen_x-20, 0, 20, 20, CLICK_ZONE_NEW);
 
   draw_column -= 20;
@@ -108,11 +107,11 @@ void draw_program_interface(byte_t *program_name, byte_t *down_string, dword_t b
 
  //draw bottom border
  draw_full_square(0, graphic_screen_y-19, graphic_screen_x, 19, border_color);
- draw_straigth_line(0, graphic_screen_y-20, graphic_screen_x);
+ draw_straigth_line(0, graphic_screen_y-20, graphic_screen_x, BLACK);
 
  //draw "BACK" button
  print("[esc] Back", 8, graphic_screen_y-6-7, BLACK);
- draw_straigth_column(8+10*8+8, graphic_screen_y-20, 20);
+ draw_straigth_column(8+10*8+8, graphic_screen_y-20, 20, BLACK);
  add_zone_to_click_board(0, graphic_screen_y-20, 8+10*8+8, 20, CLICK_ZONE_BACK);
 
  //print down string
@@ -124,19 +123,19 @@ void draw_program_interface(byte_t *program_name, byte_t *down_string, dword_t b
   if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)==0 || (get_program_value(PROGRAM_INTERFACE_FLAGS) & PROGRAM_INTERFACE_FLAG_NO_SAVE_BUTTON)==PROGRAM_INTERFACE_FLAG_NO_SAVE_BUTTON) {
    //draw "OPEN" button
    print("[F1] Open", draw_column+8, graphic_screen_y-6-7, BLACK);
-   draw_straigth_column(draw_column, graphic_screen_y-20, 20);
+   draw_straigth_column(draw_column, graphic_screen_y-20, 20, BLACK);
    add_zone_to_click_board(draw_column, graphic_screen_y-20, 8+9*8+8, 20, CLICK_ZONE_OPEN);
   }
   else {
    //draw "SAVE" button
    print("[F2] Save", draw_column+8, graphic_screen_y-6-7, BLACK);
-   draw_straigth_column(draw_column, graphic_screen_y-20, 20);
+   draw_straigth_column(draw_column, graphic_screen_y-20, 20, BLACK);
    add_zone_to_click_board(draw_column, graphic_screen_y-20, 8+9*8+8, 20, CLICK_ZONE_SAVE);
    draw_column -= (8+9*8+8);
 
    //draw "OPEN" button
    print("[F1] Open", draw_column+8, graphic_screen_y-6-7, BLACK);
-   draw_straigth_column(draw_column, graphic_screen_y-20, 20);
+   draw_straigth_column(draw_column, graphic_screen_y-20, 20, BLACK);
    add_zone_to_click_board(draw_column, graphic_screen_y-20, 8+9*8+8, 20, CLICK_ZONE_OPEN);
   }
  }
@@ -162,10 +161,9 @@ void draw_dialog_yes_no(byte_t *string) {
 void draw_bottom_line_button(byte_t *string, dword_t click_zone) {
  dword_t number_of_chars = get_number_of_chars_in_ascii_string(string);
  dword_t x = (get_program_value(PROGRAM_INTERFACE_BOTTOM_LINE_DRAW_COLUMN)+8+10*8+8);
- global_color = BLACK;
- draw_straigth_column(x, graphic_screen_y-20, 20);
+ draw_straigth_column(x, graphic_screen_y-20, 20, BLACK);
  print(string, x+8, graphic_screen_y-6-7, BLACK);
- draw_straigth_column(x+8+number_of_chars*8+8, graphic_screen_y-20, 20);
+ draw_straigth_column(x+8+number_of_chars*8+8, graphic_screen_y-20, 20, BLACK);
  add_zone_to_click_board(x, graphic_screen_y-20, 8+number_of_chars*8+8, 20, click_zone);
  set_program_value(PROGRAM_INTERFACE_BOTTOM_LINE_DRAW_COLUMN, get_program_value(PROGRAM_INTERFACE_BOTTOM_LINE_DRAW_COLUMN)+8+number_of_chars*8+8);
 }
