@@ -8,6 +8,10 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 20**
+- Document editor can from ODT files parse everything that will be supported in this version of Document editor
+- From DOCX files can Document editor parse paragraphs, different font size, emphasis, color and background color.
+
 **Update 19**
 - Tons of improvements of showing ODT files. BleskOS now can parse: font size, emphasis, color, background color, ordered and unordered lists, headings, paragraphs, paragraph alignment, space around paragraph, line breaks and page breaks.
 
@@ -17,10 +21,6 @@ Here is info about most important improvements in several last updates.
 **Update 17**
 - Improvements of Document editor
 - It is possible to copy content of viewed document by CTRL+C
-
-**Update 16**
-- Added program Document editor (now it is only Document viewer) that is capable to open ODT files in very, very simple way
-- More chars for BleskOS scalable font
 
 ## How to try BleskOS
 
@@ -86,7 +86,7 @@ Supported file formats
 - PNG (read-only), GIF (read-only), QOI, BMP
 - WAV, CDDA
 - HTML
-- ODT (read-only in very simple way)
+- ODT (simple, read-only), DOCX (very simple, read-only)
 
 ## I like this project, can I help you?
 
