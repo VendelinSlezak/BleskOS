@@ -54,24 +54,28 @@ void initalize_network_card(byte_t card) {
   initalize_ethernet_card_intel_e1000();
   network_send_packet = &ethernet_card_intel_e1000_send_packet;
   ethernet_card_get_cable_status = &ethernet_card_intel_e1000_get_cable_status;
+  ethernet_card_working_driver = STATUS_TRUE;
  }
  else if(ethernet_cards[card].driver==NETWORK_DRIVER_ETHERNET_AMD_PCNET) {
   log("\nAMD PC-net driver");
   initalize_ethernet_card_amd_pcnet();
   network_send_packet = &ethernet_card_amd_pcnet_send_packet;
   ethernet_card_get_cable_status = &ethernet_card_amd_pcnet_get_cable_status;
+  ethernet_card_working_driver = STATUS_TRUE;
  }
  else if(ethernet_cards[card].driver==NETWORK_DRIVER_ETHERNET_REALTEK_8139) {
   log("\nrealtek 8139 driver");
   initalize_ethernet_card_realtek_8139();
   network_send_packet = &ethernet_card_realtek_8139_send_packet;
   ethernet_card_get_cable_status = &ethernet_card_realtek_8139_get_cable_status;
+  ethernet_card_working_driver = STATUS_TRUE;
  }
  else if(ethernet_cards[card].driver==NETWORK_DRIVER_ETHERNET_REALTEK_8169) {
   log("\nrealtek 8169 driver");
   initalize_ethernet_card_realtek_8169();
   network_send_packet = &ethernet_card_realtek_8169_send_packet;
   ethernet_card_get_cable_status = &ethernet_card_realtek_8169_get_cable_status;
+  ethernet_card_working_driver = STATUS_TRUE;
  }
 }
 
