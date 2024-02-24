@@ -23,7 +23,7 @@ dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size) {
   log("\nODT: error with extracting content.xml");
   return STATUS_ERROR;
  }
- dword_t content_xml_file_memory = prepare_xml_file(content_raw_xml_file_memory, zip_extracted_file_size);
+ dword_t content_xml_file_memory = prepare_xml_file(content_raw_xml_file_memory, zip_extracted_file_size, XML_NO_SPECIAL_ATTRIBUTES);
  free(content_raw_xml_file_memory);
 
  //count how many memory we will need for DMF and find all available styles
@@ -101,7 +101,7 @@ dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size) {
  if(styles_xml_file_number!=ZIP_FILE_NOT_FOUNDED) {
   dword_t styles_raw_xml_file_memory = zip_extract_file(odt_memory, odt_size, styles_xml_file_number);
   if(styles_raw_xml_file_memory!=STATUS_ERROR) {
-   dword_t styles_xml_file_memory = prepare_xml_file(styles_raw_xml_file_memory, zip_extracted_file_size);
+   dword_t styles_xml_file_memory = prepare_xml_file(styles_raw_xml_file_memory, zip_extracted_file_size, XML_NO_SPECIAL_ATTRIBUTES);
    free(styles_raw_xml_file_memory);
 
    //scan styles.xml

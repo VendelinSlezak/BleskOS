@@ -8,10 +8,13 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#define XML_NO_SPECIAL_ATTRIBUTES 0
+#define XML_EAT_SPACES 0x1
+
 word_t *xml_tag_content_memory;
 word_t *xml_tag_attribute_content_memory;
 
-dword_t prepare_xml_file(dword_t raw_xml_memory, dword_t raw_xml_size);
+dword_t prepare_xml_file(dword_t raw_xml_memory, dword_t raw_xml_size, dword_t special_attributes);
 word_t xml_get_escape_sequence_character(word_t *xml_mem);
 byte_t xml_is_tag(word_t *xml_mem, byte_t *tag_name);
 byte_t xml_does_tag_have_pair(word_t *xml_mem);

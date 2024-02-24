@@ -299,18 +299,21 @@ void file_dialog_read_file_properties(dword_t folder_mem, dword_t file_number) {
  }
  
  //file extension
- for(int i=0; i<128; i++) {
-  if(folder16[i]=='.') {
+ dword_t file_name_length = get_number_of_chars_in_unicode_string((word_t *)(folder_mem+file_number*256+32));
+ folder16 = (word_t *) (folder_mem+file_number*256+32+file_name_length*2); //search from end of file name to find .
+ for(int i=0; i<file_name_length; i++, folder16--) {
+  if(*folder16=='.') {
    folder16++;
+   
    for(int j=0; j<10; j++) {
-    file_dialog_file_extension[j] = folder16[i+j];
+    file_dialog_file_extension[j] = folder16[j];
     
     if(file_dialog_file_extension[j]<0x41) {
      file_dialog_file_extension[j]=0;
      break;
     }
     else if(file_dialog_file_extension[j]<0x61) { //convert to small chars
-     file_dialog_file_extension[j] = (folder16[i+j]+0x20);
+     file_dialog_file_extension[j] = (folder16[j]+0x20);
     }
    }
    break;

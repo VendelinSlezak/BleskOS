@@ -8,7 +8,7 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-dword_t prepare_xml_file(dword_t raw_xml_memory, dword_t raw_xml_size) {
+dword_t prepare_xml_file(dword_t raw_xml_memory, dword_t raw_xml_size, dword_t special_attributes) {
  //convert file to unicode
  //TODO: support for more encodings than only UTF-8
  dword_t unicode_xml_memory = calloc(raw_xml_size*2+2);
@@ -55,7 +55,7 @@ dword_t prepare_xml_file(dword_t raw_xml_memory, dword_t raw_xml_size) {
     }
    }
   }
-  else if(*unicode_xml==' ') { 
+  else if(special_attributes==XML_EAT_SPACES && *unicode_xml==' ') { 
    unicode_xml++;
    if(is_space_sequence==STATUS_TRUE) { //we need to eat more spaces afterward
     continue;
@@ -65,7 +65,7 @@ dword_t prepare_xml_file(dword_t raw_xml_memory, dword_t raw_xml_size) {
    xml++;
    is_space_sequence = STATUS_TRUE;
   }
-  else if(*unicode_xml>' ' && *unicode_xml<512) { //printable characters
+  else if((*unicode_xml>' ' && *unicode_xml<512) || (special_attributes!=XML_EAT_SPACES && *unicode_xml==' ')) { //printable characters
    *xml = *unicode_xml;
    xml++;
    unicode_xml++;
@@ -268,8 +268,25 @@ dword_t xml_get_attribute_hex_number(void) {
 }
 
 dword_t xml_get_attribute_color_number(void) {
- if(xml_is_attribute("red")==STATUS_TRUE) {
-  return 0xFF0000;
+ extern dword_t xml_color_numbers_string_array[17*2];
+
+ //scan array
+ for(dword_t i=0; i<17; i++) {
+  if(xml_is_attribute((byte_t *)(xml_color_numbers_string_array[i*2]))==STATUS_TRUE) {
+   return xml_color_numbers_string_array[i*2+1];
+  }
+ }
+
+ return xml_get_attribute_hex_number();
+
+ if(xml_is_attribute("auto")==STATUS_TRUE || xml_is_attribute("black")==STATUS_TRUE) {
+  return BLACK;
+ }
+ else if(xml_is_attribute("white")==STATUS_TRUE) {
+  return WHITE;
+ }
+ else if(xml_is_attribute("red")==STATUS_TRUE) {
+  return RED;
  }
  else if(xml_is_attribute("green")==STATUS_TRUE) {
   return 0x00FF00;
@@ -286,11 +303,29 @@ dword_t xml_get_attribute_color_number(void) {
  else if(xml_is_attribute("cyan")==STATUS_TRUE) {
   return 0x00FFFF;
  }
- else if(xml_is_attribute("white")==STATUS_TRUE) {
-  return 0xFFFFFF;
+ else if(xml_is_attribute("lightGrey")==STATUS_TRUE) {
+  return 0xD3D3D3;
  }
- else if(xml_is_attribute("black")==STATUS_TRUE) {
-  return 0x000000;
+ else if(xml_is_attribute("darkGrey")==STATUS_TRUE) {
+  return 0xA9A9A9;
+ }
+ else if(xml_is_attribute("darkRed")==STATUS_TRUE) {
+  return 0x8B0000;
+ }
+ else if(xml_is_attribute("darkGreen")==STATUS_TRUE) {
+  return 0x006400;
+ }
+ else if(xml_is_attribute("darkBlue")==STATUS_TRUE) {
+  return 0x00008B;
+ }
+ else if(xml_is_attribute("darkYellow")==STATUS_TRUE) {
+  return 0xF6BE00;
+ }
+ else if(xml_is_attribute("darkMagneta")==STATUS_TRUE) {
+  return 0x8B008B;
+ }
+ else if(xml_is_attribute("darkCyan")==STATUS_TRUE) {
+  return 0x008B8B;
  }
  else {
   return xml_get_attribute_hex_number();

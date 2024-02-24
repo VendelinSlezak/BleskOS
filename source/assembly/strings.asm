@@ -210,3 +210,42 @@ pci_class_type_string_array:
 
  .class_type_16:
  db 'Encryption Controller', 0
+
+global xml_color_numbers_string_array
+
+xml_color_numbers_string_array:
+ dd .auto, 0x000000
+ dd .black, 0x000000
+ dd .white, 0xFFFFFF
+ dd .red, 0xFF0000
+ dd .green, 0x00FF00
+ dd .blue, 0x0000FF
+ dd .yellow, 0xFFFF00
+ dd .magneta, 0xFF00FF
+ dd .cyan, 0x00FFFF
+ dd .lightGrey, 0xD3D3D3
+ dd .darkGrey, 0xA9A9A9
+ dd .darkRed, 0x8B0000
+ dd .darkGreen, 0x006400
+ dd .darkBlue, 0x00008B
+ dd .darkYellow, 0xF6BE00
+ dd .darkMagneta, 0x8B008B
+ dd .darkCyan, 0x008B8B
+
+ .auto: db 'auto', 0
+ .black: db 'black', 0
+ .white: db 'white', 0
+ .red: db 'red', 0
+ .green: db 'green', 0
+ .blue: db 'blue', 0
+ .yellow: db 'yellow', 0
+ .magneta: db 'magneta', 0
+ .cyan: db 'cyan', 0
+ .lightGrey: db 'lightGrey', 0
+ .darkGrey: db 'darkGrey', 0
+ .darkRed: db 'darkRed', 0
+ .darkGreen: db 'darkGreen', 0
+ .darkBlue: db 'darkBlue', 0
+ .darkYellow: db 'darkYellow', 0
+ .darkMagneta: db 'darkMagneta', 0
+ .darkCyan: db 'darkCyan', 0
