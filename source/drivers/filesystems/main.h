@@ -28,7 +28,7 @@ struct partition {
  byte_t type;
  dword_t first_sector;
  dword_t num_of_sectors;
-};
+}__attribute__((packed));
 struct partition partitions[8];
 
 #define ATTRIBUTE_DIRECTORY 0x10
@@ -48,13 +48,13 @@ struct table_of_content_entry {
  word_t unknown;
  word_t number;
  dword_t first_sector;
-};
+}__attribute__((packed));
 struct table_of_content {
  word_t length;
  byte_t first_track;
  byte_t last_track;
  struct table_of_content_entry track[32];
-};
+}__attribute__((packed));
 struct table_of_content optical_disk_table_of_content;
 
 byte_t if_storage_medium_exist(byte_t type_of_medium, byte_t medium_number);

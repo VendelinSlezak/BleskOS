@@ -13,7 +13,7 @@ byte_t is_this_zip(dword_t zip_file_memory, dword_t zip_file_size) {
  word_t *zip_comment_length = (word_t *) (zip_file_memory+zip_file_size-2);
 
  for(dword_t i=0; i<0xFFFF; i++) {
-  if(*zip_end_of_central_directory_signature==0x06054B50 && *zip_comment_length==i) {
+  if(*zip_end_of_central_directory_signature==ZIP_END_OF_CENTRAL_DIRECTORY_SIGNATURE && *zip_comment_length==i) {
    //TODO: test of other signatures and too big values
 
    //check if this is ZIP64
@@ -90,7 +90,7 @@ dword_t zip_extract_file(dword_t zip_file_memory, dword_t zip_file_size, dword_t
  //go to Local file header
  zip_file_entry = (dword_t *) (((dword_t)zip_file_entry)+42);
  dword_t *zip_local_file_header = (dword_t *) (zip_file_memory+(*zip_file_entry));
- if(*zip_local_file_header!=0x04034B50) {
+ if(*zip_local_file_header!=ZIP_LOCAL_FILE_HEADER_SIGNATURE) {
   log("\nZIP: invalid signature in local file header");
   return STATUS_ERROR;
  }
@@ -118,4 +118,99 @@ dword_t zip_extract_file(dword_t zip_file_memory, dword_t zip_file_size, dword_t
 
  zip_extracted_file_size = file_data_uncompressed_data_length;
  return file_memory;
+}
+
+dword_t create_zip_file(dword_t number_of_files_inside, dword_t size_of_all_files) {
+ new_zip_file_pointer = calloc((number_of_files_inside*sizeof(struct zip_local_file_header))+(number_of_files_inside*256)+(number_of_files_inside*sizeof(struct zip_central_directory_file_header))+(number_of_files_inside*256)+size_of_all_files+(sizeof(struct zip_end_of_central_directory)));
+ new_zip_file_size = 0;
+ new_zip_file_list_of_relative_offsets = (dword_t *) (calloc((number_of_files_inside+1)*4));
+ new_zip_actual_processed_file_number = 0;
+ new_zip_number_of_files = number_of_files_inside;
+ new_zip_size_of_central_directory = 0;
+ return new_zip_file_pointer;
+}
+
+void zip_add_file(byte_t *name, dword_t memory, dword_t size) {
+ struct zip_local_file_header *local_file_header = (struct zip_local_file_header *) (new_zip_file_pointer);
+ 
+ //create local file header
+ local_file_header->signature = ZIP_LOCAL_FILE_HEADER_SIGNATURE;
+ local_file_header->version_for_extracting = 0x0014;
+ local_file_header->general_purpose_flag = 0;
+ local_file_header->compression_method = ZIP_NO_COMPRESSION;
+ local_file_header->file_last_modification_time = 0;
+ local_file_header->file_last_modification_date = 0;
+ local_file_header->crc32 = calculate_crc32_checksum((byte_t *)memory, size);
+ local_file_header->uncompressed_size = size;
+ local_file_header->compressed_size = size;
+ local_file_header->file_name_length = get_number_of_chars_in_ascii_string(name);
+ local_file_header->extra_field_length = 0;
+ copy_memory((dword_t)name, new_zip_file_pointer+sizeof(struct zip_local_file_header), local_file_header->file_name_length);
+
+ //add file content
+ copy_memory(memory, new_zip_file_pointer+sizeof(struct zip_local_file_header)+local_file_header->file_name_length, size);
+
+ //save relative offset
+ new_zip_file_list_of_relative_offsets[new_zip_actual_processed_file_number+1] = (new_zip_file_list_of_relative_offsets[new_zip_actual_processed_file_number]+(sizeof(struct zip_local_file_header)+local_file_header->file_name_length+size));
+ new_zip_actual_processed_file_number++;
+
+ //move variables
+ new_zip_file_pointer += (sizeof(struct zip_local_file_header)+local_file_header->file_name_length+size);
+ new_zip_file_size += (sizeof(struct zip_local_file_header)+local_file_header->file_name_length+size);
+}
+
+void zip_start_central_directory(void) {
+ new_zip_actual_processed_file_number = 0;
+}
+
+void zip_add_central_directory_file_header(byte_t *name, dword_t memory, dword_t size) {
+ struct zip_central_directory_file_header *central_directory_file_header = (struct zip_central_directory_file_header *) (new_zip_file_pointer);
+
+ //create central directory file header
+ central_directory_file_header->signature = ZIP_CENTRAL_DIRECTORY_FILE_HEADER_SIGNATURE;
+ central_directory_file_header->version_made_by = 0x0014;
+ central_directory_file_header->version_for_extracting = 0x0014;
+ central_directory_file_header->general_purpose_flag = 0;
+ central_directory_file_header->compression_method = ZIP_NO_COMPRESSION;
+ central_directory_file_header->file_last_modification_time = 0;
+ central_directory_file_header->file_last_modification_date = 0;
+ central_directory_file_header->crc32 = calculate_crc32_checksum((byte_t *)memory, size);
+ central_directory_file_header->uncompressed_size = size;
+ central_directory_file_header->compressed_size = size;
+ central_directory_file_header->file_name_length = get_number_of_chars_in_ascii_string(name);
+ central_directory_file_header->extra_field_length = 0;
+ central_directory_file_header->file_comment_length = 0;
+ central_directory_file_header->disk_number_of_file = 0;
+ central_directory_file_header->internal_file_attributes = 0;
+ central_directory_file_header->external_file_attributes = 0;
+ central_directory_file_header->relative_offset_to_local_file_header = new_zip_file_list_of_relative_offsets[new_zip_actual_processed_file_number];
+ copy_memory((dword_t)name, new_zip_file_pointer+sizeof(struct zip_central_directory_file_header), central_directory_file_header->file_name_length);
+
+ //move variables
+ new_zip_file_pointer += (sizeof(struct zip_central_directory_file_header)+central_directory_file_header->file_name_length);
+ new_zip_size_of_central_directory += (sizeof(struct zip_central_directory_file_header)+central_directory_file_header->file_name_length);
+ new_zip_file_size += (sizeof(struct zip_central_directory_file_header)+central_directory_file_header->file_name_length);
+
+ //move to next file
+ new_zip_actual_processed_file_number++;
+}
+
+void finish_zip_file(void) {
+ struct zip_end_of_central_directory *end_of_central_directory = (struct zip_end_of_central_directory *) (new_zip_file_pointer);
+ 
+ //create end of central directory 
+ end_of_central_directory->signature = ZIP_END_OF_CENTRAL_DIRECTORY_SIGNATURE;
+ end_of_central_directory->number_of_this_disk = 0;
+ end_of_central_directory->disk_of_central_directory = 0;
+ end_of_central_directory->number_of_central_directory_records_on_this_disk = new_zip_number_of_files;
+ end_of_central_directory->total_number_of_central_directory_records = new_zip_number_of_files;
+ end_of_central_directory->size_of_central_directory = new_zip_size_of_central_directory;
+ end_of_central_directory->relative_offset_to_central_directory = new_zip_file_list_of_relative_offsets[new_zip_actual_processed_file_number];
+ end_of_central_directory->comment_length = 0;
+
+ //move variables
+ new_zip_file_size += sizeof(struct zip_end_of_central_directory);
+
+ //free allocated memory
+ free((dword_t)new_zip_file_list_of_relative_offsets);
 }

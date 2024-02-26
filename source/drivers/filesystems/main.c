@@ -509,7 +509,7 @@ dword_t create_file(dword_t file_mem, dword_t size_of_file) {
  if(partitions[selected_partition_number].type==STORAGE_FAT) {
   return write_fat_file(file_mem, size_of_file, 0);
  }
- 
+
  return STATUS_ERROR;
 }
 
