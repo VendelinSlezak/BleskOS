@@ -40,7 +40,7 @@ struct usb_mass_storage_device {
  dword_t ehci_hub_port_number;
  dword_t size_in_sectors;
  dword_t size_of_sector;
-};
+}__attribute__((packed));
 struct usb_mass_storage_device usb_mass_storage_devices[10];
 
 dword_t usb_mass_storage_cbw_memory = 0, usb_mass_storage_response_memory = 0, usb_mass_storage_csw_memory = 0;

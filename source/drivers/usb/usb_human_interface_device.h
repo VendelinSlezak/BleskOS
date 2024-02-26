@@ -35,7 +35,7 @@ struct usb_mouse_informations {
  byte_t endpoint_size;
  byte_t interrupt_time;
  dword_t transfer_descriptor_check;
-};
+}__attribute__((packed));
 struct usb_mouse_informations usb_mouse[1];
 
 struct usb_keyboard_informations {
@@ -48,7 +48,7 @@ struct usb_keyboard_informations {
  byte_t endpoint_size;
  byte_t interrupt_time;
  dword_t transfer_descriptor_check;
-};
+}__attribute__((packed));
 struct usb_keyboard_informations usb_keyboard[1];
 
 dword_t usb_mouse_data_memory = 0, usb_mouse_packet_received = 0;

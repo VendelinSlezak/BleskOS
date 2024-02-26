@@ -37,7 +37,7 @@ struct ethernet_card {
  dword_t transmit_mem;
  dword_t transmit_buffer_mem;
  dword_t transmit_free_packet;
-};
+}__attribute__((packed));
 struct ethernet_card ethernet_cards[10];
 byte_t ethernet_cards_pointer = 0;
 byte_t ethernet_selected_card = 0;

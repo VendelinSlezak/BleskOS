@@ -27,7 +27,7 @@ struct hda_sound_card {
 
  byte_t output_amp_node_number;
  dword_t output_amp_node_capabilites;
-};
+}__attribute__((packed));
 struct hda_sound_card hda_sound_cards[10];
 dword_t hda_sound_card_pointer = 0;
 dword_t selected_hda_sound_card = 0;

@@ -119,7 +119,7 @@ void draw_media_viewer(void) {
 
  if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)==0) {
   print("Supported file formats", 10, 30, WHITE);
-  print("Images: PNG/GIF/BMP", 10, 50, WHITE);
+  print("Images: PNG/GIF/QOI/BMP", 10, 50, WHITE);
   print("Sound: WAV", 10, 70, WHITE);
  }
  else if(get_file_value(MEDIA_VIEWER_FILE_TYPE)==MEDIA_VIEWER_FILE_IMAGE) {

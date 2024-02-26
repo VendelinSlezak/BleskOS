@@ -287,6 +287,7 @@ byte_t set_fat_entry(dword_t entry, dword_t value) {
 byte_t save_fat_table_sector(void) {
  if(fat_number_of_clusters<=65536) { //FAT12/16
   if(write_storage_medium(loaded_fat_sector, 1, (dword_t)fat_table_one_sector)==STATUS_ERROR) { //save to first FAT table
+   log("\nFAT: error during saving FAT table sector");
    return STATUS_ERROR;
   }
   if(fat16_boot_sector.fat_tables>1) {
@@ -298,6 +299,7 @@ byte_t save_fat_table_sector(void) {
  }
  else { //FAT32
   if(write_storage_medium(loaded_fat_sector, 1, (dword_t)fat_table_one_sector)==STATUS_ERROR) { //save to first FAT table
+   log("\nFAT: error during saving FAT table sector");
    return STATUS_ERROR;
   }
   if(fat32_boot_sector.fat_tables>1) {
@@ -480,6 +482,7 @@ dword_t read_fat_file(dword_t cluster, dword_t size_in_bytes) {
 dword_t write_fat_file(dword_t file_mem, dword_t size_in_bytes, dword_t first_cluster) {
  //check invalid request
  if(file_mem==0 || size_in_bytes==0) {
+  log("\nFAT: invalid write request");
   return STATUS_ERROR;
  }
  
@@ -510,6 +513,7 @@ dword_t write_fat_file(dword_t file_mem, dword_t size_in_bytes, dword_t first_cl
   cluster_number = get_fat_entry(cluster);
   if(cluster_number==1) {
    free(clusters_numbers_mem);
+   log("\nFAT: invalid cluster info");
    return STATUS_ERROR;
   }
   if(cluster_number==0 && cluster!=first_cluster) {
@@ -530,6 +534,7 @@ dword_t write_fat_file(dword_t file_mem, dword_t size_in_bytes, dword_t first_cl
  for(int i=0; i<clusters_of_file; i++) { 
   if(write_fat_cluster(*clusters_numbers_ptr, file_mem)==STATUS_ERROR) {
    free(clusters_numbers_mem);
+   log("\nFAT: writing file error");
    return STATUS_ERROR;
   }
   file_mem += fat_cluster_length_in_bytes;
@@ -547,6 +552,7 @@ dword_t write_fat_file(dword_t file_mem, dword_t size_in_bytes, dword_t first_cl
  for(int i=0; i<(clusters_of_file-1); i++) {
   if(set_fat_entry(*clusters_numbers_ptr, clusters_numbers_ptr[1])==STATUS_ERROR) {
    free(clusters_numbers_mem);
+   log("\nFAT: writing cluster info error");
    return STATUS_ERROR;
   }
   clusters_numbers_ptr++;

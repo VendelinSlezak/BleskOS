@@ -35,7 +35,7 @@ struct main_window_click_zone {
  word_t down;
  word_t left;
  word_t right;
-};
+}__attribute__((packed));
 struct main_window_click_zone main_window_click_zones[10];
 
 dword_t main_window_zones_pointer;

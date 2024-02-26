@@ -53,7 +53,7 @@ struct usb_controller_informations {
  dword_t mem3;
  dword_t mem4;
  dword_t setup_mem;
-};
+}__attribute__((packed));
 struct usb_controller_informations usb_controllers[20];
 
 struct usb_descriptor_device_info {
@@ -69,7 +69,7 @@ struct usb_descriptor_device_info {
  byte_t endpoint_interrupt_out;
  byte_t endpoint_isynchronous_in;
  word_t hid_descriptor_length;
-};
+}__attribute__((packed));
 struct usb_descriptor_device_info usb_descriptor_devices[10];
 
 byte_t usb_addresses[127];

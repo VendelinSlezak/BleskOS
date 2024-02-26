@@ -40,7 +40,7 @@ struct document_editor_style_stack_entry {
  dword_t character_emphasis;
  dword_t character_color;
  dword_t character_background_color;
-};
+}__attribute__((packed));
 struct document_editor_style_stack_entry *document_editor_style_stack_pointer;
 dword_t document_editor_style_stack_number_of_entries = 0;
 
@@ -48,7 +48,7 @@ dword_t document_editor_style_stack_number_of_entries = 0;
 struct document_editor_list_of_styles_entry {
  dword_t memory_of_style_name;
  dword_t memory_of_style_content;
-};
+}__attribute__((packed));
 struct document_editor_list_of_styles_entry *document_editor_list_of_styles_pointer;
 dword_t document_editor_list_of_styles_number_of_entries = 0;
 
@@ -59,7 +59,7 @@ dword_t document_editor_list_of_styles_number_of_entries = 0;
 struct document_editor_stack_of_lists_entry {
  dword_t type_of_list;
  dword_t number;
-};
+}__attribute__((packed));
 struct document_editor_stack_of_lists_entry *document_editor_stack_of_lists_pointer;
 dword_t document_editor_stack_of_lists_number_of_entries = 0;
 
