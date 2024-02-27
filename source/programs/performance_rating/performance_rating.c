@@ -254,22 +254,22 @@ void performance_rating_task34() { // number of digit
   PERFORMANCE_RATING_RESULT_NUMBER=get_number_of_digits_in_number(PERFORMANCE_RATING_CURRENT_RUN<<16);
 }
 void performance_rating_task35() { // convert byte string to dword
-  PERFORMANCE_RATING_RESULT_NUMBER=convert_byte_string_to_number(&PERFORMANCE_RATING_SOURCE_STRING[0]);
+  PERFORMANCE_RATING_RESULT_NUMBER=convert_byte_string_to_number((dword_t)(&PERFORMANCE_RATING_SOURCE_STRING));
 }
 void performance_rating_task36() { // convert word string  to dword
-  PERFORMANCE_RATING_RESULT_NUMBER=convert_word_string_to_number(&PERFORMANCE_RATING_SOURCE_NUMBER[0]);
+  PERFORMANCE_RATING_RESULT_NUMBER=convert_word_string_to_number((dword_t)(&PERFORMANCE_RATING_SOURCE_NUMBER));
 }
 void performance_rating_task37() { // convert word string  to float 
-  PERFORMANCE_RATING_RESULT_FLOAT=convert_word_string_to_float_number(&PERFORMANCE_RATING_SOURCE_FLOAT[0]);
+  PERFORMANCE_RATING_RESULT_FLOAT=convert_word_string_to_float_number((dword_t)(&PERFORMANCE_RATING_SOURCE_FLOAT));
 }
 void performance_rating_task38() { // convert hex word string to dword 
-  PERFORMANCE_RATING_RESULT_NUMBER=convert_hex_word_string_to_number(&PERFORMANCE_RATING_SOURCE_HEXA[0]);
+  PERFORMANCE_RATING_RESULT_NUMBER=convert_hex_word_string_to_number((dword_t)(&PERFORMANCE_RATING_SOURCE_HEXA));
 }
 void performance_rating_task39() { // convert dword to byte string 
-  covert_number_to_byte_string(PERFORMANCE_RATING_CURRENT_RUN<<16, (dword_t)&PERFORMANCE_RATING_RESULT_STRING[0]);
+  convert_number_to_byte_string(PERFORMANCE_RATING_CURRENT_RUN<<16, (dword_t)(&PERFORMANCE_RATING_RESULT_STRING));
 }
 void performance_rating_task40() { // convert dword to word string 
-  covert_number_to_word_string(PERFORMANCE_RATING_CURRENT_RUN<<16, (dword_t)&PERFORMANCE_RATING_RESULT_STRING[0]);
+  convert_number_to_word_string(PERFORMANCE_RATING_CURRENT_RUN<<16, (dword_t)(&PERFORMANCE_RATING_RESULT_STRING));
 }
 void performance_rating_task41() { // convert unix time
   convert_unix_time(PERFORMANCE_RATING_CURRENT_RUN<<16);
