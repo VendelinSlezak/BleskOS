@@ -8,6 +8,9 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 23**
+- Start of work on saving documents to ODT file
+
 **Update 22**
 - ZIP library is able to create ZIP files
 
@@ -17,9 +20,6 @@ Here is info about most important improvements in several last updates.
 **Update 20**
 - Document editor can from ODT files parse everything that will be supported in this version of Document editor
 - From DOCX files can Document editor parse paragraphs, different font size, emphasis, color and background color.
-
-**Update 19**
-- Tons of improvements of showing ODT files. BleskOS now can parse: font size, emphasis, color, background color, ordered and unordered lists, headings, paragraphs, paragraph alignment, space around paragraph, line breaks and page breaks.
 
 ## How to try BleskOS
 
