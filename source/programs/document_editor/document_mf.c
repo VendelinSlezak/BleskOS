@@ -206,7 +206,7 @@ void convert_dmf_to_dllmf(dword_t dmf_memory, dword_t dllmf_memory) {
      }
      else { //ordered list
       clear_memory(((dword_t)&number_string), MATH_LENGTH_OF_NUMBER_STRING_ARRAY);
-      covert_number_to_byte_string(dmf[DMF_SFCH_PARAGRAPH_LIST_ENTRY_OFFSET], ((dword_t)&number_string));
+      convert_number_to_byte_string(dmf[DMF_SFCH_PARAGRAPH_LIST_ENTRY_OFFSET], ((dword_t)&number_string));
       dword_t num_of_digits = get_number_of_chars_in_ascii_string(number_string);
       number_string[num_of_digits] = '.';
       num_of_digits++;

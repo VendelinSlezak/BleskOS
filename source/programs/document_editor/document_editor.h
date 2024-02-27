@@ -71,6 +71,7 @@ void document_editor(void);
 void draw_document_editor(void);
 void document_editor_draw_document(void);
 void document_editor_open_file(void);
+void document_editor_save_file(void);
 void document_editor_close_file(void);
 void document_editor_key_up_event(void);
 void document_editor_key_down_event(void);

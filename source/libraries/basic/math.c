@@ -144,7 +144,7 @@ dword_t convert_hex_word_string_to_number(dword_t mem) {
  return number;
 }
 
-void covert_number_to_byte_string(dword_t number, dword_t mem) {
+void convert_number_to_byte_string(dword_t number, dword_t mem) {
  byte_t *string = (byte_t *) mem;
  word_t number_string[11];
  dword_t number_digits = 0;
@@ -171,7 +171,7 @@ void covert_number_to_byte_string(dword_t number, dword_t mem) {
  }
 }
 
-void covert_number_to_word_string(dword_t number, dword_t mem) {
+void convert_number_to_word_string(dword_t number, dword_t mem) {
  word_t *string = (word_t *) mem;
  word_t number_string[11];
  dword_t number_digits = 0;

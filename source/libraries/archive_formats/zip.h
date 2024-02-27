@@ -71,6 +71,4 @@ dword_t search_for_file_in_zip(dword_t zip_file_memory, dword_t zip_file_size, b
 dword_t zip_extract_file(dword_t zip_file_memory, dword_t zip_file_size, dword_t entry_number);
 dword_t create_zip_file(dword_t number_of_files_inside, dword_t size_of_all_files);
 void zip_add_file(byte_t *name, dword_t memory, dword_t size);
-void zip_start_central_directory(void);
 void zip_add_central_directory_file_header(byte_t *name, dword_t memory, dword_t size);
-void finish_zip_file(void);

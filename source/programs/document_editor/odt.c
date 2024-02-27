@@ -85,7 +85,7 @@ dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size) {
  }
 
  //allocate memory for DMF
- dmf_size+=2;
+ dmf_size+=4; //ending
  dword_t dmf_memory = calloc(dmf_size);
 
  //default page layout - A4 with 2 cm margins
@@ -203,17 +203,17 @@ dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size) {
    else { //normal tag
     //TAGS <text:p> <text:h> <text:span>
     if(xml_is_tag(content_xml, "text:p")==STATUS_TRUE || xml_is_tag(content_xml, "text:h")==STATUS_TRUE || xml_is_tag(content_xml, "text:span")==STATUS_TRUE) {
+     //reset variables
+     dmf_actual_paragraph_description = (dmf_paragraph_alignment<<DMF_SFCH_PARAGRAPH_DESCRIPTION_ALIGNMENT_SHIFT);
+     dmf_paragraph_top_border = 0;
+     dmf_paragraph_bottom_border = 0;
+     dmf_paragraph_left_border = 0;
+     dmf_paragraph_right_border = 0;
+     dmf_paragaph_list_entry = 0;
+     dmf_page_break = STATUS_FALSE;
+     
      //read attributes
      if(xml_find_tag_attribute("text:style-name")==STATUS_TRUE) {
-      //reset variables
-      dmf_actual_paragraph_description = (dmf_paragraph_alignment<<DMF_SFCH_PARAGRAPH_DESCRIPTION_ALIGNMENT_SHIFT);
-      dmf_paragraph_top_border = 0;
-      dmf_paragraph_bottom_border = 0;
-      dmf_paragraph_left_border = 0;
-      dmf_paragraph_right_border = 0;
-      dmf_paragaph_list_entry = 0;
-      dmf_page_break = STATUS_FALSE;
-
       //find type of style
       if(xml_is_attribute("Standard")==STATUS_TRUE) { //default style
        dmf_character_size = 9;
@@ -473,4 +473,75 @@ void odt_read_style(dword_t odt_style_memory) {
   }
   content_xml++;
  }
+}
+
+void convert_dmf_to_odt(dword_t dmf_memory) {
+ //create META-INF/manifest.xml
+ struct byte_stream_descriptor *file_manifest_xml_byte_stream = create_byte_stream(BYTE_STREAM_100_KB_BLOCK);
+ add_string_to_byte_stream(file_manifest_xml_byte_stream, "<?xml version=\"1.0\" encoding=\"UTF-8\"?><manifest:manifest xmlns:manifest=\"urn:oasis:names:tc:opendocument:xmlns:manifest:1.0\" manifest:version=\"1.2\"><manifest:file-entry manifest:full-path=\"/\" manifest:version=\"1.2\" manifest:media-type=\"application/vnd.oasis.opendocument.text\"/><manifest:file-entry manifest:full-path=\"content.xml\" manifest:media-type=\"text/xml\"/></manifest:manifest>");
+
+ //create mimetype
+ struct byte_stream_descriptor *file_mimetype_byte_stream = create_byte_stream(BYTE_STREAM_100_KB_BLOCK);
+ add_string_to_byte_stream(file_mimetype_byte_stream, "application/vnd.oasis.opendocument.text");
+
+ //create content.xml
+ struct byte_stream_descriptor *file_content_xml_byte_stream = create_byte_stream(BYTE_STREAM_100_KB_BLOCK);
+ add_string_to_byte_stream(file_content_xml_byte_stream, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+ add_string_to_byte_stream(file_content_xml_byte_stream, "<office:document-content xmlns:office=\"urn:oasis:names:tc:opendocument:xmlns:office:1.0\" xmlns:style=\"urn:oasis:names:tc:opendocument:xmlns:style:1.0\" xmlns:text=\"urn:oasis:names:tc:opendocument:xmlns:text:1.0\" xmlns:table=\"urn:oasis:names:tc:opendocument:xmlns:table:1.0\" xmlns:draw=\"urn:oasis:names:tc:opendocument:xmlns:drawing:1.0\" xmlns:fo=\"urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:meta=\"urn:oasis:names:tc:opendocument:xmlns:meta:1.0\" xmlns:number=\"urn:oasis:names:tc:opendocument:xmlns:datastyle:1.0\" xmlns:svg=\"urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0\" xmlns:chart=\"urn:oasis:names:tc:opendocument:xmlns:chart:1.0\" xmlns:dr3d=\"urn:oasis:names:tc:opendocument:xmlns:dr3d:1.0\" xmlns:math=\"http://www.w3.org/1998/Math/MathML\" xmlns:form=\"urn:oasis:names:tc:opendocument:xmlns:form:1.0\" xmlns:script=\"urn:oasis:names:tc:opendocument:xmlns:script:1.0\" xmlns:ooo=\"http://openoffice.org/2004/office\" xmlns:ooow=\"http://openoffice.org/2004/writer\" xmlns:oooc=\"http://openoffice.org/2004/calc\" xmlns:dom=\"http://www.w3.org/2001/xml-events\" xmlns:xforms=\"http://www.w3.org/2002/xforms\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:rpt=\"http://openoffice.org/2005/report\" xmlns:of=\"urn:oasis:names:tc:opendocument:xmlns:of:1.2\" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\" xmlns:grddl=\"http://www.w3.org/2003/g/data-view#\" xmlns:officeooo=\"http://openoffice.org/2009/office\" xmlns:tableooo=\"http://openoffice.org/2009/table\" xmlns:drawooo=\"http://openoffice.org/2010/draw\" xmlns:calcext=\"urn:org:documentfoundation:names:experimental:calc:xmlns:calcext:1.0\" xmlns:loext=\"urn:org:documentfoundation:names:experimental:office:xmlns:loext:1.0\" xmlns:field=\"urn:openoffice:names:experimental:ooo-ms-interop:xmlns:field:1.0\" xmlns:formx=\"urn:openoffice:names:experimental:ooxml-odf-interop:xmlns:form:1.0\" xmlns:css3t=\"http://www.w3.org/TR/css3-text/\" office:version=\"1.2\"><office:body><office:text>");
+ 
+ //TODO: convert all document data
+ word_t *dmf = (word_t *) (dmf_memory);
+ add_string_to_byte_stream(file_content_xml_byte_stream, "<text:p>");
+ byte_t first_page_paragraph_tag = STATUS_TRUE;
+ while(*dmf!=0) {
+  if(*dmf==DMF_SECTION_FORMAT_CHANGE_SIGNATURE) {
+   //process new paragraph
+   if((dmf[DMF_SFCH_DESCRIPTION_OFFSET] & DMF_SFCH_DESCRIPTION_NEW_PARAGRAPH)==DMF_SFCH_DESCRIPTION_NEW_PARAGRAPH) {
+    if(first_page_paragraph_tag==STATUS_FALSE) {
+     add_string_to_byte_stream(file_content_xml_byte_stream, "</text:p>");
+     add_string_to_byte_stream(file_content_xml_byte_stream, "<text:p>");
+    }
+    first_page_paragraph_tag = STATUS_FALSE;
+   }
+
+   //skip
+   dmf = (word_t *) (((dword_t)dmf)+DMF_SFCH_ENTRY_LENGTH_IN_BYTES);
+  }
+  else {
+   //convert Unicode to UTF-8 and write it to stream
+   if(*dmf<0x80) {
+    add_byte_to_byte_stream(file_content_xml_byte_stream, *dmf);
+   }
+   else if(*dmf<0x800) {
+    add_byte_to_byte_stream(file_content_xml_byte_stream, (((*dmf>>6) & 0x1F) | 0xC0));
+    add_byte_to_byte_stream(file_content_xml_byte_stream, ((*dmf & 0x3F) | 0x80));
+   }
+   else {
+    add_byte_to_byte_stream(file_content_xml_byte_stream, (((*dmf>>12) & 0x0F) | 0xE0));
+    add_byte_to_byte_stream(file_content_xml_byte_stream, (((*dmf>>6) & 0x1F) | 0x80));
+    add_byte_to_byte_stream(file_content_xml_byte_stream, ((*dmf & 0x3F) | 0x80));
+   }
+
+   //skip
+   dmf++;
+  }
+ }
+ add_string_to_byte_stream(file_content_xml_byte_stream, "</text:p>");
+
+ add_string_to_byte_stream(file_content_xml_byte_stream, "</office:text></office:body></office:document-content>");
+
+ //create ZIP file from all these files
+ new_odt_file_memory = create_zip_file(3, file_manifest_xml_byte_stream->size_of_stream+file_mimetype_byte_stream->size_of_stream+file_content_xml_byte_stream->size_of_stream);
+ zip_add_file("META-INF/manifest.xml", file_manifest_xml_byte_stream->start_of_allocated_memory, file_manifest_xml_byte_stream->size_of_stream);
+ zip_add_file("mimetype", file_mimetype_byte_stream->start_of_allocated_memory, file_mimetype_byte_stream->size_of_stream);
+ zip_add_file("content.xml", file_content_xml_byte_stream->start_of_allocated_memory, file_content_xml_byte_stream->size_of_stream);
+ zip_add_central_directory_file_header("META-INF/manifest.xml", file_manifest_xml_byte_stream->start_of_allocated_memory, file_manifest_xml_byte_stream->size_of_stream);
+ zip_add_central_directory_file_header("mimetype", file_mimetype_byte_stream->start_of_allocated_memory, file_mimetype_byte_stream->size_of_stream);
+ zip_add_central_directory_file_header("content.xml", file_content_xml_byte_stream->start_of_allocated_memory, file_content_xml_byte_stream->size_of_stream);
+ new_odt_file_size = new_zip_file_size;
+
+ //free all memory
+ close_byte_stream(file_manifest_xml_byte_stream);
+ close_byte_stream(file_mimetype_byte_stream);
+ close_byte_stream(file_content_xml_byte_stream);
 }

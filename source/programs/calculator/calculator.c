@@ -176,7 +176,7 @@ void calculator_button_calculate(void) {
   result_text_area_data++;
   result = abs(result);
  }
- covert_number_to_word_string(result, (dword_t)(result_text_area_data));
+ convert_number_to_word_string(result, (dword_t)(result_text_area_data));
 
  //redraw text areas
  calculator_redraw_text_areas_in_basic_mode();
