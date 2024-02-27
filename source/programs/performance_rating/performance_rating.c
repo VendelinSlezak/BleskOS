@@ -9,12 +9,18 @@
 */
 
 void initalize_performance_rating(void) {
+//  dword_t *image;
   PERFORMANCE_RATING_NBTASK_PER_PAGE=(graphic_screen_y-26)/10;
+//  PERFORMANCE_RATING_IMAGE=(dword_t *)create_image(640, 480);
+
+//  for(int i=0, image=PERFORMANCE_RATING_IMAGE;i<640*480;i++) {
+//    *image++=((i<<2) & 0xffffff00);
+//  }
 }
 
 void performance_rating(void) {
   redraw_performance_rating();
-  set_pen_width(1, BLACK);
+  set_pen_width(1,WHITE);
 
   while(1) {
     wait_for_user_input();
@@ -118,10 +124,17 @@ void performance_rating_inspect_task(dword_t task_number) {  // to be sure what'
 
   for(PERFORMANCE_RATING_CURRENT_RUN=0; PERFORMANCE_RATING_CURRENT_RUN<PERFORMANCE_RATING_RUN_COUNT; PERFORMANCE_RATING_CURRENT_RUN++) {
     clear_screen(PERFORMANCE_RATING_CURRENT_RUN<<1);
+    PERFORMANCE_RATING_RESULT_STRING[0]=0;
+    PERFORMANCE_RATING_RESULT_NUMBER=0;
+    PERFORMANCE_RATING_RESULT_FLOAT=0.0;
     performance_rating_tasks[task_number].run();
-    draw_full_square(0, 0, 64, 10, BLACK);
+    draw_full_square(0, 0, 64, 60, BLACK);
     print("[ESC]",2,2,WHITE);
     print_var(PERFORMANCE_RATING_CURRENT_RUN,42,2,WHITE);
+    print_ascii(&PERFORMANCE_RATING_RESULT_STRING[0],2,12,WHITE);
+    print_unicode((word_t *)&PERFORMANCE_RATING_RESULT_STRING[0],2,24,WHITE);
+    print_var(PERFORMANCE_RATING_RESULT_NUMBER,2,36,WHITE);
+    // Todo print results
     redraw_screen();
     if (keyboard_value == KEY_ESC) { break;}
   }
@@ -181,10 +194,10 @@ void performance_rating_task14() { // draw pixel
   draw_pixel(graphic_screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), graphic_screen_y_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);
 }
 void performance_rating_task15() { // draw straigth line
-  draw_straigth_line(graphic_screen_x_center>>1, graphic_screen_y_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), graphic_screen_x_center, BLACK);
+  draw_straigth_line(graphic_screen_x_center>>1, graphic_screen_y_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), graphic_screen_x_center, WHITE);
 }
 void performance_rating_task16() { // draw straigth column
-  draw_straigth_column(graphic_screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), graphic_screen_y_center>>1, graphic_screen_y_center, BLACK);
+  draw_straigth_column(graphic_screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), graphic_screen_y_center>>1, graphic_screen_y_center, WHITE);
 }
 void performance_rating_task17() { // draw line
   draw_line(0,(PERFORMANCE_RATING_CURRENT_RUN<<2), graphic_screen_x, graphic_screen_y-(PERFORMANCE_RATING_CURRENT_RUN<<2), WHITE);
@@ -199,13 +212,13 @@ void performance_rating_task20() { // draw full square
   draw_full_square(PERFORMANCE_RATING_CURRENT_RUN,PERFORMANCE_RATING_CURRENT_RUN, graphic_screen_x-(PERFORMANCE_RATING_CURRENT_RUN<<1), graphic_screen_y-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);
 }
 void performance_rating_task21() { // draw empty circle point
-  draw_empty_circle_point((PERFORMANCE_RATING_CURRENT_RUN<<2),(PERFORMANCE_RATING_CURRENT_RUN<<1), BLACK);
+  draw_empty_circle_point((PERFORMANCE_RATING_CURRENT_RUN<<2),(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);
 }
 void performance_rating_task22() { // draw empty circle
   draw_empty_circle((PERFORMANCE_RATING_CURRENT_RUN<<2),(PERFORMANCE_RATING_CURRENT_RUN<<1),(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);
 }
 void performance_rating_task23() { // draw full circle line
-  draw_full_circle_line((PERFORMANCE_RATING_CURRENT_RUN<<1),(PERFORMANCE_RATING_CURRENT_RUN<<2), BLACK);
+  draw_full_circle_line((PERFORMANCE_RATING_CURRENT_RUN<<1),(PERFORMANCE_RATING_CURRENT_RUN<<2), WHITE);
 }
 void performance_rating_task24() { // draw full circle
   draw_full_circle((PERFORMANCE_RATING_CURRENT_RUN<<2),(PERFORMANCE_RATING_CURRENT_RUN<<1),(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);
@@ -225,8 +238,47 @@ void performance_rating_task28() { // full framebuffer
 void performance_rating_task29() { // 25% framebuffer
   redraw_part_of_framebuffer( graphic_screen_x_center>>1, graphic_screen_y_center>>1, graphic_screen_x>>1, graphic_screen_y>>1);
 }
-void performance_rating_task30() { // 
+void performance_rating_task30() { // math: abs
+  PERFORMANCE_RATING_RESULT_NUMBER=abs((int)-PERFORMANCE_RATING_CURRENT_RUN);
 }
-void performance_rating_task31() { // 
+void performance_rating_task31() { // math: fabs
+  PERFORMANCE_RATING_RESULT_FLOAT=fabs((float)-PERFORMANCE_RATING_CURRENT_RUN);
+}
+void performance_rating_task32() { // math: floor
+  PERFORMANCE_RATING_RESULT_FLOAT=floor((float)-PERFORMANCE_RATING_CURRENT_RUN);
+}
+void performance_rating_task33() { // math: power
+  PERFORMANCE_RATING_RESULT_NUMBER=power(PERFORMANCE_RATING_CURRENT_RUN, PERFORMANCE_RATING_CURRENT_RUN);
+}
+void performance_rating_task34() { // number of digit
+  PERFORMANCE_RATING_RESULT_NUMBER=get_number_of_digits_in_number(PERFORMANCE_RATING_CURRENT_RUN<<16);
+}
+void performance_rating_task35() { // convert byte string to dword
+  PERFORMANCE_RATING_RESULT_NUMBER=convert_byte_string_to_number(&PERFORMANCE_RATING_SOURCE_STRING[0]);
+}
+void performance_rating_task36() { // convert word string  to dword
+  PERFORMANCE_RATING_RESULT_NUMBER=convert_word_string_to_number(&PERFORMANCE_RATING_SOURCE_NUMBER[0]);
+}
+void performance_rating_task37() { // convert word string  to float 
+  PERFORMANCE_RATING_RESULT_FLOAT=convert_word_string_to_float_number(&PERFORMANCE_RATING_SOURCE_FLOAT[0]);
+}
+void performance_rating_task38() { // convert hex word string to dword 
+  PERFORMANCE_RATING_RESULT_NUMBER=convert_hex_word_string_to_number(&PERFORMANCE_RATING_SOURCE_HEXA[0]);
+}
+void performance_rating_task39() { // convert dword to byte string 
+  covert_number_to_byte_string(PERFORMANCE_RATING_CURRENT_RUN<<16, (dword_t)&PERFORMANCE_RATING_RESULT_STRING[0]);
+}
+void performance_rating_task40() { // convert dword to word string 
+  covert_number_to_word_string(PERFORMANCE_RATING_CURRENT_RUN<<16, (dword_t)&PERFORMANCE_RATING_RESULT_STRING[0]);
+}
+void performance_rating_task41() { // convert unix time
+  convert_unix_time(PERFORMANCE_RATING_CURRENT_RUN<<16);
+}
+void performance_rating_task42() { // draw image
+//  draw_image((dword_t)PERFORMANCE_RATING_IMAGE);
+}
+void performance_rating_task43() { // qoi compress
+}
+void performance_rating_task44() { // qoi decompress
 }
 
