@@ -9,6 +9,7 @@
 */
 
 #include "bit_stream.c"
+#include "byte_stream.c"
 #include "huffman.c"
 #include "lz77.c"
 #include "deflate.c"

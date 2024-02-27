@@ -289,7 +289,7 @@ void draw_graphic_editor(void) {
   pen_size_text_area[TEXT_AREA_INFO_Y] = pen_size_area_line+40+6;
   pen_size_text_area[TEXT_AREA_INFO_CURSOR_POSITION] = 0xFFFFFFFF;
   clear_memory(pen_size_text_area[TEXT_AREA_INFO_MEMORY], 6);
-  covert_number_to_word_string(graphic_editor_pen_size, pen_size_text_area[TEXT_AREA_INFO_MEMORY]);
+  convert_number_to_word_string(graphic_editor_pen_size, pen_size_text_area[TEXT_AREA_INFO_MEMORY]);
   draw_text_area(graphic_editor_pen_size_text_area_info_memory);
   add_zone_to_click_board(8, pen_size_area_line+40+6, 160, 10, GRAPHIC_EDITOR_CLICK_ZONE_PEN_SIZE_TEXT_AREA);
   program_interface_add_text_area(GRAPHIC_EDITOR_CLICK_ZONE_PEN_SIZE_TEXT_AREA, graphic_editor_pen_size_text_area_info_memory);
@@ -452,7 +452,7 @@ void graphic_editor_new_file(void) {
 
  text_area_disable_cursor(graphic_editor_width_text_area_info_memory);
  clear_memory(width_text_area[TEXT_AREA_INFO_MEMORY], 8);
- covert_number_to_word_string(width, width_text_area[TEXT_AREA_INFO_MEMORY]);
+ convert_number_to_word_string(width, width_text_area[TEXT_AREA_INFO_MEMORY]);
  print("Width", graphic_screen_x_center-24, graphic_screen_y_center-50+5+6, BLACK);
  draw_text_area(graphic_editor_width_text_area_info_memory);
  program_interface_add_text_area(GRAPHIC_EDITOR_CLICK_ZONE_TEXT_AREA_WIDTH, graphic_editor_width_text_area_info_memory);
@@ -460,7 +460,7 @@ void graphic_editor_new_file(void) {
 
  text_area_disable_cursor(graphic_editor_height_text_area_info_memory);
  clear_memory(height_text_area[TEXT_AREA_INFO_MEMORY], 8);
- covert_number_to_word_string(height, height_text_area[TEXT_AREA_INFO_MEMORY]);
+ convert_number_to_word_string(height, height_text_area[TEXT_AREA_INFO_MEMORY]);
  print("Heigth", graphic_screen_x_center-24, graphic_screen_y_center-50+35+6, BLACK);
  draw_text_area(graphic_editor_height_text_area_info_memory);
  program_interface_add_text_area(GRAPHIC_EDITOR_CLICK_ZONE_TEXT_AREA_HEIGTH, graphic_editor_height_text_area_info_memory);

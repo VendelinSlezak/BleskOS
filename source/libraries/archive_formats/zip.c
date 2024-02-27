@@ -153,14 +153,13 @@ void zip_add_file(byte_t *name, dword_t memory, dword_t size) {
  //save relative offset
  new_zip_file_list_of_relative_offsets[new_zip_actual_processed_file_number+1] = (new_zip_file_list_of_relative_offsets[new_zip_actual_processed_file_number]+(sizeof(struct zip_local_file_header)+local_file_header->file_name_length+size));
  new_zip_actual_processed_file_number++;
+ if(new_zip_actual_processed_file_number==new_zip_number_of_files) { //move pointer for ZIP central directory
+  new_zip_actual_processed_file_number = 0;
+ }
 
  //move variables
  new_zip_file_pointer += (sizeof(struct zip_local_file_header)+local_file_header->file_name_length+size);
  new_zip_file_size += (sizeof(struct zip_local_file_header)+local_file_header->file_name_length+size);
-}
-
-void zip_start_central_directory(void) {
- new_zip_actual_processed_file_number = 0;
 }
 
 void zip_add_central_directory_file_header(byte_t *name, dword_t memory, dword_t size) {
@@ -193,24 +192,25 @@ void zip_add_central_directory_file_header(byte_t *name, dword_t memory, dword_t
 
  //move to next file
  new_zip_actual_processed_file_number++;
-}
 
-void finish_zip_file(void) {
- struct zip_end_of_central_directory *end_of_central_directory = (struct zip_end_of_central_directory *) (new_zip_file_pointer);
+ //finish ZIP file
+ if(new_zip_actual_processed_file_number==new_zip_number_of_files) {
+  struct zip_end_of_central_directory *end_of_central_directory = (struct zip_end_of_central_directory *) (new_zip_file_pointer);
  
- //create end of central directory 
- end_of_central_directory->signature = ZIP_END_OF_CENTRAL_DIRECTORY_SIGNATURE;
- end_of_central_directory->number_of_this_disk = 0;
- end_of_central_directory->disk_of_central_directory = 0;
- end_of_central_directory->number_of_central_directory_records_on_this_disk = new_zip_number_of_files;
- end_of_central_directory->total_number_of_central_directory_records = new_zip_number_of_files;
- end_of_central_directory->size_of_central_directory = new_zip_size_of_central_directory;
- end_of_central_directory->relative_offset_to_central_directory = new_zip_file_list_of_relative_offsets[new_zip_actual_processed_file_number];
- end_of_central_directory->comment_length = 0;
+  //create end of central directory 
+  end_of_central_directory->signature = ZIP_END_OF_CENTRAL_DIRECTORY_SIGNATURE;
+  end_of_central_directory->number_of_this_disk = 0;
+  end_of_central_directory->disk_of_central_directory = 0;
+  end_of_central_directory->number_of_central_directory_records_on_this_disk = new_zip_number_of_files;
+  end_of_central_directory->total_number_of_central_directory_records = new_zip_number_of_files;
+  end_of_central_directory->size_of_central_directory = new_zip_size_of_central_directory;
+  end_of_central_directory->relative_offset_to_central_directory = new_zip_file_list_of_relative_offsets[new_zip_actual_processed_file_number];
+  end_of_central_directory->comment_length = 0;
 
- //move variables
- new_zip_file_size += sizeof(struct zip_end_of_central_directory);
+  //move variables
+  new_zip_file_size += sizeof(struct zip_end_of_central_directory);
 
- //free allocated memory
- free((dword_t)new_zip_file_list_of_relative_offsets);
+  //free allocated memory
+  free((dword_t)new_zip_file_list_of_relative_offsets);
+ }
 }

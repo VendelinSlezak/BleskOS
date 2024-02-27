@@ -11,6 +11,7 @@
 dword_t decoded_stream_length;
 
 #include "bit_stream.h"
+#include "byte_stream.h"
 #include "huffman.h"
 #include "lz77.h"
 #include "deflate.h"

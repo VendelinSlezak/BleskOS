@@ -23,6 +23,6 @@ dword_t convert_byte_string_to_number(dword_t mem);
 dword_t convert_word_string_to_number(dword_t mem);
 float convert_word_string_to_float_number(dword_t mem);
 dword_t convert_hex_word_string_to_number(dword_t mem);
-void covert_number_to_byte_string(dword_t number, dword_t mem);
-void covert_number_to_word_string(dword_t number, dword_t mem);
+void convert_number_to_byte_string(dword_t number, dword_t mem);
+void convert_number_to_word_string(dword_t number, dword_t mem);
 void convert_unix_time(dword_t unix_time);

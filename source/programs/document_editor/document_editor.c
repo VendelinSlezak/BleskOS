@@ -30,6 +30,7 @@ void initalize_document_editor(void) {
 void document_editor(void) {
  set_program_interface(document_editor_program_interface_memory);
  program_interface_add_keyboard_event(KEY_F1, (dword_t)document_editor_open_file);
+ // program_interface_add_keyboard_event(KEY_F2, (dword_t)document_editor_save_file);
  program_interface_add_keyboard_event(KEY_F4, (dword_t)document_editor_close_file);
  program_interface_add_keyboard_event(KEY_UP, (dword_t)document_editor_key_up_event);
  program_interface_add_keyboard_event(KEY_DOWN, (dword_t)document_editor_key_down_event);
@@ -240,6 +241,21 @@ void document_editor_open_file(void) {
  set_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA, 0);
  free(new_file_mem);
  document_editor_recalculate_scrollbars();
+}
+
+void document_editor_save_file(void) {
+ if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)==0) {
+  return;
+ }
+
+ //save file
+ file_dialog_save_set_extension("odt"); //TODO: more extensions
+ convert_dmf_to_odt(get_file_value(DOCUMENT_EDITOR_FILE_DMF_MEMORY));
+ if(file_dialog_save(new_odt_file_memory, new_odt_file_size)==STATUS_GOOD) {
+  set_file_value(PROGRAM_INTERFACE_FILE_FLAGS, (get_file_value(PROGRAM_INTERFACE_FILE_FLAGS) | PROGRAM_INTERFACE_FILE_FLAG_SAVED));
+  set_file_name_from_file_dialog();
+ }
+ free(new_odt_file_memory);
 }
 
 void document_editor_close_file(void) {
