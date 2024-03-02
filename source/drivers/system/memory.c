@@ -175,13 +175,14 @@ dword_t malloc(dword_t mem_length) {
     }
     
     //ERROR: no free entry
+    memory_error_debug(RED);
     return 0;
    }
   }
  }
  
  //ERROR: no free memory
- memory_error_debug(0xFF0000);
+ memory_error_debug(RED);
  return 0;
 }
 
@@ -238,6 +239,7 @@ dword_t aligned_malloc(dword_t mem_length, dword_t mem_alignment) {
      }
     
      //ERROR: no free entry
+     memory_error_debug(RED);
      return 0;
     }
     
@@ -275,6 +277,7 @@ dword_t aligned_malloc(dword_t mem_length, dword_t mem_alignment) {
       goto gap_memory_entry_created;
      }
     }
+    memory_error_debug(RED);
     return 0; //ERROR: no free entry
 
     gap_memory_entry_created:
@@ -315,13 +318,14 @@ dword_t aligned_malloc(dword_t mem_length, dword_t mem_alignment) {
     }
     
     //ERROR: no free entry
+    memory_error_debug(RED);
     return 0;
    }
   }
  }
  
  //ERROR: no free memory
- memory_error_debug(0xFF0000);
+ memory_error_debug(RED);
  return 0;
 }
 

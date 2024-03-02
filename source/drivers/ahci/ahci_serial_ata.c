@@ -11,6 +11,7 @@
 byte_t sata_wait_for_drive(dword_t base_port, dword_t wait_ticks) {
  ticks = 0;
  while(ticks<wait_ticks) {
+  asm("nop");
   if((mmio_ind(base_port + 0x20) & 0x88)==0x00) {
    return STATUS_GOOD;
   }
@@ -62,6 +63,7 @@ byte_t sata_send_command(dword_t base_port, dword_t commands_memory, dword_t fis
  ticks = 0;
  status = STATUS_ERROR;
  while(ticks<200) {
+  asm("nop");
   if((mmio_ind(base_port + 0x20) & 0x88)==0x00) {
    status = STATUS_GOOD;
    break;
@@ -78,6 +80,7 @@ byte_t sata_send_command(dword_t base_port, dword_t commands_memory, dword_t fis
  //wait
  ticks = 0;
  while(ticks<500) {
+  asm("nop");
   if((mmio_ind(base_port + 0x38) & 0x1)==0x0) {
    return STATUS_GOOD;
   }

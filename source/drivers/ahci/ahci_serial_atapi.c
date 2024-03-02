@@ -66,6 +66,7 @@ byte_t satapi_send_command(dword_t base_port, dword_t commands_memory, dword_t f
  ticks = 0;
  status = STATUS_ERROR;
  while(ticks<200) {
+  asm("nop");
   if((mmio_ind(base_port + 0x20) & 0x88)==0x00) {
    status = STATUS_GOOD;
    break;
@@ -83,6 +84,7 @@ byte_t satapi_send_command(dword_t base_port, dword_t commands_memory, dword_t f
  ticks = 0;
  status = STATUS_ERROR;
  while(ticks<500) {
+  asm("nop");
   if((mmio_ind(base_port + 0x38) & 0x1)==0x0) {
    status = STATUS_GOOD;
    break;

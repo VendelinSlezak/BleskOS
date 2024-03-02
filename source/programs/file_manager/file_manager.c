@@ -743,7 +743,7 @@ void file_manager_rename_file(void) {
 }
 
 void file_manager_delete_file(void) {
- if(file_manager_rename_window_showed==STATUS_FALSE && get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)==0 || get_file_value(FILE_MANAGER_FILE_FOLDER_SELECTED_ENTRY)==NO_FILE_SELECTED || is_filesystem_read_write(get_file_value(FILE_MANAGER_FILE_DEVICE_PARTITION_TYPE))==STATUS_FALSE) {
+ if(file_manager_rename_window_showed==STATUS_TRUE || get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)==0 || get_file_value(FILE_MANAGER_FILE_FOLDER_SELECTED_ENTRY)==NO_FILE_SELECTED || is_filesystem_read_write(get_file_value(FILE_MANAGER_FILE_DEVICE_PARTITION_TYPE))==STATUS_FALSE) {
   return;
  }
  if(dialog_yes_no("Do you really want to delete this file?")==STATUS_FALSE) {

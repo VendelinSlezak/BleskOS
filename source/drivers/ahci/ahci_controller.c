@@ -36,6 +36,7 @@ void initalize_ahci_controllers(void) {
     
     ticks=0;
     while(ticks<500) {
+     asm("nop");
      if((mmio_ind(ahci_base + 0x28) & 0x3)==0x2) {
       break; //we have ownership
      }

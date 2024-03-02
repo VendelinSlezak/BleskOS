@@ -42,6 +42,8 @@ byte_t ethernet_card_realtek_8169_inb(dword_t port) {
  else if(ethernet_cards[ethernet_selected_card].bar_type==PCI_MMIO_BAR) {
   return mmio_inb(ethernet_cards[ethernet_selected_card].base+port);
  }
+
+ return STATUS_ERROR;
 }
 
 word_t ethernet_card_realtek_8169_inw(dword_t port) {
@@ -51,6 +53,8 @@ word_t ethernet_card_realtek_8169_inw(dword_t port) {
  else if(ethernet_cards[ethernet_selected_card].bar_type==PCI_MMIO_BAR) {
   return mmio_inw(ethernet_cards[ethernet_selected_card].base+port);
  }
+
+ return STATUS_ERROR;
 }
 
 dword_t ethernet_card_realtek_8169_ind(dword_t port) {
@@ -60,6 +64,8 @@ dword_t ethernet_card_realtek_8169_ind(dword_t port) {
  else if(ethernet_cards[ethernet_selected_card].bar_type==PCI_MMIO_BAR) {
   return mmio_ind(ethernet_cards[ethernet_selected_card].base+port);
  }
+
+ return STATUS_ERROR;
 }
 
 void initalize_ethernet_card_realtek_8169(void) {

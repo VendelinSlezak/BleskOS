@@ -50,6 +50,7 @@ void write_to_first_ps2_channel(byte_t value) {
 byte_t ps2_first_channel_wait_for_ack(void) {
  ticks = 0;
  while(ticks<50) {
+  asm("nop");
   if(ps2_first_channel_buffer_pointer>0) { //we wait for first byte of response
    if(ps2_first_channel_buffer[0]==0xFA) {
     return STATUS_GOOD; //acknowledge sended
@@ -66,6 +67,7 @@ byte_t ps2_first_channel_wait_for_ack(void) {
 byte_t ps2_first_channel_wait_for_response(void) {
  ticks = 0;
  while(ticks<250) { //processing command, especially reset can took some time, so we wait 500 milliseconds
+  asm("nop");
   if(ps2_first_channel_buffer_pointer>1) {
    wait(20); //when we receive first byte of response, we wait longer for receiving all bytes that device sends
    return STATUS_GOOD;
@@ -85,6 +87,7 @@ void write_to_second_ps2_channel(byte_t value) {
 byte_t ps2_second_channel_wait_for_ack(void) {
  ticks = 0;
  while(ticks<50) {
+  asm("nop");
   if(ps2_second_channel_buffer_pointer>0) { //we wait for second byte of response
    if(ps2_second_channel_buffer[0]==0xFA) {
     return STATUS_GOOD; //acknowledge sended
@@ -101,6 +104,7 @@ byte_t ps2_second_channel_wait_for_ack(void) {
 byte_t ps2_second_channel_wait_for_response(void) {
  ticks = 0;
  while(ticks<250) { //processing command, especially reset can took some time, so we wait 500 milliseconds
+  asm("nop");
   if(ps2_second_channel_buffer_pointer>1) {
    wait(20); //when we receive first byte of response, we wait longer for receiving all bytes that device sends
    return STATUS_GOOD;

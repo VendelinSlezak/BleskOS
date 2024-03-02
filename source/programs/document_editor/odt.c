@@ -487,25 +487,211 @@ void convert_dmf_to_odt(dword_t dmf_memory) {
  //create content.xml
  struct byte_stream_descriptor *file_content_xml_byte_stream = create_byte_stream(BYTE_STREAM_100_KB_BLOCK);
  add_string_to_byte_stream(file_content_xml_byte_stream, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
- add_string_to_byte_stream(file_content_xml_byte_stream, "<office:document-content xmlns:office=\"urn:oasis:names:tc:opendocument:xmlns:office:1.0\" xmlns:style=\"urn:oasis:names:tc:opendocument:xmlns:style:1.0\" xmlns:text=\"urn:oasis:names:tc:opendocument:xmlns:text:1.0\" xmlns:table=\"urn:oasis:names:tc:opendocument:xmlns:table:1.0\" xmlns:draw=\"urn:oasis:names:tc:opendocument:xmlns:drawing:1.0\" xmlns:fo=\"urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:meta=\"urn:oasis:names:tc:opendocument:xmlns:meta:1.0\" xmlns:number=\"urn:oasis:names:tc:opendocument:xmlns:datastyle:1.0\" xmlns:svg=\"urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0\" xmlns:chart=\"urn:oasis:names:tc:opendocument:xmlns:chart:1.0\" xmlns:dr3d=\"urn:oasis:names:tc:opendocument:xmlns:dr3d:1.0\" xmlns:math=\"http://www.w3.org/1998/Math/MathML\" xmlns:form=\"urn:oasis:names:tc:opendocument:xmlns:form:1.0\" xmlns:script=\"urn:oasis:names:tc:opendocument:xmlns:script:1.0\" xmlns:ooo=\"http://openoffice.org/2004/office\" xmlns:ooow=\"http://openoffice.org/2004/writer\" xmlns:oooc=\"http://openoffice.org/2004/calc\" xmlns:dom=\"http://www.w3.org/2001/xml-events\" xmlns:xforms=\"http://www.w3.org/2002/xforms\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:rpt=\"http://openoffice.org/2005/report\" xmlns:of=\"urn:oasis:names:tc:opendocument:xmlns:of:1.2\" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\" xmlns:grddl=\"http://www.w3.org/2003/g/data-view#\" xmlns:officeooo=\"http://openoffice.org/2009/office\" xmlns:tableooo=\"http://openoffice.org/2009/table\" xmlns:drawooo=\"http://openoffice.org/2010/draw\" xmlns:calcext=\"urn:org:documentfoundation:names:experimental:calc:xmlns:calcext:1.0\" xmlns:loext=\"urn:org:documentfoundation:names:experimental:office:xmlns:loext:1.0\" xmlns:field=\"urn:openoffice:names:experimental:ooo-ms-interop:xmlns:field:1.0\" xmlns:formx=\"urn:openoffice:names:experimental:ooxml-odf-interop:xmlns:form:1.0\" xmlns:css3t=\"http://www.w3.org/TR/css3-text/\" office:version=\"1.2\"><office:body><office:text>");
+ add_string_to_byte_stream(file_content_xml_byte_stream, "<office:document-content xmlns:office=\"urn:oasis:names:tc:opendocument:xmlns:office:1.0\" xmlns:style=\"urn:oasis:names:tc:opendocument:xmlns:style:1.0\" xmlns:text=\"urn:oasis:names:tc:opendocument:xmlns:text:1.0\" xmlns:table=\"urn:oasis:names:tc:opendocument:xmlns:table:1.0\" xmlns:draw=\"urn:oasis:names:tc:opendocument:xmlns:drawing:1.0\" xmlns:fo=\"urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:meta=\"urn:oasis:names:tc:opendocument:xmlns:meta:1.0\" xmlns:number=\"urn:oasis:names:tc:opendocument:xmlns:datastyle:1.0\" xmlns:svg=\"urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0\" xmlns:chart=\"urn:oasis:names:tc:opendocument:xmlns:chart:1.0\" xmlns:dr3d=\"urn:oasis:names:tc:opendocument:xmlns:dr3d:1.0\" xmlns:math=\"http://www.w3.org/1998/Math/MathML\" xmlns:form=\"urn:oasis:names:tc:opendocument:xmlns:form:1.0\" xmlns:script=\"urn:oasis:names:tc:opendocument:xmlns:script:1.0\" xmlns:ooo=\"http://openoffice.org/2004/office\" xmlns:ooow=\"http://openoffice.org/2004/writer\" xmlns:oooc=\"http://openoffice.org/2004/calc\" xmlns:dom=\"http://www.w3.org/2001/xml-events\" xmlns:xforms=\"http://www.w3.org/2002/xforms\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:rpt=\"http://openoffice.org/2005/report\" xmlns:of=\"urn:oasis:names:tc:opendocument:xmlns:of:1.2\" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\" xmlns:grddl=\"http://www.w3.org/2003/g/data-view#\" xmlns:officeooo=\"http://openoffice.org/2009/office\" xmlns:tableooo=\"http://openoffice.org/2009/table\" xmlns:drawooo=\"http://openoffice.org/2010/draw\" xmlns:calcext=\"urn:org:documentfoundation:names:experimental:calc:xmlns:calcext:1.0\" xmlns:loext=\"urn:org:documentfoundation:names:experimental:office:xmlns:loext:1.0\" xmlns:field=\"urn:openoffice:names:experimental:ooo-ms-interop:xmlns:field:1.0\" xmlns:formx=\"urn:openoffice:names:experimental:ooxml-odf-interop:xmlns:form:1.0\" xmlns:css3t=\"http://www.w3.org/TR/css3-text/\" office:version=\"1.2\">");
  
- //TODO: convert all document data
+ //"Standard"
+ dmf_character_size = 9;
+ dmf_character_emphasis = 0;
+ dmf_character_color = BLACK;
+ dmf_character_background_color = TRANSPARENT_COLOR;
+
+ //convert all styles in document
  word_t *dmf = (word_t *) (dmf_memory);
- add_string_to_byte_stream(file_content_xml_byte_stream, "<text:p>");
- byte_t first_page_paragraph_tag = STATUS_TRUE;
+ dword_t number_of_paragraph_style = 1, number_of_text_style = 1;
+
+ add_string_to_byte_stream(file_content_xml_byte_stream, "<office:automatic-styles>");
  while(*dmf!=0) {
   if(*dmf==DMF_SECTION_FORMAT_CHANGE_SIGNATURE) {
-   //process new paragraph
+   //style of paragraph
    if((dmf[DMF_SFCH_DESCRIPTION_OFFSET] & DMF_SFCH_DESCRIPTION_NEW_PARAGRAPH)==DMF_SFCH_DESCRIPTION_NEW_PARAGRAPH) {
-    if(first_page_paragraph_tag==STATUS_FALSE) {
-     add_string_to_byte_stream(file_content_xml_byte_stream, "</text:p>");
-     add_string_to_byte_stream(file_content_xml_byte_stream, "<text:p>");
-    }
-    first_page_paragraph_tag = STATUS_FALSE;
+    add_string_to_byte_stream(file_content_xml_byte_stream, "<style:style style:name=\"P");
+    add_number_to_byte_stream(file_content_xml_byte_stream, number_of_paragraph_style);
+    add_string_to_byte_stream(file_content_xml_byte_stream, "\" style:family=\"paragraph\" style:parent-style-name=\"Standard\">");
+    number_of_paragraph_style++;
+
+    //"Standard"
+    dmf_character_size = 9;
+    dmf_character_emphasis = 0;
+    dmf_character_color = BLACK;
+    dmf_character_background_color = TRANSPARENT_COLOR;
+
+    //text-properties
+    add_string_to_byte_stream(file_content_xml_byte_stream, "<style:text-properties");
+     //size
+     if(dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET]!=9) {
+      add_string_to_byte_stream(file_content_xml_byte_stream, " fo:font-size=\"");
+      add_number_to_byte_stream(file_content_xml_byte_stream, dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET]*96/72); //convert to pt
+      add_string_to_byte_stream(file_content_xml_byte_stream, "pt\"");
+      dmf_character_size = dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET];
+     }
+
+     //emphasis
+     if(dmf[DMF_SFCH_INLINE_CHANGE_EMPHASIS_OFFSET]!=0) {
+      if((dmf[DMF_SFCH_INLINE_CHANGE_EMPHASIS_OFFSET] & SF_EMPHASIS_BOLD)==SF_EMPHASIS_BOLD) {
+       add_string_to_byte_stream(file_content_xml_byte_stream, " fo:font-weight=\"bold\"");
+      }
+
+      if((dmf[DMF_SFCH_INLINE_CHANGE_EMPHASIS_OFFSET] & SF_EMPHASIS_UNDERLINE)==SF_EMPHASIS_UNDERLINE) {
+       add_string_to_byte_stream(file_content_xml_byte_stream, " style:text-underline-style=\"solid\" style:text-underline-width=\"auto\"");
+      }
+
+      if((dmf[DMF_SFCH_INLINE_CHANGE_EMPHASIS_OFFSET] & SF_EMPHASIS_STRIKE)==SF_EMPHASIS_STRIKE) {
+       add_string_to_byte_stream(file_content_xml_byte_stream, " style:text-line-through-style=\"solid\" style:text-line-through-type=\"single\"");
+      }
+
+      dmf_character_emphasis = dmf[DMF_SFCH_INLINE_CHANGE_EMPHASIS_OFFSET];
+     }
+
+     //color
+     if((dmf[DMF_SFCH_INLINE_CHANGE_COLOR_OFFSET] | dmf[DMF_SFCH_INLINE_CHANGE_COLOR_OFFSET+1]<<16)!=BLACK) {
+      add_string_to_byte_stream(file_content_xml_byte_stream, " fo:color=\"#");
+      add_hex_number_to_byte_stream(file_content_xml_byte_stream, (dmf[DMF_SFCH_INLINE_CHANGE_COLOR_OFFSET] | dmf[DMF_SFCH_INLINE_CHANGE_COLOR_OFFSET+1]<<16), 6);
+      add_string_to_byte_stream(file_content_xml_byte_stream, "\"");
+      dmf_character_color = (dmf[DMF_SFCH_INLINE_CHANGE_COLOR_OFFSET] | dmf[DMF_SFCH_INLINE_CHANGE_COLOR_OFFSET+1]<<16);
+     }
+
+     //background color
+     if((dmf[DMF_SFCH_INLINE_CHANGE_BACKGROUND_COLOR_OFFSET] | dmf[DMF_SFCH_INLINE_CHANGE_BACKGROUND_COLOR_OFFSET+1]<<16)!=TRANSPARENT_COLOR) {
+      add_string_to_byte_stream(file_content_xml_byte_stream, " fo:background-color=\"#");
+      add_hex_number_to_byte_stream(file_content_xml_byte_stream, (dmf[DMF_SFCH_INLINE_CHANGE_BACKGROUND_COLOR_OFFSET] | dmf[DMF_SFCH_INLINE_CHANGE_BACKGROUND_COLOR_OFFSET+1]<<16), 6);
+      add_string_to_byte_stream(file_content_xml_byte_stream, "\"");
+      dmf_character_color = (dmf[DMF_SFCH_INLINE_CHANGE_BACKGROUND_COLOR_OFFSET] | dmf[DMF_SFCH_INLINE_CHANGE_BACKGROUND_COLOR_OFFSET+1]<<16);
+     }
+    add_string_to_byte_stream(file_content_xml_byte_stream, "/>");
+
+    add_string_to_byte_stream(file_content_xml_byte_stream, "</style:style>");
+   }
+   else if(dmf_is_section_format_change_only_span_change((dword_t)dmf)==STATUS_TRUE) { //style of text
+    add_string_to_byte_stream(file_content_xml_byte_stream, "<style:style style:name=\"T");
+    add_number_to_byte_stream(file_content_xml_byte_stream, number_of_text_style);
+    add_string_to_byte_stream(file_content_xml_byte_stream, "\" style:family=\"text\">");
+    number_of_text_style++;
+
+    //TODO: convert all data
+    add_string_to_byte_stream(file_content_xml_byte_stream, "<style:text-properties");
+     //size
+     if(dmf_character_size!=dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET]) {
+      add_string_to_byte_stream(file_content_xml_byte_stream, " fo:font-size=\"");
+      add_number_to_byte_stream(file_content_xml_byte_stream, dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET]*96/72); //convert to pt
+      add_string_to_byte_stream(file_content_xml_byte_stream, "pt\"");
+      dmf_character_size = dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET];
+     }
+
+     //emphasis
+     if((dmf[DMF_SFCH_INLINE_CHANGE_EMPHASIS_OFFSET] & SF_EMPHASIS_BOLD)!=(dmf_character_emphasis & SF_EMPHASIS_BOLD)) {
+      add_string_to_byte_stream(file_content_xml_byte_stream, " fo:font-weight=\"");
+      if((dmf[DMF_SFCH_INLINE_CHANGE_EMPHASIS_OFFSET] & SF_EMPHASIS_BOLD)==SF_EMPHASIS_BOLD) {
+       add_string_to_byte_stream(file_content_xml_byte_stream, "bold");
+      }
+      else {
+       add_string_to_byte_stream(file_content_xml_byte_stream, "none");
+      }
+      add_string_to_byte_stream(file_content_xml_byte_stream, "\"");
+     }
+     
+     if((dmf[DMF_SFCH_INLINE_CHANGE_EMPHASIS_OFFSET] & SF_EMPHASIS_UNDERLINE)!=(dmf_character_emphasis & SF_EMPHASIS_UNDERLINE)) {
+      add_string_to_byte_stream(file_content_xml_byte_stream, " style:text-underline-style=\"");
+      if((dmf[DMF_SFCH_INLINE_CHANGE_EMPHASIS_OFFSET] & SF_EMPHASIS_UNDERLINE)==SF_EMPHASIS_UNDERLINE) {
+       add_string_to_byte_stream(file_content_xml_byte_stream, "solid\" style:text-underline-width=\"auto");
+      }
+      else {
+       add_string_to_byte_stream(file_content_xml_byte_stream, "none");
+      }
+      add_string_to_byte_stream(file_content_xml_byte_stream, "\"");
+     }
+
+     if((dmf[DMF_SFCH_INLINE_CHANGE_EMPHASIS_OFFSET] & SF_EMPHASIS_STRIKE)!=(dmf_character_emphasis & SF_EMPHASIS_STRIKE)) {
+      add_string_to_byte_stream(file_content_xml_byte_stream, " style:text-line-through-style=\"");
+      if((dmf[DMF_SFCH_INLINE_CHANGE_EMPHASIS_OFFSET] & SF_EMPHASIS_STRIKE)==SF_EMPHASIS_STRIKE) {
+       add_string_to_byte_stream(file_content_xml_byte_stream, "solid\" style:text-line-through-type=\"single");
+      }
+      else {
+       add_string_to_byte_stream(file_content_xml_byte_stream, "none");
+      }
+      add_string_to_byte_stream(file_content_xml_byte_stream, "\"");
+     }
+
+     dmf_character_emphasis = dmf[DMF_SFCH_INLINE_CHANGE_EMPHASIS_OFFSET];
+
+     //color
+     if(dmf_character_color!=(dmf[DMF_SFCH_INLINE_CHANGE_COLOR_OFFSET] | dmf[DMF_SFCH_INLINE_CHANGE_COLOR_OFFSET+1]<<16)) {
+      add_string_to_byte_stream(file_content_xml_byte_stream, " fo:color=\"#");
+      add_hex_number_to_byte_stream(file_content_xml_byte_stream, (dmf[DMF_SFCH_INLINE_CHANGE_COLOR_OFFSET] | dmf[DMF_SFCH_INLINE_CHANGE_COLOR_OFFSET+1]<<16), 6);
+      add_string_to_byte_stream(file_content_xml_byte_stream, "\"");
+      dmf_character_color = dmf[DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET];
+     }
+
+     //background color
+     if((dmf[DMF_SFCH_INLINE_CHANGE_BACKGROUND_COLOR_OFFSET] | dmf[DMF_SFCH_INLINE_CHANGE_BACKGROUND_COLOR_OFFSET+1]<<16)!=TRANSPARENT_COLOR) {
+      add_string_to_byte_stream(file_content_xml_byte_stream, " fo:background-color=\"#");
+      add_hex_number_to_byte_stream(file_content_xml_byte_stream, (dmf[DMF_SFCH_INLINE_CHANGE_BACKGROUND_COLOR_OFFSET] | dmf[DMF_SFCH_INLINE_CHANGE_BACKGROUND_COLOR_OFFSET+1]<<16), 6);
+      add_string_to_byte_stream(file_content_xml_byte_stream, "\"");
+      dmf_character_color = (dmf[DMF_SFCH_INLINE_CHANGE_BACKGROUND_COLOR_OFFSET] | dmf[DMF_SFCH_INLINE_CHANGE_BACKGROUND_COLOR_OFFSET+1]<<16);
+     }
+     
+    add_string_to_byte_stream(file_content_xml_byte_stream, "/>");
+
+    add_string_to_byte_stream(file_content_xml_byte_stream, "</style:style>");
    }
 
    //skip
    dmf = (word_t *) (((dword_t)dmf)+DMF_SFCH_ENTRY_LENGTH_IN_BYTES);
+  }
+  else {
+   //skip
+   dmf++;
+  }
+ }
+ add_string_to_byte_stream(file_content_xml_byte_stream, "</office:automatic-styles>");
+
+ //convert all document data
+ dmf = (word_t *) (dmf_memory);
+ byte_t inside_of_paragraph_tag = STATUS_FALSE, inside_of_span_tag = STATUS_FALSE;
+ number_of_paragraph_style = 1;
+ number_of_text_style = 1;
+ add_string_to_byte_stream(file_content_xml_byte_stream, "<office:body><office:text>");
+ while(*dmf!=0) {
+  if(*dmf==DMF_SECTION_FORMAT_CHANGE_SIGNATURE) {
+   //process new paragraph
+   if((dmf[DMF_SFCH_DESCRIPTION_OFFSET] & DMF_SFCH_DESCRIPTION_NEW_PARAGRAPH)==DMF_SFCH_DESCRIPTION_NEW_PARAGRAPH) {
+    if(inside_of_span_tag==STATUS_TRUE) {
+     add_string_to_byte_stream(file_content_xml_byte_stream, "</text:span>");
+     inside_of_span_tag = STATUS_FALSE;
+    }
+    if(inside_of_paragraph_tag==STATUS_TRUE) {
+     add_string_to_byte_stream(file_content_xml_byte_stream, "</text:p>");
+     inside_of_paragraph_tag = STATUS_FALSE;
+    }
+
+    add_string_to_byte_stream(file_content_xml_byte_stream, "<text:p text:style-name=\"P");
+    add_number_to_byte_stream(file_content_xml_byte_stream, number_of_paragraph_style);
+    add_string_to_byte_stream(file_content_xml_byte_stream, "\">");
+    number_of_paragraph_style++;
+
+    inside_of_paragraph_tag = STATUS_TRUE;
+   }
+   else if(dmf_is_section_format_change_only_span_change((dword_t)dmf)==STATUS_TRUE) { //process new span
+    if(inside_of_span_tag==STATUS_TRUE) {
+     add_string_to_byte_stream(file_content_xml_byte_stream, "</text:span>");
+     inside_of_span_tag = STATUS_FALSE;
+    }
+
+    add_string_to_byte_stream(file_content_xml_byte_stream, "<text:span text:style-name=\"T");
+    add_number_to_byte_stream(file_content_xml_byte_stream, number_of_text_style);
+    add_string_to_byte_stream(file_content_xml_byte_stream, "\">");
+    number_of_text_style++;
+
+    inside_of_span_tag = STATUS_TRUE;
+   }
+
+   //skip
+   dmf = (word_t *) (((dword_t)dmf)+DMF_SFCH_ENTRY_LENGTH_IN_BYTES);
+  }
+  else if(*dmf==0xA) { //line break
+   add_string_to_byte_stream(file_content_xml_byte_stream, "<text:line-break/>");
+
+   //skip
+   dmf++;
   }
   else {
    //convert Unicode to UTF-8 and write it to stream
@@ -526,8 +712,14 @@ void convert_dmf_to_odt(dword_t dmf_memory) {
    dmf++;
   }
  }
- add_string_to_byte_stream(file_content_xml_byte_stream, "</text:p>");
+ if(inside_of_span_tag==STATUS_TRUE) {
+  add_string_to_byte_stream(file_content_xml_byte_stream, "</text:span>");
+ }
+ if(inside_of_paragraph_tag==STATUS_TRUE) {
+  add_string_to_byte_stream(file_content_xml_byte_stream, "</text:p>");
+ }
 
+ //end document data
  add_string_to_byte_stream(file_content_xml_byte_stream, "</office:text></office:body></office:document-content>");
 
  //create ZIP file from all these files

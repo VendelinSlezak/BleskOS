@@ -358,10 +358,12 @@ byte_t *get_pci_vendor_string(dword_t vendor_id) {
 
  for(dword_t i=0; i<256; i+=2) {
   if(pci_vendor_id_string_array[i]==0) {
-   return ""; //this vendor id is not in list
+   break;
   }
   else if(pci_vendor_id_string_array[i]==vendor_id) {
    return (byte_t *)(pci_vendor_id_string_array[i+1]);
   }
  }
+
+ return ""; //this vendor id is not in list
 }

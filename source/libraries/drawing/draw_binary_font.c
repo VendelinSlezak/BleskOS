@@ -49,13 +49,13 @@ void draw_part_of_char(word_t char_val, dword_t x, dword_t y, dword_t first_char
 }
 
 void print(byte_t *string, dword_t x, dword_t y, dword_t color) {
- word_t unicode_char=0;
+ word_t unicode_char=0, original_x = x;
 
  while(*string!=0 && x<graphic_screen_x) {
   unicode_char = (word_t) *string;
   if(unicode_char=='\n') {
-   y+=10;
-   x=x;
+   y += 10;
+   x = original_x;
    string++;
   }
   else if(unicode_char<0x80) {
@@ -92,10 +92,10 @@ void print_unicode(word_t *string, dword_t x, dword_t y, dword_t color) {
 }
 
 void print_var(dword_t value, dword_t x, dword_t y, dword_t color) {
- word_t number_string[10];
+ word_t number_string[11];
  dword_t number_digits = 0;
  
- for(int i=0; i<10; i++) {
+ for(int i=0; i<11; i++) {
   number_string[i]=0;
  }
  
@@ -129,21 +129,21 @@ void print_hex(dword_t value, dword_t x, dword_t y, dword_t color) {
 }
 
 void pstr(byte_t *string) {
- print(string, 0, debug_line, BLACK);
+ print(string, 0, debug_line, 0x888888);
  debug_line+=10;
  debug_line%=graphic_screen_y;
  redraw_screen();
 }
 
 void pvar(dword_t value) {
- print_var(value, 0, debug_line, BLACK);
+ print_var(value, 0, debug_line, 0x888888);
  debug_line+=10;
  debug_line%=graphic_screen_y;
  redraw_screen();
 }
 
 void phex(dword_t value) {
- print_hex(value, 0, debug_line, BLACK);
+ print_hex(value, 0, debug_line, 0x888888);
  debug_line+=10;
  debug_line%=graphic_screen_y;
  redraw_screen();

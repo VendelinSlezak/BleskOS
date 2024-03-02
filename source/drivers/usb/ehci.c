@@ -16,6 +16,7 @@ void initalize_ehci_controller(byte_t controller_number) {
   
   ticks = 0;
   while(ticks<200) {
+   asm("nop");
    if((pci_read(usb_controllers[controller_number].bus, usb_controllers[controller_number].device, usb_controllers[controller_number].function, pci_ehci_bios_register_offset) & 0x01010000)==0x01000000) {
     break;
    }
@@ -206,6 +207,7 @@ byte_t ehci_control_or_bulk_transfer(byte_t controller_number, byte_t last_descr
  dword_t *transfer_descriptor = (dword_t *) (usb_controllers[controller_number].mem2+(last_descriptor*64)+8);
  ticks=0;
  while(ticks<time) {
+  asm("nop");
   if((*transfer_descriptor & 0x80)!=0x80) { //active bit
    if((*transfer_descriptor & 0x7C)==0x00) { //error bits
     //stop transfer

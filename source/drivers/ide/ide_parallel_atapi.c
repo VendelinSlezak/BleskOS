@@ -12,7 +12,7 @@ byte_t patapi_send_packet_command(word_t base_port, word_t transfer_length) {
  //drive must be already selected
 
  //reset drive from condition for stucking
- if(inb(base_port + 7) & 0x88!=0x00) {
+ if((inb(base_port + 7) & 0x88)!=0x00) {
   log("\nIDE ATAPI: reset");
   ide_reset_controller(base_port, ide_cdrom_alt_base);
  }

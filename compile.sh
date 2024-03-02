@@ -9,9 +9,9 @@ nasm -f elf32 source/assembly/bleskos.asm -o compile/bleskos_asm.bin
 
 if $( echo $@ | grep -Fiq wall )
 then
-	gcc -m32 -c -fno-stack-protector -ffreestanding -fno-PIC -std=gnu99 source/bleskos.c -o compile/bleskos_c.bin -Wall -Wno-pointer-sign -Wno-unused-variable 
+	gcc -m32 -c -fno-stack-protector -ffreestanding -fno-PIC -std=gnu99 source/bleskos.c -o compile/bleskos_c.bin -Os -Wall -Wno-pointer-sign -Wno-unused-variable 
 else
-	gcc -m32 -c -fno-stack-protector -ffreestanding -fno-PIC -std=gnu99 source/bleskos.c -o compile/bleskos_c.bin
+	gcc -m32 -c -fno-stack-protector -ffreestanding -fno-PIC -std=gnu99 source/bleskos.c -o compile/bleskos_c.bin -Os
 fi
 
 ld -m elf_i386 --oformat=binary -T source/linker.ld -o compile/bleskos.bin compile/bleskos_asm.bin compile/bleskos_c.bin

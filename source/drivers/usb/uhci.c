@@ -148,6 +148,7 @@ byte_t uhci_control_or_bulk_transfer(byte_t controller_number, byte_t last_descr
  dword_t *transfer_descriptor_status = (dword_t *) (usb_controllers[controller_number].mem3+(last_descriptor*32)+4);
  ticks=0;
  while(ticks<time) {
+  asm("nop");
   if((*transfer_descriptor_status & 0x00800000)==0x00000000) { //active bit
    if((*transfer_descriptor_status & 0x007E0000)==0x00000000) { //error bits
     //restore frame list
