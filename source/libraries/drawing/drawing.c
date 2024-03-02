@@ -169,10 +169,9 @@ void draw_line(int x0, int y0, int x1, int y1, dword_t color) {
  }
 }
 
-//TODO: long variables do not work on some computers and some curves are not properly drawed
 void plotQuadBezierSeg(int x0, int y0, int x1, int y1, int x2, int y2, dword_t color) {                            
   int sx = x2-x1, sy = y2-y1;
-  long xx = x0-x1, yy = y0-y1, xy;         /* relative values for checks */
+  long long xx = x0-x1, yy = y0-y1, xy;         /* relative values for checks */
   double dx, dy, err, cur = xx*sy-yy*sx;                    /* curvature */
 
   if (sx*(long)sx+sy*(long)sy > xx*xx+yy*yy) { /* begin with longer part */ 
@@ -206,13 +205,15 @@ void draw_quadratic_bezier(int x0, int y0, int x1, int y1, int x2, int y2, dword
  double t = x0-2*x1+x2, r;
  
  if ((long)x*(x2-x1) > 0) {
-  if ((long)y*(y2-y1) > 0)
+  // if ((long)y*(y2-y1) > 0) {
    if (fabs((y0-2*y1+y2)/t*x) > abs(y)) {           
     x0 = x2;
     x2 = x+x1;
     y0 = y2;
     y2 = y+y1;
    }
+  // }
+
    t = (x0-x1)/t;
    r = (1-t)*((1-t)*y0+2.0*t*y1)+t*t*y2;
    t = (x0*x2-x1*x1)*t/(x0-x1);
@@ -347,8 +348,8 @@ void draw_full_circle(dword_t x, dword_t y, dword_t radius, dword_t color) {
 }
 
 void draw_empty_ellipse(int x0, int y0, int x1, int y1, dword_t color) {
- long a = abs(x1-x0), b = abs(y1-y0), b1 = (b & 1);
- long dx = 4*(1-a)*b*b, dy = 4*(b1+1)*a*a, err = dx+dy+b1*a*a, e2;
+ long long a = abs(x1-x0), b = abs(y1-y0), b1 = (b & 1);
+ long long dx = 4*(1-a)*b*b, dy = 4*(b1+1)*a*a, err = dx+dy+b1*a*a, e2;
 
  if (x0 > x1) {
   x0 = x1;
@@ -390,8 +391,8 @@ void draw_empty_ellipse(int x0, int y0, int x1, int y1, dword_t color) {
 }
 
 void draw_parts_of_empty_ellipse(byte_t parts, int x0, int y0, int x1, int y1, dword_t color) {
- long a = abs(x1-x0), b = abs(y1-y0), b1 = (b & 1);
- long dx = 4*(1-a)*b*b, dy = 4*(b1+1)*a*a, err = dx+dy+b1*a*a, e2;
+ long long a = abs(x1-x0), b = abs(y1-y0), b1 = (b & 1);
+ long long dx = 4*(1-a)*b*b, dy = 4*(b1+1)*a*a, err = dx+dy+b1*a*a, e2;
 
  if (x0 > x1) {
   x0 = x1;
@@ -441,8 +442,8 @@ void draw_parts_of_empty_ellipse(byte_t parts, int x0, int y0, int x1, int y1, d
 }
 
 void draw_full_ellipse(int x0, int y0, int x1, int y1, dword_t color) {
- long a = abs(x1-x0), b = abs(y1-y0), b1 = (b & 1);
- long dx = 4*(1-a)*b*b, dy = 4*(b1+1)*a*a, err = dx+dy+b1*a*a, e2;
+ long long a = abs(x1-x0), b = abs(y1-y0), b1 = (b & 1);
+ long long dx = 4*(1-a)*b*b, dy = 4*(b1+1)*a*a, err = dx+dy+b1*a*a, e2;
 
  if (x0 > x1) {
   x0 = x1;

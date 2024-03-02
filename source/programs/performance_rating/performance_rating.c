@@ -276,9 +276,12 @@ void performance_rating_task41() { // convert unix time
 }
 void performance_rating_task42() { // draw image
 //  draw_image((dword_t)PERFORMANCE_RATING_IMAGE);
+ return;
 }
 void performance_rating_task43() { // qoi compress
+ return;
 }
 void performance_rating_task44() { // qoi decompress
+ return;
 }
 

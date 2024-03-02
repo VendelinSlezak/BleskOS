@@ -23,5 +23,7 @@ struct byte_stream_descriptor {
 struct byte_stream_descriptor *create_byte_stream(dword_t size_of_block);
 void add_byte_to_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor, byte_t value);
 void add_string_to_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor, byte_t *string);
+void add_number_to_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor, dword_t number);
+void add_hex_number_to_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor, dword_t number, dword_t number_of_chars);
 void create_free_space_in_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor, dword_t space_size);
 void close_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor);

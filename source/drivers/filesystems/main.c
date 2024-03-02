@@ -118,6 +118,8 @@ byte_t read_audio_cd(dword_t sector, dword_t num_of_sectors, dword_t memory) {
    return patapi_read_audio_cd_sector(ide_cdrom_base, ide_cdrom_alt_base, sector, num_of_sectors, memory);
   }
  }
+
+ return STATUS_ERROR;
 }
 
 byte_t write_storage_medium(dword_t sector, byte_t num_of_sectors, dword_t memory) {
@@ -387,7 +389,7 @@ void read_partition_info(void) {
      }
 
      //parse partition info
-     if(gpt_pointer[0]!=0 || gpt_pointer[1]!=0 || gpt_pointer[2]!=0 || gpt_pointer[3]!=0 && (gpt_pointer[9]==0 && gpt_pointer[11]==0)) { //we do not support partitions bigger than 2 TB
+     if(gpt_pointer[9]==0 && gpt_pointer[11]==0) { //we do not support partitions bigger than 2 TB
       partitions[partition_ptr].type = STORAGE_UNKNOWN_FILESYSTEM;
       partitions[partition_ptr].first_sector = gpt_pointer[8];
       partitions[partition_ptr].num_of_sectors = (gpt_pointer[10]-gpt_pointer[8]);

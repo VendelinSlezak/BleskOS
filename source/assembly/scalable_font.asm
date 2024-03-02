@@ -1181,7 +1181,7 @@ bleskos_scalable_font_char_0x77_w:
  db SF_CHAR_LINE, 0, 40, 25, 100
  db SF_CHAR_LINE, 25, 100, 50, 40
  db SF_CHAR_LINE, 50, 40, 75, 100
- db SF_CHAR_LINE, 75, 100, 100, 40
+ db SF_CHAR_LINE, 75, 100, 95, 40
  
  db SF_CHAR_END
 

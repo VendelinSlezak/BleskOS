@@ -19,7 +19,7 @@
 typedef unsigned char byte_t;
 typedef unsigned short word_t;
 typedef unsigned int dword_t;
-typedef unsigned long qword_t;
+typedef unsigned long long qword_t;
 
 byte_t value8;
 word_t value16;

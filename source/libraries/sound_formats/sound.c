@@ -9,7 +9,7 @@
 */
 
 dword_t create_sound(dword_t channels, dword_t bits_per_sample, dword_t sample_rate, dword_t length_of_data) {
- dword_t sound_info_mem = aligned_malloc(SOUND_SIZE_OF_INFO_IN_BYTES+length_of_data, 0x7F);
+ dword_t sound_info_mem = aligned_calloc(SOUND_SIZE_OF_INFO_IN_BYTES+length_of_data, 0x7F);
  dword_t *sound_info = (dword_t *) sound_info_mem;
 
  sound_info[SOUND_INFO_NUMBER_OF_CHANNELS] = channels;

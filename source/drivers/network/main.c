@@ -296,6 +296,7 @@ void connect_to_network(void) {
  //Offer
  ticks=0;
  while(ticks<500) {
+  asm("hlt");
   if(ip_address!=0x00000000 && server_ip!=0x00000000 && dns_server_ip!=0x00000000) {
    break;
   }
@@ -313,6 +314,7 @@ void connect_to_network(void) {
  //Acknowledge
  ticks=0;
  while(ticks<500) {
+  asm("hlt");
   if(dhcp_acknowledge==DHCP_ACK) {
    break;
   }

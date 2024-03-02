@@ -44,6 +44,7 @@ void add_byte_to_byte_stream(struct byte_stream_descriptor *actual_byte_stream_d
   actual_byte_stream_descriptor->size_of_allocated_memory += actual_byte_stream_descriptor->size_of_one_block;
   actual_byte_stream_descriptor->start_of_allocated_memory = (realloc(actual_byte_stream_descriptor->start_of_allocated_memory, actual_byte_stream_descriptor->size_of_allocated_memory));
   actual_byte_stream_descriptor->end_of_allocated_memory = (actual_byte_stream_descriptor->start_of_allocated_memory+actual_byte_stream_descriptor->size_of_allocated_memory);
+  actual_byte_stream_descriptor->memory_pointer = (byte_t *) (actual_byte_stream_descriptor->end_of_allocated_memory-actual_byte_stream_descriptor->size_of_one_block);
  }
 
  //write byte
@@ -55,6 +56,23 @@ void add_byte_to_byte_stream(struct byte_stream_descriptor *actual_byte_stream_d
 void add_string_to_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor, byte_t *string) {
  for(dword_t i=0; i<get_number_of_chars_in_ascii_string(string); i++) {
   add_byte_to_byte_stream(actual_byte_stream_descriptor, string[i]);
+ }
+}
+
+void add_number_to_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor, dword_t number) {
+ clear_memory((dword_t)(&number_string), MATH_LENGTH_OF_NUMBER_STRING_ARRAY);
+ convert_number_to_byte_string(number, (dword_t)(&number_string));
+ add_string_to_byte_stream(actual_byte_stream_descriptor, (byte_t *)number_string);
+}
+
+void add_hex_number_to_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor, dword_t number, dword_t number_of_chars) {
+ for(dword_t i=0, shift=((number_of_chars-1)*4); i<number_of_chars; i++, shift-=4) {
+  if(((number>>shift) & 0xF)<0xA) {
+   add_byte_to_byte_stream(actual_byte_stream_descriptor, ((number>>shift) & 0xF)+'0');
+  }
+  else {
+   add_byte_to_byte_stream(actual_byte_stream_descriptor, ((number>>shift) & 0xF)-10+'A');
+  }
  }
 }
 

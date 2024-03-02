@@ -41,7 +41,7 @@ void css_parse_file(void) {
    while(*css!='{' && *css!=0 && *css!='"' && *css!='>') {
     selector_pointer = ((dword_t)css);
     while((*css>='a' && *css<='z') || (*css>='A' && *css<='Z') || (*css>='0' && *css<='9') || *css=='-') {
-     *css++;
+     css++;
     }
     css_skip_spaces();
     if(*css=='{' || *css==',') {
@@ -88,7 +88,7 @@ void css_parse_file(void) {
    while(*css!='{' && *css!=0 && *css!='"' && *css!='>') {
     selector_pointer = ((dword_t)css);
     while((*css>='a' && *css<='z') || (*css>='A' && *css<='Z') || (*css>='0' && *css<='9') || *css=='-') {
-     *css++;
+     css++;
     }
     css_skip_spaces();
     if(*css=='{' || *css==',') {
@@ -134,7 +134,7 @@ void css_parse_file(void) {
    while(*css!='{' && *css!=0 && *css!='"' && *css!='>') {
     selector_pointer = ((dword_t)css);
     while((*css>='a' && *css<='z') || (*css>='A' && *css<='Z') || (*css>='0' && *css<='9') || *css=='-') {
-     *css++;
+     css++;
     }
     css_skip_spaces();
     if(*css=='{' || *css==',') {

@@ -388,6 +388,8 @@ dword_t dmf_get_first_column_of_line(dword_t dmf_memory, dword_t alignment, dwor
  if(alignment==DMF_SFCH_PARAGRAPH_DESCRIPTION_ALIGNMENT_RIGHT) {
   return (dmf_page_actual_right_border-length_of_line);
  }
+
+ return 0;
 }
 
 dword_t dmf_get_biggest_char_size_of_line(dword_t dmf_memory, dword_t actual_char_size) {

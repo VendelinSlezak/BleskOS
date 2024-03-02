@@ -168,6 +168,7 @@ byte_t ohci_control_transfer(byte_t controller_number, dword_t last_td, dword_t 
  
  ticks=0;
  while(ticks<time) {
+  asm("nop");
   if((mem[0] & 0xE0000000)!=0xE0000000) { //active bits
    //stop transfer
    mmio_outd(usb_controllers[controller_number].base+0x04, 0x84);
@@ -214,6 +215,7 @@ byte_t ohci_bulk_transfer(byte_t controller_number, dword_t last_td, dword_t tim
  
  ticks=0;
  while(ticks<time) {
+  asm("nop");
   if((mem[0] & 0xE0000000)!=0xE0000000) { //active bits
    //stop transfer
    mmio_outd(usb_controllers[controller_number].base+0x04, 0x84);

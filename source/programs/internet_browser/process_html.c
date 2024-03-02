@@ -1073,7 +1073,7 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
     else { //ordered list
      convert_number_to_word_string(html_list_tag, (dword_t)webpage);
      while(*webpage>='0' && *webpage<='9') {
-      *webpage++;
+      webpage++;
       ib_actual_line_width += ib_font_size;
      }
      *webpage = '.';

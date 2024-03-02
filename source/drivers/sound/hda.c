@@ -15,6 +15,7 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
  mmio_outd(hda_base + 0x08, 0x0);
  ticks = 0;
  while(ticks<10) {
+  asm("nop");
   if((mmio_ind(hda_base + 0x08) & 0x1)==0x0) {
    break;
   }
@@ -22,6 +23,7 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
  mmio_outd(hda_base + 0x08, 0x1);
  ticks = 0;
  while(ticks<10) {
+  asm("nop");
   if((mmio_ind(hda_base + 0x08) & 0x1)==0x1) {
    break;
   }
@@ -35,7 +37,7 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
  //read capabilites
  hda_sound_cards[sound_card_number].input_stream_base = (hda_base + 0x80);
  hda_sound_cards[sound_card_number].output_stream_base = (hda_base + 0x80 + (0x20*((mmio_inw(hda_base + 0x00)>>8) & 0xF))); //skip input streams ports
- hda_output_buffer_list = aligned_malloc(16*4, 0x7F);
+ hda_output_buffer_list = aligned_calloc(16*2, 0x7F);
 
  //disable interrupts
  mmio_outd(hda_base + 0x20, 0);
@@ -53,7 +55,7 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
  mmio_outb(hda_base + 0x5C, 0x0);
  
  //configure CORB
- hda_corb_mem = aligned_malloc(256*4, 0x7F);
+ hda_corb_mem = aligned_calloc(256*4, 0x7F);
  mmio_outd(hda_base + 0x40, hda_corb_mem); //CORB lower memory
  mmio_outd(hda_base + 0x44, 0); //CORB upper memory
  if((mmio_inb(hda_base + 0x4E) & 0x40)==0x40) {
@@ -78,6 +80,7 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
  mmio_outw(hda_base + 0x4A, 0x8000); //reset read pointer
  ticks = 0;
  while(ticks<5) {
+  asm("nop");
   if((mmio_inw(hda_base + 0x4A) & 0x8000)==0x8000) { //wait until reset is complete
    break;
   }
@@ -89,6 +92,7 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
  mmio_outw(hda_base + 0x4A, 0x0000); //go back to normal state
  ticks = 0;
  while(ticks<5) {
+  asm("nop");
   if((mmio_inw(hda_base + 0x4A) & 0x8000)==0x0000) { //wait until is CORB in normal state
    break;
   }
@@ -101,11 +105,7 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
  hda_corb_pointer = 1;
  
  //configure RIRB
- hda_rirb_mem = aligned_malloc(256*8, 0x7F);
- if(hda_rirb_mem==0) {
-  memory_error_debug(0x0000FF);
- }
- clear_memory(hda_rirb_mem, 256*8);
+ hda_rirb_mem = aligned_calloc(256*8, 0x7F);
  mmio_outd(hda_base + 0x50, hda_rirb_mem); //RIRB lower memory
  mmio_outd(hda_base + 0x54, 0); //RIRB upper memory
  if((mmio_inb(hda_base + 0x5E) & 0x40)==0x40) {
@@ -182,12 +182,13 @@ dword_t hda_send_verb(dword_t sound_card_number, dword_t codec, dword_t node, dw
   //wait for response
   ticks = 0;
   while(ticks<5) {
+   asm("nop");
    if(mmio_inw(hda_base + 0x58)==hda_corb_pointer) {
     break;
    }
   }
   if(mmio_inw(hda_base + 0x58)!=hda_corb_pointer) {
-   return 0;
+   return STATUS_ERROR;
   }
   
   //read response
@@ -208,6 +209,7 @@ dword_t hda_send_verb(dword_t sound_card_number, dword_t codec, dword_t node, dw
   mmio_outw(hda_base + 0x68, 0x1);
   ticks = 0;
   while(ticks<3) {
+   asm("nop");
    if((mmio_inw(hda_base + 0x68) & 0x3)==0x2) {
     value = mmio_ind(hda_base + 0x64);
     mmio_outw(hda_base + 0x68, 0x2);
@@ -215,8 +217,10 @@ dword_t hda_send_verb(dword_t sound_card_number, dword_t codec, dword_t node, dw
    }
   }
   
-  return 0;
+  return STATUS_ERROR;
  }
+
+ return STATUS_ERROR;
 }
 
 void hda_initalize_codec(dword_t sound_card_number, dword_t codec_number) {
@@ -298,6 +302,9 @@ void hda_initalize_audio_function_group(dword_t sound_card_number, dword_t afg_n
 
   if(type_of_node==HDA_WIDGET_AUDIO_OUTPUT) {
    log("Audio Output");
+
+   //disable every audio output
+   hda_send_verb(sound_card_number, codec_number, node, 0x706, 0x00);
   }
   else if(type_of_node==HDA_WIDGET_AUDIO_INPUT) {
    log("Audio Input");
@@ -516,6 +523,9 @@ void hda_initalize_output_pin(dword_t sound_card_number, dword_t pin_node_number
  //turn on power for PIN
  hda_send_verb(sound_card_number, codec_number, pin_node_number, 0x705, 0x00);
 
+ //disable unsolicited responses
+ hda_send_verb(sound_card_number, codec_number, pin_node_number, 0x708, 0x00);
+
  //enable PIN
  hda_send_verb(sound_card_number, codec_number, pin_node_number, 0x707, (hda_send_verb(sound_card_number, codec_number, pin_node_number, 0xF07, 0x00) | 0x80 | 0x40));
 
@@ -562,11 +572,17 @@ void hda_initalize_audio_output(dword_t sound_card_number, dword_t audio_output_
  //turn on power for Audio Output
  hda_send_verb(sound_card_number, codec_number, audio_output_node_number, 0x705, 0x00);
 
- //TODO: is EAPD + L-R swap needed?
- hda_send_verb(sound_card_number, codec_number, audio_output_node_number, 0x70C, 0x6);
+ //disable unsolicited responses
+ hda_send_verb(sound_card_number, codec_number, audio_output_node_number, 0x708, 0x00);
 
  //connect Audio Output to stream 1 channel 0
  hda_send_verb(sound_card_number, codec_number, audio_output_node_number, 0x706, 0x10);
+
+ log("\nSTRIPE: "); log_hex(hda_send_verb(sound_card_number, codec_number, audio_output_node_number, 0xF24, 0x00));
+ log("\nCONV CHAN COUNT: "); log_hex(hda_send_verb(sound_card_number, codec_number, audio_output_node_number, 0xF2D, 0x00));
+
+ //TODO:
+ // hda_send_verb(sound_card_number, codec_number, audio_output_node_number, 0x72D, 1);
 
  //set maximal volume for Audio Output
  //TODO: does this work in every case?
@@ -622,6 +638,9 @@ void hda_initalize_audio_mixer(dword_t sound_card_number, dword_t audio_mixer_no
  //turn on power for Audio Mixer
  hda_send_verb(sound_card_number, codec_number, audio_mixer_node_number, 0x705, 0x00);
 
+ //disable unsolicited responses
+ hda_send_verb(sound_card_number, codec_number, audio_mixer_node_number, 0x708, 0x00);
+
  //set maximal volume for Audio Mixer
  //TODO: does this work in every case?
  dword_t audio_mixer_amp_capabilites = hda_send_verb(sound_card_number, codec_number, audio_mixer_node_number, 0xF00, 0x12);
@@ -663,6 +682,9 @@ void hda_initalize_audio_selector(dword_t sound_card_number, dword_t audio_selec
 
  //turn on power for Audio Selector
  hda_send_verb(sound_card_number, codec_number, audio_selector_node_number, 0x705, 0x00);
+
+ //disable unsolicited responses
+ hda_send_verb(sound_card_number, codec_number, audio_selector_node_number, 0x708, 0x00);
 
  //set maximal volume for Audio Selector
  //TODO: does this work in every case?
@@ -816,7 +838,6 @@ void hda_play_memory(dword_t sound_card_number, dword_t memory, dword_t sample_r
   return; //this Audio Output do not support PCM sound data
  }
  
- dword_t *buffer = (dword_t *) (hda_output_buffer_list);
  dword_t codec_number = hda_sound_cards[sound_card_number].codec_number;
  dword_t hda_output_stream_base = hda_sound_cards[sound_card_number].output_stream_base;
 
@@ -827,62 +848,76 @@ void hda_play_memory(dword_t sound_card_number, dword_t memory, dword_t sample_r
  }
  hda_sound_length = (number_of_samples_in_one_channel*bytes_per_sample*channels);
 
- //fill buffer entries
- //there have to be at least two entries in buffer, so we fill second entry with zeroes
- buffer[0]=memory;
- buffer[1]=0;
- buffer[2]=hda_sound_length;
- buffer[3]=0;
- buffer[4]=0;
- buffer[5]=0;
- buffer[6]=0;
- buffer[7]=0;
-
- //stop stream 1
+ //stop stream
  hda_playing_state = 0;
- mmio_outd(hda_output_stream_base + 0x00, 0x00100000);
+ mmio_outb(hda_output_stream_base + 0x00, 0x00);
  ticks = 0;
  while(ticks<2) {
-  if((mmio_ind(hda_output_stream_base + 0x00) & 0x2)==0x0) {
+  asm("nop");
+  if((mmio_inb(hda_output_stream_base + 0x00) & 0x2)==0x0) {
    break;
   }
  }
+ if((mmio_inb(hda_output_stream_base + 0x00) & 0x2)==0x2) {
+  log("\nHDA: can not stop stream");
+  return;
+ }
+
+ //clear error bits
+ mmio_outb(hda_output_stream_base + 0x03, 0x1C);
  
  //reset stream registers
- mmio_outd(hda_output_stream_base + 0x00, 0x00100001);
+ mmio_outb(hda_output_stream_base + 0x00, 0x01);
  ticks = 0;
  while(ticks<10) {
-  if((mmio_ind(hda_output_stream_base + 0x00) & 0x1)==0x1) {
+  asm("nop");
+  if((mmio_inb(hda_output_stream_base + 0x00) & 0x1)==0x1) {
    break;
   }
+ }
+ if((mmio_inb(hda_output_stream_base + 0x00) & 0x1)==0x0) {
+  log("\nHDA: can not start resetting stream");
+  return;
  }
  wait(10);
- mmio_outd(hda_output_stream_base + 0x00, 0x00100000);
+ mmio_outb(hda_output_stream_base + 0x00, 0x00);
  ticks = 0;
  while(ticks<10) {
-  if((mmio_ind(hda_output_stream_base + 0x00) & 0x1)==0x0) {
+  asm("nop");
+  if((mmio_inb(hda_output_stream_base + 0x00) & 0x1)==0x0) {
    break;
   }
  }
- mmio_outd(hda_output_stream_base + 0x00, 0x00100000);
- 
- //set buffer entries
+ if((mmio_inb(hda_output_stream_base + 0x00) & 0x1)==0x1) {
+  log("\nHDA: can not stop resetting stream");
+  return;
+ }
+
+ //clear error bits
+ mmio_outb(hda_output_stream_base + 0x03, 0x1C);
+
+ //fill buffer entries
+ //there have to be at least two entries in buffer, so we fill second entry with zeroes
+ clear_memory(hda_output_buffer_list, 16*2);
+ dword_t *buffer = (dword_t *) (hda_output_buffer_list);
+ buffer[0]=memory;
+ buffer[2]=hda_sound_length;
+
+ //set buffer registers
  mmio_outd(hda_output_stream_base + 0x18, hda_output_buffer_list);
- mmio_outd(hda_output_stream_base + 0x1C, 0);
+ mmio_outd(hda_output_stream_base + 0x08, hda_sound_length);
  mmio_outw(hda_output_stream_base + 0x0C, 1); //there are two entries in buffer
 
- //length of sound data in bytes
- mmio_outd(hda_output_stream_base + 0x08, hda_sound_length);
- 
  //set stream data format
  mmio_outw(hda_output_stream_base + 0x12, hda_return_sound_data_format(sample_rate, channels, bits_per_sample));
 
  //set Audio Output node data format
  hda_send_verb(sound_card_number, codec_number, hda_sound_cards[sound_card_number].audio_output_node_number, 0x200, hda_return_sound_data_format(sample_rate, channels, bits_per_sample));
+ wait(10);
 
  //start streaming to stream 1
- wait(10);
- mmio_outd(hda_output_stream_base + 0x00, 0x00140002);
+ mmio_outb(hda_output_stream_base + 0x02, 0x14);
+ mmio_outb(hda_output_stream_base + 0x00, 0x02);
  hda_bytes_on_output_for_stopping_sound = 0;
  hda_playing_state = 1;
 
@@ -890,11 +925,11 @@ void hda_play_memory(dword_t sound_card_number, dword_t memory, dword_t sample_r
 }
 
 void hda_stop_sound(dword_t sound_card_number) {
- mmio_outd(hda_sound_cards[sound_card_number].output_stream_base + 0x00, 0x00140000);
+ mmio_outb(hda_sound_cards[sound_card_number].output_stream_base + 0x00, 0x00);
  hda_playing_state = 0;
 }
 
 void hda_resume_sound(dword_t sound_card_number) {
- mmio_outd(hda_sound_cards[sound_card_number].output_stream_base + 0x00, 0x00140002);
+ mmio_outb(hda_sound_cards[sound_card_number].output_stream_base + 0x00, 0x02);
  hda_playing_state = 1;
 }

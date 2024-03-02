@@ -314,6 +314,8 @@ byte_t usb_get_port_connection_status(byte_t controller_number, byte_t port_numb
  else if(usb_controllers[controller_number].type==USB_CONTROLLER_EHCI) {
   return ehci_get_port_connection_status(controller_number, port_number);
  }
+ 
+ return STATUS_ERROR;
 }
 
 byte_t usb_get_port_connection_change_status(byte_t controller_number, byte_t port_number) {
@@ -326,6 +328,8 @@ byte_t usb_get_port_connection_change_status(byte_t controller_number, byte_t po
  else if(usb_controllers[controller_number].type==USB_CONTROLLER_EHCI) {
   return ehci_get_port_connection_change_status(controller_number, port_number);
  }
+
+ return STATUS_ERROR;
 }
 
 void usb_clear_port_connection_change_status(byte_t controller_number, byte_t port_number) {
@@ -350,6 +354,8 @@ byte_t usb_enable_device_on_port(byte_t controller_number, byte_t port_number) {
  else if(usb_controllers[controller_number].type==USB_CONTROLLER_EHCI) {
   return ehci_enable_device_on_port(controller_number, port_number);
  }
+
+ return STATUS_ERROR;
 }
 
 void usb_create_setup_data(byte_t request_type, byte_t request, word_t value, word_t index, word_t length) {
@@ -370,6 +376,8 @@ byte_t usb_control_transfer_without_data(byte_t controller_number, byte_t device
  else if(usb_controllers[controller_number].type==USB_CONTROLLER_EHCI) {
   return ehci_control_transfer_without_data_stage(controller_number, device_address, device_speed);
  }
+
+ return STATUS_ERROR;
 }
 
 byte_t usb_control_transfer_with_fixed_data_length(byte_t controller_number, byte_t device_address, byte_t device_speed, byte_t request_type, byte_t request, word_t value, word_t index, word_t length) {
@@ -383,6 +391,8 @@ byte_t usb_control_transfer_with_fixed_data_length(byte_t controller_number, byt
  else if(usb_controllers[controller_number].type==USB_CONTROLLER_EHCI) {
   return ehci_control_transfer_with_data_stage(controller_number, device_address, device_speed, length);
  }
+
+ return STATUS_ERROR;
 }
 
 byte_t usb_control_transfer_with_dynamic_data_length(byte_t controller_number, byte_t device_address, byte_t device_speed, byte_t request_type, byte_t request, word_t value, word_t index) {

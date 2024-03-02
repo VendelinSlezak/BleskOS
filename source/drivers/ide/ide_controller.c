@@ -12,6 +12,7 @@ byte_t ide_wait_drive_not_busy(word_t base_port, dword_t wait_ticks) {
  ticks=0;
  
  while(ticks<wait_ticks) {
+  asm("nop");
   if((inb(base_port + 7) & 0x80)==0x00) { //drive is not busy
    return STATUS_GOOD;
   }
@@ -24,6 +25,7 @@ byte_t ide_wait_drive_not_busy_with_error_status(word_t base_port, dword_t wait_
  ticks=0;
  
  while(ticks<wait_ticks) {
+  asm("nop");
   if((inb(base_port + 7) & 0x01)==0x01) { //error
    return STATUS_ERROR;
   }
@@ -37,15 +39,14 @@ byte_t ide_wait_drive_not_busy_with_error_status(word_t base_port, dword_t wait_
 
 byte_t ide_wait_for_data(word_t base_port, dword_t wait_ticks) {
  ticks=0;
- 
+
  while(ticks<wait_ticks) {
-  byte_t status = inb(base_port + 7);
-  
-  if((status & 0x88)==0x08) { //data are ready
+  asm("nop");
+  if((inb(base_port + 7) & 0x88)==0x08) { //data are ready
    return STATUS_GOOD;
   }
-  else if((status & 0x81)==0x01) { //error
-   break;
+  else if((inb(base_port + 7) & 0x81)==0x01) { //error
+   return STATUS_ERROR;
   }
  }
  
