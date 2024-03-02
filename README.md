@@ -8,6 +8,10 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 24**
+- Improvement of saving documents to ODT file
+- Code fixed to be able to be compiled with -Os flag. Image is now smaller about 100 KB and performance is better.
+
 **Update 23**
 - Start of work on saving documents to ODT file
 
@@ -16,10 +20,6 @@ Here is info about most important improvements in several last updates.
 
 **Update 21**
 - Document editor can from DOCX files parse everything that will be supported in this version of Document editor
-
-**Update 20**
-- Document editor can from ODT files parse everything that will be supported in this version of Document editor
-- From DOCX files can Document editor parse paragraphs, different font size, emphasis, color and background color.
 
 ## How to try BleskOS
 
