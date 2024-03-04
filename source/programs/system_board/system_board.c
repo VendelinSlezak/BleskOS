@@ -181,7 +181,7 @@ void system_board_redraw(void) {
   print_var(graphic_screen_bpp, column, 10, BLACK);
 
   print("Best mode:", graphic_screen_x_center, 30, BLACK);
-  if(is_edid_present==STATUS_FALSE) {
+  if(is_bootloader_edid_present==STATUS_FALSE) {
    print("EDID not founded", graphic_screen_x_center+11*8, 30, BLACK);
   }
   else {

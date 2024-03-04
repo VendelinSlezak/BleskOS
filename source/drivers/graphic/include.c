@@ -11,3 +11,4 @@
 #include "edid.c"
 #include "vesa.c"
 #include "main.c"
+#include "intel.c"
