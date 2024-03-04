@@ -101,8 +101,10 @@ void bleskos_main_window_redraw(void) {
  
  print("BleskOS main window", 20, 20, BLACK);
 
+ //LEFT COLUMN
  bleskos_main_window_drawing_line = 40;
  bleskos_main_window_drawing_column = 20;
+
  bleskos_main_window_print_item("Programs");
  bleskos_main_window_draw_item("[d] Document viewer", 0xFFE800, MW_DOCUMENT_EDITOR);
  bleskos_main_window_draw_item("[t] Text editor", 0xFFE800, MW_TEXT_EDITOR);
@@ -122,8 +124,23 @@ void bleskos_main_window_redraw(void) {
  bleskos_main_window_draw_item("[F2] Change keyboard layout", 0xFFE800, MW_CHANGE_KEYBOARD_LAYOUT);
  bleskos_main_window_draw_item("[F12] Shutdown", 0xFFE800, MW_SHUTDOWN);
  
+ //RIGHT COLUMN
  bleskos_main_window_drawing_line = 40;
  bleskos_main_window_drawing_column = graphic_screen_x_center;
+
+ //monitor backlight control
+ if(is_driver_for_graphic_card==STATUS_TRUE && can_graphic_card_driver_change_backlight==STATUS_TRUE) {
+  bleskos_main_window_print_item("Monitor backlight");
+  add_zone_to_click_board(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20, MW_MONITOR_BACKLIGHT);
+  draw_full_square(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295*percent_of_backlight/100, 20, WHITE);
+  draw_empty_square(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20, BLACK);
+  for(dword_t i=1; i<10; i++) {
+   draw_straigth_column(bleskos_main_window_drawing_column+(295*i/10), bleskos_main_window_drawing_line, 20, BLACK);
+  }
+  bleskos_main_window_drawing_line += 35;
+ }
+
+ //sound volume control
  bleskos_main_window_print_item("Sound volume");
  add_zone_to_click_board(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20, MW_SOUND_VOLUME);
  draw_full_square(bleskos_main_window_drawing_column+5, bleskos_main_window_drawing_line, 285*sound_volume/100, 20, WHITE);
@@ -141,6 +158,7 @@ void bleskos_main_window_redraw(void) {
  }
  bleskos_main_window_drawing_line += 25;
 
+ //network state
  if(ethernet_selected_card!=0xFF) {
   bleskos_main_window_drawing_line += 10;
   bleskos_main_window_print_item("Network");
@@ -155,6 +173,7 @@ void bleskos_main_window_redraw(void) {
   }
  }
 
+ //touchpad enable/disable
  if(ps2_first_channel_device==PS2_CHANNEL_MOUSE_INITALIZED || ps2_second_channel_device==PS2_CHANNEL_MOUSE_INITALIZED) {
   bleskos_main_window_drawing_line += 10;
   bleskos_main_window_print_item("Touchpad");
@@ -166,12 +185,14 @@ void bleskos_main_window_redraw(void) {
   }
  }
 
+ //optical drive control
  if(ide_cdrom_base!=0) { //TODO: also AHCI
   bleskos_main_window_drawing_line += 10;
   bleskos_main_window_print_item("Optical drive");
   bleskos_main_window_draw_item("[F11] Eject optical disk drive", 0x00B5FF, MW_EJECT_OPTICAL_DISK_DRIVE);
  }
 
+ //info about connected USB devices
  if(usb_controllers_pointer!=0) {
   bleskos_main_window_drawing_line += 10;
   bleskos_main_window_print_item("Connected USB devices");
@@ -359,6 +380,9 @@ void bleskos_main_window(void) {
    }
    else if(click_value==MW_SHUTDOWN) {
     bleskos_main_window_shutdown();
+   }
+   else if(click_value==MW_MONITOR_BACKLIGHT) {
+    monitor_change_backlight((100*(mouse_cursor_x-graphic_screen_x_center)/295)/10*10+10);
    }
    else if(click_value==MW_SOUND_VOLUME) {
     if(mouse_cursor_x<=graphic_screen_x_center+5) {

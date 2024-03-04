@@ -66,3 +66,4 @@ void dmf_add_section_new_page(dword_t memory, dword_t width, dword_t height, dwo
 void dmf_add_section_new_paragraph(dword_t memory, dword_t description, dword_t top, dword_t bottom, dword_t left, dword_t right, dword_t list_entry);
 byte_t dmf_is_section_format_change_only_span_change(dword_t memory);
 byte_t dmf_is_section_with_new_paragraph(dword_t memory);
+byte_t dmf_is_section_standard_style(dword_t memory);

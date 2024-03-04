@@ -9,12 +9,19 @@
 */
 
 void initalize_graphic(void) {
- extern dword_t *bleskos_font;
+ //initalize variables for using graphic mode that was set by VBE
+ vesa_init_graphic();
 
- //set best video mode according to graphic card
- vesa_init_graphic(); //currently there are no other graphic drivers
+ //run driver of graphic card
+ is_driver_for_graphic_card = STATUS_FALSE;
+ percent_of_backlight = 100;
+ for(dword_t i=0; i<number_of_graphic_cards; i++) {
+  if(graphic_cards_info[i].vendor_id==VENDOR_INTEL) {
+   initalize_intel_graphic_card(i);
+  }
+ }
 
- //check if we have graphic mode
+ //check if we have valid graphic mode
  if(graphic_screen_lfb==0 || graphic_screen_bytes_per_line==0 || graphic_screen_x==0 || graphic_screen_y==0 || (graphic_screen_bpp!=16 && graphic_screen_bpp!=24 && graphic_screen_bpp!=32)) {
   //ERROR: we do not have valid graphic mode
   
@@ -30,64 +37,65 @@ void initalize_graphic(void) {
   vga[4]=(0x40<<8 | 'r');
   vga[6]=(0x40<<8 | '1');
 
-  pc_speaker_beep(500); //inform user about error also with sound from PC speaker
+  //inform user about error also with sound from PC speaker
+  pc_speaker_beep(500);
 
+  //halt forever
   while(1) { 
-   asm("hlt"); //halt forever
+   asm("hlt");
   }
  }
- 
- //initalize variables of graphic mode
+
+ //allocate memory for double buffer of screen
  screen_mem = malloc(graphic_screen_x*graphic_screen_y*4);
- if(screen_mem==0) {
-  memory_error_debug(0x0000FF);
- }
- screen_bytes_per_line = graphic_screen_x*4;
- graphic_screen_x_center = (graphic_screen_x>>1);
- graphic_screen_y_center = (graphic_screen_y>>1);
+
+ //initalize other variables for graphic mode
+ screen_bytes_per_line = (graphic_screen_x*4);
+ graphic_screen_x_center = (graphic_screen_x/2);
+ graphic_screen_y_center = (graphic_screen_y/2);
  debug_line = 0;
 
- //initalize functions of graphic mode
+ //initalize redraw functions of graphic mode
  if(graphic_screen_bpp==32) {
-  redraw_framebuffer = &redraw_framebuffer_32_bpp;
-  redraw_part_of_framebuffer = &redraw_part_of_framebuffer_32_bpp;
+  redraw_framebuffer = (&redraw_framebuffer_32_bpp);
+  redraw_part_of_framebuffer = (&redraw_part_of_framebuffer_32_bpp);
  }
  else if(graphic_screen_bpp==24) {
-  redraw_framebuffer = &redraw_framebuffer_24_bpp;
-  redraw_part_of_framebuffer = &redraw_part_of_framebuffer_24_bpp;
+  redraw_framebuffer = (&redraw_framebuffer_24_bpp);
+  redraw_part_of_framebuffer = (&redraw_part_of_framebuffer_24_bpp);
  }
- else if(graphic_screen_bpp==16) {
-  redraw_framebuffer = &redraw_framebuffer_16_bpp;
-  redraw_part_of_framebuffer = &redraw_part_of_framebuffer_16_bpp;
+ else { //graphic_screen_bpp = 16, other value is impossible, because we already tested this variable in if() about valid graphic mode
+  redraw_framebuffer = (&redraw_framebuffer_16_bpp);
+  redraw_part_of_framebuffer = (&redraw_part_of_framebuffer_16_bpp);
  }
 
  //initalize fonts
  bleskos_boot_debug_top_screen_color(0xFFFFFF); //white top of screen
- binary_font_memory = (dword_t) &bleskos_font;
+ extern dword_t *bleskos_font;
+ binary_font_memory = (dword_t) (&bleskos_font);
  initalize_scalable_font();
  bleskos_boot_debug_top_screen_color(0x888888); //grey top of screen
 
- //initalize drawing
+ //initalize variables of drawing
  set_pen_width(1, BLACK);
  fill_first_stack = malloc((graphic_screen_x*2+graphic_screen_y*2)*32+8);
  fill_second_stack = malloc((graphic_screen_x*2+graphic_screen_y*2)*32+8);
 
- //initalize mouse cursor
+ //allocate memory for mouse cursor background
  mouse_cursor_background = malloc(MOUSE_CURSOR_WIDTH*MOUSE_CURSOR_HEIGTH*4);
 
- //read EDID
- parse_edid_informations();
+ //read EDID info loaded by bootloader
+ parse_bootloader_edid();
 
  //log
- log("\nlinear frame buffer: ");
- log_hex_with_space(graphic_screen_lfb);
- log("screen x: ");
- log_var_with_space(graphic_screen_x);
- log("screen y: ");
- log_var_with_space(graphic_screen_y);
- log("screen bpp: ");
+ log("\n\nGRAPHIC MODE INFO\nLinear frame buffer: ");
+ log_hex(graphic_screen_lfb);
+ log("\nScreen x: ");
+ log_var(graphic_screen_x);
+ log("\nScreen y: ");
+ log_var(graphic_screen_y);
+ log("\nScreen bpp: ");
  log_var(graphic_screen_bpp);
- log("\n");
 }
 
 void redraw_framebuffer_32_bpp(void) {
@@ -372,4 +380,19 @@ void screen_restore_variables(void) {
  graphic_screen_x = save_screen_x;
  graphic_screen_y = save_screen_y;
  screen_bytes_per_line = save_screen_bytes_per_line;
+}
+
+void monitor_change_backlight(byte_t value) {
+ if(is_driver_for_graphic_card==STATUS_FALSE || can_graphic_card_driver_change_backlight==STATUS_FALSE) {
+  return;
+ }
+
+ if(value<10) {
+  value = 10;
+ }
+ else if(value>100) {
+  value = 100;
+ }
+
+ (*graphic_card_driver_monitor_change_backlight)(value);
 }
