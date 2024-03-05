@@ -16,8 +16,8 @@ void program_layout_set_dimensions(dword_t x, dword_t y, dword_t width, dword_t 
 }
 
 void program_layout_set_dimensions_window(dword_t width, dword_t height) {
- program_layout_draw_x = program_layout_x = (graphic_screen_x_center-(width/2)+10);
- program_layout_draw_y = program_layout_y = (graphic_screen_y_center-(height/2)+10);
+ program_layout_draw_x = program_layout_x = (screen_x_center-(width/2)+10);
+ program_layout_draw_y = program_layout_y = (screen_y_center-(height/2)+10);
  program_layout_width = (width-20);
  program_layout_height = (height-20);
 }

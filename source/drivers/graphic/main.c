@@ -10,11 +10,13 @@
 
 void initalize_graphic(void) {
  //initalize variables for using graphic mode that was set by VBE
- vesa_init_graphic();
+ vesa_read_graphic_mode_info();
+
+ //read EDID info loaded by bootloader
+ parse_bootloader_edid();
 
  //run driver of graphic card
  is_driver_for_graphic_card = STATUS_FALSE;
- percent_of_backlight = 100;
  for(dword_t i=0; i<number_of_graphic_cards; i++) {
   if(graphic_cards_info[i].vendor_id==VENDOR_INTEL) {
    initalize_intel_graphic_card(i);
@@ -22,7 +24,7 @@ void initalize_graphic(void) {
  }
 
  //check if we have valid graphic mode
- if(graphic_screen_lfb==0 || graphic_screen_bytes_per_line==0 || graphic_screen_x==0 || graphic_screen_y==0 || (graphic_screen_bpp!=16 && graphic_screen_bpp!=24 && graphic_screen_bpp!=32)) {
+ if((dword_t)monitor_screen_linear_frame_buffer_memory_pointer==0 || monitor_screen_bytes_per_line==0 || screen_width==0 || screen_height==0 || (screen_bpp!=16 && screen_bpp!=24 && screen_bpp!=32)) {
   //ERROR: we do not have valid graphic mode
   
   //if is monitor still in VGA mode, this will clear screen with red color end print "Error 1"
@@ -47,25 +49,40 @@ void initalize_graphic(void) {
  }
 
  //allocate memory for double buffer of screen
- screen_mem = malloc(graphic_screen_x*graphic_screen_y*4);
+ screen_double_buffer_memory_pointer = (byte_t *) malloc(screen_width*screen_height*4);
 
  //initalize other variables for graphic mode
- screen_bytes_per_line = (graphic_screen_x*4);
- graphic_screen_x_center = (graphic_screen_x/2);
- graphic_screen_y_center = (graphic_screen_y/2);
+ screen_double_buffer_bytes_per_line = (screen_width*4);
+ screen_x_center = (screen_width/2);
+ screen_y_center = (screen_height/2);
  debug_line = 0;
 
  //initalize redraw functions of graphic mode
- if(graphic_screen_bpp==32) {
-  redraw_framebuffer = (&redraw_framebuffer_32_bpp);
+ if(screen_bpp==32) {
+  if(monitor_screen_bytes_per_line==(screen_width*4)) {
+   redraw_framebuffer = (&redraw_framebuffer_32_bpp_without_padding);
+  }
+  else {
+   redraw_framebuffer = (&redraw_framebuffer_32_bpp);
+  }
   redraw_part_of_framebuffer = (&redraw_part_of_framebuffer_32_bpp);
  }
- else if(graphic_screen_bpp==24) {
-  redraw_framebuffer = (&redraw_framebuffer_24_bpp);
+ else if(screen_bpp==24) {
+  if(monitor_screen_bytes_per_line==(screen_width*3)) {
+   redraw_framebuffer = (&redraw_framebuffer_24_bpp_without_padding);
+  }
+  else {
+   redraw_framebuffer = (&redraw_framebuffer_24_bpp);
+  }
   redraw_part_of_framebuffer = (&redraw_part_of_framebuffer_24_bpp);
  }
- else { //graphic_screen_bpp = 16, other value is impossible, because we already tested this variable in if() about valid graphic mode
-  redraw_framebuffer = (&redraw_framebuffer_16_bpp);
+ else { //screen_bpp = 16, other value is impossible, because we already tested this variable in if() about valid graphic mode
+  if(monitor_screen_bytes_per_line==(screen_width*2)) {
+   redraw_framebuffer = (&redraw_framebuffer_16_bpp_without_padding);
+  }
+  else {
+   redraw_framebuffer = (&redraw_framebuffer_16_bpp);
+  }
   redraw_part_of_framebuffer = (&redraw_part_of_framebuffer_16_bpp);
  }
 
@@ -78,146 +95,120 @@ void initalize_graphic(void) {
 
  //initalize variables of drawing
  set_pen_width(1, BLACK);
- fill_first_stack = malloc((graphic_screen_x*2+graphic_screen_y*2)*32+8);
- fill_second_stack = malloc((graphic_screen_x*2+graphic_screen_y*2)*32+8);
+ fill_first_stack = malloc((screen_width*2+screen_height*2)*32+8);
+ fill_second_stack = malloc((screen_width*2+screen_height*2)*32+8);
 
  //allocate memory for mouse cursor background
  mouse_cursor_background = malloc(MOUSE_CURSOR_WIDTH*MOUSE_CURSOR_HEIGTH*4);
 
- //read EDID info loaded by bootloader
- parse_bootloader_edid();
-
  //log
  log("\n\nGRAPHIC MODE INFO\nLinear frame buffer: ");
- log_hex(graphic_screen_lfb);
+ log_hex((dword_t)monitor_screen_linear_frame_buffer_memory_pointer);
  log("\nScreen x: ");
- log_var(graphic_screen_x);
+ log_var(screen_width);
  log("\nScreen y: ");
- log_var(graphic_screen_y);
+ log_var(screen_height);
  log("\nScreen bpp: ");
- log_var(graphic_screen_bpp);
+ log_var(screen_bpp);
 }
 
 void redraw_framebuffer_32_bpp(void) {
- dword_t *screen32 = (dword_t *) (screen_mem);
- dword_t framebuffer_line_start = (graphic_screen_lfb);
+ dword_t *screen32 = (dword_t *) (screen_double_buffer_memory_pointer);
+ dword_t framebuffer_line_start = ((dword_t)monitor_screen_linear_frame_buffer_memory_pointer);
  dword_t *framebuffer32 = (dword_t *) (framebuffer_line_start);
 
- for(int i=0; i<graphic_screen_y; i++) {
+ for(int i=0; i<screen_height; i++) {
   framebuffer32 = (dword_t *) (framebuffer_line_start);
 
-  for(int j=0; j<graphic_screen_x; j++) {
+  for(int j=0; j<screen_width; j++) {
    *framebuffer32 = *screen32;
    framebuffer32++;
    screen32++;
   }
 
-  framebuffer_line_start += graphic_screen_bytes_per_line;
+  framebuffer_line_start += monitor_screen_bytes_per_line;
+ }
+}
+
+void redraw_framebuffer_32_bpp_without_padding(void) {
+ dword_t *screen32 = (dword_t *) (screen_double_buffer_memory_pointer);
+ dword_t *framebuffer32 = (dword_t *) (monitor_screen_linear_frame_buffer_memory_pointer);
+
+ for(int i=0; i<(screen_height*screen_width); i++) {
+  *framebuffer32 = *screen32;
+  framebuffer32++;
+  screen32++;
  }
 }
 
 void redraw_framebuffer_24_bpp(void) {
- byte_t *screen8 = (byte_t *) (screen_mem);
- dword_t framebuffer_line_start = (graphic_screen_lfb);
+ byte_t *screen8 = (byte_t *) (screen_double_buffer_memory_pointer);
+ dword_t framebuffer_line_start = ((dword_t)monitor_screen_linear_frame_buffer_memory_pointer);
  byte_t *framebuffer8 = (byte_t *) (framebuffer_line_start);
 
- for(int i=0; i<graphic_screen_y; i++) {
+ for(int i=0; i<screen_height; i++) {
   framebuffer8 = (byte_t *) (framebuffer_line_start);
 
-  for(int j=0; j<graphic_screen_x; j++) {
-   *framebuffer8 = *screen8;
-   framebuffer8++;
-   screen8++;
-   *framebuffer8 = *screen8;
-   framebuffer8++;
-   screen8++;
-   *framebuffer8 = *screen8;
-   framebuffer8++;
-   screen8+=2;
+  for(int j=0; j<screen_width; j++) {
+   framebuffer8[0] = screen8[0];
+   framebuffer8[1] = screen8[1];
+   framebuffer8[2] = screen8[2];
+   framebuffer8 += 3;
+   screen8 += 4;
   }
 
-  framebuffer_line_start += graphic_screen_bytes_per_line;
+  framebuffer_line_start += monitor_screen_bytes_per_line;
  }
 }
 
+void redraw_framebuffer_24_bpp_without_padding(void) {
+ dword_t *screen32 = (dword_t *) (screen_double_buffer_memory_pointer);
+ dword_t *framebuffer32 = (dword_t *) (monitor_screen_linear_frame_buffer_memory_pointer);
+
+ for(int i=0; i<(screen_height*screen_width-1); i++) {
+  *framebuffer32 = *screen32;
+  framebuffer32 = (dword_t *) ((dword_t)framebuffer32+3);
+  screen32++;
+ }
+
+ framebuffer32 = (dword_t *) ((dword_t)framebuffer32-1);
+ *framebuffer32 = ((screen32[0] << 8) | ((screen32[-1] >> 16) & 0xFF));
+}
+
 void redraw_framebuffer_16_bpp(void) {
- byte_t *screen8 = (byte_t *) (screen_mem);
- dword_t framebuffer_line_start = (graphic_screen_lfb);
+ byte_t *screen8 = (byte_t *) (screen_double_buffer_memory_pointer);
+ dword_t framebuffer_line_start = ((dword_t)monitor_screen_linear_frame_buffer_memory_pointer);
  word_t *framebuffer16 = (word_t *) (framebuffer_line_start);
 
- for(int i=0; i<graphic_screen_y; i++) {
+ for(int i=0; i<screen_height; i++) {
   framebuffer16 = (word_t *) (framebuffer_line_start);
 
-  for(int j=0; j<graphic_screen_x; j++) {
+  for(int j=0; j<screen_width; j++) {
    *framebuffer16 = (((screen8[2] & 0xF8)<<8) | ((screen8[1] & 0xFC)<<3) | ((screen8[0] & 0xF8)>>3));
    framebuffer16++;
    screen8+=4;
   }
 
-  framebuffer_line_start += graphic_screen_bytes_per_line;
+  framebuffer_line_start += monitor_screen_bytes_per_line;
+ }
+}
+
+void redraw_framebuffer_16_bpp_without_padding(void) {
+ byte_t *screen8 = (byte_t *) (screen_double_buffer_memory_pointer);
+ word_t *framebuffer16 = (word_t *) (monitor_screen_linear_frame_buffer_memory_pointer);
+
+ for(int i=0; i<(screen_height*screen_width); i++) {
+  *framebuffer16 = (((screen8[2] & 0xF8)<<8) | ((screen8[1] & 0xFC)<<3) | ((screen8[0] & 0xF8)>>3));
+  framebuffer16++;
+  screen8+=4;
  }
 }
 
 void redraw_screen(void) {
- if(mouse_cursor_x<graphic_screen_x && mouse_cursor_y<graphic_screen_y) { //mouse is on screen
-  //initalize variables
-  dword_t *screen;
-  dword_t first_line_pixel_pointer_start_value = (screen_mem + (mouse_cursor_y*screen_bytes_per_line) + (mouse_cursor_x<<2));
-  dword_t first_line_pixel_pointer = first_line_pixel_pointer_start_value;
-  dword_t mouse_height = MOUSE_CURSOR_HEIGTH;
-  if((mouse_cursor_y+MOUSE_CURSOR_HEIGTH)>graphic_screen_y) {
-   mouse_height = (graphic_screen_y-mouse_cursor_y);
-  }
-  dword_t mouse_width = MOUSE_CURSOR_WIDTH;
-  if((mouse_cursor_x+MOUSE_CURSOR_WIDTH)>graphic_screen_x) {
-   mouse_width = (graphic_screen_x-mouse_cursor_x);
-  }
-
-  //save background of mouse 
-  dword_t *mouse_cursor_background_ptr = (dword_t *) (mouse_cursor_background);
-  for(int i=0; i<mouse_height; i++) {
-   screen = (dword_t *) first_line_pixel_pointer;
-   for(int j=0; j<mouse_width; j++) {
-    *mouse_cursor_background_ptr = *screen;
-    screen++;
-    mouse_cursor_background_ptr++;
-   }
-   first_line_pixel_pointer += screen_bytes_per_line;
-  }
-
-  //draw mouse to double buffer
-  dword_t mouse_cursor_img_pointer = (dword_t)(mouse_cursor_img);
-  dword_t *mouse_cursor_img = (dword_t *) (mouse_cursor_img_pointer);
-  first_line_pixel_pointer = first_line_pixel_pointer_start_value;
-  for(int i=0; i<mouse_height; i++) {
-   screen = (dword_t *) (first_line_pixel_pointer);
-   mouse_cursor_img = (dword_t *) (mouse_cursor_img_pointer);
-   for(int j=0; j<mouse_width; j++) {
-    if(*mouse_cursor_img!=TRANSPARENT_COLOR) {
-     *screen = *mouse_cursor_img;
-    }
-    screen++;
-    mouse_cursor_img++;
-   }
-   first_line_pixel_pointer += screen_bytes_per_line;
-   mouse_cursor_img_pointer += MOUSE_CURSOR_WIDTH*4;
-  }
-
-  //redraw screen
+ if(mouse_cursor_x<screen_width && mouse_cursor_y<screen_height) { //mouse is on screen
+  add_mouse_to_screen_double_buffer();
   (*redraw_framebuffer)();
-
-  //restore background of mouse
-  mouse_cursor_background_ptr = (dword_t *) (mouse_cursor_background);
-  first_line_pixel_pointer = first_line_pixel_pointer_start_value;
-  for(int i=0; i<mouse_height; i++) {
-   screen = (dword_t *) first_line_pixel_pointer;
-   for(int j=0; j<mouse_width; j++) {
-    *screen = *mouse_cursor_background_ptr;
-    screen++;
-    mouse_cursor_background_ptr++;
-   }
-   first_line_pixel_pointer += screen_bytes_per_line;
-  }
+  remove_mouse_from_screen_double_buffer();
  }
  else { //mouse is not on screen
   (*redraw_framebuffer)();
@@ -225,10 +216,10 @@ void redraw_screen(void) {
 }
 
 void redraw_part_of_framebuffer_32_bpp(dword_t x, dword_t y, dword_t width, dword_t height) {
- dword_t *screen32 = (dword_t *) (screen_mem + (y*screen_bytes_per_line) + (x*4));
- dword_t framebuffer_line_start = (graphic_screen_lfb + (y*graphic_screen_bytes_per_line) + (x*4));
+ dword_t *screen32 = (dword_t *) ((dword_t)screen_double_buffer_memory_pointer + (y*screen_double_buffer_bytes_per_line) + (x*4));
+ dword_t framebuffer_line_start = ((dword_t)monitor_screen_linear_frame_buffer_memory_pointer + (y*monitor_screen_bytes_per_line) + (x*4));
  dword_t *framebuffer32 = (dword_t *) (framebuffer_line_start);
- dword_t next_line = (graphic_screen_x-width);
+ dword_t next_line = (screen_width-width);
 
  for(int i=0; i<height; i++) {
   framebuffer32 = (dword_t *) (framebuffer_line_start);
@@ -239,41 +230,37 @@ void redraw_part_of_framebuffer_32_bpp(dword_t x, dword_t y, dword_t width, dwor
    screen32++;
   }
 
-  framebuffer_line_start+=graphic_screen_bytes_per_line;
+  framebuffer_line_start+=monitor_screen_bytes_per_line;
   screen32+=next_line;
  }
 }
 
 void redraw_part_of_framebuffer_24_bpp(dword_t x, dword_t y, dword_t width, dword_t height) {
- byte_t *screen8 = (byte_t *) (screen_mem + (y*screen_bytes_per_line) + (x*4));
- dword_t next_line = ((graphic_screen_x-width)*4);
- dword_t framebuffer_line_start = (graphic_screen_lfb + (y*graphic_screen_bytes_per_line) + (x*3));
+ byte_t *screen8 = (byte_t *) ((dword_t)screen_double_buffer_memory_pointer + (y*screen_double_buffer_bytes_per_line) + (x*4));
+ dword_t next_line = ((screen_width-width)*4);
+ dword_t framebuffer_line_start = ((dword_t)monitor_screen_linear_frame_buffer_memory_pointer + (y*monitor_screen_bytes_per_line) + (x*3));
  byte_t *framebuffer8 = (byte_t *) (framebuffer_line_start);
  
  for(int i=0; i<height; i++) {
   framebuffer8 = (byte_t *) (framebuffer_line_start);
 
   for(int j=0; j<width; j++) {
-   *framebuffer8 = *screen8;
-   framebuffer8++;
-   screen8++;
-   *framebuffer8 = *screen8;
-   framebuffer8++;
-   screen8++;
-   *framebuffer8 = *screen8;
-   framebuffer8++;
-   screen8+=2;
+   framebuffer8[0] = screen8[0];
+   framebuffer8[1] = screen8[1];
+   framebuffer8[2] = screen8[2];
+   framebuffer8 += 3;
+   screen8 += 4;
   }
 
-  framebuffer_line_start+=graphic_screen_bytes_per_line;
+  framebuffer_line_start+=monitor_screen_bytes_per_line;
   screen8+=next_line;
  }
 }
 
 void redraw_part_of_framebuffer_16_bpp(dword_t x, dword_t y, dword_t width, dword_t height) {
- byte_t *screen8 = (byte_t *) (screen_mem + (y*screen_bytes_per_line) + (x*4));
- dword_t next_line = ((graphic_screen_x-width)*4);
- dword_t framebuffer_line_start = (graphic_screen_lfb + (y*graphic_screen_bytes_per_line) + (x*2));
+ byte_t *screen8 = (byte_t *) ((dword_t)screen_double_buffer_memory_pointer + (y*screen_double_buffer_bytes_per_line) + (x*4));
+ dword_t next_line = ((screen_width-width)*4);
+ dword_t framebuffer_line_start = ((dword_t)monitor_screen_linear_frame_buffer_memory_pointer + (y*monitor_screen_bytes_per_line) + (x*2));
  word_t *framebuffer16 = (word_t *) (framebuffer_line_start);
 
  for(int i=0; i<height; i++) {
@@ -285,21 +272,21 @@ void redraw_part_of_framebuffer_16_bpp(dword_t x, dword_t y, dword_t width, dwor
    screen8+=4;
   }
 
-  framebuffer_line_start += graphic_screen_bytes_per_line;
+  framebuffer_line_start += monitor_screen_bytes_per_line;
   screen8+=next_line;
  }
 }
 
 void redraw_part_of_screen(dword_t x, dword_t y, dword_t width, dword_t height) {
  //calculate variables
- if(x>graphic_screen_x || y>graphic_screen_y) {
+ if(x>screen_width || y>screen_height) {
   return;
  }
- if((x+width)>graphic_screen_x) {
-  width = (graphic_screen_x-x);
+ if((x+width)>screen_width) {
+  width = (screen_width-x);
  }
- if((y+height)>graphic_screen_y) {
-  height = (graphic_screen_y-y);
+ if((y+height)>screen_height) {
+  height = (screen_height-y);
  }
  
  //redraw part of screen
@@ -307,79 +294,95 @@ void redraw_part_of_screen(dword_t x, dword_t y, dword_t width, dword_t height) 
   (*redraw_part_of_framebuffer)(x, y, width, height);
  }
  else { //mouse is on redrawed part of screen
-  //initalize variables
-  dword_t *screen;
-  dword_t first_line_pixel_pointer_start_value = (screen_mem + (mouse_cursor_y*screen_bytes_per_line) + (mouse_cursor_x<<2));
-  dword_t first_line_pixel_pointer = first_line_pixel_pointer_start_value;
-  dword_t mouse_height = MOUSE_CURSOR_HEIGTH;
-  if((mouse_cursor_y+MOUSE_CURSOR_HEIGTH)>graphic_screen_y) {
-   mouse_height = (graphic_screen_y-mouse_cursor_y);
-  }
-  dword_t mouse_width = MOUSE_CURSOR_WIDTH;
-  if((mouse_cursor_x+MOUSE_CURSOR_WIDTH)>graphic_screen_x) {
-   mouse_width = (graphic_screen_x-mouse_cursor_x);
-  }
-
-  //save background of mouse 
-  dword_t *mouse_cursor_background_ptr = (dword_t *) (mouse_cursor_background);
-  for(int i=0; i<mouse_height; i++) {
-   screen = (dword_t *) first_line_pixel_pointer;
-   for(int j=0; j<mouse_width; j++) {
-    *mouse_cursor_background_ptr = *screen;
-    screen++;
-    mouse_cursor_background_ptr++;
-   }
-   first_line_pixel_pointer += screen_bytes_per_line;
-  }
-
-  //draw mouse to double buffer
-  dword_t mouse_cursor_img_pointer = (dword_t)(mouse_cursor_img);
-  dword_t *mouse_cursor_img = (dword_t *) (mouse_cursor_img_pointer);
-  first_line_pixel_pointer = first_line_pixel_pointer_start_value;
-  for(int i=0; i<mouse_height; i++) {
-   screen = (dword_t *) (first_line_pixel_pointer);
-   mouse_cursor_img = (dword_t *) (mouse_cursor_img_pointer);
-   for(int j=0; j<mouse_width; j++) {
-    if(*mouse_cursor_img!=TRANSPARENT_COLOR) {
-     *screen = *mouse_cursor_img;
-    }
-    screen++;
-    mouse_cursor_img++;
-   }
-   first_line_pixel_pointer += screen_bytes_per_line;
-   mouse_cursor_img_pointer += MOUSE_CURSOR_WIDTH*4;
-  }
-
-  //redraw part of screen
+  add_mouse_to_screen_double_buffer();
   (*redraw_part_of_framebuffer)(x, y, width, height);
-  
-  //restore background of mouse
-  mouse_cursor_background_ptr = (dword_t *) (mouse_cursor_background);
-  first_line_pixel_pointer = first_line_pixel_pointer_start_value;
-  for(int i=0; i<mouse_height; i++) {
-   screen = (dword_t *) first_line_pixel_pointer;
-   for(int j=0; j<mouse_width; j++) {
-    *screen = *mouse_cursor_background_ptr;
-    screen++;
-    mouse_cursor_background_ptr++;
-   }
-   first_line_pixel_pointer += screen_bytes_per_line;
+  remove_mouse_from_screen_double_buffer();
+ }
+}
+
+void add_mouse_to_screen_double_buffer(void) {
+ //initalize variables
+ dword_t *screen;
+ dword_t first_line_pixel_pointer_start_value = ((dword_t)screen_double_buffer_memory_pointer + (mouse_cursor_y*screen_double_buffer_bytes_per_line) + (mouse_cursor_x*4));
+ dword_t first_line_pixel_pointer = first_line_pixel_pointer_start_value;
+ dword_t mouse_height = MOUSE_CURSOR_HEIGTH;
+ if((mouse_cursor_y+MOUSE_CURSOR_HEIGTH)>screen_height) {
+  mouse_height = (screen_height-mouse_cursor_y);
+ }
+ dword_t mouse_width = MOUSE_CURSOR_WIDTH;
+ if((mouse_cursor_x+MOUSE_CURSOR_WIDTH)>screen_width) {
+  mouse_width = (screen_width-mouse_cursor_x);
+ }
+
+ //save background of mouse 
+ dword_t *mouse_cursor_background_ptr = (dword_t *) (mouse_cursor_background);
+ for(int i=0; i<mouse_height; i++) {
+  screen = (dword_t *) first_line_pixel_pointer;
+  for(int j=0; j<mouse_width; j++) {
+   *mouse_cursor_background_ptr = *screen;
+   screen++;
+   mouse_cursor_background_ptr++;
   }
+  first_line_pixel_pointer += screen_double_buffer_bytes_per_line;
+ }
+
+ //draw mouse to double buffer
+ dword_t mouse_cursor_img_pointer = (dword_t)(mouse_cursor_img);
+ dword_t *mouse_cursor_img = (dword_t *) (mouse_cursor_img_pointer);
+ first_line_pixel_pointer = first_line_pixel_pointer_start_value;
+ for(int i=0; i<mouse_height; i++) {
+  screen = (dword_t *) (first_line_pixel_pointer);
+  mouse_cursor_img = (dword_t *) (mouse_cursor_img_pointer);
+  for(int j=0; j<mouse_width; j++) {
+   if(*mouse_cursor_img!=TRANSPARENT_COLOR) {
+    *screen = *mouse_cursor_img;
+   }
+   screen++;
+   mouse_cursor_img++;
+  }
+  first_line_pixel_pointer += screen_double_buffer_bytes_per_line;
+  mouse_cursor_img_pointer += MOUSE_CURSOR_WIDTH*4;
+ }
+}
+
+void remove_mouse_from_screen_double_buffer(void) {
+ //initalize variables
+ dword_t mouse_height = MOUSE_CURSOR_HEIGTH;
+ if((mouse_cursor_y+MOUSE_CURSOR_HEIGTH)>screen_height) {
+  mouse_height = (screen_height-mouse_cursor_y);
+ }
+ dword_t mouse_width = MOUSE_CURSOR_WIDTH;
+ if((mouse_cursor_x+MOUSE_CURSOR_WIDTH)>screen_width) {
+  mouse_width = (screen_width-mouse_cursor_x);
+ }
+ dword_t *screen;
+ dword_t *mouse_cursor_background_ptr = (dword_t *) (mouse_cursor_background);
+ dword_t first_line_pixel_pointer = ((dword_t)screen_double_buffer_memory_pointer + (mouse_cursor_y*screen_double_buffer_bytes_per_line) + (mouse_cursor_x*4));
+ 
+ //restore background of mouse
+ for(int i=0; i<mouse_height; i++) {
+  screen = (dword_t *) first_line_pixel_pointer;
+  for(int j=0; j<mouse_width; j++) {
+   *screen = *mouse_cursor_background_ptr;
+   screen++;
+   mouse_cursor_background_ptr++;
+  }
+  first_line_pixel_pointer += screen_double_buffer_bytes_per_line;
  }
 }
 
 void screen_save_variables(void) {
- save_screen_mem = screen_mem;
- save_screen_x = graphic_screen_x;
- save_screen_y = graphic_screen_y;
- save_screen_bytes_per_line = screen_bytes_per_line;
+ save_screen_double_buffer_memory_pointer = screen_double_buffer_memory_pointer;
+ save_screen_width = screen_width;
+ save_screen_height = screen_height;
+ save_screen_double_buffer_bytes_per_line = screen_double_buffer_bytes_per_line;
 }
 
 void screen_restore_variables(void) {
- screen_mem = save_screen_mem;
- graphic_screen_x = save_screen_x;
- graphic_screen_y = save_screen_y;
- screen_bytes_per_line = save_screen_bytes_per_line;
+ screen_double_buffer_memory_pointer = save_screen_double_buffer_memory_pointer;
+ screen_width = save_screen_width;
+ screen_height = save_screen_height;
+ screen_double_buffer_bytes_per_line = save_screen_double_buffer_bytes_per_line;
 }
 
 void monitor_change_backlight(byte_t value) {
@@ -387,6 +390,7 @@ void monitor_change_backlight(byte_t value) {
   return;
  }
 
+ //set to good value
  if(value<10) {
   value = 10;
  }
@@ -394,5 +398,6 @@ void monitor_change_backlight(byte_t value) {
   value = 100;
  }
 
+ //change backlight
  (*graphic_card_driver_monitor_change_backlight)(value);
 }

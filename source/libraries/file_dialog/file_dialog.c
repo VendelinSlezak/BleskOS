@@ -20,11 +20,11 @@ void initalize_file_dialog(void) {
  file_dialog_folder_vertical_scrollbar_rider_size = 0;
  file_dialog_array_of_allowed_extension_mem = malloc((FILE_DIALOG_MAX_FILE_EXTENSION_LENGTH+1)*FILE_DIALOG_MAX_OF_ALLOWED_EXTENSIONS);
 
- file_dialog_number_of_files_on_screen = ((graphic_screen_y-PROGRAM_INTERFACE_TOP_LINE_HEIGTH-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH-24-8)/10);
- file_dialog_number_of_chars_of_file_name = ((graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-20)/8);
+ file_dialog_number_of_files_on_screen = ((screen_height-PROGRAM_INTERFACE_TOP_LINE_HEIGTH-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH-24-8)/10);
+ file_dialog_number_of_chars_of_file_name = ((screen_width-FILE_DIALOG_DEVICE_LIST_WIDTH-8-20)/8);
  file_dialog_scrollbar_height = (file_dialog_number_of_files_on_screen*10);
 
- file_dialog_new_name_text_area = create_text_area(TEXT_AREA_INPUT_LINE, 29, graphic_screen_x_center-120, graphic_screen_y_center-5, 240, 10);
+ file_dialog_new_name_text_area = create_text_area(TEXT_AREA_INPUT_LINE, 29, screen_x_center-120, screen_y_center-5, 240, 10);
 }
 
 void redraw_file_dialog(byte_t dialog_type) {
@@ -35,31 +35,31 @@ void redraw_file_dialog(byte_t dialog_type) {
  clear_screen(0xFF6600);
 
  //draw borders
- draw_full_square(0, 0, graphic_screen_x, 20, 0x00C000);
- draw_straigth_line(0, 20, graphic_screen_x, BLACK);
+ draw_full_square(0, 0, screen_width, 20, 0x00C000);
+ draw_straigth_line(0, 20, screen_width, BLACK);
  print("File dialog", 8, 6, BLACK);
- draw_full_square(0, graphic_screen_y-19, graphic_screen_x, 19, 0x00C000);
- draw_straigth_line(0, graphic_screen_y-20, graphic_screen_x, BLACK);
+ draw_full_square(0, screen_height-19, screen_width, 19, 0x00C000);
+ draw_straigth_line(0, screen_height-20, screen_width, BLACK);
  if(dialog_type==FILE_DIALOG_TYPE_SAVE) {
   dword_t number_of_chars_in_extension = get_number_of_chars_in_unicode_string(file_dialog_file_extension);
-  print("Save file with extension:", graphic_screen_x-8-(number_of_chars_in_extension*8)-8-(25*8), 6, BLACK);
-  print_unicode(file_dialog_file_extension, graphic_screen_x-8-(number_of_chars_in_extension*8), 6, BLACK);
+  print("Save file with extension:", screen_width-8-(number_of_chars_in_extension*8)-8-(25*8), 6, BLACK);
+  print_unicode(file_dialog_file_extension, screen_width-8-(number_of_chars_in_extension*8), 6, BLACK);
  }
 
  //draw "BACK" button
- print("[esc] Back", 8, graphic_screen_y-6-7, BLACK);
- draw_straigth_column(8+10*8+8, graphic_screen_y-20, 20, BLACK);
- add_zone_to_click_board(0, graphic_screen_y-20, 8+10*8+8, 20, CLICK_ZONE_BACK);
+ print("[esc] Back", 8, screen_height-6-7, BLACK);
+ draw_straigth_column(8+10*8+8, screen_height-20, 20, BLACK);
+ add_zone_to_click_board(0, screen_height-20, 8+10*8+8, 20, CLICK_ZONE_BACK);
 
  //draw "SAVE" button
  if(dialog_type==FILE_DIALOG_TYPE_SAVE && file_dialog_folder_memory!=0 && is_filesystem_read_write(file_dialog_folder_device_partition_type)==STATUS_TRUE) {
-  print("[s] Save", graphic_screen_x-72, graphic_screen_y-6-7, BLACK);
-  draw_straigth_column(graphic_screen_x-80, graphic_screen_y-20, 20, BLACK);
-  add_zone_to_click_board(graphic_screen_x-80, graphic_screen_y-20, 80, 20, FILE_DIALOG_CLICK_ZONE_SAVE_BUTTON);
+  print("[s] Save", screen_width-72, screen_height-6-7, BLACK);
+  draw_straigth_column(screen_width-80, screen_height-20, 20, BLACK);
+  add_zone_to_click_board(screen_width-80, screen_height-20, 80, 20, FILE_DIALOG_CLICK_ZONE_SAVE_BUTTON);
  }
 
  //draw connected devices
- draw_full_square(0, 21, FILE_DIALOG_DEVICE_LIST_WIDTH, graphic_screen_y-41, 0xB04100);
+ draw_full_square(0, 21, FILE_DIALOG_DEVICE_LIST_WIDTH, screen_height-41, 0xB04100);
  dword_t connected_devices_draw_line = (PROGRAM_INTERFACE_TOP_LINE_HEIGTH+2), last_device_type = 0, last_device_number = 0;
  for(device_list_selected_entry=0; device_list_selected_entry<DEVICE_LIST_NUMBER_OF_ENTRIES; device_list_selected_entry++) {
   if(get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_TYPE)==0) {
@@ -148,12 +148,12 @@ void redraw_file_dialog(byte_t dialog_type) {
   
   //draw up strings
   print("Name", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+8, BLACK);
-  print("Size", (graphic_screen_x-12-72-80-8), PROGRAM_INTERFACE_TOP_LINE_HEIGTH+8, BLACK);
-  print("Date", (graphic_screen_x-12-80-8), PROGRAM_INTERFACE_TOP_LINE_HEIGTH+8, BLACK);
+  print("Size", (screen_width-12-72-80-8), PROGRAM_INTERFACE_TOP_LINE_HEIGTH+8, BLACK);
+  print("Date", (screen_width-12-80-8), PROGRAM_INTERFACE_TOP_LINE_HEIGTH+8, BLACK);
 
   //draw selected file background
   if(file_dialog_folder_selected_entry!=NO_FILE_SELECTED && file_dialog_folder_selected_entry>=file_dialog_folder_first_showed_entry && file_dialog_folder_selected_entry<(file_dialog_folder_first_showed_entry+file_dialog_number_of_files_on_screen)) {
-   draw_full_square(FILE_DIALOG_DEVICE_LIST_WIDTH+8, (PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+(file_dialog_folder_selected_entry-file_dialog_folder_first_showed_entry)*10), (graphic_screen_x-(FILE_DIALOG_DEVICE_LIST_WIDTH+8)-20), 10, RED);
+   draw_full_square(FILE_DIALOG_DEVICE_LIST_WIDTH+8, (PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+(file_dialog_folder_selected_entry-file_dialog_folder_first_showed_entry)*10), (screen_width-(FILE_DIALOG_DEVICE_LIST_WIDTH+8)-20), 10, RED);
    
    if(dialog_type==FILE_DIALOG_TYPE_OPEN && file_dialog_folder_device_partition_type==STORAGE_CDDA) {
     set_program_value(PROGRAM_INTERFACE_BOTTOM_LINE_DRAW_COLUMN, 0);
@@ -169,7 +169,7 @@ void redraw_file_dialog(byte_t dialog_type) {
    }
 
    //add click zone
-   add_zone_to_click_board(FILE_DIALOG_DEVICE_LIST_WIDTH+8, draw_line-1, (graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-20), 10, FILE_DIALOG_CLICK_ZONE_FIRST_FILE+i);
+   add_zone_to_click_board(FILE_DIALOG_DEVICE_LIST_WIDTH+8, draw_line-1, (screen_width-FILE_DIALOG_DEVICE_LIST_WIDTH-8-20), 10, FILE_DIALOG_CLICK_ZONE_FIRST_FILE+i);
    
    //print name
    for(int j=0, draw_column = FILE_DIALOG_DEVICE_LIST_WIDTH+8; j<file_dialog_number_of_chars_of_file_name; j++) {
@@ -185,41 +185,41 @@ void redraw_file_dialog(byte_t dialog_type) {
     dword_t file_size = folder32[(64*i)+7];
 
     if(file_size<1024) {
-     print_var(file_size, (graphic_screen_x-12-72-80-8), draw_line, BLACK);
-     print("B", (graphic_screen_x-12-24-80-8), draw_line, BLACK);
+     print_var(file_size, (screen_width-12-72-80-8), draw_line, BLACK);
+     print("B", (screen_width-12-24-80-8), draw_line, BLACK);
     }
     else if(file_size<1024*1024) {
-     print_var((file_size/1024), (graphic_screen_x-12-72-80-8), draw_line, BLACK);
-     print("KB", (graphic_screen_x-12-24-80-8), draw_line, BLACK);
+     print_var((file_size/1024), (screen_width-12-72-80-8), draw_line, BLACK);
+     print("KB", (screen_width-12-24-80-8), draw_line, BLACK);
     }
     else if(file_size<1024*1024*1024) {
-     print_var((file_size/1024/1024), (graphic_screen_x-12-72-80-8), draw_line, BLACK);
-     print("MB", (graphic_screen_x-12-24-80-8), draw_line, BLACK);
+     print_var((file_size/1024/1024), (screen_width-12-72-80-8), draw_line, BLACK);
+     print("MB", (screen_width-12-24-80-8), draw_line, BLACK);
     }
     else {
-     print_var((file_size/1024/1024/1024), (graphic_screen_x-12-72-80-8), draw_line, BLACK);
-     print("GB", (graphic_screen_x-12-24-80-8), draw_line, BLACK);
+     print_var((file_size/1024/1024/1024), (screen_width-12-72-80-8), draw_line, BLACK);
+     print("GB", (screen_width-12-24-80-8), draw_line, BLACK);
     }
    }
    
    //print date
    dword_t file_date = folder16[(128*i)+8];
-   print_var((file_date >> 9)+1980, (graphic_screen_x-12-80-8), draw_line, BLACK);
-   draw_char('/', (graphic_screen_x-12-48-8), draw_line, BLACK);
+   print_var((file_date >> 9)+1980, (screen_width-12-80-8), draw_line, BLACK);
+   draw_char('/', (screen_width-12-48-8), draw_line, BLACK);
    if(((file_date >> 5) & 0xF)<10) {
-    draw_char('0', (graphic_screen_x-12-40-8), draw_line, BLACK);
-    print_var(((file_date >> 5) & 0xF), (graphic_screen_x-12-32-8), draw_line, BLACK);
+    draw_char('0', (screen_width-12-40-8), draw_line, BLACK);
+    print_var(((file_date >> 5) & 0xF), (screen_width-12-32-8), draw_line, BLACK);
    }
    else {
-    print_var(((file_date >> 5) & 0xF), (graphic_screen_x-12-40-8), draw_line, BLACK);
+    print_var(((file_date >> 5) & 0xF), (screen_width-12-40-8), draw_line, BLACK);
    }
-   draw_char('/', (graphic_screen_x-12-24-8), draw_line, BLACK);
+   draw_char('/', (screen_width-12-24-8), draw_line, BLACK);
    if((file_date & 0x1F)<10) {
-    draw_char('0', (graphic_screen_x-12-16-8), draw_line, BLACK);
-    print_var((file_date & 0x1F), (graphic_screen_x-12-8-8), draw_line, BLACK);
+    draw_char('0', (screen_width-12-16-8), draw_line, BLACK);
+    print_var((file_date & 0x1F), (screen_width-12-8-8), draw_line, BLACK);
    }
    else {
-    print_var((file_date & 0x1F), (graphic_screen_x-12-16-8), draw_line, BLACK);
+    print_var((file_date & 0x1F), (screen_width-12-16-8), draw_line, BLACK);
    }
    
    draw_line+=10;
@@ -227,14 +227,14 @@ void redraw_file_dialog(byte_t dialog_type) {
 
   //draw scrollbar
   if(file_dialog_folder_vertical_scrollbar_rider_size!=0) {
-   draw_vertical_scrollbar(graphic_screen_x-15, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, file_dialog_scrollbar_height, file_dialog_folder_vertical_scrollbar_position, file_dialog_folder_vertical_scrollbar_rider_size);
+   draw_vertical_scrollbar(screen_width-15, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, file_dialog_scrollbar_height, file_dialog_folder_vertical_scrollbar_position, file_dialog_folder_vertical_scrollbar_rider_size);
    //TODO: program_interface_add_vertical_scrollbar(FILE_DIALOG_CLICK_ZONE_SCROLLBAR, ((dword_t)(&file_dialog_scrollbar_height)), ((dword_t)&file_dialog_folder_vertical_scrollbar_position), ((dword_t)&file_dialog_folder_vertical_scrollbar_rider_size), ((dword_t)&file_dialog_verticall_scrollbar_event));
-   add_zone_to_click_board(graphic_screen_x-15, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, 10, file_dialog_scrollbar_height, FILE_DIALOG_CLICK_ZONE_SCROLLBAR);
+   add_zone_to_click_board(screen_width-15, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, 10, file_dialog_scrollbar_height, FILE_DIALOG_CLICK_ZONE_SCROLLBAR);
   }
 
   //draw back button
   if(file_dialog_folder_path_actual_folder_number!=0) {
-   draw_button_with_click_zone("[b] Go back", 5, graphic_screen_y-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH-24, FILE_DIALOG_DEVICE_LIST_WIDTH-10, 24, FILE_DIALOG_CLICK_ZONE_BUTTON_BACK);
+   draw_button_with_click_zone("[b] Go back", 5, screen_height-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH-24, FILE_DIALOG_DEVICE_LIST_WIDTH-10, 24, FILE_DIALOG_CLICK_ZONE_BUTTON_BACK);
   }
 
  }
@@ -244,24 +244,24 @@ void redraw_file_dialog(byte_t dialog_type) {
 }
 
 void file_dialog_show_progress(void) {
- draw_full_square(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, (graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8), 16, 0xFF6600);
- draw_full_square(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, ((graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8)*file_work_done_percents/100), 16, 0x000CFF);
+ draw_full_square(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, (screen_width-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8), 16, 0xFF6600);
+ draw_full_square(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, ((screen_width-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8)*file_work_done_percents/100), 16, 0x000CFF);
  dword_t printed_percents_string_x = 0;
  if(file_work_done_percents<10) {
-  printed_percents_string_x = (FILE_DIALOG_DEVICE_LIST_WIDTH+((graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8*5)/2));
+  printed_percents_string_x = (FILE_DIALOG_DEVICE_LIST_WIDTH+((screen_width-FILE_DIALOG_DEVICE_LIST_WIDTH-8*5)/2));
  }
  else {
-  printed_percents_string_x = (FILE_DIALOG_DEVICE_LIST_WIDTH+((graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8*6)/2));
+  printed_percents_string_x = (FILE_DIALOG_DEVICE_LIST_WIDTH+((screen_width-FILE_DIALOG_DEVICE_LIST_WIDTH-8*6)/2));
  }
  print_var(file_work_done_percents, printed_percents_string_x, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+28, BLACK);
  draw_char('%', printed_percents_string_x+16, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+28, BLACK);
- redraw_part_of_screen(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, (graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8), 16);
+ redraw_part_of_screen(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, (screen_width-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8), 16);
 }
 
 void file_dialog_print_message(byte_t *message) {
- draw_full_square(FILE_DIALOG_DEVICE_LIST_WIDTH, PROGRAM_INTERFACE_TOP_LINE_HEIGTH, (graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH), (graphic_screen_y-PROGRAM_INTERFACE_TOP_LINE_HEIGTH-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH), 0xFF6600);
+ draw_full_square(FILE_DIALOG_DEVICE_LIST_WIDTH, PROGRAM_INTERFACE_TOP_LINE_HEIGTH, (screen_width-FILE_DIALOG_DEVICE_LIST_WIDTH), (screen_height-PROGRAM_INTERFACE_TOP_LINE_HEIGTH-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH), 0xFF6600);
  print(message, FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+8, BLACK);
- redraw_part_of_screen(FILE_DIALOG_DEVICE_LIST_WIDTH, PROGRAM_INTERFACE_TOP_LINE_HEIGTH, (graphic_screen_x-FILE_DIALOG_DEVICE_LIST_WIDTH), (graphic_screen_y-PROGRAM_INTERFACE_TOP_LINE_HEIGTH-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH));
+ redraw_part_of_screen(FILE_DIALOG_DEVICE_LIST_WIDTH, PROGRAM_INTERFACE_TOP_LINE_HEIGTH, (screen_width-FILE_DIALOG_DEVICE_LIST_WIDTH), (screen_height-PROGRAM_INTERFACE_TOP_LINE_HEIGTH-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH));
 }
 
 void file_dialog_compute_number_of_files_in_directory(void) {
@@ -608,10 +608,10 @@ byte_t file_dialog_save_file(byte_t dialog_type, dword_t new_file_memory, dword_
  //show dialog window
  clear_click_board();
  draw_message_window(270, 95);
- print("Write name of new file:", graphic_screen_x_center-120, graphic_screen_y_center-25, BLACK);
+ print("Write name of new file:", screen_x_center-120, screen_y_center-25, BLACK);
  draw_text_area(file_dialog_new_name_text_area);
- draw_button("Cancel", graphic_screen_x_center-100, graphic_screen_y_center+15, 90, 20);
- draw_button("Save", graphic_screen_x_center+10, graphic_screen_y_center+15, 90, 20);
+ draw_button("Cancel", screen_x_center-100, screen_y_center+15, 90, 20);
+ draw_button("Save", screen_x_center+10, screen_y_center+15, 90, 20);
  redraw_screen();
 
  //file name window
@@ -620,12 +620,12 @@ byte_t file_dialog_save_file(byte_t dialog_type, dword_t new_file_memory, dword_
   move_mouse_cursor();
 
   //do not save
-  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center+15, graphic_screen_y_center+35, graphic_screen_x_center-100, graphic_screen_x_center-10)==STATUS_TRUE)) {
+  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center+15, screen_y_center+35, screen_x_center-100, screen_x_center-10)==STATUS_TRUE)) {
    return STATUS_ERROR;
   }
 
   //save file
-  if(keyboard_value==KEY_ENTER || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center+15, graphic_screen_y_center+35, graphic_screen_x_center+10, graphic_screen_x_center+100)==STATUS_TRUE)) {
+  if(keyboard_value==KEY_ENTER || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center+15, screen_y_center+35, screen_x_center+10, screen_x_center+100)==STATUS_TRUE)) {
    if(text_area_file_name[0]==0 || text_area_file_name[0]=='.') { //TODO: more invalid characters
     error_window("Invalid file name");
     return STATUS_ERROR;

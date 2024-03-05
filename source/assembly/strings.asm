@@ -104,6 +104,7 @@ pci_vendor_id_string_array:
  dd 0x8384, .sigmatel
  dd 0x1AF4, .red_hat
  dd 0x1234, .emulator
+ dd 0x80EE, .innotek
  dd 0
 
  .intel:
@@ -138,6 +139,9 @@ pci_vendor_id_string_array:
 
  .emulator:
  db 'Emulator', 0
+
+ .innotek:
+ db 'InnoTek', 0
 
 global pci_class_type_string_array
 

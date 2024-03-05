@@ -83,7 +83,7 @@ void draw_calculator(void) {
    print_var(calculator_result_remainder, 10+11*8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+10+8+10+10+10+20+10+8+10+10+10+20+10+8+10+10+10, WHITE);
   }
 
-  print("You can use F9-F12 buttons to select operation", 10, graphic_screen_y-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH-20, BLACK);
+  print("You can use F9-F12 buttons to select operation", 10, screen_height-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH-20, BLACK);
  }
 }
 

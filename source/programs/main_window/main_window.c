@@ -24,48 +24,53 @@ void bleskos_main_window_draw_item(byte_t *string, dword_t color, byte_t type) {
 
 void bleskos_main_window_redraw_time(void) {
  if(time_hour<10) {
-  print("0", graphic_screen_x-20-152, graphic_screen_y-30, BLACK);
-  print_var(time_hour, graphic_screen_x-20-144, graphic_screen_y-30, BLACK);
+  print("0", screen_width-20-152, screen_height-30, BLACK);
+  print_var(time_hour, screen_width-20-144, screen_height-30, BLACK);
  }
  else {
-  print_var(time_hour, graphic_screen_x-20-152, graphic_screen_y-30, BLACK);
+  print_var(time_hour, screen_width-20-152, screen_height-30, BLACK);
  }
  if(time_minute<10) {
-  print("0", graphic_screen_x-20-128, graphic_screen_y-30, BLACK);
-  print_var(time_minute, graphic_screen_x-20-120, graphic_screen_y-30, BLACK);
+  print("0", screen_width-20-128, screen_height-30, BLACK);
+  print_var(time_minute, screen_width-20-120, screen_height-30, BLACK);
  }
  else {
-  print_var(time_minute, graphic_screen_x-20-128, graphic_screen_y-30, BLACK);
+  print_var(time_minute, screen_width-20-128, screen_height-30, BLACK);
  }
  if(time_second<10) {
-  print("0", graphic_screen_x-20-104, graphic_screen_y-30, BLACK);
-  print_var(time_second, graphic_screen_x-20-96, graphic_screen_y-30, BLACK);
+  print("0", screen_width-20-104, screen_height-30, BLACK);
+  print_var(time_second, screen_width-20-96, screen_height-30, BLACK);
  }
  else {
-  print_var(time_second, graphic_screen_x-20-104, graphic_screen_y-30, BLACK);
+  print_var(time_second, screen_width-20-104, screen_height-30, BLACK);
  }
  
- print(":  :     /  /", graphic_screen_x-20-136, graphic_screen_y-30, BLACK);
+ print(":  :     /  /", screen_width-20-136, screen_height-30, BLACK);
  if(time_day<10) {
-  print("0", graphic_screen_x-20-80, graphic_screen_y-30, BLACK);
-  print_var(time_day, graphic_screen_x-20-72, graphic_screen_y-30, BLACK);
+  print("0", screen_width-20-80, screen_height-30, BLACK);
+  print_var(time_day, screen_width-20-72, screen_height-30, BLACK);
  }
  else {
-  print_var(time_day, graphic_screen_x-20-80, graphic_screen_y-30, BLACK);
+  print_var(time_day, screen_width-20-80, screen_height-30, BLACK);
  }
  if(time_month<10) {
-  print("0", graphic_screen_x-20-56, graphic_screen_y-30, BLACK);
-  print_var(time_month, graphic_screen_x-20-48, graphic_screen_y-30, BLACK);
+  print("0", screen_width-20-56, screen_height-30, BLACK);
+  print_var(time_month, screen_width-20-48, screen_height-30, BLACK);
  }
  else {
-  print_var(time_month, graphic_screen_x-20-56, graphic_screen_y-30, BLACK);
+  print_var(time_month, screen_width-20-56, screen_height-30, BLACK);
  }
- print_var(time_year, graphic_screen_x-20-32, graphic_screen_y-30, BLACK);
+ print_var(time_year, screen_width-20-32, screen_height-30, BLACK);
 }
 
 void bleskos_main_window_redraw_sound_volume(void) {
- bleskos_main_window_drawing_line = 40;
- bleskos_main_window_drawing_column = graphic_screen_x_center;
+ if(is_driver_for_graphic_card==STATUS_TRUE && can_graphic_card_driver_change_backlight==STATUS_TRUE) {
+  bleskos_main_window_drawing_line = 40+15+35;
+ }
+ else {
+  bleskos_main_window_drawing_line = 40;
+ }
+ bleskos_main_window_drawing_column = screen_x_center;
  bleskos_main_window_print_item("Sound volume");
  add_zone_to_click_board(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20, MW_SOUND_VOLUME);
  draw_full_square(bleskos_main_window_drawing_column+5, bleskos_main_window_drawing_line, 295, 20, 0x00C000);
@@ -88,10 +93,10 @@ void bleskos_main_window_redraw_sound_volume(void) {
 
 void bleskos_main_window_draw_background(void) {
  clear_screen(0x00C000);
- draw_full_square(0, 0, graphic_screen_x, 10, BLACK);
- draw_full_square(0, 0, 10, graphic_screen_y, BLACK);
- draw_full_square(0, graphic_screen_y-10, graphic_screen_x, 10, BLACK);
- draw_full_square(graphic_screen_x-10, 0, 10, graphic_screen_y, BLACK);
+ draw_full_square(0, 0, screen_width, 10, BLACK);
+ draw_full_square(0, 0, 10, screen_height, BLACK);
+ draw_full_square(0, screen_height-10, screen_width, 10, BLACK);
+ draw_full_square(screen_width-10, 0, 10, screen_height, BLACK);
 }
 
 void bleskos_main_window_redraw(void) {
@@ -126,7 +131,7 @@ void bleskos_main_window_redraw(void) {
  
  //RIGHT COLUMN
  bleskos_main_window_drawing_line = 40;
- bleskos_main_window_drawing_column = graphic_screen_x_center;
+ bleskos_main_window_drawing_column = screen_x_center;
 
  //monitor backlight control
  if(is_driver_for_graphic_card==STATUS_TRUE && can_graphic_card_driver_change_backlight==STATUS_TRUE) {
@@ -217,12 +222,12 @@ void bleskos_main_window_redraw(void) {
   }
  }
  
- print("Keyboard layout:", 20, graphic_screen_y-30, BLACK);
+ print("Keyboard layout:", 20, screen_height-30, BLACK);
  if(((dword_t)keyboard_layout_ptr)==((dword_t)english_keyboard_layout)) {
-  print("English", 20+17*8, graphic_screen_y-30, BLACK);
+  print("English", 20+17*8, screen_height-30, BLACK);
  }
  else if(((dword_t)keyboard_layout_ptr)==((dword_t)slovak_keyboard_layout)) {
-  print("Slovak", 20+17*8, graphic_screen_y-30, BLACK);
+  print("Slovak", 20+17*8, screen_height-30, BLACK);
  }
  
  bleskos_main_window_redraw_time();
@@ -382,17 +387,17 @@ void bleskos_main_window(void) {
     bleskos_main_window_shutdown();
    }
    else if(click_value==MW_MONITOR_BACKLIGHT) {
-    monitor_change_backlight((100*(mouse_cursor_x-graphic_screen_x_center)/295)/10*10+10);
+    monitor_change_backlight((100*(mouse_cursor_x-screen_x_center)/295)/10*10+10);
    }
    else if(click_value==MW_SOUND_VOLUME) {
-    if(mouse_cursor_x<=graphic_screen_x_center+5) {
+    if(mouse_cursor_x<=screen_x_center+5) {
      sound_set_volume(0);
     }
-    else if(mouse_cursor_x>=graphic_screen_x_center+290) {
+    else if(mouse_cursor_x>=screen_x_center+290) {
      sound_set_volume(100);
     }
     else {
-     sound_set_volume((100*(mouse_cursor_x-graphic_screen_x_center-5)/285));
+     sound_set_volume((100*(mouse_cursor_x-screen_x_center-5)/285));
     }
    }
    else if(click_value==MW_ENABLE_DISABLE_TOUCHPAD) {
@@ -412,14 +417,14 @@ void bleskos_main_window(void) {
     continue;
    }
    else if(click_value==MW_SOUND_VOLUME) {
-    if(mouse_cursor_x<=graphic_screen_x_center+5) {
+    if(mouse_cursor_x<=screen_x_center+5) {
      sound_set_volume(0);
     }
-    else if(mouse_cursor_x>=graphic_screen_x_center+290) {
+    else if(mouse_cursor_x>=screen_x_center+290) {
      sound_set_volume(100);
     }
     else {
-     sound_set_volume((100*(mouse_cursor_x-graphic_screen_x_center-5)/285));
+     sound_set_volume((100*(mouse_cursor_x-screen_x_center-5)/285));
     }
     bleskos_main_window_redraw_sound_volume();
    }
@@ -440,7 +445,7 @@ void bleskos_main_window_change_keyboard_layout(void) {
  bleskos_main_window_draw_item("[e] English", 0x00FF00, MW_KEYBOARD_LAYOUT_ENGLISH);
  bleskos_main_window_draw_item("[s] Slovak", 0x00FF00, MW_KEYBOARD_LAYOUT_SLOVAK);
 
- print("You can go back with ESC", 20, graphic_screen_y-30, BLACK);
+ print("You can go back with ESC", 20, screen_height-30, BLACK);
 
  redraw_screen();
 

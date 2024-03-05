@@ -9,9 +9,9 @@
 */
 
 void clear_screen(dword_t color) {
- dword_t *screen = (dword_t *) screen_mem;
+ dword_t *screen = (dword_t *) (screen_double_buffer_memory_pointer);
  
- for(int i=0; i<(graphic_screen_x*graphic_screen_y); i++) {
+ for(int i=0; i<(screen_width*screen_height); i++) {
   *screen = color;
   screen++;
  }
@@ -65,17 +65,17 @@ void set_pixel_shape_circle(dword_t color) {
  }
  
  //save screen variables
- save_lfb = screen_mem;
- save_x = graphic_screen_x;
- save_y = graphic_screen_y;
- save_bpl = screen_bytes_per_line;
+ save_lfb = (dword_t) screen_double_buffer_memory_pointer;
+ save_x = screen_width;
+ save_y = screen_height;
+ save_bpl = screen_double_buffer_bytes_per_line;
  width = pen_width;
 
  //draw circle to pen image
- screen_mem = pen_img_pointer;
- graphic_screen_x = pen_width;
- graphic_screen_y = width;
- screen_bytes_per_line = (width*4);
+ screen_double_buffer_memory_pointer = (byte_t *) pen_img_pointer;
+ screen_width = pen_width;
+ screen_height = width;
+ screen_double_buffer_bytes_per_line = (width*4);
  pen_width = 1;
  draw_full_circle((width/2), (width/2), ((width-1)/2), color);
  if((width & 0x1) == 0) {
@@ -86,10 +86,10 @@ void set_pixel_shape_circle(dword_t color) {
  pen_width = width;
  
  //restore screen variables
- screen_mem = save_lfb;
- graphic_screen_x = save_x;
- graphic_screen_y = save_y;
- screen_bytes_per_line = save_bpl;
+ screen_double_buffer_memory_pointer = (byte_t *) save_lfb;
+ screen_width = save_x;
+ screen_height = save_y;
+ screen_double_buffer_bytes_per_line = save_bpl;
 }
 
 void set_pixel_shape_square(dword_t color) {
@@ -101,10 +101,10 @@ void set_pixel_shape_square(dword_t color) {
 }
 
 void draw_pixel(dword_t x, dword_t y, dword_t color) {
- dword_t *screen = (dword_t *) (screen_mem + (y*screen_bytes_per_line) + (x<<2));
+ dword_t *screen = (dword_t *) ((dword_t)screen_double_buffer_memory_pointer + (y*screen_double_buffer_bytes_per_line) + (x<<2));
  
  if(pen_width==1 || pen_width==0) {
-  if(x<graphic_screen_x && y<graphic_screen_y) {
+  if(x<screen_width && y<screen_height) {
    *screen = color;
   }
   return;
@@ -112,20 +112,20 @@ void draw_pixel(dword_t x, dword_t y, dword_t color) {
  
  x = (x-(pen_width/2)) + ~(pen_width | 0xFFFFFFFE);
  y = (y-(pen_width/2)) + ~(pen_width | 0xFFFFFFFE);
- dword_t first_line_pixel_pointer = (screen_mem + (y*screen_bytes_per_line) + (x<<2));
+ dword_t first_line_pixel_pointer = ((dword_t)screen_double_buffer_memory_pointer + (y*screen_double_buffer_bytes_per_line) + (x<<2));
  dword_t old_x = x;
  dword_t *pen_img = (dword_t *) pen_img_pointer;
  for(int i=0; i<pen_width; i++) {
   screen = (dword_t *) first_line_pixel_pointer;
   for(int j=0; j<pen_width; j++) {
-   if(*pen_img!=TRANSPARENT_COLOR && x<graphic_screen_x && y<graphic_screen_y) {
+   if(*pen_img!=TRANSPARENT_COLOR && x<screen_width && y<screen_height) {
     *screen = color;
    }
    screen++;
    pen_img++;
    x++;
   }
-  first_line_pixel_pointer += screen_bytes_per_line;
+  first_line_pixel_pointer += screen_double_buffer_bytes_per_line;
   y++;
   x = old_x;
  }
@@ -153,7 +153,7 @@ void draw_line(int x0, int y0, int x1, int y1, dword_t color) {
   if (x0==x1 && y0==y1) {
    return;
   }
-  if(x0>graphic_screen_x || y0>graphic_screen_y) {
+  if(x0>screen_width || y0>screen_height) {
    return;
   }
  
@@ -253,7 +253,7 @@ void draw_empty_square(dword_t x, dword_t y, dword_t width, dword_t height, dwor
 }
 
 void draw_full_square(dword_t x, dword_t y, dword_t width, dword_t height, dword_t color) {
- dword_t first_line_pixel_pointer = (screen_mem + (y*screen_bytes_per_line) + (x<<2));
+ dword_t first_line_pixel_pointer = ((dword_t)screen_double_buffer_memory_pointer + (y*screen_double_buffer_bytes_per_line) + (x<<2));
  dword_t *screen = (dword_t *) first_line_pixel_pointer;
  
  for(int i=0; i<height; i++) {
@@ -262,7 +262,7 @@ void draw_full_square(dword_t x, dword_t y, dword_t width, dword_t height, dword
    screen++;
   }
   
-  first_line_pixel_pointer += screen_bytes_per_line;
+  first_line_pixel_pointer += screen_double_buffer_bytes_per_line;
   screen = (dword_t *) first_line_pixel_pointer;
  }
 }
@@ -478,11 +478,11 @@ void draw_full_ellipse(int x0, int y0, int x1, int y1, dword_t color) {
 void fill_area(dword_t x, dword_t y, dword_t color) {
  dword_t *first_stack = (dword_t *) fill_first_stack;
  dword_t *second_stack = (dword_t *) fill_second_stack;
- dword_t *screen = (dword_t *) (screen_mem + (y*screen_bytes_per_line) + (x<<2));
+ dword_t *screen = (dword_t *) ((dword_t)screen_double_buffer_memory_pointer + (y*screen_double_buffer_bytes_per_line) + (x<<2));
  dword_t *screen_2;
  dword_t background_color;
  
- for(int i=0; i<((graphic_screen_x*2+graphic_screen_y*2)*8); i++) {
+ for(int i=0; i<((screen_width*2+screen_height*2)*8); i++) {
   first_stack[i]=0;
   second_stack[i]=0;
  }
@@ -503,7 +503,7 @@ void fill_area(dword_t x, dword_t y, dword_t color) {
  first_stack = (dword_t *) fill_first_stack;
  second_stack = (dword_t *) fill_second_stack;
  second_stack[0] = 0;
- for(int i=0; i<(graphic_screen_x*2+graphic_screen_y*2); i++) {
+ for(int i=0; i<(screen_width*2+screen_height*2); i++) {
   if(*first_stack==0) {
    if((dword_t) first_stack == (dword_t) fill_first_stack) {
     return;
@@ -519,7 +519,7 @@ void fill_area(dword_t x, dword_t y, dword_t color) {
   //pixel above
   if(y > 0) {
    screen_2 = (dword_t *) screen;
-   screen_2 -= graphic_screen_x;
+   screen_2 -= screen_width;
    if(*screen_2==background_color) {
     *screen_2 = color;
     second_stack[0] = (dword_t) screen_2;
@@ -529,9 +529,9 @@ void fill_area(dword_t x, dword_t y, dword_t color) {
   }
   
   //pixel below
-  if(y < graphic_screen_y-1) {
+  if(y < screen_height-1) {
    screen_2 = (dword_t *) screen;
-   screen_2 += graphic_screen_x;
+   screen_2 += screen_width;
    if(*screen_2==background_color) {
     *screen_2 = color;
     second_stack[0] = (dword_t) screen_2;
@@ -553,7 +553,7 @@ void fill_area(dword_t x, dword_t y, dword_t color) {
   }
   
   //pixel right
-  if(x < graphic_screen_x-1) {
+  if(x < screen_width-1) {
    screen_2 = (dword_t *) screen;
    screen_2++;
    if(*screen_2==background_color) {
@@ -571,7 +571,7 @@ void fill_area(dword_t x, dword_t y, dword_t color) {
  first_stack = (dword_t *) fill_first_stack;
  second_stack = (dword_t *) fill_second_stack;
  first_stack[0] = 0;
- for(int i=0; i<(graphic_screen_x*2+graphic_screen_y*2); i++) {
+ for(int i=0; i<(screen_width*2+screen_height*2); i++) {
   if(*second_stack==0) {
    if((dword_t) second_stack == (dword_t) fill_second_stack) {
     return;
@@ -587,7 +587,7 @@ void fill_area(dword_t x, dword_t y, dword_t color) {
   //pixel above
   if(y > 0) {
    screen_2 = (dword_t *) screen;
-   screen_2 -= graphic_screen_x;
+   screen_2 -= screen_width;
    if(*screen_2==background_color) {
     *screen_2 = color;
     first_stack[0] = (dword_t) screen_2;
@@ -597,9 +597,9 @@ void fill_area(dword_t x, dword_t y, dword_t color) {
   }
   
   //pixel below
-  if(y < graphic_screen_y-1) {
+  if(y < screen_height-1) {
    screen_2 = (dword_t *) screen;
-   screen_2 += graphic_screen_x;
+   screen_2 += screen_width;
    if(*screen_2==background_color) {
     *screen_2 = color;
     first_stack[0] = (dword_t) screen_2;
@@ -621,7 +621,7 @@ void fill_area(dword_t x, dword_t y, dword_t color) {
   }
   
   //pixel right
-  if(x < graphic_screen_x-1) {
+  if(x < screen_width-1) {
    screen_2 = (dword_t *) screen;
    screen_2++;
    if(*screen_2==background_color) {

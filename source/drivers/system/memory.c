@@ -491,12 +491,12 @@ void memory_error_debug(dword_t color) {
  dword_t *framebuffer = (dword_t *) 0x70028;
  byte_t *screen = (byte_t *) (*framebuffer);
 
- if(graphic_screen_bpp==32) {
-  screen_mem = graphic_screen_lfb;
+ if(screen_bpp==32) {
+  screen_double_buffer_memory_pointer = monitor_screen_linear_frame_buffer_memory_pointer;
   clear_screen(color);
  }
- else if(graphic_screen_bpp==24) {
-  for(dword_t i=0; i<(graphic_screen_x*graphic_screen_y); i++) {
+ else if(screen_bpp==24) {
+  for(dword_t i=0; i<(screen_width*screen_height); i++) {
    *screen = (color & 0xFF);
    screen++;
    *screen = ((color >> 8) & 0xFF);

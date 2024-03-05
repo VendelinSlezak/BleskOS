@@ -10,26 +10,26 @@
 
 void draw_clear_window(byte_t *up_string, byte_t *down_string, dword_t background_color, dword_t border_color) {
  clear_screen(background_color);
- draw_full_square(0, 0, graphic_screen_x, 20, border_color);
- draw_full_square(0, graphic_screen_y-20, graphic_screen_x, 20, border_color);
+ draw_full_square(0, 0, screen_width, 20, border_color);
+ draw_full_square(0, screen_height-20, screen_width, 20, border_color);
  print(up_string, 10, 5, BLACK);
- print(down_string, 10, graphic_screen_y-14, BLACK);
+ print(down_string, 10, screen_height-14, BLACK);
 }
 
 void draw_message_window(dword_t width, dword_t height) {
- draw_full_square(graphic_screen_x_center-(width/2), graphic_screen_y_center-(height/2), width, height, 0xFF7000);
+ draw_full_square(screen_x_center-(width/2), screen_y_center-(height/2), width, height, 0xFF7000);
  set_pen_width(1, BLACK);
- draw_empty_square(graphic_screen_x_center-(width/2), graphic_screen_y_center-(height/2), width, height, BLACK);
+ draw_empty_square(screen_x_center-(width/2), screen_y_center-(height/2), width, height, BLACK);
 }
 
 void redraw_message_window(dword_t width, dword_t height) {
- redraw_part_of_screen(graphic_screen_x_center-(width/2), graphic_screen_y_center-(height/2), width, height);
+ redraw_part_of_screen(screen_x_center-(width/2), screen_y_center-(height/2), width, height);
 }
 
 void print_to_message_window(byte_t *string, dword_t line) {
  for(int i=0, width=0; i<1000; i++) {
   if(string[i]==0) {
-   print(string, graphic_screen_x_center-(width/2), line, BLACK);
+   print(string, screen_x_center-(width/2), line, BLACK);
    return;
   }
   width += 8;
@@ -47,7 +47,7 @@ void message_window(byte_t *message) {
  }
  
  draw_message_window(chars*8+16, 30);
- print(message, graphic_screen_x_center-chars*4, graphic_screen_y_center-4, BLACK);
+ print(message, screen_x_center-chars*4, screen_y_center-4, BLACK);
 }
 
 void show_message_window(byte_t *message) {
@@ -58,7 +58,7 @@ void show_message_window(byte_t *message) {
 void show_system_message(byte_t *string) {
  system_message_background_mem = malloc(300*30*4);
 
- copy_raw_image_data(screen_mem, graphic_screen_x, 10, 10, 300, 30, system_message_background_mem, 300, 0, 0);
+ copy_raw_image_data((dword_t)screen_double_buffer_memory_pointer, screen_width, 10, 10, 300, 30, system_message_background_mem, 300, 0, 0);
  draw_full_square(10, 10, 300, 30, WHITE);
  draw_empty_square(10, 10, 300, 30, BLACK);
  print(string, 20, 20, BLACK);
@@ -66,7 +66,7 @@ void show_system_message(byte_t *string) {
 }
 
 void remove_system_message(void) {
- copy_raw_image_data(system_message_background_mem, 300, 0, 0, 300, 30, screen_mem, graphic_screen_x, 10, 10);
+ copy_raw_image_data(system_message_background_mem, 300, 0, 0, 300, 30, (dword_t)screen_double_buffer_memory_pointer, screen_width, 10, 10);
  redraw_part_of_screen(10, 10, 300, 30);
 
  free(system_message_background_mem);

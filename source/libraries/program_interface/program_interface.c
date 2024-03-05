@@ -471,10 +471,10 @@ byte_t dialog_yes_no(byte_t *string) {
    return STATUS_TRUE;
   }
   if(mouse_click_button_state==MOUSE_CLICK) {
-   if(is_mouse_in_zone(graphic_screen_y_center-38+2+16+7+16, graphic_screen_y_center-38+2+16+7+16+17, graphic_screen_x_center-10-80, graphic_screen_x_center-10)==STATUS_TRUE) {
+   if(is_mouse_in_zone(screen_y_center-38+2+16+7+16, screen_y_center-38+2+16+7+16+17, screen_x_center-10-80, screen_x_center-10)==STATUS_TRUE) {
     return STATUS_TRUE;
    }
-   else if(is_mouse_in_zone(graphic_screen_y_center-38+2+16+7+16, graphic_screen_y_center-38+2+16+7+16+17, graphic_screen_x_center+10, graphic_screen_x_center+10+80)==STATUS_TRUE) {
+   else if(is_mouse_in_zone(screen_y_center-38+2+16+7+16, screen_y_center-38+2+16+7+16+17, screen_x_center+10, screen_x_center+10+80)==STATUS_TRUE) {
     return STATUS_FALSE;
    }
   }
@@ -496,7 +496,7 @@ void error_window(byte_t *string) {
 }
 
 dword_t get_number_of_clicked_item_from_menu_list(dword_t number_of_items) {
- return ((mouse_cursor_y-(graphic_screen_y-20-number_of_items*20))/20);
+ return ((mouse_cursor_y-(screen_height-20-number_of_items*20))/20);
 }
 
 dword_t window_for_choosing_file_format(dword_t number_of_formats, byte_t *formats_string) {
@@ -532,7 +532,7 @@ dword_t window_for_choosing_file_format(dword_t number_of_formats, byte_t *forma
   }
 
   if(mouse_click_button_state==MOUSE_CLICK) {
-   if(is_mouse_in_zone(graphic_screen_y_center-((10+10+10+number_of_formats*20+10)/2), graphic_screen_y_center+((10+10+10+number_of_formats*20+10)/2), graphic_screen_x_center-100, graphic_screen_x_center+100)==STATUS_FALSE) {
+   if(is_mouse_in_zone(screen_y_center-((10+10+10+number_of_formats*20+10)/2), screen_y_center+((10+10+10+number_of_formats*20+10)/2), screen_x_center-100, screen_x_center+100)==STATUS_FALSE) {
     return 0xFFFFFFFF;
    }
    else if(is_mouse_in_zone(program_layout_draw_y, program_layout_draw_y+number_of_formats*20, program_layout_draw_x, program_layout_draw_x+program_layout_width)) {

@@ -23,13 +23,13 @@ void move_mouse_cursor(void) {
  //X movement
  if(mouse_movement_x<0x80000000) {
   mouse_cursor_x += mouse_movement_x;
-  if(mouse_cursor_x>=graphic_screen_x) {
-   mouse_cursor_x = (graphic_screen_x-1);
+  if(mouse_cursor_x>=screen_width) {
+   mouse_cursor_x = (screen_width-1);
   }
  }
  else {
   mouse_cursor_x -= ((0xFFFFFFFF-mouse_movement_x)+1);
-  if(mouse_cursor_x>graphic_screen_x) {
+  if(mouse_cursor_x>screen_width) {
    mouse_cursor_x = 0;
   }
  }
@@ -38,13 +38,13 @@ void move_mouse_cursor(void) {
  //Y movement
  if(mouse_movement_y<0x80000000) {
   mouse_cursor_y += mouse_movement_y;
-  if(mouse_cursor_y>=graphic_screen_y) {
-   mouse_cursor_y = (graphic_screen_y-1);
+  if(mouse_cursor_y>=screen_height) {
+   mouse_cursor_y = (screen_height-1);
   }
  }
  else {
   mouse_cursor_y -= ((0xFFFFFFFF-mouse_movement_y)+1);
-  if(mouse_cursor_y>graphic_screen_y) {
+  if(mouse_cursor_y>screen_height) {
    mouse_cursor_y = 0;
   }
  }

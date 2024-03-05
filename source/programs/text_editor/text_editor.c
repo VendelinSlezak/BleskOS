@@ -10,11 +10,11 @@
 
 void initalize_text_editor(void) {
  text_editor_program_interface_memory = create_program_interface_memory(((dword_t)&draw_text_editor), PROGRAM_INTERFACE_FLAG_PERMANENT_FOCUS_ON_TEXT_AREA);
- text_editor_find_function_text_area_info_mem = create_text_area(TEXT_AREA_INPUT_LINE, 1000, 4, graphic_screen_y-20-4-12, graphic_screen_x-24-160, 10);
+ text_editor_find_function_text_area_info_mem = create_text_area(TEXT_AREA_INPUT_LINE, 1000, 4, screen_height-20-4-12, screen_width-24-160, 10);
  text_area_disable_cursor(text_editor_find_function_text_area_info_mem);
- text_editor_replace_function_text_area_mem = create_text_area(TEXT_AREA_INPUT_LINE, 1000, 4, graphic_screen_y-20-4-12, graphic_screen_x-24-160, 10);
+ text_editor_replace_function_text_area_mem = create_text_area(TEXT_AREA_INPUT_LINE, 1000, 4, screen_height-20-4-12, screen_width-24-160, 10);
  text_area_disable_cursor(text_editor_replace_function_text_area_mem);
- text_editor_go_to_line_text_area_mem = create_text_area(TEXT_AREA_NUMBER_INPUT, 5, graphic_screen_x_center-24, graphic_screen_y_center, 6*8, 10);
+ text_editor_go_to_line_text_area_mem = create_text_area(TEXT_AREA_NUMBER_INPUT, 5, screen_x_center-24, screen_y_center, 6*8, 10);
  text_editor_state = TEXT_EDITOR_STATE_TEXT;
  text_editor_more_list_on_screen = STATUS_FALSE;
 }
@@ -87,59 +87,59 @@ void draw_text_editor(void) {
 
   //add text area
   if(text_editor_state==TEXT_EDITOR_STATE_TEXT) {
-   text_area_info[TEXT_AREA_INFO_HEIGTH]=graphic_screen_y-41;
+   text_area_info[TEXT_AREA_INFO_HEIGTH]=screen_height-41;
   }
   else if(text_editor_state==TEXT_EDITOR_STATE_FIND) {
-   text_area_info[TEXT_AREA_INFO_HEIGTH]=graphic_screen_y-41-20;
+   text_area_info[TEXT_AREA_INFO_HEIGTH]=screen_height-41-20;
   }
   else if(text_editor_state==TEXT_EDITOR_STATE_FIND_AND_REPLACE) {
-   text_area_info[TEXT_AREA_INFO_HEIGTH]=graphic_screen_y-41-20-20;
+   text_area_info[TEXT_AREA_INFO_HEIGTH]=screen_height-41-20-20;
   }
   text_area_info[TEXT_AREA_INFO_REAL_HEIGTH]=text_area_info[TEXT_AREA_INFO_HEIGTH];
   draw_text_area(text_area_info_memory);
-  add_zone_to_click_board(0, 21, graphic_screen_x, text_area_info[TEXT_AREA_INFO_REAL_HEIGTH], TEXT_EDITOR_CLICK_ZONE_TEXT_AREA);
+  add_zone_to_click_board(0, 21, screen_width, text_area_info[TEXT_AREA_INFO_REAL_HEIGTH], TEXT_EDITOR_CLICK_ZONE_TEXT_AREA);
   program_interface_add_text_area(TEXT_EDITOR_CLICK_ZONE_TEXT_AREA, text_area_info_memory);
   program_interface_element_with_focus = 0; //set focus on main text area
 
   //draw find/find and replace area
   dword_t *find_function_text_area_info = (dword_t *) (text_editor_find_function_text_area_info_mem);
   if(text_editor_state==TEXT_EDITOR_STATE_FIND) {
-   draw_full_square(0, graphic_screen_y-20-20, graphic_screen_x, 20, 0xFF7000);
+   draw_full_square(0, screen_height-20-20, screen_width, 20, 0xFF7000);
 
-   find_function_text_area_info[TEXT_AREA_INFO_Y] = graphic_screen_y-20-16;
+   find_function_text_area_info[TEXT_AREA_INFO_Y] = screen_height-20-16;
    draw_text_area(text_editor_find_function_text_area_info_mem);
-   add_zone_to_click_board(4, graphic_screen_y-20-16, graphic_screen_x-24-160, 10, TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_FIND);
+   add_zone_to_click_board(4, screen_height-20-16, screen_width-24-160, 10, TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_FIND);
    program_interface_add_text_area(TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_FIND, text_editor_find_function_text_area_info_mem);
 
-   draw_button("Next", graphic_screen_x-4-80-8-80, find_function_text_area_info[TEXT_AREA_INFO_Y], 80, 12);
-   add_zone_to_click_board(graphic_screen_x-4-80-8-80, find_function_text_area_info[TEXT_AREA_INFO_Y], 80, 12, TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_FIND_NEXT);
+   draw_button("Next", screen_width-4-80-8-80, find_function_text_area_info[TEXT_AREA_INFO_Y], 80, 12);
+   add_zone_to_click_board(screen_width-4-80-8-80, find_function_text_area_info[TEXT_AREA_INFO_Y], 80, 12, TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_FIND_NEXT);
 
-   draw_button("Previous", graphic_screen_x-4-80, find_function_text_area_info[TEXT_AREA_INFO_Y], 80, 12);
-   add_zone_to_click_board(graphic_screen_x-4-80, find_function_text_area_info[TEXT_AREA_INFO_Y], 80, 12, TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_FIND_PREVIOUS);
+   draw_button("Previous", screen_width-4-80, find_function_text_area_info[TEXT_AREA_INFO_Y], 80, 12);
+   add_zone_to_click_board(screen_width-4-80, find_function_text_area_info[TEXT_AREA_INFO_Y], 80, 12, TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_FIND_PREVIOUS);
   }
   else if(text_editor_state==TEXT_EDITOR_STATE_FIND_AND_REPLACE) {
-   draw_full_square(0, graphic_screen_y-20-20-20, graphic_screen_x, 20+20, 0xFF7000);
+   draw_full_square(0, screen_height-20-20-20, screen_width, 20+20, 0xFF7000);
 
-   find_function_text_area_info[TEXT_AREA_INFO_Y] = graphic_screen_y-20-20-16;
+   find_function_text_area_info[TEXT_AREA_INFO_Y] = screen_height-20-20-16;
    draw_text_area(text_editor_find_function_text_area_info_mem);
-   add_zone_to_click_board(4, graphic_screen_y-20-20-16, graphic_screen_x-24-160, 10, TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_FIND);
+   add_zone_to_click_board(4, screen_height-20-20-16, screen_width-24-160, 10, TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_FIND);
    program_interface_add_text_area(TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_FIND, text_editor_find_function_text_area_info_mem);
 
-   draw_button("Next", graphic_screen_x-4-80-8-80, find_function_text_area_info[TEXT_AREA_INFO_Y], 80, 12);
-   add_zone_to_click_board(graphic_screen_x-4-80-8-80, find_function_text_area_info[TEXT_AREA_INFO_Y], 80, 12, TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_FIND_NEXT);
+   draw_button("Next", screen_width-4-80-8-80, find_function_text_area_info[TEXT_AREA_INFO_Y], 80, 12);
+   add_zone_to_click_board(screen_width-4-80-8-80, find_function_text_area_info[TEXT_AREA_INFO_Y], 80, 12, TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_FIND_NEXT);
 
-   draw_button("Previous", graphic_screen_x-4-80, find_function_text_area_info[TEXT_AREA_INFO_Y], 80, 12);
-   add_zone_to_click_board(graphic_screen_x-4-80, find_function_text_area_info[TEXT_AREA_INFO_Y], 80, 12, TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_FIND_PREVIOUS);
+   draw_button("Previous", screen_width-4-80, find_function_text_area_info[TEXT_AREA_INFO_Y], 80, 12);
+   add_zone_to_click_board(screen_width-4-80, find_function_text_area_info[TEXT_AREA_INFO_Y], 80, 12, TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_FIND_PREVIOUS);
 
    draw_text_area(text_editor_replace_function_text_area_mem);
-   add_zone_to_click_board(4, graphic_screen_y-20-16, graphic_screen_x-24-160, 10, TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_REPLACE);
+   add_zone_to_click_board(4, screen_height-20-16, screen_width-24-160, 10, TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_REPLACE);
    program_interface_add_text_area(TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_REPLACE, text_editor_replace_function_text_area_mem);
 
-   draw_button("Replace", graphic_screen_x-4-100-8-60, graphic_screen_y-20-16, 65, 12);
-   add_zone_to_click_board(graphic_screen_x-4-100-8-60, graphic_screen_y-20-16, 65, 12, TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_REPLACE_ACTUAL_SELECTION);
+   draw_button("Replace", screen_width-4-100-8-60, screen_height-20-16, 65, 12);
+   add_zone_to_click_board(screen_width-4-100-8-60, screen_height-20-16, 65, 12, TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_REPLACE_ACTUAL_SELECTION);
 
-   draw_button("Replace all", graphic_screen_x-4-100, graphic_screen_y-20-16, 100, 12);
-   add_zone_to_click_board(graphic_screen_x-4-100, graphic_screen_y-20-16, 100, 12, TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_REPLACE_ALL);
+   draw_button("Replace all", screen_width-4-100, screen_height-20-16, 100, 12);
+   add_zone_to_click_board(screen_width-4-100, screen_height-20-16, 100, 12, TEXT_EDITOR_CLICK_ZONE_TEXT_AREA_REPLACE_ALL);
   }
 
   //draw bottom line buttons
@@ -167,7 +167,7 @@ void text_editor_open_file(void) {
 
  //add file entry with clear text area with as many characters as bytes of file + 100000 more
  add_file((word_t *)file_dialog_file_name, 0, 0, 0, 0, 0);
- set_file_value(TEXT_EDITOR_FILE_TEXT_AREA_MEMORY, create_text_area(TEXT_AREA_NORMAL_DARK, (file_dialog_file_size+100000), 0, 21, graphic_screen_x, graphic_screen_y-41));
+ set_file_value(TEXT_EDITOR_FILE_TEXT_AREA_MEMORY, create_text_area(TEXT_AREA_NORMAL_DARK, (file_dialog_file_size+100000), 0, 21, screen_width, screen_height-41));
 
  //convert file from utf-8 to unicode to text area
  dword_t *text_area_info = (dword_t *) (get_file_value(TEXT_EDITOR_FILE_TEXT_AREA_MEMORY));
@@ -211,7 +211,7 @@ void text_editor_save_file(void) {
 
 void text_editor_new_file(void) {
  add_file((word_t *)"N\0e\0w\0 \0t\0e\0x\0t\0 \0f\0i\0l\0e\0\0\0", 0, 0, 0, 0, 0);
- set_file_value(TEXT_EDITOR_FILE_TEXT_AREA_MEMORY, create_text_area(TEXT_AREA_NORMAL_DARK, 100000, 0, 21, graphic_screen_x, graphic_screen_y-41));
+ set_file_value(TEXT_EDITOR_FILE_TEXT_AREA_MEMORY, create_text_area(TEXT_AREA_NORMAL_DARK, 100000, 0, 21, screen_width, screen_height-41));
 }
 
 void text_editor_close_file(void) {
@@ -286,23 +286,23 @@ void text_editor_key_f10_event(void) {
 
   //draw Go to line dialog
   
-  draw_full_square(graphic_screen_x_center-32, graphic_screen_y_center-8-7-8, 8*8+2, 8+7+8+12+8+12+8, 0xFF7000);
-  draw_empty_square(graphic_screen_x_center-32, graphic_screen_y_center-8-7-8, 8*8+2, 8+7+8+12+8+12+8, BLACK);
-  print("Line:", graphic_screen_x_center-24, graphic_screen_y_center-8-7, BLACK);
+  draw_full_square(screen_x_center-32, screen_y_center-8-7-8, 8*8+2, 8+7+8+12+8+12+8, 0xFF7000);
+  draw_empty_square(screen_x_center-32, screen_y_center-8-7-8, 8*8+2, 8+7+8+12+8+12+8, BLACK);
+  print("Line:", screen_x_center-24, screen_y_center-8-7, BLACK);
   draw_text_area(text_editor_go_to_line_text_area_mem);
-  draw_button("Go", graphic_screen_x_center-24, graphic_screen_y_center+12+8, 6*8+2, 12);
-  redraw_part_of_screen(graphic_screen_x_center-32, graphic_screen_y_center-8-7-8, 8*8, 8+7+8+12+8+12+8);
+  draw_button("Go", screen_x_center-24, screen_y_center+12+8, 6*8+2, 12);
+  redraw_part_of_screen(screen_x_center-32, screen_y_center-8-7-8, 8*8, 8+7+8+12+8+12+8);
 
   while(1) {
    wait_for_user_input();
    move_mouse_cursor();
 
-   if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center-8-7-8, graphic_screen_y_center+12+8+12+8, graphic_screen_x_center-4*8, graphic_screen_x_center+4*8+2)==STATUS_FALSE)) {
+   if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center-8-7-8, screen_y_center+12+8+12+8, screen_x_center-4*8, screen_x_center+4*8+2)==STATUS_FALSE)) {
     program_interface_redraw();
     mouse_click_button_state = MOUSE_DRAG;
     return;
    }
-   else if(keyboard_value==KEY_ENTER || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center+12+8, graphic_screen_y_center+12+8+10, graphic_screen_x_center-24, graphic_screen_x_center-24+6*8+2)==STATUS_TRUE)) {
+   else if(keyboard_value==KEY_ENTER || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center+12+8, screen_y_center+12+8+10, screen_x_center-24, screen_x_center-24+6*8+2)==STATUS_TRUE)) {
     dword_t *text_area_info = (dword_t *) (get_file_value(TEXT_EDITOR_FILE_TEXT_AREA_MEMORY));
     word_t *text_area_data = (word_t *) (text_area_info[TEXT_AREA_INFO_MEMORY]);
     dword_t line = convert_word_string_to_number(number_text_area_info[TEXT_AREA_INFO_MEMORY]); //get number of line

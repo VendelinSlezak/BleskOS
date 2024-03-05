@@ -9,10 +9,9 @@
 */
 
 void parse_bootloader_edid(void) {
- log("\n");
  is_bootloader_edid_present = parse_edid_data(0x2000); //here bootloader loaded EDID
  if(is_bootloader_edid_present==STATUS_FALSE) {
-  log("\nBootloader did not load EDID");
+  log("\n\nBootloader did not load EDID");
  }
 }
 
@@ -45,21 +44,22 @@ byte_t parse_edid_data(dword_t edid_data_memory) {
  mode_vertical_total = (vertical_active + vertical_blank);
  
  //log
- log("\nEDID DATA\nHorizontal\nactive: ");
- log_var(horizontal_active);
- log("\nblank: ");
- log_var(horizontal_blank);
- log("\nsync offset: ");
- log_var(horizontal_sync_offset);
- log("\nsync pulse: ");
+ log("\n\nEDID DATA\nHORIZONTAL active: ");
+ log_var_with_space(horizontal_active);
+ log("blank: ");
+ log_var_with_space(horizontal_blank);
+ log("sync offset: ");
+ log_var_with_space(horizontal_sync_offset);
+ log("sync pulse: ");
  log_var(horizontal_sync_pulse);
- log("\nVertical\n active: ");
- log_var(vertical_active);
- log("\nblank: ");
- log_var(vertical_blank);
- log("\nsync offset: ");
- log_var(vertical_sync_offset);
- log("\nsync pulse: ");
+
+ log("\nVERTICAL active: ");
+ log_var_with_space(vertical_active);
+ log("blank: ");
+ log_var_with_space(vertical_blank);
+ log("sync offset: ");
+ log_var_with_space(vertical_sync_offset);
+ log("sync pulse: ");
  log_var(vertical_sync_pulse);
 
  return STATUS_TRUE;

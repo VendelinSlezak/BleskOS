@@ -30,31 +30,31 @@ byte_t can_graphic_card_driver_change_backlight;
 
 byte_t percent_of_backlight;
 
-dword_t screen_mem;
-dword_t screen_bytes_per_line;
+dword_t screen_width, screen_height, screen_bpp, screen_x_center, screen_y_center;
+byte_t *screen_double_buffer_memory_pointer;
+dword_t screen_double_buffer_bytes_per_line;
+byte_t *monitor_screen_linear_frame_buffer_memory_pointer;
+dword_t monitor_screen_bytes_per_line;
 
-dword_t save_screen_mem;
-dword_t save_screen_x;
-dword_t save_screen_y;
-dword_t save_screen_bytes_per_line;
-
-dword_t graphic_screen_lfb;
-dword_t graphic_screen_x;
-dword_t graphic_screen_y;
-dword_t graphic_screen_bpp;
-dword_t graphic_screen_bytes_per_line;
-dword_t graphic_screen_x_center;
-dword_t graphic_screen_y_center;
+byte_t *save_screen_double_buffer_memory_pointer;
+dword_t save_screen_width;
+dword_t save_screen_height;
+dword_t save_screen_double_buffer_bytes_per_line;
 
 void initalize_graphic(void);
 void redraw_framebuffer_32_bpp(void);
+void redraw_framebuffer_32_bpp_without_padding(void);
 void redraw_framebuffer_24_bpp(void);
+void redraw_framebuffer_24_bpp_without_padding(void);
 void redraw_framebuffer_16_bpp(void);
+void redraw_framebuffer_16_bpp_without_padding(void);
 void redraw_screen(void);
 void redraw_part_of_framebuffer_32_bpp(dword_t x, dword_t y, dword_t width, dword_t height);
 void redraw_part_of_framebuffer_24_bpp(dword_t x, dword_t y, dword_t width, dword_t height);
 void redraw_part_of_framebuffer_16_bpp(dword_t x, dword_t y, dword_t width, dword_t height);
 void redraw_part_of_screen(dword_t x, dword_t y, dword_t width, dword_t height);
+void add_mouse_to_screen_double_buffer(void);
+void remove_mouse_from_screen_double_buffer(void);
 void screen_save_variables(void);
 void screen_restore_variables(void);
 void monitor_change_backlight(byte_t value);

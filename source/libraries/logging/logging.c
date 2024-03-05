@@ -132,7 +132,7 @@ void show_log(void) {
 
  draw_x = 10;
  draw_y = 10;
- for(dword_t num_of_lines = ((graphic_screen_y-20)/10); num_of_lines>0; log++) {
+ for(dword_t num_of_lines = ((screen_height-20)/10); num_of_lines>0; log++) {
   if(*log==0) {
    break; //we are at end of log
   }

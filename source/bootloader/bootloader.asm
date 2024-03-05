@@ -803,7 +803,7 @@ load_bleskos:
  ;load bleskos
  cmp byte [boot_drive], 0x80
  jae .hard_disk_boot
- 
+
  ;load first 8 sectors to align reading from floppy
  mov ch, 0 ;cylinder
  mov dh, 0 ;head
@@ -835,7 +835,7 @@ load_bleskos:
   mov ax, 0x7000
   mov es, ax
   mov ah, 0x2 ;read
-  mov al, 36 ;36 sector
+  mov al, 36 ;36 sectors
   pusha ;some hardware change values in registers during int 13h so we have to save everything
   int 13h
   popa
@@ -921,7 +921,6 @@ load_bleskos:
  jne error_graphic_mode ;error during setting graphic mode
  
  ;enter to protected mode
- .enter_protected_mode:
  cli
  lgdt [gdt_wrap]
  mov eax, cr0
