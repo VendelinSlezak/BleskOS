@@ -12,12 +12,12 @@ void initalize_graphic_editor(void) {
  graphic_editor_program_interface_memory = create_program_interface_memory(((dword_t)&draw_graphic_editor), 0);
 
  graphic_editor_pen_size_text_area_info_memory = create_text_area(TEXT_AREA_NUMBER_INPUT, 3, 8, 0, 160, 10);
- graphic_editor_width_text_area_info_memory = create_text_area(TEXT_AREA_NUMBER_INPUT, 4, graphic_screen_x_center-24, graphic_screen_y_center-50+25, 48, 10);
- graphic_editor_height_text_area_info_memory = create_text_area(TEXT_AREA_NUMBER_INPUT, 4, graphic_screen_x_center-24, graphic_screen_y_center-50+55, 48, 10);
+ graphic_editor_width_text_area_info_memory = create_text_area(TEXT_AREA_NUMBER_INPUT, 4, screen_x_center-24, screen_y_center-50+25, 48, 10);
+ graphic_editor_height_text_area_info_memory = create_text_area(TEXT_AREA_NUMBER_INPUT, 4, screen_x_center-24, screen_y_center-50+55, 48, 10);
 
- graphic_editor_image_area_width = (graphic_screen_x-GRAPHIC_EDITOR_SIDE_PANEL_WIDTH);
+ graphic_editor_image_area_width = (screen_width-GRAPHIC_EDITOR_SIDE_PANEL_WIDTH);
  graphic_editor_image_area_width_center = GRAPHIC_EDITOR_SIDE_PANEL_WIDTH+(graphic_editor_image_area_width/2);
- graphic_editor_image_area_height = (graphic_screen_y-41-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH);
+ graphic_editor_image_area_height = (screen_height-41-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH);
  graphic_editor_image_area_height_center = 21+(graphic_editor_image_area_height/2);
 
  graphic_editor_color = BLACK;
@@ -188,7 +188,7 @@ void draw_graphic_editor(void) {
  draw_program_interface("Graphic editor", "", 0xFFAE29, 0xBBBBBB);
  if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0) {
   //draw side panel
-  draw_full_square(0, 21, GRAPHIC_EDITOR_SIDE_PANEL_WIDTH, graphic_screen_y-41, 0x999999);
+  draw_full_square(0, 21, GRAPHIC_EDITOR_SIDE_PANEL_WIDTH, screen_height-41, 0x999999);
 
   //draw color area
   print("Color", 8, GRAPHIC_EDITOR_COLOR_AREA_LINE+6, BLACK);
@@ -295,7 +295,7 @@ void draw_graphic_editor(void) {
   program_interface_add_text_area(GRAPHIC_EDITOR_CLICK_ZONE_PEN_SIZE_TEXT_AREA, graphic_editor_pen_size_text_area_info_memory);
 
   //draw bottom panel
-  draw_full_square(GRAPHIC_EDITOR_SIDE_PANEL_WIDTH, graphic_screen_y-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH, graphic_screen_x-GRAPHIC_EDITOR_SIDE_PANEL_WIDTH, GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH, 0xAAAAAA);
+  draw_full_square(GRAPHIC_EDITOR_SIDE_PANEL_WIDTH, screen_height-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH, screen_width-GRAPHIC_EDITOR_SIDE_PANEL_WIDTH, GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH, 0xAAAAAA);
   dword_t zoom = get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_ZOOM), zoom_background_x = 0, zoom_background_width = 0;
   if(zoom==25) {
    zoom_background_x = GRAPHIC_EDITOR_SIDE_PANEL_WIDTH+4;
@@ -321,22 +321,22 @@ void draw_graphic_editor(void) {
    zoom_background_x = GRAPHIC_EDITOR_SIDE_PANEL_WIDTH+4+40+40+48+48+48;
    zoom_background_width = 40;
   }
-  draw_full_square(zoom_background_x, graphic_screen_y-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH+2, zoom_background_width, 16, RED);
-  draw_empty_square(zoom_background_x, graphic_screen_y-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH+2, zoom_background_width, 16, BLACK);
-  print(" 25%  50%  100%  200%  300%  400%", GRAPHIC_EDITOR_SIDE_PANEL_WIDTH, graphic_screen_y-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH+6, BLACK);
-  add_zone_to_click_board(GRAPHIC_EDITOR_SIDE_PANEL_WIDTH, graphic_screen_y-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH, 40, 20, GRAPHIC_EDITOR_CLICK_ZONE_IMAGE_ZOOM_25);
-  add_zone_to_click_board(GRAPHIC_EDITOR_SIDE_PANEL_WIDTH+40, graphic_screen_y-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH, 40, 20, GRAPHIC_EDITOR_CLICK_ZONE_IMAGE_ZOOM_50);
-  add_zone_to_click_board(GRAPHIC_EDITOR_SIDE_PANEL_WIDTH+40+40, graphic_screen_y-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH, 48, 20, GRAPHIC_EDITOR_CLICK_ZONE_IMAGE_ZOOM_100);
-  add_zone_to_click_board(GRAPHIC_EDITOR_SIDE_PANEL_WIDTH+40+40+48, graphic_screen_y-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH, 48, 20, GRAPHIC_EDITOR_CLICK_ZONE_IMAGE_ZOOM_200);
-  add_zone_to_click_board(GRAPHIC_EDITOR_SIDE_PANEL_WIDTH+40+40+48+48, graphic_screen_y-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH, 48, 20, GRAPHIC_EDITOR_CLICK_ZONE_IMAGE_ZOOM_300);
-  add_zone_to_click_board(GRAPHIC_EDITOR_SIDE_PANEL_WIDTH+40+40+48+48+48, graphic_screen_y-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH, 48, 20, GRAPHIC_EDITOR_CLICK_ZONE_IMAGE_ZOOM_400);
+  draw_full_square(zoom_background_x, screen_height-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH+2, zoom_background_width, 16, RED);
+  draw_empty_square(zoom_background_x, screen_height-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH+2, zoom_background_width, 16, BLACK);
+  print(" 25%  50%  100%  200%  300%  400%", GRAPHIC_EDITOR_SIDE_PANEL_WIDTH, screen_height-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH+6, BLACK);
+  add_zone_to_click_board(GRAPHIC_EDITOR_SIDE_PANEL_WIDTH, screen_height-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH, 40, 20, GRAPHIC_EDITOR_CLICK_ZONE_IMAGE_ZOOM_25);
+  add_zone_to_click_board(GRAPHIC_EDITOR_SIDE_PANEL_WIDTH+40, screen_height-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH, 40, 20, GRAPHIC_EDITOR_CLICK_ZONE_IMAGE_ZOOM_50);
+  add_zone_to_click_board(GRAPHIC_EDITOR_SIDE_PANEL_WIDTH+40+40, screen_height-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH, 48, 20, GRAPHIC_EDITOR_CLICK_ZONE_IMAGE_ZOOM_100);
+  add_zone_to_click_board(GRAPHIC_EDITOR_SIDE_PANEL_WIDTH+40+40+48, screen_height-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH, 48, 20, GRAPHIC_EDITOR_CLICK_ZONE_IMAGE_ZOOM_200);
+  add_zone_to_click_board(GRAPHIC_EDITOR_SIDE_PANEL_WIDTH+40+40+48+48, screen_height-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH, 48, 20, GRAPHIC_EDITOR_CLICK_ZONE_IMAGE_ZOOM_300);
+  add_zone_to_click_board(GRAPHIC_EDITOR_SIDE_PANEL_WIDTH+40+40+48+48+48, screen_height-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH, 48, 20, GRAPHIC_EDITOR_CLICK_ZONE_IMAGE_ZOOM_400);
   
   //print image dimensions
   dword_t *image_info = (dword_t *) (get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
   dword_t size_of_digits_of_width = (get_number_of_digits_in_number(image_info[IMAGE_INFO_REAL_WIDTH])*8), size_of_digits_of_height = (get_number_of_digits_in_number(image_info[IMAGE_INFO_REAL_HEIGTH])*8);
-  print_var(image_info[IMAGE_INFO_REAL_WIDTH], graphic_screen_x-8-size_of_digits_of_height-8-size_of_digits_of_width, graphic_screen_y-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH+6, BLACK);
-  print("x", graphic_screen_x-8-size_of_digits_of_height-8, graphic_screen_y-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH+6, BLACK);
-  print_var(image_info[IMAGE_INFO_REAL_HEIGTH], graphic_screen_x-8-size_of_digits_of_height, graphic_screen_y-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH+6, BLACK);
+  print_var(image_info[IMAGE_INFO_REAL_WIDTH], screen_width-8-size_of_digits_of_height-8-size_of_digits_of_width, screen_height-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH+6, BLACK);
+  print("x", screen_width-8-size_of_digits_of_height-8, screen_height-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH+6, BLACK);
+  print_var(image_info[IMAGE_INFO_REAL_HEIGTH], screen_width-8-size_of_digits_of_height, screen_height-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH+6, BLACK);
 
   //draw image
   add_zone_to_click_board(GRAPHIC_EDITOR_SIDE_PANEL_WIDTH, 20, graphic_editor_image_area_width, graphic_editor_image_area_height, NO_CLICK); //clear click board
@@ -453,20 +453,20 @@ void graphic_editor_new_file(void) {
  text_area_disable_cursor(graphic_editor_width_text_area_info_memory);
  clear_memory(width_text_area[TEXT_AREA_INFO_MEMORY], 8);
  convert_number_to_word_string(width, width_text_area[TEXT_AREA_INFO_MEMORY]);
- print("Width", graphic_screen_x_center-24, graphic_screen_y_center-50+5+6, BLACK);
+ print("Width", screen_x_center-24, screen_y_center-50+5+6, BLACK);
  draw_text_area(graphic_editor_width_text_area_info_memory);
  program_interface_add_text_area(GRAPHIC_EDITOR_CLICK_ZONE_TEXT_AREA_WIDTH, graphic_editor_width_text_area_info_memory);
- add_zone_to_click_board(graphic_screen_x_center-24, graphic_screen_y_center-25, 48, 10, GRAPHIC_EDITOR_CLICK_ZONE_TEXT_AREA_WIDTH);
+ add_zone_to_click_board(screen_x_center-24, screen_y_center-25, 48, 10, GRAPHIC_EDITOR_CLICK_ZONE_TEXT_AREA_WIDTH);
 
  text_area_disable_cursor(graphic_editor_height_text_area_info_memory);
  clear_memory(height_text_area[TEXT_AREA_INFO_MEMORY], 8);
  convert_number_to_word_string(height, height_text_area[TEXT_AREA_INFO_MEMORY]);
- print("Heigth", graphic_screen_x_center-24, graphic_screen_y_center-50+35+6, BLACK);
+ print("Heigth", screen_x_center-24, screen_y_center-50+35+6, BLACK);
  draw_text_area(graphic_editor_height_text_area_info_memory);
  program_interface_add_text_area(GRAPHIC_EDITOR_CLICK_ZONE_TEXT_AREA_HEIGTH, graphic_editor_height_text_area_info_memory);
- add_zone_to_click_board(graphic_screen_x_center-24, graphic_screen_y_center+5, 48, 10, GRAPHIC_EDITOR_CLICK_ZONE_TEXT_AREA_HEIGTH);
+ add_zone_to_click_board(screen_x_center-24, screen_y_center+5, 48, 10, GRAPHIC_EDITOR_CLICK_ZONE_TEXT_AREA_HEIGTH);
 
- draw_button("OK", graphic_screen_x_center-24, graphic_screen_y_center+20, 48, 20);
+ draw_button("OK", screen_x_center-24, screen_y_center+20, 48, 20);
  redraw_screen();
 
  while(1) {
@@ -474,7 +474,7 @@ void graphic_editor_new_file(void) {
   move_mouse_cursor();
 
   //do not create new file
-  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center-50, graphic_screen_y_center+50, graphic_screen_x_center-32, graphic_screen_x_center+32)==STATUS_FALSE)) {
+  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center-50, screen_y_center+50, screen_x_center-32, screen_x_center+32)==STATUS_FALSE)) {
    set_program_value(PROGRAM_INTERFACE_FLAGS, (get_program_value(PROGRAM_INTERFACE_FLAGS) & ~PROGRAM_INTERFACE_FLAG_KEYBOARD_EVENTS_DISABLED));
    return;
   }
@@ -484,7 +484,7 @@ void graphic_editor_new_file(void) {
   program_interface_process_mouse_event();
 
   //create file
-  if(keyboard_value==KEY_ENTER || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center+20, graphic_screen_y_center+40, graphic_screen_x_center-24, graphic_screen_x_center+24)==STATUS_TRUE)) {
+  if(keyboard_value==KEY_ENTER || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center+20, screen_y_center+40, screen_x_center-24, screen_x_center+24)==STATUS_TRUE)) {
    //get image size
    width = convert_word_string_to_number(width_text_area[TEXT_AREA_INFO_MEMORY]);
    height = convert_word_string_to_number(height_text_area[TEXT_AREA_INFO_MEMORY]);
@@ -561,7 +561,7 @@ void graphic_editor_key_f7_event(void) {
    }
 
    if(mouse_click_button_state==MOUSE_CLICK) {
-    if(is_mouse_in_zone(graphic_screen_y-20-4*20, graphic_screen_y-20, 8+10*8+8, 8+10*8+8+200)==STATUS_TRUE) {
+    if(is_mouse_in_zone(screen_height-20-4*20, screen_height-20, 8+10*8+8, 8+10*8+8+200)==STATUS_TRUE) {
      dword_t selected_item = get_number_of_clicked_item_from_menu_list(4);
 
      if(selected_item==0) {
@@ -915,10 +915,10 @@ void graphic_editor_prepare_drawing_by_tool_without_copying_preview(void) {
 
  //switch to image as screen
  dword_t *image_info = (dword_t *) (get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
- screen_mem = get_image_data_memory((dword_t)image_info);
- graphic_screen_x = image_info[IMAGE_INFO_REAL_WIDTH];
- graphic_screen_y = image_info[IMAGE_INFO_REAL_HEIGTH];
- screen_bytes_per_line = (graphic_screen_x*4);
+ screen_double_buffer_memory_pointer = (byte_t *) get_image_data_memory((dword_t)image_info);
+ screen_width = image_info[IMAGE_INFO_REAL_WIDTH];
+ screen_height = image_info[IMAGE_INFO_REAL_HEIGTH];
+ screen_double_buffer_bytes_per_line = (screen_width*4);
 
  //set pen size
  set_pen_width(graphic_editor_pen_size, graphic_editor_color);

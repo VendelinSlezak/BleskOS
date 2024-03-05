@@ -126,7 +126,7 @@ void draw_media_viewer(void) {
   dword_t *image_info = (dword_t *) (get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY));
 
   //draw buttons
-  draw_full_square(0, 20, graphic_screen_x, 20, 0x00C0FF);
+  draw_full_square(0, 20, screen_width, 20, 0x00C0FF);
   draw_button("[l] Turn left", 8, 22, 120, 16);
   add_zone_to_click_board(8, 22, 120, 16, MEDIA_VIEWER_CLICK_ZONE_IMAGE_TURN_LEFT);
   draw_button("[r] Turn right", 8+120+8, 22, 120, 16);
@@ -152,16 +152,16 @@ void draw_media_viewer(void) {
 
   //print zoom
   dword_t zoom = get_file_value(MEDIA_VIEWER_FILE_IMAGE_ZOOM), percent_char_column = 152+8*3;
-  print("Zoom:", 104, graphic_screen_y-6-7, BLACK);
-  draw_full_square(152, graphic_screen_y-19, 40, 20, 0x0089FF);
-  print_var(zoom, 152, graphic_screen_y-6-7, BLACK);
+  print("Zoom:", 104, screen_height-6-7, BLACK);
+  draw_full_square(152, screen_height-19, 40, 20, 0x0089FF);
+  print_var(zoom, 152, screen_height-6-7, BLACK);
   if(zoom<100) {
    percent_char_column = 152+8*2;
    if(zoom<10) {
     percent_char_column = 152+8*1;
    }
   }
-  draw_char('%', percent_char_column, graphic_screen_y-6-7, BLACK);
+  draw_char('%', percent_char_column, screen_height-6-7, BLACK);
  }
  else if(get_file_value(MEDIA_VIEWER_FILE_TYPE)==MEDIA_VIEWER_FILE_SOUND) {
   //set state
@@ -176,43 +176,43 @@ void draw_media_viewer(void) {
 
   //draw play/stop button
   if(media_viewer_sound_state==MEDIA_VIEWER_SOUND_STATE_PLAYING) {
-   draw_button("[space] Stop sound", 10, graphic_screen_y-42, 200, 14);
+   draw_button("[space] Stop sound", 10, screen_height-42, 200, 14);
   }
   else {
-   draw_button("[space] Play sound", 10, graphic_screen_y-42, 200, 14);
+   draw_button("[space] Play sound", 10, screen_height-42, 200, 14);
   }
-  add_zone_to_click_board(10, graphic_screen_y-42, 200, 14, MEDIA_VIEWER_CLICK_ZONE_SOUND_PLAY_STOP);
+  add_zone_to_click_board(10, screen_height-42, 200, 14, MEDIA_VIEWER_CLICK_ZONE_SOUND_PLAY_STOP);
 
   //print volume
-  print("Volume:", 10, graphic_screen_y-80+3, WHITE);
-  print_var(sound_volume, 10+64, graphic_screen_y-80+3, WHITE);
+  print("Volume:", 10, screen_height-80+3, WHITE);
+  print_var(sound_volume, 10+64, screen_height-80+3, WHITE);
 
   //print length of file
-  print(":  :  /  :  :", graphic_screen_x-10-24-24-24-24-24, graphic_screen_y-37, WHITE);
+  print(":  :  /  :  :", screen_width-10-24-24-24-24-24, screen_height-37, WHITE);
   dword_t seconds = get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)%60000/1000;
   dword_t minutes = get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)/60000;
   dword_t hours = minutes/60;
   minutes -= (hours*60);
   if(seconds<10) {
-   print("0", graphic_screen_x-10-16, graphic_screen_y-37, WHITE);
-   print_var(seconds, graphic_screen_x-10-8, graphic_screen_y-37, WHITE);
+   print("0", screen_width-10-16, screen_height-37, WHITE);
+   print_var(seconds, screen_width-10-8, screen_height-37, WHITE);
   }
   else {
-   print_var(seconds, graphic_screen_x-10-16, graphic_screen_y-37, WHITE);
+   print_var(seconds, screen_width-10-16, screen_height-37, WHITE);
   }
   if(minutes<10) {
-   print("0", graphic_screen_x-10-16-24, graphic_screen_y-37, WHITE);
-   print_var(minutes, graphic_screen_x-10-16-16, graphic_screen_y-37, WHITE);
+   print("0", screen_width-10-16-24, screen_height-37, WHITE);
+   print_var(minutes, screen_width-10-16-16, screen_height-37, WHITE);
   }
   else {
-   print_var(minutes, graphic_screen_x-10-16-24, graphic_screen_y-37, WHITE);
+   print_var(minutes, screen_width-10-16-24, screen_height-37, WHITE);
   }
   if(hours<10) {
-   print("0", graphic_screen_x-10-16-24-24, graphic_screen_y-37, WHITE);
-   print_var(hours, graphic_screen_x-10-16-24-16, graphic_screen_y-37, WHITE);
+   print("0", screen_width-10-16-24-24, screen_height-37, WHITE);
+   print_var(hours, screen_width-10-16-24-16, screen_height-37, WHITE);
   }
   else {
-   print_var(hours, graphic_screen_x-10-16-24-24, graphic_screen_y-37, WHITE);
+   print_var(hours, screen_width-10-16-24-24, screen_height-37, WHITE);
   }
 
   //print length of played part of file
@@ -220,34 +220,34 @@ void draw_media_viewer(void) {
   minutes = get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)/60000;
   hours = minutes/60;
   minutes -= (hours*60);
-  draw_full_square(graphic_screen_x-10-24-24-24-24-24-16, graphic_screen_y-37, 64, 8, BLACK);
+  draw_full_square(screen_width-10-24-24-24-24-24-16, screen_height-37, 64, 8, BLACK);
   if(seconds<10) {
-   print("0", graphic_screen_x-82-16, graphic_screen_y-37, WHITE);
-   print_var(seconds, graphic_screen_x-82-8, graphic_screen_y-37, WHITE);
+   print("0", screen_width-82-16, screen_height-37, WHITE);
+   print_var(seconds, screen_width-82-8, screen_height-37, WHITE);
   }
   else {
-   print_var(seconds, graphic_screen_x-82-16, graphic_screen_y-37, WHITE);
+   print_var(seconds, screen_width-82-16, screen_height-37, WHITE);
   }
   if(minutes<10) {
-   print("0", graphic_screen_x-82-16-24, graphic_screen_y-37, WHITE);
-   print_var(minutes, graphic_screen_x-82-16-16, graphic_screen_y-37, WHITE);
+   print("0", screen_width-82-16-24, screen_height-37, WHITE);
+   print_var(minutes, screen_width-82-16-16, screen_height-37, WHITE);
   }
   else {
-   print_var(minutes, graphic_screen_x-82-16-24, graphic_screen_y-37, WHITE);
+   print_var(minutes, screen_width-82-16-24, screen_height-37, WHITE);
   }
   if(hours<10) {
-   print("0", graphic_screen_x-82-16-24-24, graphic_screen_y-37, WHITE);
-   print_var(hours, graphic_screen_x-82-16-24-16, graphic_screen_y-37, WHITE);
+   print("0", screen_width-82-16-24-24, screen_height-37, WHITE);
+   print_var(hours, screen_width-82-16-24-16, screen_height-37, WHITE);
   }
   else {
-   print_var(hours, graphic_screen_x-82-16-24-24, graphic_screen_y-37, WHITE);
+   print_var(hours, screen_width-82-16-24-24, screen_height-37, WHITE);
   }
-  print(":  :", graphic_screen_x-10-24-24-24-24-24, graphic_screen_y-37, WHITE);
+  print(":  :", screen_width-10-24-24-24-24-24, screen_height-37, WHITE);
 
   //draw square of played part of file
-  draw_empty_square(10, graphic_screen_y-60, graphic_screen_x-20, 10, WHITE);
-  draw_full_square(11, graphic_screen_y-59, ((graphic_screen_x-22)*get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)/get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)), 8, 0x0900FF);
-  add_zone_to_click_board(11, graphic_screen_y-59, graphic_screen_x-22, 8, MEDIA_VIEWER_CLICK_ZONE_SOUND_PROGRESS);
+  draw_empty_square(10, screen_height-60, screen_width-20, 10, WHITE);
+  draw_full_square(11, screen_height-59, ((screen_width-22)*get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)/get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)), 8, 0x0900FF);
+  add_zone_to_click_board(11, screen_height-59, screen_width-22, 8, MEDIA_VIEWER_CLICK_ZONE_SOUND_PROGRESS);
  }
 }
 
@@ -564,30 +564,30 @@ void media_viewer_image_recalculate_scrollbars(void) {
  calculate_image_scrollbars((dword_t)image_info);
 
  //calculate size of image with scrollbars
- if(image_info[IMAGE_INFO_WIDTH]<graphic_screen_x) {
+ if(image_info[IMAGE_INFO_WIDTH]<screen_width) {
   image_info[IMAGE_INFO_DRAW_WIDTH] = image_info[IMAGE_INFO_WIDTH];
  }
  else {
-  image_info[IMAGE_INFO_DRAW_WIDTH] = graphic_screen_x;
+  image_info[IMAGE_INFO_DRAW_WIDTH] = screen_width;
  }
- if(image_info[IMAGE_INFO_HEIGTH]<(graphic_screen_y-60)) {
+ if(image_info[IMAGE_INFO_HEIGTH]<(screen_height-60)) {
   image_info[IMAGE_INFO_DRAW_HEIGTH] = image_info[IMAGE_INFO_HEIGTH];
  }
  else {
-  image_info[IMAGE_INFO_DRAW_HEIGTH] = (graphic_screen_y-60);
+  image_info[IMAGE_INFO_DRAW_HEIGTH] = (screen_height-60);
  }
- if(image_info[IMAGE_INFO_WIDTH]>graphic_screen_x && image_info[IMAGE_INFO_HEIGTH]>(graphic_screen_y-60)) { //both scrollbars
+ if(image_info[IMAGE_INFO_WIDTH]>screen_width && image_info[IMAGE_INFO_HEIGTH]>(screen_height-60)) { //both scrollbars
   image_info[IMAGE_INFO_DRAW_HEIGTH] -= 10;
   image_info[IMAGE_INFO_DRAW_WIDTH] -= 10;
  }
- else if(image_info[IMAGE_INFO_HEIGTH]>(graphic_screen_y-60) && image_info[IMAGE_INFO_WIDTH]<=graphic_screen_x) { //vertical scrollbar
-  if((graphic_screen_x-image_info[IMAGE_INFO_WIDTH])<20 || (graphic_screen_x-image_info[IMAGE_INFO_WIDTH])>0x80000000) { //also horizontal scrollbar
+ else if(image_info[IMAGE_INFO_HEIGTH]>(screen_height-60) && image_info[IMAGE_INFO_WIDTH]<=screen_width) { //vertical scrollbar
+  if((screen_width-image_info[IMAGE_INFO_WIDTH])<20 || (screen_width-image_info[IMAGE_INFO_WIDTH])>0x80000000) { //also horizontal scrollbar
    image_info[IMAGE_INFO_DRAW_HEIGTH] -= 10;
    image_info[IMAGE_INFO_DRAW_WIDTH] -= 10;
   }
  }
- else if(image_info[IMAGE_INFO_HEIGTH]<=(graphic_screen_y-60) && image_info[IMAGE_INFO_WIDTH]>graphic_screen_x) { //horizontal scrollbar
-  if((graphic_screen_y-60-image_info[IMAGE_INFO_HEIGTH])<20 || (graphic_screen_y-60-image_info[IMAGE_INFO_HEIGTH])>0x80000000) { //also vertical scrollbar
+ else if(image_info[IMAGE_INFO_HEIGTH]<=(screen_height-60) && image_info[IMAGE_INFO_WIDTH]>screen_width) { //horizontal scrollbar
+  if((screen_height-60-image_info[IMAGE_INFO_HEIGTH])<20 || (screen_height-60-image_info[IMAGE_INFO_HEIGTH])>0x80000000) { //also vertical scrollbar
    image_info[IMAGE_INFO_DRAW_HEIGTH] -= 10;
    image_info[IMAGE_INFO_DRAW_WIDTH] -= 10;
   }
@@ -608,26 +608,26 @@ void media_viewer_image_recalculate_zoom(void) {
  image_info[IMAGE_INFO_DRAW_HEIGTH]=image_info[IMAGE_INFO_HEIGTH];
 
  //set dimensions of image for screen
- if(image_info[IMAGE_INFO_WIDTH]<graphic_screen_x) {
-  image_info[IMAGE_INFO_SCREEN_X] = (graphic_screen_x_center-(image_info[IMAGE_INFO_WIDTH]/2));
+ if(image_info[IMAGE_INFO_WIDTH]<screen_width) {
+  image_info[IMAGE_INFO_SCREEN_X] = (screen_x_center-(image_info[IMAGE_INFO_WIDTH]/2));
   image_info[IMAGE_INFO_DRAW_X] = 0;
  }
  else {
-  image_info[IMAGE_INFO_DRAW_WIDTH] = graphic_screen_x;
+  image_info[IMAGE_INFO_DRAW_WIDTH] = screen_width;
   image_info[IMAGE_INFO_SCREEN_X] = 0;
-  if(image_info[IMAGE_INFO_DRAW_X]>(image_info[IMAGE_INFO_WIDTH]-graphic_screen_x)) {
-   image_info[IMAGE_INFO_DRAW_X] = (image_info[IMAGE_INFO_WIDTH]-graphic_screen_x);
+  if(image_info[IMAGE_INFO_DRAW_X]>(image_info[IMAGE_INFO_WIDTH]-screen_width)) {
+   image_info[IMAGE_INFO_DRAW_X] = (image_info[IMAGE_INFO_WIDTH]-screen_width);
   }
  }
- if(image_info[IMAGE_INFO_HEIGTH]<(graphic_screen_y-60)) {
-  image_info[IMAGE_INFO_SCREEN_Y] = (graphic_screen_y_center+10-(image_info[IMAGE_INFO_HEIGTH]/2));
+ if(image_info[IMAGE_INFO_HEIGTH]<(screen_height-60)) {
+  image_info[IMAGE_INFO_SCREEN_Y] = (screen_y_center+10-(image_info[IMAGE_INFO_HEIGTH]/2));
   image_info[IMAGE_INFO_DRAW_Y] = 0;
  }
  else {
-  image_info[IMAGE_INFO_DRAW_HEIGTH] = (graphic_screen_y-60);
+  image_info[IMAGE_INFO_DRAW_HEIGTH] = (screen_height-60);
   image_info[IMAGE_INFO_SCREEN_Y] = 40;
-  if(image_info[IMAGE_INFO_DRAW_Y]>(image_info[IMAGE_INFO_HEIGTH]-(graphic_screen_y-60))) {
-   image_info[IMAGE_INFO_DRAW_Y] = (image_info[IMAGE_INFO_HEIGTH]-(graphic_screen_y-60));
+  if(image_info[IMAGE_INFO_DRAW_Y]>(image_info[IMAGE_INFO_HEIGTH]-(screen_height-60))) {
+   image_info[IMAGE_INFO_DRAW_Y] = (image_info[IMAGE_INFO_HEIGTH]-(screen_height-60));
   }
  }
  
@@ -647,7 +647,7 @@ void media_viewer_click_on_sound_progress_square(void) {
   dword_t *sound_info = (dword_t *) (get_file_value(MEDIA_VIEWER_FILE_SOUND_INFO_MEMORY));
   
   //calculate where we should move sound
-  set_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS, (get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)*(mouse_cursor_x-11)/(graphic_screen_x-22)));
+  set_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS, (get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)*(mouse_cursor_x-11)/(screen_width-22)));
   set_file_value(MEDIA_VIEWER_FILE_SOUND_NEXT_UPDATE_MS, get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS));
   
   //play sound if sound is already playing

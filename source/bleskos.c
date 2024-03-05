@@ -90,7 +90,7 @@ void bleskos(dword_t bootloader_passed_value) {
  bleskos_boot_debug_top_screen_color(0x00FF00); //green top of screen
  initalize_logging();
  bleskos_boot_debug_top_screen_color(0x0000FF); //blue top of screen
- log("BleskOS 2024 update 25\n\nPress F2 to save System log as TXT file\n\n");
+ log("BleskOS 2024 update 26\n\nPress F2 to save System log as TXT file\n\n");
  log_starting_memory();
  bleskos_boot_debug_top_screen_color(0xFFFF00); //yellow top of screen
  scan_pci();
@@ -101,9 +101,9 @@ void bleskos(dword_t bootloader_passed_value) {
  mouse_cursor_y = 0;
  clear_screen(0x00C000);
  set_scalable_char_size(64);
- scalable_font_print("BleskOS", graphic_screen_x_center-(64*7/2), graphic_screen_y_center-92, BLACK);
- print_to_message_window("Version 2024 update 25", graphic_screen_y_center);
- draw_empty_square(graphic_screen_x_center-161, graphic_screen_y_center+30, 322, 15, BLACK);
+ scalable_font_print("BleskOS", screen_x_center-(64*7/2), screen_y_center-92, BLACK);
+ print_to_message_window("Version 2024 update 26", screen_y_center);
+ draw_empty_square(screen_x_center-161, screen_y_center+30, 322, 15, BLACK);
  (*redraw_framebuffer)();
  
  bleskos_redraw_starting_screen("Initalizing interrupts...", 7);
@@ -176,8 +176,8 @@ void bleskos(dword_t bootloader_passed_value) {
  bleskos_redraw_starting_screen("Starting Graphic User Interface...", 100);
  log("\nEND OF BOOTING\n");
 
- mouse_cursor_x = graphic_screen_x_center;
- mouse_cursor_y = graphic_screen_y_center;
+ mouse_cursor_x = screen_x_center;
+ mouse_cursor_y = screen_y_center;
  bleskos_main_window();
 }
 
@@ -186,10 +186,10 @@ void bleskos_redraw_starting_screen(char *string, dword_t percent) {
   return;
  }
 
- draw_full_square(0, graphic_screen_y_center+65, graphic_screen_x, 8, 0x00C000);
- print_to_message_window(string, graphic_screen_y_center+65);
- draw_full_square(graphic_screen_x_center-160, graphic_screen_y_center+31, (320*percent/100), 13, 0x0900FF);
- redraw_part_of_screen(0, graphic_screen_y_center+31, graphic_screen_x, 42);
+ draw_full_square(0, screen_y_center+65, screen_width, 8, 0x00C000);
+ print_to_message_window(string, screen_y_center+65);
+ draw_full_square(screen_x_center-160, screen_y_center+31, (320*percent/100), 13, 0x0900FF);
+ redraw_part_of_screen(0, screen_y_center+31, screen_width, 42);
 }
 
 void bleskos_boot_debug_top_screen_color(dword_t color) {

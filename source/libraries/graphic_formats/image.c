@@ -204,7 +204,7 @@ void draw_image(dword_t image_info_mem) {
  dword_t *image_info = (dword_t *) image_info_mem;
  
  //draw image
- copy_raw_image_data((image_info_mem+IMAGE_SIZE_OF_INFO_IN_BYTES), image_info[IMAGE_INFO_REAL_WIDTH], image_info[IMAGE_INFO_DRAW_X], image_info[IMAGE_INFO_DRAW_Y], image_info[IMAGE_INFO_DRAW_WIDTH], image_info[IMAGE_INFO_DRAW_HEIGTH], screen_mem, graphic_screen_x, image_info[IMAGE_INFO_SCREEN_X], image_info[IMAGE_INFO_SCREEN_Y]);
+ copy_raw_image_data((image_info_mem+IMAGE_SIZE_OF_INFO_IN_BYTES), image_info[IMAGE_INFO_REAL_WIDTH], image_info[IMAGE_INFO_DRAW_X], image_info[IMAGE_INFO_DRAW_Y], image_info[IMAGE_INFO_DRAW_WIDTH], image_info[IMAGE_INFO_DRAW_HEIGTH], (dword_t)screen_double_buffer_memory_pointer, screen_width, image_info[IMAGE_INFO_SCREEN_X], image_info[IMAGE_INFO_SCREEN_Y]);
 
  //draw scrollbars
  if(image_info[IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE]>0) {
@@ -219,7 +219,7 @@ void draw_resized_image(dword_t image_info_mem) {
  dword_t *image_info = (dword_t *) image_info_mem;
  
  //draw image
- copy_and_resize_raw_image_data((image_info_mem+IMAGE_SIZE_OF_INFO_IN_BYTES), image_info[IMAGE_INFO_REAL_WIDTH], image_info[IMAGE_INFO_REAL_HEIGTH], image_info[IMAGE_INFO_WIDTH], image_info[IMAGE_INFO_HEIGTH], image_info[IMAGE_INFO_DRAW_X], image_info[IMAGE_INFO_DRAW_Y], image_info[IMAGE_INFO_DRAW_WIDTH], image_info[IMAGE_INFO_DRAW_HEIGTH], screen_mem, graphic_screen_x, image_info[IMAGE_INFO_SCREEN_X], image_info[IMAGE_INFO_SCREEN_Y]);
+ copy_and_resize_raw_image_data((image_info_mem+IMAGE_SIZE_OF_INFO_IN_BYTES), image_info[IMAGE_INFO_REAL_WIDTH], image_info[IMAGE_INFO_REAL_HEIGTH], image_info[IMAGE_INFO_WIDTH], image_info[IMAGE_INFO_HEIGTH], image_info[IMAGE_INFO_DRAW_X], image_info[IMAGE_INFO_DRAW_Y], image_info[IMAGE_INFO_DRAW_WIDTH], image_info[IMAGE_INFO_DRAW_HEIGTH], (dword_t)screen_double_buffer_memory_pointer, screen_width, image_info[IMAGE_INFO_SCREEN_X], image_info[IMAGE_INFO_SCREEN_Y]);
 
  //draw scrollbars
  if(image_info[IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE]>0) {

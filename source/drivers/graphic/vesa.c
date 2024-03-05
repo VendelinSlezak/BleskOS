@@ -8,35 +8,33 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-void vesa_init_graphic(void) {
+void vesa_read_graphic_mode_info(void) {
  //bootloader loaded VESA information block on 0x3000 and VESA mode info on 0x3800
- dword_t *vesa_info_block_32 = (dword_t *) (0x3000);
- if(*vesa_info_block_32!=0x41534556) { //'VESA' signature
-  log("\nInvalid VESA info block\n");
+ struct vesa_info_block *vesa_info_block_data = (struct vesa_info_block *) (0x3000);
+ struct vesa_mode_info_block *vesa_mode_info_block_data = (struct vesa_mode_info_block *) (0x3800);
+
+ //check signature
+ if(vesa_info_block_data->signature!=VESA_SIGNATURE) {
+  log("\n\nInvalid VESA info block");
   return;
  }
 
- dword_t *vesa_mode_info_32 = (dword_t *) 0x3828;
- graphic_screen_lfb = (*vesa_mode_info_32);
- byte_t *vesa_info_block_8 = (byte_t *) (0x3005);
- if(((vesa_info_block_32[1]>>8) & 0xFF)==0x03) { //VBE 3
-  word_t *vesa_mode_info_16 = (word_t *) 0x3832;
-  graphic_screen_bytes_per_line = ((dword_t)(*vesa_mode_info_16)); //in VBE 3 get bytes per line from here
+ //read info
+ monitor_screen_linear_frame_buffer_memory_pointer = vesa_mode_info_block_data->linear_frame_buffer_memory_pointer;
+ if(vesa_info_block_data->major_version==0x03) { //VBE 3
+  monitor_screen_bytes_per_line = vesa_mode_info_block_data->vbe3_bytes_per_line;
  }
  else { //other VBE version
-  word_t *vesa_mode_info_16 = (word_t *) 0x3810;
-  graphic_screen_bytes_per_line = ((dword_t)(*vesa_mode_info_16));
+  monitor_screen_bytes_per_line = vesa_mode_info_block_data->bytes_per_line;
  }
- word_t *vesa_mode_info_16 = (word_t *) 0x3812;
- graphic_screen_x = ((dword_t)(*vesa_mode_info_16));
- vesa_mode_info_16 = (word_t *) 0x3814;
- graphic_screen_y = ((dword_t)(*vesa_mode_info_16));
- byte_t *vesa_mode_info_8 = (byte_t *) 0x3819;
- graphic_screen_bpp = ((dword_t)(*vesa_mode_info_8));
+ screen_width = vesa_mode_info_block_data->screen_width;
+ screen_height = vesa_mode_info_block_data->screen_height;
+ screen_bpp = vesa_mode_info_block_data->bits_per_pixel;
 
  //log
- log("\nVBE ");
- word_t *vesa_info_block_16 = (word_t *) (0x3004);
- log_hex_specific_size(*vesa_info_block_16, 4);
- log("\n");
+ log("\n\nVBE "); log_var(vesa_info_block_data->major_version); log("."); log_var(vesa_info_block_data->minor_version);
+ log("\nOEM string: "); log((byte_t *)(vesa_info_block_data->oem_string_segment*0x10 + vesa_info_block_data->oem_string_offset));
+ log("\nVendor Name string: "); log((byte_t *)(vesa_info_block_data->vendor_name_string_segment*0x10 + vesa_info_block_data->vendor_name_string_offset));
+ log("\nProduct Name string: "); log((byte_t *)(vesa_info_block_data->product_name_string_segment*0x10 + vesa_info_block_data->product_name_string_offset));
+ log("\nProduct Revision string: "); log((byte_t *)(vesa_info_block_data->product_revision_string_segment*0x10 + vesa_info_block_data->product_revision_string_offset));
 }

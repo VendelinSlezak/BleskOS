@@ -149,7 +149,7 @@ void draw_text_area(dword_t text_area_info_mem) {
     if(*text_area_data==0xA) {
      text_area_mouse_cursor_char_memory = (dword_t)text_area_data;
     }
-    else if(first_char_column==0 && (char_column+8)<graphic_screen_x) {
+    else if(first_char_column==0 && (char_column+8)<screen_width) {
      if(mouse_cursor_x<(char_column+4)) {
       text_area_mouse_cursor_char_memory = (dword_t)text_area_data;
      }

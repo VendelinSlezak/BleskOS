@@ -20,10 +20,11 @@ void initalize_intel_graphic_card(byte_t graphic_card_number) {
  else {
   can_graphic_card_driver_change_backlight = STATUS_TRUE;
   graphic_card_driver_monitor_change_backlight = (&graphic_card_intel_change_backlight);
+  graphic_card_intel_change_backlight(100);
  }
 
  //log info
- log("\nINTEL graphic card");
+ log("\n\nINTEL graphic card");
  log("\nDevice ID: "); log_hex_specific_size(graphic_cards_info[graphic_card_number].device_id, 4);
  log("\nLinear frame buffer: "); log_hex((dword_t)graphic_cards_info[graphic_card_number].linear_frame_buffer);
  log("\nPipe A mode: "); log_var((mmio_ind(graphic_cards_info[graphic_card_number].mmio_base+0x60000) & 0xFFFF)+1); log("x"); log_var((mmio_ind(graphic_cards_info[graphic_card_number].mmio_base+0x6000C) & 0xFFFF)+1);

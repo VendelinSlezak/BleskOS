@@ -18,9 +18,9 @@ void run_processes_on_background(void) {
   if(time_second_old!=time_second) {
    read_time();
    if(bleskos_main_window_time_redraw==1) { //redraw time on main window
-    draw_full_square(graphic_screen_x-20-152, graphic_screen_y-30, 152, 10, 0x00C000);
+    draw_full_square(screen_width-20-152, screen_height-30, 152, 10, 0x00C000);
     bleskos_main_window_redraw_time();
-    redraw_part_of_screen(graphic_screen_x-20-152, graphic_screen_y-30, 152, 10);
+    redraw_part_of_screen(screen_width-20-152, screen_height-30, 152, 10);
    }
   }
  }
@@ -65,7 +65,7 @@ void run_processes_on_background(void) {
    media_viewer_sound_state = MEDIA_VIEWER_SOUND_STATE_STOPPED;
    
    draw_media_viewer();
-   redraw_part_of_screen(10, graphic_screen_y-60, graphic_screen_x-20, 40);
+   redraw_part_of_screen(10, screen_height-60, screen_width-20, 40);
   }
   else if(get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)>get_file_value(MEDIA_VIEWER_FILE_SOUND_NEXT_UPDATE_MS)) { //update progress in file playing
    //print length of played part of file
@@ -73,33 +73,33 @@ void run_processes_on_background(void) {
    dword_t minutes = get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)/60000;
    dword_t hours = minutes/60;
    minutes -= (hours*60);
-   draw_full_square(graphic_screen_x-10-24-24-24-24-24-16, graphic_screen_y-37, 64, 8, BLACK);
+   draw_full_square(screen_width-10-24-24-24-24-24-16, screen_height-37, 64, 8, BLACK);
    if(seconds<10) {
-    print("0", graphic_screen_x-82-16, graphic_screen_y-37, WHITE);
-    print_var(seconds, graphic_screen_x-82-8, graphic_screen_y-37, WHITE);
+    print("0", screen_width-82-16, screen_height-37, WHITE);
+    print_var(seconds, screen_width-82-8, screen_height-37, WHITE);
    }
    else {
-    print_var(seconds, graphic_screen_x-82-16, graphic_screen_y-37, WHITE);
+    print_var(seconds, screen_width-82-16, screen_height-37, WHITE);
    }
    if(minutes<10) {
-    print("0", graphic_screen_x-82-16-24, graphic_screen_y-37, WHITE);
-    print_var(minutes, graphic_screen_x-82-16-16, graphic_screen_y-37, WHITE);
+    print("0", screen_width-82-16-24, screen_height-37, WHITE);
+    print_var(minutes, screen_width-82-16-16, screen_height-37, WHITE);
    }
    else {
-    print_var(minutes, graphic_screen_x-82-16-24, graphic_screen_y-37, WHITE);
+    print_var(minutes, screen_width-82-16-24, screen_height-37, WHITE);
    }
    if(hours<10) {
-    print("0", graphic_screen_x-82-16-24-24, graphic_screen_y-37, WHITE);
-    print_var(hours, graphic_screen_x-82-16-24-16, graphic_screen_y-37, WHITE);
+    print("0", screen_width-82-16-24-24, screen_height-37, WHITE);
+    print_var(hours, screen_width-82-16-24-16, screen_height-37, WHITE);
    }
    else {
-    print_var(hours, graphic_screen_x-82-16-24-24, graphic_screen_y-37, WHITE);
+    print_var(hours, screen_width-82-16-24-24, screen_height-37, WHITE);
    }
-   print(":  :", graphic_screen_x-10-24-24-24-24-24, graphic_screen_y-37, WHITE);
+   print(":  :", screen_width-10-24-24-24-24-24, screen_height-37, WHITE);
  
    //draw square of played part of file
-   draw_full_square(11, graphic_screen_y-59, ((graphic_screen_x-22)*get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)/get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)), 8, 0x0900FF);
-   redraw_part_of_screen(10, graphic_screen_y-60, graphic_screen_x-20, 40);
+   draw_full_square(11, screen_height-59, ((screen_width-22)*get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)/get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)), 8, 0x0900FF);
+   redraw_part_of_screen(10, screen_height-60, screen_width-20, 40);
 
    set_file_value(MEDIA_VIEWER_FILE_SOUND_NEXT_UPDATE_MS, get_file_value(MEDIA_VIEWER_FILE_SOUND_NEXT_UPDATE_MS)+200);
    if(get_file_value(MEDIA_VIEWER_FILE_SOUND_NEXT_UPDATE_MS)>get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)) {

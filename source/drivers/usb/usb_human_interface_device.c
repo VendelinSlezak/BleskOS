@@ -195,7 +195,7 @@ void wait_for_user_input(void) {
 
  //make screenshot
  if(keyboard_value==KEY_PRINT_SCREEN) {
-  copy_memory(screen_mem, screenshoot_image_info_data_mem, screenshoot_image_info_data_length);
+  copy_memory((dword_t)screen_double_buffer_memory_pointer, screenshoot_image_info_data_mem, screenshoot_image_info_data_length);
   show_system_message("You made a screenshot");
   wait(500);
   remove_system_message();

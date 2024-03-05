@@ -58,8 +58,8 @@
 void initalize_dllmf(void) {
  dllmf_screen_first_column = 0;
  dllmf_screen_first_line = PROGRAM_INTERFACE_TOP_LINE_HEIGTH;
- dllmf_draw_width = graphic_screen_x;
- dllmf_draw_height = graphic_screen_y-PROGRAM_INTERFACE_TOP_LINE_HEIGTH-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH;
+ dllmf_draw_width = screen_width;
+ dllmf_draw_height = screen_height-PROGRAM_INTERFACE_TOP_LINE_HEIGTH-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH;
 
  dllmf_draw_first_line = 0;
  dllmf_draw_last_line = (dllmf_draw_first_line+dllmf_draw_height);

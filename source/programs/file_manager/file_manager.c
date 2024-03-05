@@ -10,13 +10,13 @@
 
 void initalize_file_manager(void) {
  file_manager_program_interface_memory = create_program_interface_memory(((dword_t)&draw_file_manager), PROGRAM_INTERFACE_FLAG_NO_OPEN_AND_SAVE_BUTTON);
- file_manager_number_of_files_on_screen = ((graphic_screen_y-PROGRAM_INTERFACE_TOP_LINE_HEIGTH-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH-24-8)/10);
- file_manager_number_of_chars_of_file_name = ((graphic_screen_x-FILE_MANAGER_DEVICE_LIST_WIDTH-8-20)/8);
+ file_manager_number_of_files_on_screen = ((screen_height-PROGRAM_INTERFACE_TOP_LINE_HEIGTH-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH-24-8)/10);
+ file_manager_number_of_chars_of_file_name = ((screen_width-FILE_MANAGER_DEVICE_LIST_WIDTH-8-20)/8);
  file_manager_scrollbar_height = (file_manager_number_of_files_on_screen*10);
  file_manager_copy_entry_memory = calloc(256);
  file_manager_copied_file_memory = 0;
  file_manager_file_copied = STATUS_FALSE;
- file_manager_rename_text_area = create_text_area(TEXT_AREA_INPUT_LINE, 220, graphic_screen_x_center-120, graphic_screen_y_center-5, 240, 10);
+ file_manager_rename_text_area = create_text_area(TEXT_AREA_INPUT_LINE, 220, screen_x_center-120, screen_y_center-5, 240, 10);
  file_manager_rename_window_showed = STATUS_FALSE;
 }
 
@@ -148,7 +148,7 @@ void draw_file_manager(void) {
  draw_program_interface("File manager", "", 0x803300, 0xFF6600);
 
  //draw connected devices
- draw_full_square(0, 21, FILE_MANAGER_DEVICE_LIST_WIDTH, graphic_screen_y-41, 0xB04100);
+ draw_full_square(0, 21, FILE_MANAGER_DEVICE_LIST_WIDTH, screen_height-41, 0xB04100);
  dword_t connected_devices_draw_line = (PROGRAM_INTERFACE_TOP_LINE_HEIGTH+2), last_device_type = 0, last_device_number = 0;
  for(device_list_selected_entry=0; device_list_selected_entry<DEVICE_LIST_NUMBER_OF_ENTRIES; device_list_selected_entry++) {
   if(get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_TYPE)==0) {
@@ -226,12 +226,12 @@ void draw_file_manager(void) {
   
   //draw up strings
   print("Name", FILE_MANAGER_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+8, BLACK);
-  print("Size", (graphic_screen_x-12-72-80-8), PROGRAM_INTERFACE_TOP_LINE_HEIGTH+8, BLACK);
-  print("Date", (graphic_screen_x-12-80-8), PROGRAM_INTERFACE_TOP_LINE_HEIGTH+8, BLACK);
+  print("Size", (screen_width-12-72-80-8), PROGRAM_INTERFACE_TOP_LINE_HEIGTH+8, BLACK);
+  print("Date", (screen_width-12-80-8), PROGRAM_INTERFACE_TOP_LINE_HEIGTH+8, BLACK);
 
   //draw selected file background
   if(get_file_value(FILE_MANAGER_FILE_FOLDER_SELECTED_ENTRY)!=NO_FILE_SELECTED && get_file_value(FILE_MANAGER_FILE_FOLDER_SELECTED_ENTRY)>=get_file_value(FILE_MANAGER_FILE_FOLDER_FIRST_SHOWED_ENTRY) && get_file_value(FILE_MANAGER_FILE_FOLDER_SELECTED_ENTRY)<(get_file_value(FILE_MANAGER_FILE_FOLDER_FIRST_SHOWED_ENTRY)+file_manager_number_of_files_on_screen)) {
-   draw_full_square(FILE_MANAGER_DEVICE_LIST_WIDTH+8, (PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+(get_file_value(FILE_MANAGER_FILE_FOLDER_SELECTED_ENTRY)-get_file_value(FILE_MANAGER_FILE_FOLDER_FIRST_SHOWED_ENTRY))*10), (graphic_screen_x-(FILE_MANAGER_DEVICE_LIST_WIDTH+8)-20), 10, RED);
+   draw_full_square(FILE_MANAGER_DEVICE_LIST_WIDTH+8, (PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+(get_file_value(FILE_MANAGER_FILE_FOLDER_SELECTED_ENTRY)-get_file_value(FILE_MANAGER_FILE_FOLDER_FIRST_SHOWED_ENTRY))*10), (screen_width-(FILE_MANAGER_DEVICE_LIST_WIDTH+8)-20), 10, RED);
   }
 
   //print file entries
@@ -242,7 +242,7 @@ void draw_file_manager(void) {
    }
 
    //add click zone
-   add_zone_to_click_board(FILE_MANAGER_DEVICE_LIST_WIDTH+8, draw_line-1, (graphic_screen_x-FILE_MANAGER_DEVICE_LIST_WIDTH-8-20), 10, FILE_MANAGER_CLICK_ZONE_FIRST_FILE+i);
+   add_zone_to_click_board(FILE_MANAGER_DEVICE_LIST_WIDTH+8, draw_line-1, (screen_width-FILE_MANAGER_DEVICE_LIST_WIDTH-8-20), 10, FILE_MANAGER_CLICK_ZONE_FIRST_FILE+i);
    
    //print name
    for(int j=0, draw_column = FILE_MANAGER_DEVICE_LIST_WIDTH+8; j<file_manager_number_of_chars_of_file_name; j++) {
@@ -258,41 +258,41 @@ void draw_file_manager(void) {
     dword_t file_size = folder32[(64*i)+7];
 
     if(file_size<1024) {
-     print_var(file_size, (graphic_screen_x-12-72-80-8), draw_line, BLACK);
-     print("B", (graphic_screen_x-12-24-80-8), draw_line, BLACK);
+     print_var(file_size, (screen_width-12-72-80-8), draw_line, BLACK);
+     print("B", (screen_width-12-24-80-8), draw_line, BLACK);
     }
     else if(file_size<1024*1024) {
-     print_var((file_size/1024), (graphic_screen_x-12-72-80-8), draw_line, BLACK);
-     print("KB", (graphic_screen_x-12-24-80-8), draw_line, BLACK);
+     print_var((file_size/1024), (screen_width-12-72-80-8), draw_line, BLACK);
+     print("KB", (screen_width-12-24-80-8), draw_line, BLACK);
     }
     else if(file_size<1024*1024*1024) {
-     print_var((file_size/1024/1024), (graphic_screen_x-12-72-80-8), draw_line, BLACK);
-     print("MB", (graphic_screen_x-12-24-80-8), draw_line, BLACK);
+     print_var((file_size/1024/1024), (screen_width-12-72-80-8), draw_line, BLACK);
+     print("MB", (screen_width-12-24-80-8), draw_line, BLACK);
     }
     else {
-     print_var((file_size/1024/1024/1024), (graphic_screen_x-12-72-80-8), draw_line, BLACK);
-     print("GB", (graphic_screen_x-12-24-80-8), draw_line, BLACK);
+     print_var((file_size/1024/1024/1024), (screen_width-12-72-80-8), draw_line, BLACK);
+     print("GB", (screen_width-12-24-80-8), draw_line, BLACK);
     }
    }
    
    //print date
    dword_t file_date = folder16[(128*i)+8];
-   print_var((file_date >> 9)+1980, (graphic_screen_x-12-80-8), draw_line, BLACK);
-   draw_char('/', (graphic_screen_x-12-48-8), draw_line, BLACK);
+   print_var((file_date >> 9)+1980, (screen_width-12-80-8), draw_line, BLACK);
+   draw_char('/', (screen_width-12-48-8), draw_line, BLACK);
    if(((file_date >> 5) & 0xF)<10) {
-    draw_char('0', (graphic_screen_x-12-40-8), draw_line, BLACK);
-    print_var(((file_date >> 5) & 0xF), (graphic_screen_x-12-32-8), draw_line, BLACK);
+    draw_char('0', (screen_width-12-40-8), draw_line, BLACK);
+    print_var(((file_date >> 5) & 0xF), (screen_width-12-32-8), draw_line, BLACK);
    }
    else {
-    print_var(((file_date >> 5) & 0xF), (graphic_screen_x-12-40-8), draw_line, BLACK);
+    print_var(((file_date >> 5) & 0xF), (screen_width-12-40-8), draw_line, BLACK);
    }
-   draw_char('/', (graphic_screen_x-12-24-8), draw_line, BLACK);
+   draw_char('/', (screen_width-12-24-8), draw_line, BLACK);
    if((file_date & 0x1F)<10) {
-    draw_char('0', (graphic_screen_x-12-16-8), draw_line, BLACK);
-    print_var((file_date & 0x1F), (graphic_screen_x-12-8-8), draw_line, BLACK);
+    draw_char('0', (screen_width-12-16-8), draw_line, BLACK);
+    print_var((file_date & 0x1F), (screen_width-12-8-8), draw_line, BLACK);
    }
    else {
-    print_var((file_date & 0x1F), (graphic_screen_x-12-16-8), draw_line, BLACK);
+    print_var((file_date & 0x1F), (screen_width-12-16-8), draw_line, BLACK);
    }
    
    draw_line+=10;
@@ -300,14 +300,14 @@ void draw_file_manager(void) {
 
   //draw scrollbar
   if(get_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE)!=0) {
-   draw_vertical_scrollbar(graphic_screen_x-15, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, file_manager_scrollbar_height, get_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION), get_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE));
+   draw_vertical_scrollbar(screen_width-15, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, file_manager_scrollbar_height, get_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION), get_file_value(FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE));
    program_interface_add_vertical_scrollbar(FILE_MANAGER_CLICK_ZONE_SCROLLBAR, ((dword_t)(&file_manager_scrollbar_height)), get_position_of_file_memory()+FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION*4, get_position_of_file_memory()+FILE_MANAGER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE*4, ((dword_t)&file_manager_verticall_scrollbar_event));
-   add_zone_to_click_board(graphic_screen_x-15, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, 10, file_manager_scrollbar_height, FILE_MANAGER_CLICK_ZONE_SCROLLBAR);
+   add_zone_to_click_board(screen_width-15, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, 10, file_manager_scrollbar_height, FILE_MANAGER_CLICK_ZONE_SCROLLBAR);
   }
 
   //draw back button
   if(get_file_value(FILE_MANAGER_FILE_PATH_ACTUAL_FOLDER_NUMBER)!=0) {
-   draw_button_with_click_zone("[b] Go back", 5, graphic_screen_y-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH-24, FILE_MANAGER_DEVICE_LIST_WIDTH-10, 24, FILE_MANAGER_CLICK_ZONE_BUTTON_BACK);
+   draw_button_with_click_zone("[b] Go back", 5, screen_height-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH-24, FILE_MANAGER_DEVICE_LIST_WIDTH-10, 24, FILE_MANAGER_CLICK_ZONE_BUTTON_BACK);
   }
 
   //draw bottom line buttons
@@ -545,9 +545,9 @@ void file_manager_verticall_scrollbar_event(void) {
 }
 
 void file_manager_print_message(byte_t *message) {
- draw_full_square(FILE_MANAGER_DEVICE_LIST_WIDTH, PROGRAM_INTERFACE_TOP_LINE_HEIGTH, (graphic_screen_x-FILE_MANAGER_DEVICE_LIST_WIDTH), (graphic_screen_y-PROGRAM_INTERFACE_TOP_LINE_HEIGTH-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH), 0xFF6600);
+ draw_full_square(FILE_MANAGER_DEVICE_LIST_WIDTH, PROGRAM_INTERFACE_TOP_LINE_HEIGTH, (screen_width-FILE_MANAGER_DEVICE_LIST_WIDTH), (screen_height-PROGRAM_INTERFACE_TOP_LINE_HEIGTH-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH), 0xFF6600);
  print(message, FILE_MANAGER_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+8, BLACK);
- redraw_part_of_screen(FILE_MANAGER_DEVICE_LIST_WIDTH, PROGRAM_INTERFACE_TOP_LINE_HEIGTH, (graphic_screen_x-FILE_MANAGER_DEVICE_LIST_WIDTH), (graphic_screen_y-PROGRAM_INTERFACE_TOP_LINE_HEIGTH-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH));
+ redraw_part_of_screen(FILE_MANAGER_DEVICE_LIST_WIDTH, PROGRAM_INTERFACE_TOP_LINE_HEIGTH, (screen_width-FILE_MANAGER_DEVICE_LIST_WIDTH), (screen_height-PROGRAM_INTERFACE_TOP_LINE_HEIGTH-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH));
 }
 
 void file_manager_compute_number_of_files_in_directory(void) {
@@ -670,15 +670,15 @@ void file_manager_rename_file(void) {
  clear_program_interface_before_drawing();
  draw_message_window(270, 95);
 
- print("Write new name of file:", graphic_screen_x_center-120, graphic_screen_y_center-25, BLACK);
+ print("Write new name of file:", screen_x_center-120, screen_y_center-25, BLACK);
 
  text_area_disable_cursor(file_manager_rename_text_area);
  draw_text_area(file_manager_rename_text_area);
  program_interface_add_text_area(FILE_MANAGER_CLICK_ZONE_RENAME_TEXT_AREA, file_manager_rename_text_area);
- add_zone_to_click_board(graphic_screen_x_center-120, graphic_screen_y_center-5, 240, 10, FILE_MANAGER_CLICK_ZONE_RENAME_TEXT_AREA);
+ add_zone_to_click_board(screen_x_center-120, screen_y_center-5, 240, 10, FILE_MANAGER_CLICK_ZONE_RENAME_TEXT_AREA);
 
- draw_button("Cancel", graphic_screen_x_center-100, graphic_screen_y_center+15, 90, 20);
- draw_button("Rename", graphic_screen_x_center+10, graphic_screen_y_center+15, 90, 20);
+ draw_button("Cancel", screen_x_center-100, screen_y_center+15, 90, 20);
+ draw_button("Rename", screen_x_center+10, screen_y_center+15, 90, 20);
 
  file_manager_rename_window_showed = STATUS_TRUE;
  redraw_screen();
@@ -689,14 +689,14 @@ void file_manager_rename_file(void) {
   move_mouse_cursor();
 
   //do not rename
-  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center+15, graphic_screen_y_center+35, graphic_screen_x_center-100, graphic_screen_x_center-10)==STATUS_TRUE)) {
+  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center+15, screen_y_center+35, screen_x_center-100, screen_x_center-10)==STATUS_TRUE)) {
    file_manager_rename_window_showed = STATUS_FALSE;
    program_interface_redraw();
    return;
   }
 
   //rename
-  if(keyboard_value==KEY_ENTER || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(graphic_screen_y_center+15, graphic_screen_y_center+35, graphic_screen_x_center+10, graphic_screen_x_center+100)==STATUS_TRUE)) {
+  if(keyboard_value==KEY_ENTER || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center+15, screen_y_center+35, screen_x_center+10, screen_x_center+100)==STATUS_TRUE)) {
    file_manager_rename_window_showed = STATUS_FALSE;
    if(text_area_data[0]==0 || text_area_data[0]=='.') { //TODO: more invalid characters
     error_window("Invalid file name");

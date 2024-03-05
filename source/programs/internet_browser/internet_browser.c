@@ -14,8 +14,8 @@
 
 void initalize_internet_browser(void) {
  internet_browser_program_interface_memory = create_program_interface_memory(((dword_t)&draw_internet_browser), (PROGRAM_INTERFACE_FLAG_NO_SAVE_BUTTON | PROGRAM_INTERFACE_FLAG_FOCUS_ON_TEXT_AREA_FROM_NEW_FILE_METHOD));
- internet_browser_webpage_height = graphic_screen_y-20-INTERNET_BROWSER_WEBPAGE_START_LINE;
- internet_browser_webpage_width = graphic_screen_x-10;
+ internet_browser_webpage_height = screen_height-20-INTERNET_BROWSER_WEBPAGE_START_LINE;
+ internet_browser_webpage_width = screen_width-10;
  internet_browser_first_show_line = 0;
  internet_browser_last_show_line = (internet_browser_first_show_line+internet_browser_webpage_height);
  internet_browser_first_show_column = 0;
@@ -131,7 +131,7 @@ void draw_internet_browser(void) {
  if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0) {
   //draw text area
   draw_text_area(get_file_value(INTERNET_BROWSER_FILE_TEXT_AREA_MEMORY));
-  add_zone_to_click_board(0, 21, graphic_screen_x, 10, INTERNET_BROWSER_CLICK_ZONE_TEXT_AREA);
+  add_zone_to_click_board(0, 21, screen_width, 10, INTERNET_BROWSER_CLICK_ZONE_TEXT_AREA);
   program_interface_add_text_area(INTERNET_BROWSER_CLICK_ZONE_TEXT_AREA, get_file_value(INTERNET_BROWSER_FILE_TEXT_AREA_MEMORY));
 
   //draw file
@@ -188,7 +188,7 @@ void draw_internet_browser(void) {
 
 void internet_browser_print_message(byte_t *string) {
  print(string, 8, internet_browser_message_line+40, BLACK);
- redraw_part_of_screen(0, internet_browser_message_line+40, graphic_screen_x, 10);
+ redraw_part_of_screen(0, internet_browser_message_line+40, screen_width, 10);
  internet_browser_message_line += 10;
 }
 
@@ -211,7 +211,7 @@ void internet_browser_open_file(void) {
  set_file_value(INTERNET_BROWSER_FILE_HTML_MEMORY, new_file_mem);
  set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH, html_page_height);
  set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE, 0);
- set_file_value(INTERNET_BROWSER_FILE_TEXT_AREA_MEMORY, create_text_area(TEXT_AREA_INPUT_LINE, 2048, 0, 20, graphic_screen_x, 10));
+ set_file_value(INTERNET_BROWSER_FILE_TEXT_AREA_MEMORY, create_text_area(TEXT_AREA_INPUT_LINE, 2048, 0, 20, screen_width, 10));
  text_area_disable_cursor(get_file_value(INTERNET_BROWSER_FILE_TEXT_AREA_MEMORY));
  if(html_page_height!=0) {
   set_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE, calculate_scrollbar_rider_size(internet_browser_webpage_height, html_page_height, internet_browser_webpage_height));
@@ -244,7 +244,7 @@ void internet_browser_new_file(void) {
  set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_MEMORY, 0);
  set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH, 0);
  set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE, 0);
- set_file_value(INTERNET_BROWSER_FILE_TEXT_AREA_MEMORY, create_text_area(TEXT_AREA_INPUT_LINE, 2048, 0, 20, graphic_screen_x, 10));
+ set_file_value(INTERNET_BROWSER_FILE_TEXT_AREA_MEMORY, create_text_area(TEXT_AREA_INPUT_LINE, 2048, 0, 20, screen_width, 10));
  program_interface_element_with_focus = 0; //give text area focus
  set_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE, 0);
  set_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION, 0);
@@ -357,7 +357,7 @@ void internet_browser_vertical_scrollbar_event(void) {
   
   //redraw
   
-  draw_full_square(0, INTERNET_BROWSER_WEBPAGE_START_LINE, graphic_screen_x, internet_browser_webpage_height, WHITE);
+  draw_full_square(0, INTERNET_BROWSER_WEBPAGE_START_LINE, screen_width, internet_browser_webpage_height, WHITE);
   internet_browser_first_show_line = get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE);
   internet_browser_last_show_line = (internet_browser_first_show_line+internet_browser_webpage_height);
   internet_browser_redraw_webpage(get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_MEMORY));

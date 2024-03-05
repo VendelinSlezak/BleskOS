@@ -9,21 +9,21 @@
 */
 
 void initalize_screenshooter(void) {
- screenshoot_image_info_mem = create_image(graphic_screen_x, graphic_screen_y);
- cropped_image_info_mem = create_image(graphic_screen_x, graphic_screen_y);
+ screenshoot_image_info_mem = create_image(screen_width, screen_height);
+ cropped_image_info_mem = create_image(screen_width, screen_height);
  screenshoot_image_info_data_mem = get_image_data_memory(screenshoot_image_info_mem);
- screenshoot_image_info_data_length = (graphic_screen_x*graphic_screen_y*4);
+ screenshoot_image_info_data_length = (screen_width*screen_height*4);
  dword_t *screenshoot_image_info = (dword_t *) (screenshoot_image_info_mem);
- if(graphic_screen_x>=1024) {
-  screenshot_buffer_image_original_width = (graphic_screen_x/15*13);
-  screenshot_buffer_image_original_height = (graphic_screen_y/15*13);
+ if(screen_width>=1024) {
+  screenshot_buffer_image_original_width = (screen_width/15*13);
+  screenshot_buffer_image_original_height = (screen_height/15*13);
  }
  else {
-  screenshot_buffer_image_original_width = (graphic_screen_x/15*12);
-  screenshot_buffer_image_original_height = (graphic_screen_y/15*12);
+  screenshot_buffer_image_original_width = (screen_width/15*12);
+  screenshot_buffer_image_original_height = (screen_height/15*12);
  }
- screenshot_buffer_image_original_x = (graphic_screen_x_center-(screenshot_buffer_image_original_width/2));
- screenshot_buffer_image_original_y = (graphic_screen_y_center-(screenshot_buffer_image_original_height/2));
+ screenshot_buffer_image_original_x = (screen_x_center-(screenshot_buffer_image_original_width/2));
+ screenshot_buffer_image_original_y = (screen_y_center-(screenshot_buffer_image_original_height/2));
  screenshoot_image_info[IMAGE_INFO_WIDTH] = screenshot_buffer_image_original_width;
  screenshoot_image_info[IMAGE_INFO_HEIGTH] = screenshot_buffer_image_original_height;
  screenshoot_image_info[IMAGE_INFO_SCREEN_X] = screenshot_buffer_image_original_x;
@@ -133,7 +133,7 @@ void screenshooter(void) {
    }
 
    //crop
-   copy_raw_image_data(get_image_data_memory(screenshoot_image_info_mem), graphic_screen_x, screenshot_crop_x, screenshot_crop_y, screenshot_crop_width, screenshot_crop_height, get_image_data_memory(cropped_image_info_mem), screenshot_crop_width, 0, 0);
+   copy_raw_image_data(get_image_data_memory(screenshoot_image_info_mem), screen_width, screenshot_crop_x, screenshot_crop_y, screenshot_crop_width, screenshot_crop_height, get_image_data_memory(cropped_image_info_mem), screenshot_crop_width, 0, 0);
 
    //set variables for result image
    dword_t *cropped_image_info = (dword_t *) (cropped_image_info_mem);
@@ -145,7 +145,7 @@ void screenshooter(void) {
    }
    else {
     cropped_image_info[IMAGE_INFO_WIDTH] = screenshot_crop_width;
-    cropped_image_info[IMAGE_INFO_SCREEN_X] = (graphic_screen_x_center-(screenshot_crop_width/2));
+    cropped_image_info[IMAGE_INFO_SCREEN_X] = (screen_x_center-(screenshot_crop_width/2));
    }
    cropped_image_info[IMAGE_INFO_REAL_HEIGTH] = screenshot_crop_height;
    cropped_image_info[IMAGE_INFO_DRAW_HEIGTH] = screenshot_crop_height;
@@ -155,11 +155,11 @@ void screenshooter(void) {
    }
    else {
     cropped_image_info[IMAGE_INFO_HEIGTH] = screenshot_crop_height;
-    cropped_image_info[IMAGE_INFO_SCREEN_Y] = (graphic_screen_y_center-(screenshot_crop_height/2));
+    cropped_image_info[IMAGE_INFO_SCREEN_Y] = (screen_y_center-(screenshot_crop_height/2));
    }
 
    //redraw screen
-   screenshoot_image_info[IMAGE_INFO_WIDTH] = (graphic_screen_x/15*13);
+   screenshoot_image_info[IMAGE_INFO_WIDTH] = (screen_width/15*13);
    screenshoot_image_info[IMAGE_INFO_HEIGTH] = screenshot_buffer_image_original_height;
    screenshoot_image_info[IMAGE_INFO_SCREEN_X] = screenshot_buffer_image_original_x;
    screenshoot_image_info[IMAGE_INFO_SCREEN_Y] = screenshot_buffer_image_original_y;
@@ -196,20 +196,20 @@ void redraw_screenshooter(void) {
  }
  draw_resized_image((dword_t)image_info);
  draw_empty_square(image_info[IMAGE_INFO_SCREEN_X]-1, image_info[IMAGE_INFO_SCREEN_Y]-1, image_info[IMAGE_INFO_WIDTH]+2, image_info[IMAGE_INFO_HEIGTH]+2, BLACK);
- if(graphic_screen_x>=900) {
-  draw_button_with_click_zone("[esc] Back", 20, graphic_screen_y-40, 200, 20, SCREENSHOTER_CLICK_ZONE_BACK);
-  draw_button_with_click_zone("[F2] Save screenshot", 20+200+20, graphic_screen_y-40, 200, 20, SCREENSHOTER_CLICK_ZONE_SAVE);
-  draw_button_with_click_zone("[space] Crop", 20+200+20+200+20, graphic_screen_y-40, 200, 20, SCREENSHOTER_CLICK_ZONE_CROP);
+ if(screen_width>=900) {
+  draw_button_with_click_zone("[esc] Back", 20, screen_height-40, 200, 20, SCREENSHOTER_CLICK_ZONE_BACK);
+  draw_button_with_click_zone("[F2] Save screenshot", 20+200+20, screen_height-40, 200, 20, SCREENSHOTER_CLICK_ZONE_SAVE);
+  draw_button_with_click_zone("[space] Crop", 20+200+20+200+20, screen_height-40, 200, 20, SCREENSHOTER_CLICK_ZONE_CROP);
   if(screenshot_is_cropped==STATUS_TRUE) {
-   draw_button_with_click_zone("[r] Remove crop", 20+200+20+200+20+200+20, graphic_screen_y-40, 200, 20, SCREENSHOTER_CLICK_ZONE_REMOVE_CROP);
+   draw_button_with_click_zone("[r] Remove crop", 20+200+20+200+20+200+20, screen_height-40, 200, 20, SCREENSHOTER_CLICK_ZONE_REMOVE_CROP);
   }
  }
  else {
-  draw_button_with_click_zone("[esc] Back", 20, graphic_screen_y-40, 100, 20, SCREENSHOTER_CLICK_ZONE_BACK);
-  draw_button_with_click_zone("[F2] Save screenshot", 20+100+10, graphic_screen_y-40, 180, 20, SCREENSHOTER_CLICK_ZONE_SAVE);
-  draw_button_with_click_zone("[space] Crop", 20+100+10+180+10, graphic_screen_y-40, 110, 20, SCREENSHOTER_CLICK_ZONE_CROP);
+  draw_button_with_click_zone("[esc] Back", 20, screen_height-40, 100, 20, SCREENSHOTER_CLICK_ZONE_BACK);
+  draw_button_with_click_zone("[F2] Save screenshot", 20+100+10, screen_height-40, 180, 20, SCREENSHOTER_CLICK_ZONE_SAVE);
+  draw_button_with_click_zone("[space] Crop", 20+100+10+180+10, screen_height-40, 110, 20, SCREENSHOTER_CLICK_ZONE_CROP);
   if(screenshot_is_cropped==STATUS_TRUE) {
-   draw_button_with_click_zone("[r] Remove crop", 20+100+10+180+10+110+10, graphic_screen_y-40, 150, 20, SCREENSHOTER_CLICK_ZONE_REMOVE_CROP);
+   draw_button_with_click_zone("[r] Remove crop", 20+100+10+180+10+110+10, screen_height-40, 150, 20, SCREENSHOTER_CLICK_ZONE_REMOVE_CROP);
   }
  }
  redraw_screen();
