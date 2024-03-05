@@ -8,6 +8,9 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 26**
+- I started to reviewing all code I wrote to optimize it, fix issues and upgrade it to next level. Today I finished reviewing folder drivers/graphic.
+
 **Update 25**
 - Further improvement of saving documents to ODT files
 - BleskOS can change monitor backlight for some Intel graphic cards
@@ -18,9 +21,6 @@ Here is info about most important improvements in several last updates.
 
 **Update 23**
 - Start of work on saving documents to ODT file
-
-**Update 22**
-- ZIP library is able to create ZIP files
 
 ## How to try BleskOS
 
