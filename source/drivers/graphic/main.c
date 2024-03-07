@@ -12,8 +12,15 @@ void initalize_graphic(void) {
  //initalize variables for using graphic mode that was set by VBE
  vesa_read_graphic_mode_info();
 
- //read EDID info loaded by bootloader
- parse_bootloader_edid();
+ //read EDID info loaded by bootloader on 0x2000
+ is_bootloader_edid_present = parse_edid_data(0x2000);
+ if(is_bootloader_edid_present==STATUS_FALSE) {
+  log("\n\nBootloader did not load EDID");
+ }
+ else {
+  log("\n\nBOOTLOADER EDID");
+  log_edid_data();
+ }
 
  //run driver of graphic card
  is_driver_for_graphic_card = STATUS_FALSE;

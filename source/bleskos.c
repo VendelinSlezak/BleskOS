@@ -85,15 +85,20 @@
 
 void bleskos(dword_t bootloader_passed_value) {
  boot_options = bootloader_passed_value;
+
  bleskos_boot_debug_top_screen_color(0xFF0000); //red top of screen
  initalize_memory();
+
  bleskos_boot_debug_top_screen_color(0x00FF00); //green top of screen
  initalize_logging();
  bleskos_boot_debug_top_screen_color(0x0000FF); //blue top of screen
- log("BleskOS 2024 update 26\n\nPress F2 to save System log as TXT file\n\n");
+ log("BleskOS 2024 update 27\n\nPress F2 to save System log as TXT file");
  log_starting_memory();
+
  bleskos_boot_debug_top_screen_color(0xFFFF00); //yellow top of screen
  scan_pci();
+ set_interrupts();
+ set_pit();
  bleskos_boot_debug_top_screen_color(0xFF00FF); //pink top of screen
 
  initalize_graphic();
@@ -102,78 +107,77 @@ void bleskos(dword_t bootloader_passed_value) {
  clear_screen(0x00C000);
  set_scalable_char_size(64);
  scalable_font_print("BleskOS", screen_x_center-(64*7/2), screen_y_center-92, BLACK);
- print_to_message_window("Version 2024 update 26", screen_y_center);
+ print_to_message_window("Version 2024 update 27", screen_y_center);
  draw_empty_square(screen_x_center-161, screen_y_center+30, 322, 15, BLACK);
+ number_of_start_screen_messages = 0;
  (*redraw_framebuffer)();
- 
- bleskos_redraw_starting_screen("Initalizing interrupts...", 7);
- set_interrupts();
- set_pit();
- bleskos_boot_debug_log_message();
- bleskos_redraw_starting_screen("Reading time format...", 14);
+
+ bleskos_show_message_on_starting_screen("Reading time format...");
  read_time_format();
- bleskos_redraw_starting_screen("Reading ACPI tables...", 21);
+ bleskos_show_message_on_starting_screen("Reading ACPI tables...");
  read_acpi_tables();
  initalize_hpet();
  bleskos_boot_debug_log_message();
  
- bleskos_redraw_starting_screen("Initalizing PS/2 controller...", 28);
+ bleskos_show_message_on_starting_screen("Initalizing PS/2 controller...");
  initalize_ps2_controller();
  initalize_ps2_keyboard();
  initalize_ps2_mouse();
- bleskos_redraw_starting_screen("Initalizing keyboard...", 35);
+ bleskos_show_message_on_starting_screen("Initalizing keyboard...");
  initalize_keyboard();
- bleskos_redraw_starting_screen("Initalizing mouse...", 42);
+ bleskos_show_message_on_starting_screen("Initalizing mouse...");
  initalize_mouse();
  bleskos_boot_debug_log_message();
 
  hard_disk_size = 0;
- bleskos_redraw_starting_screen("Initalizing AHCI controllers...", 49);
+ bleskos_show_message_on_starting_screen("Initalizing AHCI controllers...");
  initalize_ahci_controllers();
  bleskos_boot_debug_log_message();
- bleskos_redraw_starting_screen("Initalizing IDE controllers...", 56);
+ bleskos_show_message_on_starting_screen("Initalizing IDE controllers...");
  initalize_ide_controllers();
  bleskos_boot_debug_log_message();
  initalize_device_list();
  bleskos_boot_debug_log_message();
  
- bleskos_redraw_starting_screen("Initalizing sound card...", 63);
+ bleskos_show_message_on_starting_screen("Initalizing sound card...");
  initalize_sound_card();
  bleskos_boot_debug_log_message();
  
- bleskos_redraw_starting_screen("Initalizing ethernet card...", 70);
+ bleskos_show_message_on_starting_screen("Initalizing ethernet card...");
  initalize_network_cards();
  bleskos_boot_debug_log_message();
  initalize_network_stack();
  read_ethernet_cable_status();
  if(is_ethernet_cable_connected==STATUS_TRUE) {
-  bleskos_redraw_starting_screen("Connecting to network...", 77);
+  bleskos_show_message_on_starting_screen("Connecting to network...");
   connect_to_network();
   bleskos_boot_debug_log_message();
  }
 
- bleskos_redraw_starting_screen("Initalizing USB controllers...", 84);
+ bleskos_show_message_on_starting_screen("Initalizing USB controllers...");
  initalize_usb_controllers();
  bleskos_boot_debug_log_message();
  
- bleskos_redraw_starting_screen("Initalizing programs...", 92);
+ bleskos_show_message_on_starting_screen("Initalizing libraries...");
  initalize_program_interface();
  initalize_click_board();
  initalize_image_operations();
  initalize_file_dialog();
  initalize_lzw();
  initalize_deflate();
+
+ bleskos_show_message_on_starting_screen("Initalizing programs...");
+ initalize_document_editor();
  initalize_text_editor();
  initalize_graphic_editor();
  initalize_media_viewer();
  initalize_internet_browser();
  initalize_file_manager();
+ initalize_calculator();
  initalize_screenshooter();
  initalize_performance_rating();
- initalize_calculator();
- initalize_document_editor();
  
- bleskos_redraw_starting_screen("Starting Graphic User Interface...", 100);
+ bleskos_show_message_on_starting_screen("Starting Graphic User Interface...");
  log("\nEND OF BOOTING\n");
 
  mouse_cursor_x = screen_x_center;
@@ -181,14 +185,15 @@ void bleskos(dword_t bootloader_passed_value) {
  bleskos_main_window();
 }
 
-void bleskos_redraw_starting_screen(char *string, dword_t percent) {
+void bleskos_show_message_on_starting_screen(char *string) {
  if((boot_options & BOOT_OPTION_DEBUG_MESSAGES)==BOOT_OPTION_DEBUG_MESSAGES) {
   return;
  }
 
  draw_full_square(0, screen_y_center+65, screen_width, 8, 0x00C000);
  print_to_message_window(string, screen_y_center+65);
- draw_full_square(screen_x_center-160, screen_y_center+31, (320*percent/100), 13, 0x0900FF);
+ number_of_start_screen_messages++;
+ draw_full_square(screen_x_center-160, screen_y_center+31, (320*number_of_start_screen_messages/BLESKOS_NUMBER_OF_START_SCREEN_MESSAGES), 13, 0x0900FF);
  redraw_part_of_screen(0, screen_y_center+31, screen_width, 42);
 }
 

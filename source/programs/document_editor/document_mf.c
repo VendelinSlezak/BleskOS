@@ -180,13 +180,13 @@ void convert_dmf_to_dllmf(dword_t dmf_memory, dword_t dllmf_memory) {
      dllmf_page_entries[DLLMF_PAGE_ENTRY_HEIGHT_OFFSET] = dmf_page_height;
      dllmf_page_entries = (dword_t *) (((dword_t)dllmf_page_entries)+DLLMF_PAGE_ENTRY_SIZE);
 
-     dmf_page_actual_left_border = (dmf_page_left_border+dmf[DMF_SFCH_PARAGRAPH_LEFT_BORDER_OFFSET]);
+     dmf_page_actual_left_border = (dmf_page_left_border+(dmf[DMF_SFCH_PARAGRAPH_LIST_LEVEL_OFFSET]*DMF_LIST_ENTRY_LEFT_MARGIN)+dmf[DMF_SFCH_PARAGRAPH_LEFT_BORDER_OFFSET]);
      dmf_actual_y_position = (dmf_page_top_border+dmf[DMF_SFCH_PARAGRAPH_TOP_BORDER_OFFSET]);
      dmf_character_spacing = (biggest_char_size+(biggest_char_size/2));
      dmf_bottom_line_of_characters = (dmf_actual_y_position+biggest_char_size);
     }
     else {
-     dmf_page_actual_left_border = (dmf_page_left_border+dmf[DMF_SFCH_PARAGRAPH_LEFT_BORDER_OFFSET]);
+     dmf_page_actual_left_border = (dmf_page_left_border+(dmf[DMF_SFCH_PARAGRAPH_LIST_LEVEL_OFFSET]*DMF_LIST_ENTRY_LEFT_MARGIN)+dmf[DMF_SFCH_PARAGRAPH_LEFT_BORDER_OFFSET]);
      dmf_actual_y_position += (dmf_character_spacing+paragraph_how_many_space_skip);     
      dmf_character_spacing = (biggest_char_size+(biggest_char_size/2));
      dmf_bottom_line_of_characters = (dmf_actual_y_position+biggest_char_size);
@@ -504,7 +504,7 @@ void dmf_add_section_new_page(dword_t memory, dword_t width, dword_t height, dwo
  dmf[DMF_SFCH_NEW_PAGE_RIGHT_BORDER_OFFSET] = right;
 }
 
-void dmf_add_section_new_paragraph(dword_t memory, dword_t description, dword_t top, dword_t bottom, dword_t left, dword_t right, dword_t list_entry) {
+void dmf_add_section_new_paragraph(dword_t memory, dword_t description, dword_t top, dword_t bottom, dword_t left, dword_t right, dword_t list_level, dword_t list_entry) {
  word_t *dmf = (word_t *) (memory);
 
  dmf[DMF_SFCH_DESCRIPTION_OFFSET] |= DMF_SFCH_DESCRIPTION_NEW_PARAGRAPH;
@@ -514,6 +514,7 @@ void dmf_add_section_new_paragraph(dword_t memory, dword_t description, dword_t 
  dmf[DMF_SFCH_PARAGRAPH_BOTTOM_BORDER_OFFSET] = bottom;
  dmf[DMF_SFCH_PARAGRAPH_LEFT_BORDER_OFFSET] = left;
  dmf[DMF_SFCH_PARAGRAPH_RIGHT_BORDER_OFFSET] = right;
+ dmf[DMF_SFCH_PARAGRAPH_LIST_LEVEL_OFFSET] = list_level;
  dmf[DMF_SFCH_PARAGRAPH_LIST_ENTRY_OFFSET] = list_entry;
 }
 

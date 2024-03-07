@@ -8,30 +8,6 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-struct hda_sound_card {
- dword_t present;
- dword_t base;
- dword_t input_stream_base;
- dword_t output_stream_base;
- dword_t communication;
- byte_t codec_number;
-
- dword_t afg_node_sample_capabilites;
- dword_t afg_node_stream_format_capabilites;
- dword_t afg_node_input_amp_capabilites;
- dword_t afg_node_output_amp_capabilites;
-
- byte_t audio_output_node_number; 
- dword_t audio_output_node_sample_capabilites;
- dword_t audio_output_node_stream_format_capabilites;
-
- byte_t output_amp_node_number;
- dword_t output_amp_node_capabilites;
-}__attribute__((packed));
-struct hda_sound_card hda_sound_cards[10];
-dword_t hda_sound_card_pointer = 0;
-dword_t selected_hda_sound_card = 0;
-
 #define HDA_UNINITALIZED 0
 #define HDA_CORB_RIRB 1
 #define HDA_PIO 2
@@ -71,6 +47,11 @@ dword_t hda_sound_length = 0;
 dword_t hda_silent_sound_memory = 0;
 dword_t hda_bytes_on_output_for_stopping_sound = 0;
 byte_t hda_length_of_node_path = 0;
+
+dword_t hda_base, hda_input_stream_base, hda_output_stream_base;
+byte_t hda_communication_type, hda_codec_number, hda_is_initalized_useful_output;
+dword_t hda_afg_node_sample_capabilites, hda_afg_node_stream_format_capabilites, hda_afg_node_input_amp_capabilites, hda_afg_node_output_amp_capabilites;
+dword_t hda_audio_output_node_number, hda_audio_output_node_sample_capabilites, hda_audio_output_node_stream_format_capabilites, hda_output_amp_node_number, hda_output_amp_node_capabilites;
 
 void hda_initalize_sound_card(dword_t sound_card_number);
 dword_t hda_send_verb(dword_t sound_card_number, dword_t codec, dword_t node, dword_t verb, dword_t command);

@@ -34,7 +34,4 @@ void vesa_read_graphic_mode_info(void) {
  //log
  log("\n\nVBE "); log_var(vesa_info_block_data->major_version); log("."); log_var(vesa_info_block_data->minor_version);
  log("\nOEM string: "); log((byte_t *)(vesa_info_block_data->oem_string_segment*0x10 + vesa_info_block_data->oem_string_offset));
- log("\nVendor Name string: "); log((byte_t *)(vesa_info_block_data->vendor_name_string_segment*0x10 + vesa_info_block_data->vendor_name_string_offset));
- log("\nProduct Name string: "); log((byte_t *)(vesa_info_block_data->product_name_string_segment*0x10 + vesa_info_block_data->product_name_string_offset));
- log("\nProduct Revision string: "); log((byte_t *)(vesa_info_block_data->product_revision_string_segment*0x10 + vesa_info_block_data->product_revision_string_offset));
 }

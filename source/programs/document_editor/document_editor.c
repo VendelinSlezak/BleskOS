@@ -55,81 +55,144 @@ void document_editor(void) {
   program_interface_process_keyboard_event();
   program_interface_process_mouse_event();
 
-  //process CTRL+C
-  if((keyboard_control_keys & KEYBOARD_CTRL)==KEYBOARD_CTRL && get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0) {
-   if(keyboard_value==KEY_C && get_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA)!=0) {
-    //release previous copied text
-    if(text_area_copy_memory!=0) {
-     free(text_area_copy_memory);
+  //process events of opened document
+  if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0) {
+   //process CTRL events
+   if((keyboard_control_keys & KEYBOARD_CTRL)==KEYBOARD_CTRL && get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0) {
+    //process CTRL+C
+    if(keyboard_value==KEY_C && get_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA)!=0) {
+     //release previous copied text
+     if(text_area_copy_memory!=0) {
+      free(text_area_copy_memory);
+     }
+
+     //calculate variables TODO: copy text to Document editor copy memory
+     dword_t first_character_memory = 0, last_character_memory = 0;
+     if(get_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA)<get_file_value(DOCUMENT_EDITOR_FILE_CURSOR)) {
+      first_character_memory = (get_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA));
+      last_character_memory = (get_file_value(DOCUMENT_EDITOR_FILE_CURSOR));
+     }
+     else {
+      first_character_memory = (get_file_value(DOCUMENT_EDITOR_FILE_CURSOR));
+      last_character_memory = (get_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA));
+     }
+
+     //copy text to text area copy memory
+     dword_t *dllmf = (dword_t *) (first_character_memory);
+     dword_t number_of_characters = 0;
+     while(((dword_t)dllmf)<last_character_memory) {
+      if(*dllmf==DLLMF_PAGE_CONTENT_END) {
+       dllmf++;
+      }
+      else {
+       if(*dllmf!=0xD) {
+        number_of_characters++;
+       }
+       dllmf+=(DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES/4);
+      }
+     }
+
+     text_area_copy_memory_length = (number_of_characters*2);
+     text_area_copy_memory = calloc(text_area_copy_memory_length);
+     dllmf = (dword_t *) (first_character_memory);
+     word_t *text_area_copy_memory_pointer = (word_t *) (text_area_copy_memory);
+     while(((dword_t)dllmf)<last_character_memory) {
+      if(*dllmf==DLLMF_PAGE_CONTENT_END) {
+       dllmf++;
+      }
+      else {
+       if(*dllmf!=0xD) {
+        if(*dllmf==DLLMF_HIDDEN_SPACE) {
+         *text_area_copy_memory_pointer = ' ';
+        }
+        else {
+         *text_area_copy_memory_pointer = *dllmf;
+        }
+        text_area_copy_memory_pointer++;
+       }
+       dllmf+=(DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES/4);
+      }
+     }
+
+     continue;
     }
 
-    //calculate variables TODO: copy text to Document editor copy memory
-    dword_t first_character_memory = 0, last_character_memory = 0;
-    if(get_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA)<get_file_value(DOCUMENT_EDITOR_FILE_CURSOR)) {
-     first_character_memory = (get_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA));
-     last_character_memory = (get_file_value(DOCUMENT_EDITOR_FILE_CURSOR));
+    //process CTRL+A
+    if(keyboard_value==KEY_A) {
+     dword_t *dllmf = (dword_t *) (dllmf_get_data_memory(get_file_value(DOCUMENT_EDITOR_FILE_DLLMF_MEMORY)));
+     set_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA, ((dword_t)dllmf));
+     while(*dllmf!=0) {
+      if(*dllmf==DLLMF_PAGE_CONTENT_END) {
+       dllmf++;
+      }
+      else {
+       dllmf+=(DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES/4);
+      }
+     }
+     set_file_value(DOCUMENT_EDITOR_FILE_CURSOR, ((dword_t)dllmf));
+     program_interface_redraw();
+
+     continue;
+    }
+   }
+   
+   //process events that change text area
+   if(get_file_value(DOCUMENT_EDITOR_FILE_CURSOR)!=0) {
+    if(keyboard_value==KEY_LEFT) {
+     //unselect if something is selected
+     set_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA, 0);
+
+     //do not move if we are at start of memory
+     if(get_file_value(DOCUMENT_EDITOR_FILE_CURSOR)>dllmf_get_data_memory(get_file_value(DOCUMENT_EDITOR_FILE_DLLMF_MEMORY))) {
+      //skip page end
+      dword_t *dllmf = (dword_t *) (get_file_value(DOCUMENT_EDITOR_FILE_CURSOR));
+      if(dllmf[-1]==DLLMF_PAGE_CONTENT_END) {
+       set_file_value(DOCUMENT_EDITOR_FILE_CURSOR, (get_file_value(DOCUMENT_EDITOR_FILE_CURSOR)-4));
+      }
+
+      //skip char
+      set_file_value(DOCUMENT_EDITOR_FILE_CURSOR, (get_file_value(DOCUMENT_EDITOR_FILE_CURSOR)-DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES));
+      
+      //do not go on char with size 0
+      byte_t *dllmf8 = (byte_t *) (get_file_value(DOCUMENT_EDITOR_FILE_CURSOR));
+      if(dllmf8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]==0) {
+       set_file_value(DOCUMENT_EDITOR_FILE_CURSOR, (get_file_value(DOCUMENT_EDITOR_FILE_CURSOR)+DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES));
+      }
+
+      program_interface_redraw();
+     }
+    }
+    else if(keyboard_value==KEY_RIGHT) {
+     //unselect if something is selected
+     set_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA, 0);
+
+     //do not move if we are at end of memory or do not move on char with size 0
+     dword_t *dllmf = (dword_t *) (get_file_value(DOCUMENT_EDITOR_FILE_CURSOR));
+     byte_t *dllmf8 = (byte_t *) (get_file_value(DOCUMENT_EDITOR_FILE_CURSOR));
+     if(*dllmf!=DLLMF_DOCUMENT_CONTENT_END && dllmf8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]!=0) {
+      //skip char
+      set_file_value(DOCUMENT_EDITOR_FILE_CURSOR, (get_file_value(DOCUMENT_EDITOR_FILE_CURSOR)+DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES));
+      
+      //skip page end
+      dllmf = (dword_t *) (get_file_value(DOCUMENT_EDITOR_FILE_CURSOR));
+      if(*dllmf==DLLMF_PAGE_CONTENT_END) {
+       set_file_value(DOCUMENT_EDITOR_FILE_CURSOR, (get_file_value(DOCUMENT_EDITOR_FILE_CURSOR)+4));
+      }
+
+      program_interface_redraw();
+     }
+    }
+   }
+
+   //process mouse wheel event
+   if(mouse_wheel!=0) {
+    if(mouse_wheel<0x80000000) {
+     document_editor_key_up_event();
     }
     else {
-     first_character_memory = (get_file_value(DOCUMENT_EDITOR_FILE_CURSOR));
-     last_character_memory = (get_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA));
+     document_editor_key_down_event();
     }
-
-    //copy text to text area copy memory
-    dword_t *dllmf = (dword_t *) (first_character_memory);
-    dword_t number_of_characters = 0;
-    while(((dword_t)dllmf)<last_character_memory) {
-     if(*dllmf==DLLMF_PAGE_CONTENT_END) {
-      dllmf++;
-     }
-     else {
-      if(*dllmf!=0xD) {
-       number_of_characters++;
-      }
-      dllmf+=(DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES/4);
-     }
-    }
-
-    text_area_copy_memory_length = (number_of_characters*2);
-    text_area_copy_memory = calloc(text_area_copy_memory_length);
-    dllmf = (dword_t *) (first_character_memory);
-    word_t *text_area_copy_memory_pointer = (word_t *) (text_area_copy_memory);
-    while(((dword_t)dllmf)<last_character_memory) {
-     if(*dllmf==DLLMF_PAGE_CONTENT_END) {
-      dllmf++;
-     }
-     else {
-      if(*dllmf!=0xD) {
-       if(*dllmf==DLLMF_HIDDEN_SPACE) {
-        *text_area_copy_memory_pointer = ' ';
-       }
-       else {
-        *text_area_copy_memory_pointer = *dllmf;
-       }
-       text_area_copy_memory_pointer++;
-      }
-      dllmf+=(DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES/4);
-     }
-    }
-
-    continue;
-   }
-
-   if(keyboard_value==KEY_A) {
-    dword_t *dllmf = (dword_t *) (dllmf_get_data_memory(get_file_value(DOCUMENT_EDITOR_FILE_DLLMF_MEMORY)));
-    set_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA, ((dword_t)dllmf));
-    while(*dllmf!=0) {
-     if(*dllmf==DLLMF_PAGE_CONTENT_END) {
-      dllmf++;
-     }
-     else {
-      dllmf+=(DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES/4);
-     }
-    }
-    set_file_value(DOCUMENT_EDITOR_FILE_CURSOR, ((dword_t)dllmf));
-    program_interface_redraw();
-
-    continue;
-   }
+   }  
   }
   
 
@@ -151,16 +214,6 @@ void document_editor(void) {
    if(click_zone>0x100000 && get_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA)!=0) {
     set_file_value(DOCUMENT_EDITOR_FILE_CURSOR, click_zone);
     program_interface_redraw();
-   }
-  }
-
-  //process mouse wheel event
-  if(mouse_wheel!=0) {
-   if(mouse_wheel<0x80000000) {
-    document_editor_key_up_event();
-   }
-   else {
-    document_editor_key_down_event();
    }
   }
  }
@@ -226,7 +279,7 @@ void document_editor_open_file(void) {
  }
 
  //convert DMF to DLLMF
- dword_t dllmf_memory = calloc((DLLMF_NUM_OF_PAGE_ENTRIES*(DLLMF_PAGE_ENTRY_SIZE+4))+((dmf_number_of_chars_in_document*2)*DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES));
+ dword_t dllmf_memory = calloc((DLLMF_NUM_OF_PAGE_ENTRIES*(DLLMF_PAGE_ENTRY_SIZE+4))+((dmf_number_of_chars_in_document*2+1)*DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES));
  convert_dmf_to_dllmf(dmf_memory, dllmf_memory);
 
  //add file

@@ -108,7 +108,7 @@ void draw_dllmf(dword_t dllmf_mem) {
 
    //draw char entry
    dllmf_calculate_draw_square(page_first_column+document_data[DLLMF_CHAR_ENTRY_COLUMN_OFFSET], page_first_line+document_data[DLLMF_CHAR_ENTRY_LINE_OFFSET], document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET], char_size_with_spacing);
-   if(document_data[DLLMF_CHAR_ENTRY_CHAR_NUMBER_OFFSET]>=32) { //skip unprintable characters
+   if(document_data[DLLMF_CHAR_ENTRY_CHAR_NUMBER_OFFSET]>=32) { //do not print unprintable characters
     //set size
     set_scalable_char_size(document_data8[DLLMF_CHAR_ENTRY_SIZE_OFFSET]);
 

@@ -55,15 +55,14 @@ void scan_pci(void) {
  ahci_ports_pointer = 0;
  ethernet_cards_pointer = 0;
  usb_controllers_pointer = 0;
- ac97_present = DEVICE_NOT_PRESENT;
- hda_sound_card_pointer = 0;
  number_of_graphic_cards = 0;
+ number_of_sound_cards = 0;
 
  //this array is used in System board
  pci_devices_array_mem = calloc(12*1000);
  pci_num_of_devices = 0;
  
- log("PCI devices:\n");
+ log("\n\nPCI devices:");
 
  for(int bus=0; bus<256; bus++) {
   for(int device=0; device<32; device++) {
@@ -106,6 +105,8 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
 
  //Graphic card
  if(type_of_device==0x030000 && number_of_graphic_cards<MAX_NUMBER_OF_GRAPHIC_CARDS) {
+  log("\nGraphic card");
+
   graphic_cards_info[number_of_graphic_cards].vendor_id = vendor_id;
   graphic_cards_info[number_of_graphic_cards].device_id = device_id;
 
@@ -120,7 +121,7 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  
  //IDE controller
  if((type_of_device & 0xFFFF00)==0x010100) {
-  log("IDE controller\n");
+  log("\nIDE controller");
  
   pci_device_ide_controller:
   pci_enable_io_busmastering(bus, device, function);
@@ -171,7 +172,7 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  
  //SATA controller
  if(type_of_device==0x010601) {
-  log("AHCI controller\n");
+  log("\nAHCI controller");
   
   ahci_base = pci_read_mmio_bar(bus, device, function, PCI_BAR5);
   pci_enable_mmio_busmastering(bus, device, function);
@@ -190,7 +191,7 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  
  //Ethernet card
  if(type_of_device==0x020000) {
-  log("Ethernet card ");
+  log("\nEthernet card ");
   log_hex_with_space(full_device_id);
   
   if(ethernet_cards_pointer>=10) {
@@ -220,7 +221,7 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
    }
    
    ethernet_cards_pointer++;
-   log("Intel E1000\n");
+   log("Intel E1000");
    return;
   }
   
@@ -232,7 +233,7 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
    ethernet_cards[ethernet_cards_pointer].base = pci_read_io_bar(bus, device, function, PCI_BAR0);
    
    ethernet_cards_pointer++;
-   log("AMD PC-net\n");
+   log("AMD PC-net");
    return;
   }
   
@@ -244,7 +245,7 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
    ethernet_cards[ethernet_cards_pointer].base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
    
    ethernet_cards_pointer++;
-   log("Broadcom NetXtreme\n");
+   log("Broadcom NetXtreme");
    return;
   }
   
@@ -259,7 +260,7 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
     ethernet_cards[ethernet_cards_pointer].base = pci_read_io_bar(bus, device, function, PCI_BAR0);
    
     ethernet_cards_pointer++;
-    log("Realtek 8139\n");
+    log("Realtek 8139");
     return;
    }
    
@@ -276,47 +277,49 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
     }
    
     ethernet_cards_pointer++;
-    log("Realtek 8169\n");
+    log("Realtek 8169");
     return;
    }
   }
   
   ethernet_cards_pointer++;
-  log("\n");
   return;
  }
  
- if(class==0x03) {
-  log("graphic card\n");
- }
- 
  //AC97 sound card
- if(type_of_device==0x040100) {
-  log("sound card AC97\n");
-  ac97_present = DEVICE_PRESENT;
-  ac97_nam_base = pci_read_io_bar(bus, device, function, PCI_BAR0);
-  ac97_nabm_base = pci_read_io_bar(bus, device, function, PCI_BAR1);
+ if(type_of_device==0x040100 && number_of_sound_cards<MAX_NUMBER_OF_SOUND_CARDS) {
+  log("\nsound card AC97");
+
   pci_enable_io_busmastering(bus, device, function);
+
+  sound_cards_info[number_of_sound_cards].driver = SOUND_CARD_DRIVER_AC97;
+  sound_cards_info[number_of_sound_cards].vendor_id = vendor_id;
+  sound_cards_info[number_of_sound_cards].device_id = device_id;
+  sound_cards_info[number_of_sound_cards].io_base = pci_read_io_bar(bus, device, function, PCI_BAR0);
+  sound_cards_info[number_of_sound_cards].io_base_2 = pci_read_io_bar(bus, device, function, PCI_BAR1);
+  number_of_sound_cards++;
+
   return;
  }
  
  //HD Audio sound card
- if(type_of_device==0x040300) {
-  log("sound card HDA\n");
-  if(hda_sound_card_pointer>=10) {
-   return;
-  }
-  hda_sound_cards[hda_sound_card_pointer].present = DEVICE_PRESENT;
-  hda_sound_cards[hda_sound_card_pointer].base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
-  hda_sound_cards[hda_sound_card_pointer].communication = HDA_UNINITALIZED;
+ if(type_of_device==0x040300 && number_of_sound_cards<MAX_NUMBER_OF_SOUND_CARDS) {
+  log("\nsound card HDA");
+
   pci_enable_mmio_busmastering(bus, device, function);
-  hda_sound_card_pointer++;
+
+  sound_cards_info[number_of_sound_cards].driver = SOUND_CARD_DRIVER_HDA;
+  sound_cards_info[number_of_sound_cards].vendor_id = vendor_id;
+  sound_cards_info[number_of_sound_cards].device_id = device_id;
+  sound_cards_info[number_of_sound_cards].mmio_base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
+  number_of_sound_cards++;
+
   return;
  }
  
  //Universal Host Controller Interface
  if(type_of_device==0x0C0300) {
-  log("UHCI\n");
+  log("\nUHCI");
   if(usb_controllers_pointer>=20) {
    return;
   }
@@ -329,7 +332,7 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  
  //Open Host Controller Interface
  if(type_of_device==0x0C0310) {
-  log("OHCI\n");
+  log("\nOHCI");
   if(usb_controllers_pointer>=20) {
    return;
   }
@@ -345,7 +348,7 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  
  //Enhanced Host Controller Interface
  if(type_of_device==0x0C0320) {
-  log("EHCI\n");
+  log("\nEHCI");
   if(usb_controllers_pointer>=20) {
    return;
   }
@@ -360,13 +363,12 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  
  //eXtensible Host Controller Interface
  if(type_of_device==0x0C0330) {
-  log("xHCI\n");
+  log("\nxHCI");
   return;
  }
  
- log("unknown device ");
+ log("\nunknown device ");
  log_hex(type_of_device);
- log("\n");
  pci_disable_interrupts(bus, device, function); //disable interrupts from every device that we do not know
 }
 

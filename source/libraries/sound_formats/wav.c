@@ -51,6 +51,7 @@ dword_t convert_wav_to_sound_data(dword_t wav_memory, dword_t wav_length) {
    else {
     sound_memory = create_sound(2, 16, converted_pcm_data_sample_rate, converted_pcm_data_length);
     copy_memory(converted_pcm_data_memory, (get_sound_data_memory(sound_memory)), converted_pcm_data_length);
+    free(converted_pcm_data_memory);
    }
    
    return sound_memory;

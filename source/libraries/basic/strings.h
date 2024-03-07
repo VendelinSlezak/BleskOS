@@ -22,3 +22,5 @@ word_t get_big_char_value(word_t value);
 word_t get_unicode_char_with_diacritic(word_t value, word_t diacritic);
 dword_t get_number_of_chars_in_ascii_string(byte_t *string);
 dword_t get_number_of_chars_in_unicode_string(word_t *string);
+void add_space_to_memory_area(dword_t memory_area_start, dword_t memory_area_size, dword_t space_start, dword_t space_size);
+void remove_space_from_memory_area(dword_t memory_area_start, dword_t memory_area_size, dword_t space_start, dword_t space_size);
