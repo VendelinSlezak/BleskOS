@@ -9,7 +9,7 @@
 */
 
 void initalize_memory(void) {
- dword_t *memory_map = (dword_t *) 0x1000; //bootloader loaded memory map here
+ dword_t *memory_map = (dword_t *) (0x1000); //bootloader loaded memory map here
  dword_t *memory_entries;
 
  //convert 64 bit entries
@@ -85,9 +85,9 @@ void initalize_memory(void) {
 }
 
 void log_starting_memory(void) {
- dword_t *memory_map = (dword_t *) 0x1000; //bootloader loaded memory map here
+ dword_t *memory_map = (dword_t *) (0x1000); //bootloader loaded memory map here
  
- log("Memory in B: ");
+ log("\n\nMemory in B: ");
  log_var_with_space(all_memory_in_bytes);
  log("\nMemory in MB: ");
  log_var_with_space(all_memory_in_bytes/1024/1024);
@@ -95,11 +95,11 @@ void log_starting_memory(void) {
  
  //calculate all amount of memory
  for(dword_t i=0, offset=0; i<50; i++, offset+=6) {
-  log("\n");
-  
   if(memory_map[offset+4]==0) {
    break; //we reach end of list
   }
+
+  log("\n");
   
   if(memory_map[offset+4]==MEMORY_TYPE_FREE) {
    log("Free memory ");
@@ -135,8 +135,6 @@ void log_starting_memory(void) {
    log("MB");
   }
  }
- 
- log("\n");
 }
 
 dword_t malloc(dword_t mem_length) {
@@ -333,6 +331,7 @@ dword_t calloc(dword_t mem_length) {
  //allocate memory
  dword_t mem_pointer = malloc(mem_length);
  if(mem_pointer==0) {
+  memory_error_debug(RED);
   return 0; //some error
  }
  
@@ -346,6 +345,7 @@ dword_t aligned_calloc(dword_t mem_length, dword_t mem_alignment) {
  //allocate memory
  dword_t mem_pointer = aligned_malloc(mem_length, mem_alignment);
  if(mem_pointer==0) {
+  memory_error_debug(RED);
   return 0; //some error
  }
  
@@ -373,6 +373,7 @@ dword_t realloc(dword_t mem_pointer, dword_t mem_length) {
   }
  }
  if(pointed_memory_entry==0) {
+  memory_error_debug(RED);
   return 0; //ERROR: memory entry not founded
  }
  
@@ -385,6 +386,7 @@ dword_t realloc(dword_t mem_pointer, dword_t mem_length) {
  free(mem_pointer);
  mem_pointer = malloc(mem_length);
  if(mem_pointer==0) {
+  memory_error_debug(RED);
   return 0; //ERROR: some error during allocation 
  }
  if(mem_pointer==pointed_memory_entry_start) { //reallocated to same memory  
@@ -488,22 +490,49 @@ void free(dword_t mem_pointer) {
 }
 
 void memory_error_debug(dword_t color) {
- dword_t *framebuffer = (dword_t *) 0x70028;
- byte_t *screen = (byte_t *) (*framebuffer);
+ dword_t screen_line_start = (dword_t)monitor_screen_linear_frame_buffer_memory_pointer;
+ byte_t *color8 = (byte_t *) (&color);
 
  if(screen_bpp==32) {
-  screen_double_buffer_memory_pointer = monitor_screen_linear_frame_buffer_memory_pointer;
-  clear_screen(color);
+  dword_t *screen = (dword_t *) (screen_line_start);
+  for(int i=0; i<screen_height; i++) {
+   screen = (dword_t *) (screen_line_start);
+
+   for(int j=0; j<screen_width; j++) {
+    *screen = color;
+    screen++;
+   }
+
+   screen_line_start += monitor_screen_bytes_per_line;
+  }
  }
  else if(screen_bpp==24) {
-  for(dword_t i=0; i<(screen_width*screen_height); i++) {
-   *screen = (color & 0xFF);
-   screen++;
-   *screen = ((color >> 8) & 0xFF);
-   screen++;
-   *screen = ((color >> 16) & 0xFF);
+  byte_t *screen = (byte_t *) (screen_line_start);
+  for(int i=0; i<screen_height; i++) {
+   screen = (byte_t *) (screen_line_start);
+
+   for(int j=0; j<screen_width; j++) {
+    screen[0] = color8[0];
+    screen[1] = color8[1];
+    screen[2] = color8[2];
+    screen += 3;
+   }
+
+   screen_line_start += monitor_screen_bytes_per_line;
+  }
+ }
+ else if(screen_bpp==16) {
+  word_t *screen = (word_t *) (screen_line_start);
+  for(int i=0; i<screen_height; i++) {
+  screen = (word_t *) (screen_line_start);
+
+  for(int j=0; j<screen_width; j++) {
+   *screen = (((color8[2] & 0xF8)<<8) | ((color8[1] & 0xFC)<<3) | ((color8[0] & 0xF8)>>3));
    screen++;
   }
+
+  screen_line_start += monitor_screen_bytes_per_line;
+ }
  }
  
  while(1) {
@@ -512,32 +541,48 @@ void memory_error_debug(dword_t color) {
 }
 
 void clear_memory(dword_t memory, dword_t length) {
- byte_t *mem = (byte_t *) memory;
+ dword_t *mem32 = (dword_t *) (memory);
+
+ for(dword_t i=0; i<(length/4); i++) {
+  *mem32 = 0;
+  mem32++;
+ }
+
+ byte_t *mem8 = (byte_t *) (mem32);
  
- for(dword_t i=0; i<length; i++) {
-  *mem = 0;
-  mem++;
+ for(dword_t i=0; i<(length%4); i++) {
+  *mem8 = 0;
+  mem8++;
  }
 }
 
 void copy_memory(dword_t source_memory, dword_t destination_memory, dword_t size) {
- byte_t *source = (byte_t *) (source_memory);
- byte_t *destination = (byte_t *) (destination_memory);
+ dword_t *source32 = (dword_t *) (source_memory);
+ dword_t *destination32 = (dword_t *) (destination_memory);
  
- for(dword_t i=0; i<size; i++) {
-  *destination=*source;
-  destination++;
-  source++;
+ for(dword_t i=0; i<(size/4); i++) {
+  *destination32=*source32;
+  destination32++;
+  source32++;
+ }
+
+ byte_t *source8 = (byte_t *) (source32);
+ byte_t *destination8 = (byte_t *) (destination32);
+
+ for(dword_t i=0; i<(size%4); i++) {
+  *destination8=*source8;
+  destination8++;
+  source8++;
  }
 }
 
 void copy_memory_back(dword_t source_memory, dword_t destination_memory, dword_t size) {
- byte_t *source = (byte_t *) (source_memory);
- byte_t *destination = (byte_t *) (destination_memory);
+ byte_t *source8 = (byte_t *) (source_memory);
+ byte_t *destination8 = (byte_t *) (destination_memory);
 
  for(dword_t i=0; i<size; i++) {
-  *destination=*source;
-  destination--;
-  source--;
+  *destination8=*source8;
+  destination8--;
+  source8--;
  }
 }

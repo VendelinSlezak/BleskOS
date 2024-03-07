@@ -97,10 +97,10 @@ dword_t convert_pcm_to_2_channels_16_bit_samples_48000_44100_sample_rate(dword_t
   //read samples from channels
   if(bits_per_sample==8) {
    output_sample_first_channel = pcm_memory_input[0];
-   output_sample_first_channel *= 0x80;
+   output_sample_first_channel *= 0x40;
    if(channels>1) {
     output_sample_second_channel = pcm_memory_input[1];
-    output_sample_second_channel *= 0x80;
+    output_sample_second_channel *= 0x40;
    }
   }
   else {

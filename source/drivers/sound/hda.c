@@ -9,7 +9,8 @@
 */
 
 void hda_initalize_sound_card(dword_t sound_card_number) {
- dword_t hda_base = hda_sound_cards[sound_card_number].base;
+ hda_base = sound_cards_info[sound_card_number].mmio_base;
+ hda_communication_type = HDA_UNINITALIZED;
 
  //reset card and set operational state
  mmio_outd(hda_base + 0x08, 0x0);
@@ -29,14 +30,14 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
   }
  }
  if((mmio_ind(hda_base + 0x08) & 0x1)==0x0) {
-  log("\nHDA ERROR: card can not be set to operational state");
+  log("\n\nHDA ERROR: card can not be set to operational state");
   return;
  }
- log("\nsound card High Definition Audio");
+ log("\n\nSound card High Definition Audio");
 
  //read capabilites
- hda_sound_cards[sound_card_number].input_stream_base = (hda_base + 0x80);
- hda_sound_cards[sound_card_number].output_stream_base = (hda_base + 0x80 + (0x20*((mmio_inw(hda_base + 0x00)>>8) & 0xF))); //skip input streams ports
+ hda_input_stream_base = (hda_base + 0x80);
+ hda_output_stream_base = (hda_base + 0x80 + (0x20*((mmio_inw(hda_base + 0x00)>>8) & 0xF)) + 0x20); //skip input streams ports
  hda_output_buffer_list = aligned_calloc(16*2, 0x7F);
 
  //disable interrupts
@@ -138,7 +139,8 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
 
  //find codec and working communication interface
  //TODO: find more codecs
- hda_sound_cards[sound_card_number].communication = HDA_CORB_RIRB;
+ hda_is_initalized_useful_output = STATUS_FALSE;
+ hda_communication_type = HDA_CORB_RIRB;
  for(dword_t codec_number=0, codec_id=0; codec_number<16; codec_number++) {
   codec_id = hda_send_verb(sound_card_number, codec_number, 0, 0xF00, 0);
 
@@ -150,7 +152,8 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
  }
 
  hda_use_pio_interface:
- hda_sound_cards[sound_card_number].communication = HDA_PIO;
+ hda_is_initalized_useful_output = STATUS_FALSE;
+ hda_communication_type = HDA_PIO;
  for(dword_t codec_number=0, codec_id=0; codec_number<16; codec_number++) {
   codec_id = hda_send_verb(sound_card_number, codec_number, 0, 0xF00, 0);
 
@@ -167,12 +170,11 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
 }
 
 dword_t hda_send_verb(dword_t sound_card_number, dword_t codec, dword_t node, dword_t verb, dword_t command) {
- dword_t hda_base = hda_sound_cards[sound_card_number].base;
- dword_t *corb = (dword_t *) hda_corb_mem;
- dword_t *rirb = (dword_t *) hda_rirb_mem;
+ dword_t *corb = (dword_t *) (hda_corb_mem);
+ dword_t *rirb = (dword_t *) (hda_rirb_mem);
  dword_t value = ((codec<<28) | (node<<20) | (verb<<8) | (command));
  
- if(hda_sound_cards[sound_card_number].communication==HDA_CORB_RIRB) { //CORB/RIRB interface
+ if(hda_communication_type==HDA_CORB_RIRB) { //CORB/RIRB interface
   //write verb
   corb[hda_corb_pointer] = value;
   
@@ -203,7 +205,7 @@ dword_t hda_send_verb(dword_t sound_card_number, dword_t codec, dword_t node, dw
   }
   return value;
  }
- else if(hda_sound_cards[sound_card_number].communication==HDA_PIO) { //PIO interface
+ else if(hda_communication_type==HDA_PIO) { //PIO interface
   mmio_outw(hda_base + 0x68, 0x2);
   mmio_outd(hda_base + 0x60, value);
   mmio_outw(hda_base + 0x68, 0x1);
@@ -229,7 +231,7 @@ void hda_initalize_codec(dword_t sound_card_number, dword_t codec_number) {
  if(codec_id==0) {
   return;
  }
- hda_sound_cards[sound_card_number].codec_number = codec_number;
+ hda_codec_number = codec_number;
 
  //log basic codec info
  log("\nCodec ");
@@ -264,47 +266,45 @@ void hda_initalize_codec(dword_t sound_card_number, dword_t codec_number) {
 }
 
 void hda_initalize_audio_function_group(dword_t sound_card_number, dword_t afg_node_number) {
- dword_t codec_number = hda_sound_cards[sound_card_number].codec_number;
-
  //reset AFG
- hda_send_verb(sound_card_number, codec_number, afg_node_number, 0x7FF, 0x00);
+ hda_send_verb(sound_card_number, hda_codec_number, afg_node_number, 0x7FF, 0x00);
 
  //enable power for AFG
- hda_send_verb(sound_card_number, codec_number, afg_node_number, 0x705, 0x00);
+ hda_send_verb(sound_card_number, hda_codec_number, afg_node_number, 0x705, 0x00);
 
  //read available info
- hda_sound_cards[sound_card_number].afg_node_sample_capabilites = hda_send_verb(sound_card_number, codec_number, afg_node_number, 0xF00, 0x0A);
- hda_sound_cards[sound_card_number].afg_node_stream_format_capabilites = hda_send_verb(sound_card_number, codec_number, afg_node_number, 0xF00, 0x0B);
- hda_sound_cards[sound_card_number].afg_node_input_amp_capabilites = hda_send_verb(sound_card_number, codec_number, afg_node_number, 0xF00, 0x0D);
- hda_sound_cards[sound_card_number].afg_node_output_amp_capabilites = hda_send_verb(sound_card_number, codec_number, afg_node_number, 0xF00, 0x12);
+ hda_afg_node_sample_capabilites = hda_send_verb(sound_card_number, hda_codec_number, afg_node_number, 0xF00, 0x0A);
+ hda_afg_node_stream_format_capabilites = hda_send_verb(sound_card_number, hda_codec_number, afg_node_number, 0xF00, 0x0B);
+ hda_afg_node_input_amp_capabilites = hda_send_verb(sound_card_number, hda_codec_number, afg_node_number, 0xF00, 0x0D);
+ hda_afg_node_output_amp_capabilites = hda_send_verb(sound_card_number, hda_codec_number, afg_node_number, 0xF00, 0x12);
 
  //log AFG info
  log("\nAudio Function Group node ");
  log_var(afg_node_number);
  log("\nAFG sample capabilites: ");
- log_hex(hda_sound_cards[sound_card_number].afg_node_sample_capabilites);
+ log_hex(hda_afg_node_sample_capabilites);
  log("\nAFG stream format capabilites: ");
- log_hex(hda_sound_cards[sound_card_number].afg_node_stream_format_capabilites);
+ log_hex(hda_afg_node_stream_format_capabilites);
  log("\nAFG input amp capabilites: ");
- log_hex(hda_sound_cards[sound_card_number].afg_node_input_amp_capabilites);
+ log_hex(hda_afg_node_input_amp_capabilites);
  log("\nAFG output amp capabilites: ");
- log_hex(hda_sound_cards[sound_card_number].afg_node_output_amp_capabilites);
+ log_hex(hda_afg_node_output_amp_capabilites);
 
  //log all AFG nodes and find useful PINs
  log(("\n\nLIST OF ALL NODES IN AFG:"));
- dword_t subordinate_node_count_reponse = hda_send_verb(sound_card_number, codec_number, afg_node_number, 0xF00, 0x04);
+ dword_t subordinate_node_count_reponse = hda_send_verb(sound_card_number, hda_codec_number, afg_node_number, 0xF00, 0x04);
  dword_t pin_alternative_output_node_number = 0, pin_speaker_default_node_number = 0, pin_speaker_node_number = 0, pin_headphone_node_number = 0;
  for(dword_t node = ((subordinate_node_count_reponse>>16) & 0xFF), last_node = (node+(subordinate_node_count_reponse & 0xFF)), type_of_node = 0; node<last_node; node++) {
   log("\n");
   log_var_with_space(node);
   
-  type_of_node = ((hda_send_verb(sound_card_number, codec_number, node, 0xF00, 0x09) >> 20) & 0xF);
+  type_of_node = ((hda_send_verb(sound_card_number, hda_codec_number, node, 0xF00, 0x09) >> 20) & 0xF);
 
   if(type_of_node==HDA_WIDGET_AUDIO_OUTPUT) {
    log("Audio Output");
 
    //disable every audio output
-   hda_send_verb(sound_card_number, codec_number, node, 0x706, 0x00);
+   hda_send_verb(sound_card_number, hda_codec_number, node, 0x706, 0x00);
   }
   else if(type_of_node==HDA_WIDGET_AUDIO_INPUT) {
    log("Audio Input");
@@ -319,7 +319,7 @@ void hda_initalize_audio_function_group(dword_t sound_card_number, dword_t afg_n
    log("Pin Complex ");
 
    //read type of PIN
-   type_of_node = ((hda_send_verb(sound_card_number, codec_number, node, 0xF1C, 0x00) >> 20) & 0xF);
+   type_of_node = ((hda_send_verb(sound_card_number, hda_codec_number, node, 0xF1C, 0x00) >> 20) & 0xF);
    if(type_of_node==HDA_PIN_LINE_OUT) {
     log("Line Out");
 
@@ -335,11 +335,11 @@ void hda_initalize_audio_function_group(dword_t sound_card_number, dword_t afg_n
     }
 
     //find if there is device connected to this PIN
-    if((hda_send_verb(sound_card_number, codec_number, node, 0xF00, 0x09) & 0x4)==0x4) {
+    if((hda_send_verb(sound_card_number, hda_codec_number, node, 0xF00, 0x09) & 0x4)==0x4) {
      //find if it is jack or fixed device
-     if((hda_send_verb(sound_card_number, codec_number, node, 0xF1C, 0x00)>>30)!=0x1) {
+     if((hda_send_verb(sound_card_number, hda_codec_number, node, 0xF1C, 0x00)>>30)!=0x1) {
       //find if is device output capable
-      if((hda_send_verb(sound_card_number, codec_number, node, 0xF00, 0x0C) & 0x10)==0x10) {
+      if((hda_send_verb(sound_card_number, hda_codec_number, node, 0xF00, 0x0C) & 0x10)==0x10) {
        //there is connected device
        log("connected output device");
 
@@ -439,8 +439,8 @@ void hda_initalize_audio_function_group(dword_t sound_card_number, dword_t afg_n
   }
 
   //log first four connected nodes
-  dword_t connection_list_length = hda_send_verb(sound_card_number, codec_number, node, 0xF00, 0x0E);
-  dword_t connection_list_entries = hda_send_verb(sound_card_number, codec_number, node, 0xF02, 0x00);
+  dword_t connection_list_length = hda_send_verb(sound_card_number, hda_codec_number, node, 0xF00, 0x0E);
+  dword_t connection_list_entries = hda_send_verb(sound_card_number, hda_codec_number, node, 0xF02, 0x00);
   if(connection_list_entries!=0) {
    log(" ");
    if((connection_list_length & 0x80)==0x00) { //short form
@@ -494,6 +494,8 @@ void hda_initalize_audio_function_group(dword_t sound_card_number, dword_t afg_n
 
  //initalize output PIN
  if(pin_speaker_default_node_number!=0) {
+  hda_is_initalized_useful_output = STATUS_GOOD;
+
   if(pin_speaker_node_number!=0) {
    hda_initalize_output_pin(sound_card_number, pin_speaker_node_number); //we will initalize speaker with connected output device
   }
@@ -502,6 +504,7 @@ void hda_initalize_audio_function_group(dword_t sound_card_number, dword_t afg_n
   }
  }
  else if(pin_alternative_output_node_number!=0) {
+  hda_is_initalized_useful_output = STATUS_FALSE;
   hda_initalize_output_pin(sound_card_number, pin_alternative_output_node_number); //we will initalize alternative output
  }
 
@@ -509,45 +512,44 @@ void hda_initalize_audio_function_group(dword_t sound_card_number, dword_t afg_n
 }
 
 void hda_initalize_output_pin(dword_t sound_card_number, dword_t pin_node_number) {
- dword_t codec_number = hda_sound_cards[sound_card_number].codec_number;
  log("\nInitalizing PIN ");
  log_var(pin_node_number);
 
  //reset variables
- hda_sound_cards[sound_card_number].audio_output_node_number = 0;
- hda_sound_cards[sound_card_number].audio_output_node_sample_capabilites = 0;
- hda_sound_cards[sound_card_number].audio_output_node_stream_format_capabilites = 0;
- hda_sound_cards[sound_card_number].output_amp_node_number = 0;
- hda_sound_cards[sound_card_number].output_amp_node_capabilites = 0;
+ hda_audio_output_node_number = 0;
+ hda_audio_output_node_sample_capabilites = 0;
+ hda_audio_output_node_stream_format_capabilites = 0;
+ hda_output_amp_node_number = 0;
+ hda_output_amp_node_capabilites = 0;
 
  //turn on power for PIN
- hda_send_verb(sound_card_number, codec_number, pin_node_number, 0x705, 0x00);
+ hda_send_verb(sound_card_number, hda_codec_number, pin_node_number, 0x705, 0x00);
 
  //disable unsolicited responses
- hda_send_verb(sound_card_number, codec_number, pin_node_number, 0x708, 0x00);
+ hda_send_verb(sound_card_number, hda_codec_number, pin_node_number, 0x708, 0x00);
 
  //enable PIN
- hda_send_verb(sound_card_number, codec_number, pin_node_number, 0x707, (hda_send_verb(sound_card_number, codec_number, pin_node_number, 0xF07, 0x00) | 0x80 | 0x40));
+ hda_send_verb(sound_card_number, hda_codec_number, pin_node_number, 0x707, (hda_send_verb(sound_card_number, hda_codec_number, pin_node_number, 0xF07, 0x00) | 0x80 | 0x40));
 
  //enable EAPD + L-R swap
- hda_send_verb(sound_card_number, codec_number, pin_node_number, 0x70C, 0x6);
+ hda_send_verb(sound_card_number, hda_codec_number, pin_node_number, 0x70C, 0x6);
 
  //set maximal volume for PIN
  //TODO: does this work in every case?
- dword_t pin_output_amp_capabilites = hda_send_verb(sound_card_number, codec_number, pin_node_number, 0xF00, 0x12);
- hda_send_verb(sound_card_number, codec_number, pin_node_number, 0x300, (0xF000 | ((pin_output_amp_capabilites>>8) & 0x7F)));
+ dword_t pin_output_amp_capabilites = hda_send_verb(sound_card_number, hda_codec_number, pin_node_number, 0xF00, 0x12);
+ hda_send_verb(sound_card_number, hda_codec_number, pin_node_number, 0x300, (0xF000 | ((pin_output_amp_capabilites>>8) & 0x7F)));
  if(pin_output_amp_capabilites!=0) {
   //we will control volume by PIN node
-  hda_sound_cards[sound_card_number].output_amp_node_number = pin_node_number;
-  hda_sound_cards[sound_card_number].output_amp_node_capabilites = pin_output_amp_capabilites;
+  hda_output_amp_node_number = pin_node_number;
+  hda_output_amp_node_capabilites = pin_output_amp_capabilites;
  }
 
  //start enabling path of nodes
  //TODO: more options than only through first connected node
  hda_length_of_node_path = 0;
- hda_send_verb(sound_card_number, codec_number, pin_node_number, 0x701, 0x00); //select first node
- dword_t first_connected_node_number = (hda_send_verb(sound_card_number, codec_number, pin_node_number, 0xF02, 0x00) & 0xFF);
- dword_t type_of_first_connected_node = ((hda_send_verb(sound_card_number, codec_number, first_connected_node_number, 0xF00, 0x09) >> 20) & 0xF);
+ hda_send_verb(sound_card_number, hda_codec_number, pin_node_number, 0x701, 0x00); //select first node
+ dword_t first_connected_node_number = (hda_send_verb(sound_card_number, hda_codec_number, pin_node_number, 0xF02, 0x00) & 0xFF);
+ dword_t type_of_first_connected_node = ((hda_send_verb(sound_card_number, hda_codec_number, first_connected_node_number, 0xF00, 0x09) >> 20) & 0xF);
  if(type_of_first_connected_node==HDA_WIDGET_AUDIO_OUTPUT) {
   hda_initalize_audio_output(sound_card_number, first_connected_node_number);
  }
@@ -564,66 +566,62 @@ void hda_initalize_output_pin(dword_t sound_card_number, dword_t pin_node_number
 }
 
 void hda_initalize_audio_output(dword_t sound_card_number, dword_t audio_output_node_number) {
- dword_t codec_number = hda_sound_cards[sound_card_number].codec_number;
  log("\nInitalizing Audio Output ");
  log_var(audio_output_node_number);
- hda_sound_cards[sound_card_number].audio_output_node_number = audio_output_node_number;
+ hda_audio_output_node_number = audio_output_node_number;
 
  //turn on power for Audio Output
- hda_send_verb(sound_card_number, codec_number, audio_output_node_number, 0x705, 0x00);
+ hda_send_verb(sound_card_number, hda_codec_number, audio_output_node_number, 0x705, 0x00);
 
  //disable unsolicited responses
- hda_send_verb(sound_card_number, codec_number, audio_output_node_number, 0x708, 0x00);
+ hda_send_verb(sound_card_number, hda_codec_number, audio_output_node_number, 0x708, 0x00);
 
  //connect Audio Output to stream 1 channel 0
- hda_send_verb(sound_card_number, codec_number, audio_output_node_number, 0x706, 0x10);
-
- log("\nSTRIPE: "); log_hex(hda_send_verb(sound_card_number, codec_number, audio_output_node_number, 0xF24, 0x00));
- log("\nCONV CHAN COUNT: "); log_hex(hda_send_verb(sound_card_number, codec_number, audio_output_node_number, 0xF2D, 0x00));
+ hda_send_verb(sound_card_number, hda_codec_number, audio_output_node_number, 0x706, 0x10);
 
  //TODO:
- // hda_send_verb(sound_card_number, codec_number, audio_output_node_number, 0x72D, 1);
+ // hda_send_verb(sound_card_number, hda_codec_number, audio_output_node_number, 0x72D, 1);
 
  //set maximal volume for Audio Output
  //TODO: does this work in every case?
- dword_t audio_output_amp_capabilites = hda_send_verb(sound_card_number, codec_number, audio_output_node_number, 0xF00, 0x12);
- hda_send_verb(sound_card_number, codec_number, audio_output_node_number, 0x300, (0xF000 | ((audio_output_amp_capabilites>>8) & 0x7F)));
+ dword_t audio_output_amp_capabilites = hda_send_verb(sound_card_number, hda_codec_number, audio_output_node_number, 0xF00, 0x12);
+ hda_send_verb(sound_card_number, hda_codec_number, audio_output_node_number, 0x300, (0xF000 | ((audio_output_amp_capabilites>>8) & 0x7F)));
  if(audio_output_amp_capabilites!=0) {
   //we will control volume by Audio Output node
-  hda_sound_cards[sound_card_number].output_amp_node_number = audio_output_node_number;
-  hda_sound_cards[sound_card_number].output_amp_node_capabilites = audio_output_amp_capabilites;
+  hda_output_amp_node_number = audio_output_node_number;
+  hda_output_amp_node_capabilites = audio_output_amp_capabilites;
  }
 
  //read info, if something is not present, take it from AFG node
- dword_t audio_output_sample_capabilites = hda_send_verb(sound_card_number, codec_number, audio_output_node_number, 0xF00, 0x0A);
+ dword_t audio_output_sample_capabilites = hda_send_verb(sound_card_number, hda_codec_number, audio_output_node_number, 0xF00, 0x0A);
  if(audio_output_sample_capabilites==0) {
-  hda_sound_cards[sound_card_number].audio_output_node_sample_capabilites = hda_sound_cards[sound_card_number].afg_node_sample_capabilites;
+  hda_audio_output_node_sample_capabilites = hda_afg_node_sample_capabilites;
  }
  else {
-  hda_sound_cards[sound_card_number].audio_output_node_sample_capabilites = audio_output_sample_capabilites;
+  hda_audio_output_node_sample_capabilites = audio_output_sample_capabilites;
  }
- dword_t audio_output_stream_format_capabilites = hda_send_verb(sound_card_number, codec_number, audio_output_node_number, 0xF00, 0x0B);
+ dword_t audio_output_stream_format_capabilites = hda_send_verb(sound_card_number, hda_codec_number, audio_output_node_number, 0xF00, 0x0B);
  if(audio_output_stream_format_capabilites==0) {
-  hda_sound_cards[sound_card_number].audio_output_node_stream_format_capabilites = hda_sound_cards[sound_card_number].afg_node_stream_format_capabilites;
+  hda_audio_output_node_stream_format_capabilites = hda_afg_node_stream_format_capabilites;
  }
  else {
-  hda_sound_cards[sound_card_number].audio_output_node_stream_format_capabilites = audio_output_stream_format_capabilites;
+  hda_audio_output_node_stream_format_capabilites = audio_output_stream_format_capabilites;
  }
- if(hda_sound_cards[sound_card_number].output_amp_node_number==0) { //if nodes in path do not have output amp capabilites, volume will be controlled by Audio Output node by capabilites from AFG node
-  hda_sound_cards[sound_card_number].output_amp_node_number = audio_output_node_number;
-  hda_sound_cards[sound_card_number].output_amp_node_capabilites = hda_sound_cards[sound_card_number].afg_node_output_amp_capabilites;
+ if(hda_output_amp_node_number==0) { //if nodes in path do not have output amp capabilites, volume will be controlled by Audio Output node by capabilites from AFG node
+  hda_output_amp_node_number = audio_output_node_number;
+  hda_output_amp_node_capabilites = hda_afg_node_output_amp_capabilites;
  }
 
  //because we are at end of node path, log all gathered info
  log("\nAudio Output path sucessfully initalized");
  log("\nSample Capabilites: ");
- log_hex(hda_sound_cards[sound_card_number].audio_output_node_sample_capabilites);
+ log_hex(hda_audio_output_node_sample_capabilites);
  log("\nStream Format Capabilites: ");
- log_hex(hda_sound_cards[sound_card_number].audio_output_node_stream_format_capabilites);
+ log_hex(hda_audio_output_node_stream_format_capabilites);
  log("\nVolume node: ");
- log_var(hda_sound_cards[sound_card_number].output_amp_node_number);
+ log_var(hda_output_amp_node_number);
  log("\nVolume capabilites: ");
- log_hex(hda_sound_cards[sound_card_number].output_amp_node_capabilites);
+ log_hex(hda_output_amp_node_capabilites);
 }
 
 void hda_initalize_audio_mixer(dword_t sound_card_number, dword_t audio_mixer_node_number) {
@@ -631,31 +629,30 @@ void hda_initalize_audio_mixer(dword_t sound_card_number, dword_t audio_mixer_no
   log("\nHDA ERROR: too long path");
   return;
  }
- dword_t codec_number = hda_sound_cards[sound_card_number].codec_number;
  log("\nInitalizing Audio Mixer ");
  log_var(audio_mixer_node_number);
 
  //turn on power for Audio Mixer
- hda_send_verb(sound_card_number, codec_number, audio_mixer_node_number, 0x705, 0x00);
+ hda_send_verb(sound_card_number, hda_codec_number, audio_mixer_node_number, 0x705, 0x00);
 
  //disable unsolicited responses
- hda_send_verb(sound_card_number, codec_number, audio_mixer_node_number, 0x708, 0x00);
+ hda_send_verb(sound_card_number, hda_codec_number, audio_mixer_node_number, 0x708, 0x00);
 
  //set maximal volume for Audio Mixer
  //TODO: does this work in every case?
- dword_t audio_mixer_amp_capabilites = hda_send_verb(sound_card_number, codec_number, audio_mixer_node_number, 0xF00, 0x12);
- hda_send_verb(sound_card_number, codec_number, audio_mixer_node_number, 0x300, (0xF000 | ((audio_mixer_amp_capabilites>>8) & 0x7F)));
+ dword_t audio_mixer_amp_capabilites = hda_send_verb(sound_card_number, hda_codec_number, audio_mixer_node_number, 0xF00, 0x12);
+ hda_send_verb(sound_card_number, hda_codec_number, audio_mixer_node_number, 0x300, (0xF000 | ((audio_mixer_amp_capabilites>>8) & 0x7F)));
  if(audio_mixer_amp_capabilites!=0) {
   //we will control volume by Audio Mixer node
-  hda_sound_cards[sound_card_number].output_amp_node_number = audio_mixer_node_number;
-  hda_sound_cards[sound_card_number].output_amp_node_capabilites = audio_mixer_amp_capabilites;
+  hda_output_amp_node_number = audio_mixer_node_number;
+  hda_output_amp_node_capabilites = audio_mixer_amp_capabilites;
  }
 
  //continue in path
  //TODO: more options than only through first connected node
  hda_length_of_node_path++;
- dword_t first_connected_node_number = (hda_send_verb(sound_card_number, codec_number, audio_mixer_node_number, 0xF02, 0x00) & 0xFF);
- dword_t type_of_first_connected_node = ((hda_send_verb(sound_card_number, codec_number, first_connected_node_number, 0xF00, 0x09) >> 20) & 0xF);
+ dword_t first_connected_node_number = (hda_send_verb(sound_card_number, hda_codec_number, audio_mixer_node_number, 0xF02, 0x00) & 0xFF);
+ dword_t type_of_first_connected_node = ((hda_send_verb(sound_card_number, hda_codec_number, first_connected_node_number, 0xF00, 0x09) >> 20) & 0xF);
  if(type_of_first_connected_node==HDA_WIDGET_AUDIO_OUTPUT) {
   hda_initalize_audio_output(sound_card_number, first_connected_node_number);
  }
@@ -676,32 +673,31 @@ void hda_initalize_audio_selector(dword_t sound_card_number, dword_t audio_selec
   log("\nHDA ERROR: too long path");
   return;
  }
- dword_t codec_number = hda_sound_cards[sound_card_number].codec_number;
  log("\nInitalizing Audio Selector ");
  log_var(audio_selector_node_number);
 
  //turn on power for Audio Selector
- hda_send_verb(sound_card_number, codec_number, audio_selector_node_number, 0x705, 0x00);
+ hda_send_verb(sound_card_number, hda_codec_number, audio_selector_node_number, 0x705, 0x00);
 
  //disable unsolicited responses
- hda_send_verb(sound_card_number, codec_number, audio_selector_node_number, 0x708, 0x00);
+ hda_send_verb(sound_card_number, hda_codec_number, audio_selector_node_number, 0x708, 0x00);
 
  //set maximal volume for Audio Selector
  //TODO: does this work in every case?
- dword_t audio_selector_amp_capabilites = hda_send_verb(sound_card_number, codec_number, audio_selector_node_number, 0xF00, 0x12);
- hda_send_verb(sound_card_number, codec_number, audio_selector_node_number, 0x300, (0xF000 | ((audio_selector_amp_capabilites>>8) & 0x7F)));
+ dword_t audio_selector_amp_capabilites = hda_send_verb(sound_card_number, hda_codec_number, audio_selector_node_number, 0xF00, 0x12);
+ hda_send_verb(sound_card_number, hda_codec_number, audio_selector_node_number, 0x300, (0xF000 | ((audio_selector_amp_capabilites>>8) & 0x7F)));
  if(audio_selector_amp_capabilites!=0) {
   //we will control volume by Audio Selector node
-  hda_sound_cards[sound_card_number].output_amp_node_number = audio_selector_node_number;
-  hda_sound_cards[sound_card_number].output_amp_node_capabilites = audio_selector_amp_capabilites;
+  hda_output_amp_node_number = audio_selector_node_number;
+  hda_output_amp_node_capabilites = audio_selector_amp_capabilites;
  }
 
  //continue in path
  //TODO: more options than only through first connected node
  hda_length_of_node_path++;
- hda_send_verb(sound_card_number, codec_number, audio_selector_node_number, 0x701, 0x00); //select first node
- dword_t first_connected_node_number = (hda_send_verb(sound_card_number, codec_number, audio_selector_node_number, 0xF02, 0x00) & 0xFF);
- dword_t type_of_first_connected_node = ((hda_send_verb(sound_card_number, codec_number, first_connected_node_number, 0xF00, 0x09) >> 20) & 0xF);
+ hda_send_verb(sound_card_number, hda_codec_number, audio_selector_node_number, 0x701, 0x00); //select first node
+ dword_t first_connected_node_number = (hda_send_verb(sound_card_number, hda_codec_number, audio_selector_node_number, 0xF02, 0x00) & 0xFF);
+ dword_t type_of_first_connected_node = ((hda_send_verb(sound_card_number, hda_codec_number, first_connected_node_number, 0xF00, 0x09) >> 20) & 0xF);
  if(type_of_first_connected_node==HDA_WIDGET_AUDIO_OUTPUT) {
   hda_initalize_audio_output(sound_card_number, first_connected_node_number);
  }
@@ -718,23 +714,22 @@ void hda_initalize_audio_selector(dword_t sound_card_number, dword_t audio_selec
 }
 
 void hda_set_volume(dword_t sound_card_number, dword_t volume) {
- dword_t codec_number = hda_sound_cards[sound_card_number].codec_number;
- dword_t number_of_steps = ((hda_sound_cards[sound_card_number].output_amp_node_capabilites>>8) & 0x7F);
+ dword_t number_of_steps = ((hda_output_amp_node_capabilites>>8) & 0x7F);
 
  //zero volume
  if(volume==0) {
-  hda_send_verb(sound_card_number, codec_number, hda_sound_cards[sound_card_number].output_amp_node_number, 0x300, (0xF000 | 0x80)); //mute with lowest volume
+  hda_send_verb(sound_card_number, hda_codec_number, hda_output_amp_node_number, 0x300, (0xF000 | 0x80)); //mute with lowest volume
   return;
  }
 
  //max volume, or if there is fixed volume on node, unmute it
  if(volume==100 || number_of_steps==0) {
-  hda_send_verb(sound_card_number, codec_number, hda_sound_cards[sound_card_number].output_amp_node_number, 0x300, (0xF000 | number_of_steps)); //unmute with highest volume
+  hda_send_verb(sound_card_number, hda_codec_number, hda_output_amp_node_number, 0x300, (0xF000 | number_of_steps)); //unmute with highest volume
   return;
  }
  
  //recalculate volume scale 0-100 to node volume scale
- hda_send_verb(sound_card_number, codec_number, hda_sound_cards[sound_card_number].output_amp_node_number, 0x300, (0xB000 | (number_of_steps-((100-volume)*number_of_steps/100))));
+ hda_send_verb(sound_card_number, hda_codec_number, hda_output_amp_node_number, 0x300, (0xB000 | (number_of_steps-((100-volume)*number_of_steps/100))));
 }
 
 byte_t hda_is_supported_channel_size(dword_t sound_card_number, byte_t size) {
@@ -748,7 +743,7 @@ byte_t hda_is_supported_channel_size(dword_t sound_card_number, byte_t size) {
   mask <<= 1;
  }
  
- if((hda_sound_cards[sound_card_number].audio_output_node_sample_capabilites & mask)==mask) {
+ if((hda_audio_output_node_sample_capabilites & mask)==mask) {
   return STATUS_GOOD;
  }
  else {
@@ -767,7 +762,7 @@ byte_t hda_is_supported_sample_rate(dword_t sound_card_number, dword_t sample_ra
   mask <<= 1;
  }
  
- if((hda_sound_cards[sound_card_number].audio_output_node_sample_capabilites & mask)==mask) {
+ if((hda_audio_output_node_sample_capabilites & mask)==mask) {
   return STATUS_GOOD;
  }
  else {
@@ -834,12 +829,9 @@ word_t hda_return_sound_data_format(dword_t sample_rate, dword_t channels, dword
 }
 
 void hda_play_memory(dword_t sound_card_number, dword_t memory, dword_t sample_rate, dword_t channels, dword_t bits_per_sample, dword_t number_of_samples_in_one_channel) {
- if((hda_sound_cards[sound_card_number].audio_output_node_stream_format_capabilites & 0x1)==0x0) {
+ if((hda_audio_output_node_stream_format_capabilites & 0x1)==0x0) {
   return; //this Audio Output do not support PCM sound data
  }
- 
- dword_t codec_number = hda_sound_cards[sound_card_number].codec_number;
- dword_t hda_output_stream_base = hda_sound_cards[sound_card_number].output_stream_base;
 
  //calculate length of data in bytes
  dword_t bytes_per_sample = (bits_per_sample/8); //8 bits/16 bits
@@ -892,6 +884,7 @@ void hda_play_memory(dword_t sound_card_number, dword_t memory, dword_t sample_r
   log("\nHDA: can not stop resetting stream");
   return;
  }
+ wait(10);
 
  //clear error bits
  mmio_outb(hda_output_stream_base + 0x03, 0x1C);
@@ -903,6 +896,15 @@ void hda_play_memory(dword_t sound_card_number, dword_t memory, dword_t sample_r
  buffer[0]=memory;
  buffer[2]=hda_sound_length;
 
+ //TODO:
+ //?????
+ //I really do not understand why, but if after setting buffer there is not 8+ ms wait when processor do something with memory, there are strange issues with playing stream, as if it remembers previous stream memory and try to play it
+ reset_timer();
+ while(get_timer_value_in_microseconds()<8) {
+  redraw_screen();
+ }
+ //?????
+
  //set buffer registers
  mmio_outd(hda_output_stream_base + 0x18, hda_output_buffer_list);
  mmio_outd(hda_output_stream_base + 0x08, hda_sound_length);
@@ -912,7 +914,7 @@ void hda_play_memory(dword_t sound_card_number, dword_t memory, dword_t sample_r
  mmio_outw(hda_output_stream_base + 0x12, hda_return_sound_data_format(sample_rate, channels, bits_per_sample));
 
  //set Audio Output node data format
- hda_send_verb(sound_card_number, codec_number, hda_sound_cards[sound_card_number].audio_output_node_number, 0x200, hda_return_sound_data_format(sample_rate, channels, bits_per_sample));
+ hda_send_verb(sound_card_number, hda_codec_number, hda_audio_output_node_number, 0x200, hda_return_sound_data_format(sample_rate, channels, bits_per_sample));
  wait(10);
 
  //start streaming to stream 1
@@ -925,11 +927,11 @@ void hda_play_memory(dword_t sound_card_number, dword_t memory, dword_t sample_r
 }
 
 void hda_stop_sound(dword_t sound_card_number) {
- mmio_outb(hda_sound_cards[sound_card_number].output_stream_base + 0x00, 0x00);
+ mmio_outb(hda_output_stream_base + 0x00, 0x00);
  hda_playing_state = 0;
 }
 
 void hda_resume_sound(dword_t sound_card_number) {
- mmio_outb(hda_sound_cards[sound_card_number].output_stream_base + 0x00, 0x02);
+ mmio_outb(hda_output_stream_base + 0x00, 0x02);
  hda_playing_state = 1;
 }

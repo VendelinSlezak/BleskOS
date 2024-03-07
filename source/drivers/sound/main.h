@@ -8,6 +8,23 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#define SOUND_CARD_DRIVER_AC97 0
+#define SOUND_CARD_DRIVER_HDA 1
+
+#define MAX_NUMBER_OF_SOUND_CARDS 10
+struct sound_card_info {
+ byte_t driver;
+ word_t vendor_id;
+ word_t device_id;
+ word_t io_base;
+ word_t io_base_2;
+ dword_t mmio_base;
+}__attribute__((packed));
+struct sound_card_info sound_cards_info[MAX_NUMBER_OF_SOUND_CARDS];
+byte_t number_of_sound_cards;
+#define NO_SOUND_CARD 0xFF
+byte_t selected_sound_card;
+
 byte_t sound_volume = 0;
 dword_t sound_sample_rate = 0;
 dword_t sound_memory = 0;

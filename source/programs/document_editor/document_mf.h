@@ -9,11 +9,11 @@
 */
 
 #define DMF_SECTION_FORMAT_CHANGE_SIGNATURE 0xFFFF
-#define DMF_SFCH_ENTRY_LENGTH_IN_BYTES 23*2
+#define DMF_SFCH_ENTRY_LENGTH_IN_BYTES 24*2
 #define DMF_SFCH_SIGNATURE_OFFSET_1 0
 #define DMF_SFCH_LENGTH_OFFSET_1 1
-#define DMF_SFCH_LENGTH_OFFSET_2 21
-#define DMF_SFCH_SIGNATURE_OFFSET_2 22
+#define DMF_SFCH_LENGTH_OFFSET_2 22
+#define DMF_SFCH_SIGNATURE_OFFSET_2 23
 
 #define DMF_SFCH_DESCRIPTION_OFFSET 2
  #define DMF_SFCH_DESCRIPTION_PAGE_BREAK 0x1
@@ -37,13 +37,14 @@
 #define DMF_SFCH_PARAGRAPH_BOTTOM_BORDER_OFFSET 11
 #define DMF_SFCH_PARAGRAPH_LEFT_BORDER_OFFSET 12
 #define DMF_SFCH_PARAGRAPH_RIGHT_BORDER_OFFSET 13
-#define DMF_SFCH_PARAGRAPH_LIST_ENTRY_OFFSET 14
+#define DMF_SFCH_PARAGRAPH_LIST_LEVEL_OFFSET 14
+#define DMF_SFCH_PARAGRAPH_LIST_ENTRY_OFFSET 15
  #define DMF_SFCH_PARAGRAPH_LIST_ENTRY_DOT 0xFFFF
 
-#define DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET 15
-#define DMF_SFCH_INLINE_CHANGE_EMPHASIS_OFFSET 16
-#define DMF_SFCH_INLINE_CHANGE_COLOR_OFFSET 17
-#define DMF_SFCH_INLINE_CHANGE_BACKGROUND_COLOR_OFFSET 19
+#define DMF_SFCH_INLINE_CHANGE_SIZE_OFFSET 16
+#define DMF_SFCH_INLINE_CHANGE_EMPHASIS_OFFSET 17
+#define DMF_SFCH_INLINE_CHANGE_COLOR_OFFSET 18
+#define DMF_SFCH_INLINE_CHANGE_BACKGROUND_COLOR_OFFSET 20
 
 #define DMF_LIST_ENTRY_LEFT_MARGIN 45
 
@@ -63,7 +64,7 @@ dword_t dmf_get_size_of_word(dword_t dmf_memory, dword_t actual_char_size);
 void dmf_add_section_format_change(dword_t memory, dword_t size, dword_t emphasis, dword_t color, dword_t background_color);
 void dmf_add_section_page_break(dword_t memory);
 void dmf_add_section_new_page(dword_t memory, dword_t width, dword_t height, dword_t top, dword_t bottom, dword_t left, dword_t right);
-void dmf_add_section_new_paragraph(dword_t memory, dword_t description, dword_t top, dword_t bottom, dword_t left, dword_t right, dword_t list_entry);
+void dmf_add_section_new_paragraph(dword_t memory, dword_t description, dword_t top, dword_t bottom, dword_t left, dword_t right, dword_t list_level, dword_t list_entry);
 byte_t dmf_is_section_format_change_only_span_change(dword_t memory);
 byte_t dmf_is_section_with_new_paragraph(dword_t memory);
 byte_t dmf_is_section_standard_style(dword_t memory);

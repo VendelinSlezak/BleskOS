@@ -200,7 +200,7 @@ dword_t convert_docx_to_dmf(dword_t docx_memory, dword_t docx_size) {
      //add all properties to paragraph format change section
      if(dmf[-1]==DMF_SECTION_FORMAT_CHANGE_SIGNATURE) { 
       dmf_add_section_format_change(((dword_t)dmf)-DMF_SFCH_ENTRY_LENGTH_IN_BYTES, dmf_character_size, dmf_character_emphasis, dmf_character_color, dmf_character_background_color);
-      dmf_add_section_new_paragraph(((dword_t)dmf)-DMF_SFCH_ENTRY_LENGTH_IN_BYTES, dmf_actual_paragraph_description, dmf_paragraph_top_border, dmf_paragraph_bottom_border, dmf_paragraph_left_border, dmf_paragraph_right_border, dmf_paragaph_list_entry);
+      dmf_add_section_new_paragraph(((dword_t)dmf)-DMF_SFCH_ENTRY_LENGTH_IN_BYTES, dmf_actual_paragraph_description, dmf_paragraph_top_border, dmf_paragraph_bottom_border, dmf_paragraph_left_border, dmf_paragraph_right_border, document_editor_stack_of_lists_number_of_entries, dmf_paragaph_list_entry);
      }
     }
     //TAG </w:numPr>
@@ -217,10 +217,9 @@ dword_t convert_docx_to_dmf(dword_t docx_memory, dword_t docx_size) {
       else if(list_entry_level<document_editor_stack_of_lists_number_of_entries) { //previous list was finished
        document_editor_stack_of_lists_number_of_entries--;
       }
-      //if(list_entry_level==document_editor_stack_of_lists_number_of_entries) then this is next entry of list
+      //list_entry_level==document_editor_stack_of_lists_number_of_entries mean this is next entry of same list
 
       is_this_paragraph_list_entry = STATUS_TRUE;
-      dmf_paragraph_left_border += (document_editor_stack_of_lists_number_of_entries*DMF_LIST_ENTRY_LEFT_MARGIN);
      }
     }
    }
@@ -231,12 +230,12 @@ dword_t convert_docx_to_dmf(dword_t docx_memory, dword_t docx_size) {
      if(dmf[-1]==DMF_SECTION_FORMAT_CHANGE_SIGNATURE && dmf_is_section_format_change_only_span_change(((dword_t)dmf)-DMF_SFCH_ENTRY_LENGTH_IN_BYTES)==STATUS_TRUE) {
       //we can rewrite format change section
       dmf_add_section_format_change(((dword_t)dmf)-DMF_SFCH_ENTRY_LENGTH_IN_BYTES, dmf_character_size, dmf_character_emphasis, dmf_character_color, dmf_character_background_color);
-      dmf_add_section_new_paragraph(((dword_t)dmf)-DMF_SFCH_ENTRY_LENGTH_IN_BYTES, dmf_actual_paragraph_description, dmf_paragraph_top_border, dmf_paragraph_bottom_border, dmf_paragraph_left_border, dmf_paragraph_right_border, dmf_paragaph_list_entry);
+      dmf_add_section_new_paragraph(((dword_t)dmf)-DMF_SFCH_ENTRY_LENGTH_IN_BYTES, dmf_actual_paragraph_description, dmf_paragraph_top_border, dmf_paragraph_bottom_border, dmf_paragraph_left_border, dmf_paragraph_right_border, document_editor_stack_of_lists_number_of_entries, dmf_paragaph_list_entry);
      }
      else {
       //new format change section
       dmf_add_section_format_change(((dword_t)dmf), dmf_character_size, dmf_character_emphasis, dmf_character_color, dmf_character_background_color);
-      dmf_add_section_new_paragraph(((dword_t)dmf), dmf_actual_paragraph_description, dmf_paragraph_top_border, dmf_paragraph_bottom_border, dmf_paragraph_left_border, dmf_paragraph_right_border, dmf_paragaph_list_entry);
+      dmf_add_section_new_paragraph(((dword_t)dmf), dmf_actual_paragraph_description, dmf_paragraph_top_border, dmf_paragraph_bottom_border, dmf_paragraph_left_border, dmf_paragraph_right_border, document_editor_stack_of_lists_number_of_entries, dmf_paragaph_list_entry);
       dmf = (word_t *) (((dword_t)dmf)+DMF_SFCH_ENTRY_LENGTH_IN_BYTES);
      }
     }

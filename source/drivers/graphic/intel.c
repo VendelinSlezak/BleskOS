@@ -42,3 +42,37 @@ void graphic_card_intel_change_backlight(byte_t value) {
 
  percent_of_backlight = value;
 }
+
+void intel_try_read_edid(void) {
+ dword_t *edid_memory_pointer = (dword_t *)calloc(128);
+
+ //type of device
+ mmio_outd(graphic_cards_info[selected_graphic_card].mmio_base+GRAPHIC_CARD_INTEL_MMIO_GMBUS0, 0b011);
+
+ //read 128 bytes from offset 0x50
+ mmio_outd(graphic_cards_info[selected_graphic_card].mmio_base+GRAPHIC_CARD_INTEL_MMIO_GMBUS1, ((1 << 30) | (0b011 << 25) | (128 << 16) | (0x50 << 1) | 0x1));
+ 
+ for(dword_t i=0; i<32; i++) {
+  //wait
+  ticks = 0;
+  while(ticks<10) {
+   asm("nop");
+   if((mmio_ind(graphic_cards_info[selected_graphic_card].mmio_base+GRAPHIC_CARD_INTEL_MMIO_GMBUS2) & (1<<11))==(1<<11)) {
+    break;
+   }
+   if((mmio_ind(graphic_cards_info[selected_graphic_card].mmio_base+GRAPHIC_CARD_INTEL_MMIO_GMBUS2) & (1<<10))==(1<<10)) {
+    log("\nNAK error");
+    break;
+   }
+  }
+
+  //read 4 bytes
+  edid_memory_pointer[i] = mmio_ind(graphic_cards_info[selected_graphic_card].mmio_base+GRAPHIC_CARD_INTEL_MMIO_GMBUS3);
+ }
+
+ //stop transfer
+ mmio_outd(graphic_cards_info[selected_graphic_card].mmio_base+GRAPHIC_CARD_INTEL_MMIO_GMBUS1, ((1 << 30) | (0b100 << 27)));
+
+ parse_edid_data((dword_t)edid_memory_pointer);
+ free((dword_t)edid_memory_pointer);
+}

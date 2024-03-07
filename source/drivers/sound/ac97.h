@@ -11,18 +11,49 @@
 #define AC97_BUFFER_NOT_FILLED 1
 #define AC97_BUFFER_FILLED 0
 
-byte_t ac97_present = 0, ac97_variable_sound_rate_present = 0, ac97_free_entry = 0, ac97_playing_state = AC97_BUFFER_FILLED;
-word_t ac97_nam_base, ac97_nabm_base;
-dword_t ac97_buffer_entries_memory;
-dword_t ac97_sound_memory, ac97_sound_num_of_samples;
+#define AC97_NAM_IO_RESET 0x00
+#define AC97_NAM_IO_CAPABILITES 0x00
+ #define AC97_CAPABILITY_HEADPHONE_OUTPUT 0x10
+#define AC97_NAM_IO_MASTER_VOLUME 0x02
+#define AC97_NAM_IO_AUX_OUT_VOLUME 0x04
+#define AC97_NAM_IO_PCM_OUT_VOLUME 0x18
+#define AC97_NAM_IO_EXTENDED_CAPABILITIES 0x28
+ #define AC97_EXTENDED_CAPABILITY_VARIABLE_SAMPLE_RATE 0x1
+#define AC97_NAM_IO_EXTENDED_FEATURES_CONTROL 0x2A
+#define AC97_NAM_IO_VARIABLE_SAMPLE_RATE_FRONT_DAC 0x2C
+#define AC97_NAM_IO_VARIABLE_SAMPLE_RATE_SURR_DAC 0x2E
+#define AC97_NAM_IO_VARIABLE_SAMPLE_RATE_LFE_DAC 0x30
+#define AC97_NAM_IO_VARIABLE_SAMPLE_RATE_LR_ADC 0x32
 
-void initalize_ac97(void);
+#define AC97_NABM_IO_PCM_OUTPUT_BUFFER_BASE_ADDRESS 0x10
+#define AC97_NABM_IO_PCM_OUTPUT_CURRENTLY_PROCESSED_ENTRY 0x14
+#define AC97_NABM_IO_PCM_OUTPUT_LAST_VALID_ENTRY 0x15
+#define AC97_NABM_IO_PCM_OUTPUT_STATUS 0x16
+#define AC97_NABM_IO_PCM_OUTPUT_CURRENT_ENTRY_POSITION 0x18
+#define AC97_NABM_IO_PCM_OUTPUT_CONTROL 0x1B
+#define AC97_NABM_IO_GLOBAL_CONTROL 0x2C
+
+#define AC97_NABM_IO_PCM_INPUT_CONTROL 0x0B
+#define AC97_NABM_IO_MICROPHONE_INPUT_CONTROL 0x2B
+
+struct ac97_buffer_entry {
+ dword_t sample_memory;
+ word_t number_of_samples;
+ word_t reserved: 14;
+ byte_t last_buffer_entry: 1;
+ byte_t interrupt_on_completion: 1;
+}__attribute__((packed));
+
+struct ac97_buffer_entry *ac97_buffer_memory_pointer;
+byte_t ac97_headphone_output_present, ac97_free_entry, ac97_playing_state;
+word_t ac97_nam_base, ac97_nabm_base, ac97_extended_capabilities;
+dword_t ac97_sound_memory, ac97_number_of_samples_in_one_channel;
+
+void initalize_ac97_sound_card(byte_t sound_card_number);
 void ac97_set_volume(byte_t volume);
 byte_t ac97_is_supported_sample_rate(word_t sample_rate);
 void ac97_set_sample_rate(word_t sample_rate);
+void ac97_fill_buffer_entry(void);
 void ac97_play_sound(void);
 void ac97_stop_sound(void);
-void ac97_clear_buffer(void);
-void ac97_fill_buffer_entry(void);
-void ac97_play_memory(dword_t sound_memory, dword_t number_of_samples_in_one_channel);
-void ac97_stop_playing_memory(void);
+void ac97_play_memory(dword_t sound_memory, dword_t sound_size, dword_t sample_rate);

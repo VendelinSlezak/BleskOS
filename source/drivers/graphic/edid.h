@@ -66,8 +66,8 @@ struct edid {
 }__attribute__((packed));
 
 byte_t is_bootloader_edid_present;
-word_t horizontal_active, horizontal_blank, horizontal_sync_offset, horizontal_sync_pulse, vertical_active, vertical_blank, vertical_sync_offset, vertical_sync_pulse;
+word_t edid_horizontal_active, edid_horizontal_blank, edid_horizontal_sync_offset, edid_horizontal_sync_pulse, edid_vertical_active, edid_vertical_blank, edid_vertical_sync_offset, edid_vertical_sync_pulse;
 word_t mode_horizontal_active, mode_horizontal_sync_start, mode_horizontal_sync_end, mode_horizontal_total, mode_vertical_active, mode_vertical_sync_start, mode_vertical_sync_end, mode_vertical_total;
 
-void parse_bootloader_edid(void);
 byte_t parse_edid_data(dword_t edid_data_memory);
+void log_edid_data(void);

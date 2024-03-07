@@ -56,6 +56,8 @@ void performance_rating(void) {
           redraw_performance_rating();
 			 if( keyboard_value == KEY_ESC ) {break;}
         }
+        PERFORMANCE_RATING_CURRENT_TASK = 0;
+        redraw_performance_rating();
         break;
       case KEY_PAGE_UP:
         if (PERFORMANCE_RATING_CURRENT_TASK > 5) { PERFORMANCE_RATING_CURRENT_TASK-=5; } else { PERFORMANCE_RATING_CURRENT_TASK=0; }

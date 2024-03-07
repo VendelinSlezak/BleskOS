@@ -177,3 +177,26 @@ dword_t get_number_of_chars_in_unicode_string(word_t *string) {
 
  return STATUS_ERROR;
 }
+
+void add_space_to_memory_area(dword_t memory_area_start, dword_t memory_area_size, dword_t space_start, dword_t space_size) {
+ dword_t memory_area_end = (memory_area_start+memory_area_size);
+ if(space_start<memory_area_start || (space_start+space_size)>memory_area_end) {
+  return;
+ }
+ if((space_start+space_size)<memory_area_end) {
+  copy_memory_back((memory_area_end-space_size-1), (memory_area_end-1), (memory_area_end-space_start-1));
+ }
+ clear_memory(space_start, space_size);
+}
+
+void remove_space_from_memory_area(dword_t memory_area_start, dword_t memory_area_size, dword_t space_start, dword_t space_size) {
+ dword_t memory_area_end = (memory_area_start+memory_area_size);
+ dword_t space_area_end = (space_start+space_size);
+ if(space_start<memory_area_start || space_area_end>memory_area_end) {
+  return;
+ }
+ if(space_area_end<memory_area_end) {
+  copy_memory(space_area_end, space_start, (memory_area_end-space_area_end));
+ }
+ clear_memory((memory_area_end-space_size), space_size);
+}

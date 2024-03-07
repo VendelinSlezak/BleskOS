@@ -11,4 +11,4 @@
 #include "pc_speaker.c"
 #include "ac97.c"
 #include "hda.c"
-#include "sound.c"
+#include "main.c"

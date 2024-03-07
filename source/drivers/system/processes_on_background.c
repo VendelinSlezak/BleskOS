@@ -30,9 +30,9 @@ void run_processes_on_background(void) {
  }
 
  if(hda_playing_state==1) {
-  dword_t link_position_in_buffer = mmio_ind(hda_sound_cards[selected_hda_sound_card].output_stream_base + 0x04);
-  if(hda_bytes_on_output_for_stopping_sound>link_position_in_buffer || link_position_in_buffer>mmio_ind(hda_sound_cards[selected_hda_sound_card].output_stream_base + 0x08)) {
-   hda_stop_sound(selected_hda_sound_card);
+  dword_t link_position_in_buffer = mmio_ind(hda_output_stream_base + 0x04);
+  if(hda_bytes_on_output_for_stopping_sound>link_position_in_buffer || link_position_in_buffer>mmio_ind(hda_output_stream_base + 0x08)) {
+   hda_stop_sound(selected_sound_card);
    hda_playing_state = 0;
    hda_bytes_on_output_for_stopping_sound = hda_sound_length;
    if(media_viewer_sound_state==MEDIA_VIEWER_SOUND_STATE_PLAYING) {
@@ -43,7 +43,7 @@ void run_processes_on_background(void) {
    hda_bytes_on_output_for_stopping_sound = link_position_in_buffer;
   }
  }
- else if(ac97_playing_state==1) {
+ else if(ac97_playing_state==AC97_BUFFER_NOT_FILLED) {
   if(ticks_of_processes==0xFF) {
    ac97_fill_buffer_entry();
   }
