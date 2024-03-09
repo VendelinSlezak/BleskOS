@@ -86,14 +86,39 @@ void wait_for_user_input(void) {
  
  while(usb_mouse_packet_received==STATUS_FALSE && usb_keyboard_packet_received==STATUS_FALSE && ps2_mouse_wait==1 && ps2_keyboard_wait==1 && usb_new_device_detected==STATUS_FALSE && ethernet_link_state_change==0) {
   asm("hlt");
+
   if(is_ethernet_cable_connected==STATUS_TRUE && connected_to_network==STATUS_FALSE) {
    connect_to_network_with_message();
    break;
   }
+
   if((ticks_of_processes & 0x80)==0x80) {
    detect_usb_devices_on_hubs(); //detect devices connected to USB HUBs
    if(usb_new_device_detected==STATUS_TRUE) {
     break;
+   }
+  }
+
+  if(sound_card_detect_headphone_connection_status==STATUS_TRUE) {
+   if(sound_cards_info[selected_sound_card].driver==SOUND_CARD_DRIVER_AC97) {
+    if(ac97_selected_output==AC97_SPEAKER_OUTPUT && ac97_is_headphone_connected()==STATUS_TRUE) { //headphone was connected
+     ac97_set_output(AC97_HEADPHONE_OUTPUT);
+    }
+    else if(ac97_selected_output==AC97_HEADPHONE_OUTPUT && ac97_is_headphone_connected()==STATUS_FALSE) { //headphone was disconnected
+     ac97_set_output(AC97_SPEAKER_OUTPUT);
+    }
+   }
+   else if(sound_cards_info[selected_sound_card].driver==SOUND_CARD_DRIVER_HDA) {
+    if(hda_selected_output_node==hda_pin_output_node_number && hda_is_headphone_connected()==STATUS_TRUE) { //headphone was connected
+     hda_disable_pin_output(hda_codec_number, hda_pin_output_node_number);
+     hda_enable_pin_output(hda_codec_number, hda_pin_headphone_node_number);
+     hda_selected_output_node = hda_pin_headphone_node_number;
+    }
+    else if(hda_selected_output_node==hda_pin_headphone_node_number && hda_is_headphone_connected()==STATUS_FALSE) { //headphone was disconnected
+     hda_disable_pin_output(hda_codec_number, hda_pin_headphone_node_number);
+     hda_enable_pin_output(hda_codec_number, hda_pin_output_node_number);
+     hda_selected_output_node = hda_pin_output_node_number;
+    }
    }
   }
  }

@@ -171,7 +171,7 @@ byte_t detect_optical_disk(void) {
  
  //detect disk
  if(ahci_cdrom_base!=0) { //CDROM is connected to AHCI port
-  status = satapi_read_drive_capabilites(ahci_cdrom_base, ahci_cdrom_cmd_mem, ahci_cdrom_fis_mem);
+  status = satapi_read_drive_capabilities(ahci_cdrom_base, ahci_cdrom_cmd_mem, ahci_cdrom_fis_mem);
  }
  if(ide_cdrom_base!=0) { //CDROM is connected to IDE port
   status = patapi_detect_disk(ide_cdrom_base, ide_cdrom_alt_base);
@@ -180,10 +180,10 @@ byte_t detect_optical_disk(void) {
  //read disk size
  if(status==STATUS_TRUE) {
   if(ahci_cdrom_base!=0) { //CDROM is connected to AHCI port
-   //status = satapi_read_capabilites(ahci_cdrom_base, ahci_cdrom_cmd_mem, ahci_cdrom_fis_mem); //TODO:
+   //status = satapi_read_capabilities(ahci_cdrom_base, ahci_cdrom_cmd_mem, ahci_cdrom_fis_mem); //TODO:
   }
   if(ide_cdrom_base!=0) { //CDROM is connected to IDE port
-   patapi_read_capabilites(ide_cdrom_base, ide_cdrom_alt_base);
+   patapi_read_capabilities(ide_cdrom_base, ide_cdrom_alt_base);
   }
  }
  

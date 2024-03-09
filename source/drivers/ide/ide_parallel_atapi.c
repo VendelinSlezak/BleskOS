@@ -69,7 +69,7 @@ byte_t patapi_detect_disk(word_t base_port, word_t alt_base_port) {
  }
 }
 
-byte_t patapi_read_capabilites(word_t base_port, word_t alt_base_port) {
+byte_t patapi_read_capabilities(word_t base_port, word_t alt_base_port) {
  word_t response = 0;
  optical_disk_size = 0;
  optical_disk_sector_size = 0;

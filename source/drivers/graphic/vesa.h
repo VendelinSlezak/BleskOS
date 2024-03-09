@@ -16,7 +16,7 @@ struct vesa_info_block {
  byte_t major_version;
  word_t oem_string_offset;
  word_t oem_string_segment;
- dword_t capabilites_of_graphic_controller;
+ dword_t capabilities_of_graphic_controller;
  word_t video_mode_list_offset;
  word_t video_mode_list_segment;
  word_t number_of_64_kb_blocks;

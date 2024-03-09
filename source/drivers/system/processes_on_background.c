@@ -47,7 +47,7 @@ void run_processes_on_background(void) {
   if(ticks_of_processes==0xFF) {
    ac97_fill_buffer_entry();
   }
- }
+ } 
  
  if(media_viewer_sound_state==MEDIA_VIEWER_SOUND_STATE_PLAYING) {
   //update counter of played milliseconds

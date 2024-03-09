@@ -109,7 +109,7 @@ byte_t satapi_detect_disk(dword_t base_port, dword_t commands_memory, dword_t fi
  return satapi_send_command(base_port, commands_memory, fis_memory, 0, 0, 0, 0, 0); //TEST UNIT READY
 }
 
-byte_t satapi_read_drive_capabilites(dword_t base_port, dword_t commands_memory, dword_t fis_memory) {
+byte_t satapi_read_drive_capabilities(dword_t base_port, dword_t commands_memory, dword_t fis_memory) {
  word_t *ahci_drive_info_mem = (word_t *) ahci_drive_info;
  dword_t response;
  optical_disk_size = 0;

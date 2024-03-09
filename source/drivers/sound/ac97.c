@@ -32,7 +32,7 @@ void initalize_ac97_sound_card(byte_t sound_card_number) {
   ac97_headphone_output_present = STATUS_TRUE;
  }
 
- //set max PCM out volume
+ //set max PCM output volume
  outw(ac97_nam_base + AC97_NAM_IO_PCM_OUT_VOLUME, 0x0);
  
  //allocate memory for buffer
@@ -43,6 +43,23 @@ void initalize_ac97_sound_card(byte_t sound_card_number) {
  if((ac97_extended_capabilities & AC97_EXTENDED_CAPABILITY_VARIABLE_SAMPLE_RATE)==AC97_EXTENDED_CAPABILITY_VARIABLE_SAMPLE_RATE) {
   outw(ac97_nam_base + AC97_NAM_IO_EXTENDED_FEATURES_CONTROL, AC97_EXTENDED_CAPABILITY_VARIABLE_SAMPLE_RATE); //enable variable sample rate
  }
+
+ //get number of AUX_OUT volume steps
+ ac97_aux_out_number_of_volume_steps = 31;
+ outw(ac97_nam_base + AC97_NAM_IO_AUX_OUT_VOLUME, 0x2020);
+ if((inw(ac97_nam_base + AC97_NAM_IO_AUX_OUT_VOLUME) & 0x2020)==0x2020) {
+  ac97_aux_out_number_of_volume_steps = 63;
+ }
+
+ //set output 
+ sound_volume = 0;
+ if(ac97_is_headphone_connected()==STATUS_TRUE) {
+  ac97_set_output(AC97_HEADPHONE_OUTPUT);
+ }
+ else {
+  ac97_set_output(AC97_SPEAKER_OUTPUT);
+ }
+ sound_card_detect_headphone_connection_status = STATUS_TRUE;
  
  //log
  log("\n\nSound card AC97");
@@ -50,30 +67,49 @@ void initalize_ac97_sound_card(byte_t sound_card_number) {
  log("\nExtended capabilities: "); log_hex_specific_size(ac97_extended_capabilities, 4);
 }
 
-void ac97_set_volume(byte_t volume) {
- if(volume==0) {
-  //mute speaker
-  outw(ac97_nam_base + AC97_NAM_IO_MASTER_VOLUME, 0x8000);
-
-  //mute headphone
-  if(ac97_headphone_output_present==STATUS_TRUE) {
-   outw(ac97_nam_base + AC97_NAM_IO_AUX_OUT_VOLUME, 0x8000);
-  }
+byte_t ac97_is_headphone_connected(void) {
+ //JACK_SENSE port is not part of official specification, but it seems to be supported by cards
+ if(ac97_headphone_output_present==STATUS_TRUE && (inw(ac97_nam_base + AC97_NAM_IO_JACK_SENSE) & 0x8)==0x8) {
+  return STATUS_TRUE;
  }
  else {
-  //recalculate 0-100 scale to AC97 0-31 volume scale
-  volume = ((100-volume)*31/100);
+  return STATUS_FALSE;
+ }
+}
 
-  //set volume for speaker
-  outw(ac97_nam_base + AC97_NAM_IO_MASTER_VOLUME, ((volume) | (volume<<8)));
+void ac97_set_volume_in_register(dword_t offset, byte_t number_of_volume_steps, byte_t volume) {
+ if(volume==0) {
+  outw(ac97_nam_base + offset, 0x8000); //mute
+ }
+ else {
+  volume = ((100-volume)*number_of_volume_steps/100); //recalculate 0-100 scale to register volume scale
+  outw(ac97_nam_base + offset, ((volume) | (volume<<8))); //set same volume for left and right
+ }
+}
 
-  //set volume for headphone
-  if(ac97_headphone_output_present==STATUS_TRUE) {
-   outw(ac97_nam_base + AC97_NAM_IO_AUX_OUT_VOLUME, ((volume) | (volume<<8)));
-  }
+void ac97_set_output(byte_t output) {
+ if(output==AC97_SPEAKER_OUTPUT) {
+  ac97_set_volume_in_register(AC97_NAM_IO_AUX_OUT_VOLUME, ac97_aux_out_number_of_volume_steps, 0);
+  ac97_set_volume_in_register(AC97_NAM_IO_MASTER_VOLUME, AC97_SPEAKER_OUTPUT_NUMBER_OF_VOLUME_STEPS, sound_volume);
+ }
+ else if(output==AC97_HEADPHONE_OUTPUT) {
+  ac97_set_volume_in_register(AC97_NAM_IO_MASTER_VOLUME, ac97_aux_out_number_of_volume_steps, 0);
+  ac97_set_volume_in_register(AC97_NAM_IO_AUX_OUT_VOLUME, AC97_SPEAKER_OUTPUT_NUMBER_OF_VOLUME_STEPS, sound_volume);
+ }
+ else {
+  return;
  }
 
- //TODO: find out if headphone is connected, and if yes, mute speaker
+ ac97_selected_output = output;
+}
+
+void ac97_set_volume(byte_t volume) {
+ if(ac97_selected_output==AC97_SPEAKER_OUTPUT) {
+  ac97_set_volume_in_register(AC97_NAM_IO_MASTER_VOLUME, ac97_aux_out_number_of_volume_steps, volume);
+ }
+ else if(ac97_selected_output==AC97_HEADPHONE_OUTPUT) {
+  ac97_set_volume_in_register(AC97_NAM_IO_AUX_OUT_VOLUME, AC97_SPEAKER_OUTPUT_NUMBER_OF_VOLUME_STEPS, volume);
+ }
 }
 
 byte_t ac97_is_supported_sample_rate(word_t sample_rate) {
