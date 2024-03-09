@@ -11,5 +11,5 @@
 byte_t satapi_send_command(dword_t base_port, dword_t commands_memory, dword_t fis_memory, dword_t transfer_length, dword_t cmd1, dword_t cmd2, dword_t cmd3, dword_t memory);
 byte_t satapi_eject_drive(dword_t base_port, dword_t commands_memory, dword_t fis_memory);
 byte_t satapi_detect_disk(dword_t base_port, dword_t commands_memory, dword_t fis_memory);
-byte_t satapi_read_drive_capabilites(dword_t base_port, dword_t commands_memory, dword_t fis_memory);
+byte_t satapi_read_drive_capabilities(dword_t base_port, dword_t commands_memory, dword_t fis_memory);
 byte_t satapi_read_sector(dword_t base_port, dword_t commands_memory, dword_t fis_memory, dword_t sector, dword_t memory);

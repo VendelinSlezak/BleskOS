@@ -42,7 +42,7 @@ void set_interrupts(void) {
  hda_playing_state = 0;
  ac97_playing_state = 0;
  usb_mouse[0].controller_type = USB_NO_DEVICE_ATTACHED;
- // usb_keyboard_state = 0;
+ sound_card_detect_headphone_connection_status = STATUS_FALSE;
  media_viewer_sound_state = MEDIA_VIEWER_SOUND_NO_FILE;
  
   //load IDT and enable interrupts

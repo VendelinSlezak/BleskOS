@@ -11,6 +11,7 @@
 void initalize_sound_card(void) {
  //found usable sound card and initalize it
  selected_sound_card = NO_SOUND_CARD;
+ sound_card_detect_headphone_connection_status = STATUS_FALSE;
  for(dword_t i=0; i<number_of_sound_cards; i++) {
   if(sound_cards_info[i].driver==SOUND_CARD_DRIVER_AC97) {
    initalize_ac97_sound_card(i); //we will initalize only one AC97 sound card

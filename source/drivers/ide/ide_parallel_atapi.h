@@ -10,7 +10,7 @@
 
 byte_t patapi_send_packet_command(word_t base_port, word_t transfer_length);
 byte_t patapi_detect_disk(word_t base_port, word_t alt_base_port);
-byte_t patapi_read_capabilites(word_t base_port, word_t alt_base_port);
+byte_t patapi_read_capabilities(word_t base_port, word_t alt_base_port);
 byte_t patapi_eject_drive(word_t base_port, word_t alt_base_port);
 byte_t patapi_spin_down_drive(word_t base_port, word_t alt_base_port);
 byte_t patapi_read_cd_toc(word_t base_port, word_t alt_base_port, dword_t memory);
