@@ -42,12 +42,12 @@ void screenshooter(void) {
   dword_t click_value = get_mouse_cursor_click_board_value();
 
   //back
-  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && click_value==SCREENSHOTER_CLICK_ZONE_BACK)) {
+  if(keyboard_code_of_pressed_key==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && click_value==SCREENSHOTER_CLICK_ZONE_BACK)) {
    return;
   }
 
   //save
-  if(keyboard_value==KEY_F2 || (mouse_click_button_state==MOUSE_CLICK && click_value==SCREENSHOTER_CLICK_ZONE_SAVE)) {
+  if(keyboard_code_of_pressed_key==KEY_F2 || (mouse_click_button_state==MOUSE_CLICK && click_value==SCREENSHOTER_CLICK_ZONE_SAVE)) {
    file_dialog_save_set_extension("bmp");
    if(screenshot_is_cropped==STATUS_FALSE) {
     convert_image_data_to_bmp(screenshoot_image_info_mem);
@@ -62,7 +62,7 @@ void screenshooter(void) {
   }
 
   //crop
-  if(keyboard_value==KEY_SPACE || (mouse_click_button_state==MOUSE_CLICK && click_value==SCREENSHOTER_CLICK_ZONE_CROP)) {
+  if(keyboard_code_of_pressed_key==KEY_SPACE || (mouse_click_button_state==MOUSE_CLICK && click_value==SCREENSHOTER_CLICK_ZONE_CROP)) {
    //draw screenshot buffer on whole screen
    dword_t *screenshoot_image_info = (dword_t *) (screenshoot_image_info_mem);
    screenshoot_image_info[IMAGE_INFO_SCREEN_X] = 0;
@@ -78,7 +78,7 @@ void screenshooter(void) {
     wait_for_user_input();
     move_mouse_cursor();
 
-    if(keyboard_value==KEY_ESC) {
+    if(keyboard_code_of_pressed_key==KEY_ESC) {
      screenshoot_image_info[IMAGE_INFO_WIDTH] = screenshot_buffer_image_original_width;
      screenshoot_image_info[IMAGE_INFO_HEIGTH] = screenshot_buffer_image_original_height;
      screenshoot_image_info[IMAGE_INFO_SCREEN_X] = screenshot_buffer_image_original_x;
@@ -169,7 +169,7 @@ void screenshooter(void) {
   }
 
   //remove crop
-  if(keyboard_value==KEY_R || (mouse_click_button_state==MOUSE_CLICK && click_value==SCREENSHOTER_CLICK_ZONE_REMOVE_CROP)) {
+  if(keyboard_code_of_pressed_key==KEY_R || (mouse_click_button_state==MOUSE_CLICK && click_value==SCREENSHOTER_CLICK_ZONE_REMOVE_CROP)) {
    screenshot_is_cropped=STATUS_FALSE;
    redraw_screenshooter();
    continue;

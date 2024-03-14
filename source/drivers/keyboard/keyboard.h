@@ -118,11 +118,7 @@
 #define KEY_POWER_BUTTON 0xE05E
 #define KEY_PRINT_SCREEN 0xE037
 
-#define RELEASED_KEY(key) (key+0x80)
-
-#define KEYBOARD_SHIFT 0x1
-#define KEYBOARD_CTRL 0x2
-#define KEYBOARD_ALT 0x4
+#define RELEASED_KEY_CODE(key) (key+0x80)
 
 word_t english_keyboard_layout[256] = {
  0, 0, //zero, escape
@@ -168,10 +164,20 @@ word_t slovak_shift_keyboard_layout[256] = {
  0 //other keys
 };
 
-dword_t keyboard_value = 0;
-word_t keyboard_diacritic = 0;
-word_t keyboard_unicode = 0;
-byte_t keyboard_control_keys = 0;
+#define KEYBOARD_SHIFT 0x1
+#define KEYBOARD_CTRL 0x2
+#define KEYBOARD_ALT 0x4
+#define KEYBOARD_CAPSLOCK 0x8
+byte_t keyboard_pressed_control_keys;
+
+dword_t keyboard_code_of_pressed_key;
+word_t keyboard_diacritic_char_for_next_key;
+word_t keyboard_unicode_value_of_pressed_key;
+
+#define KEYBOARD_LED_CAPSLOCK 0x1
+#define KEYBOARD_LED_NUMBERLOCK 0x2
+#define KEYBOARD_LED_SCROLLOCK 0x4
+byte_t keyboard_led_state, keyboard_change_in_led_state;
 
 word_t *keyboard_layout_ptr;
 word_t *keyboard_shift_layout_ptr;

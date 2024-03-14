@@ -9,7 +9,7 @@
 */
 
 byte_t read_ps2_data(void) {
- for(int i=0; i<100; i++) {
+ for(int i=0; i<200; i++) {
   wait(1);
   if((inb(0x64) & 0x1)==0x1) {
    break;
@@ -20,7 +20,7 @@ byte_t read_ps2_data(void) {
 }
 
 void write_ps2_data(byte_t value) {
- for(int i=0; i<100; i++) {
+ for(int i=0; i<200; i++) {
   wait(1);
   if((inb(0x64) & 0x2)==0x0) {
    break;
@@ -31,7 +31,7 @@ void write_ps2_data(byte_t value) {
 }
 
 void write_ps2_command(byte_t value) {
- for(int i=0; i<100; i++) {
+ for(int i=0; i<200; i++) {
   wait(1);
   if((inb(0x64) & 0x2)==0x0) {
    break;
@@ -49,7 +49,7 @@ void write_to_first_ps2_channel(byte_t value) {
 
 byte_t ps2_first_channel_wait_for_ack(void) {
  ticks = 0;
- while(ticks<50) {
+ while(ticks<200) {
   asm("nop");
   if(ps2_first_channel_buffer_pointer>0) { //we wait for first byte of response
    if(ps2_first_channel_buffer[0]==0xFA) {
@@ -86,7 +86,7 @@ void write_to_second_ps2_channel(byte_t value) {
 
 byte_t ps2_second_channel_wait_for_ack(void) {
  ticks = 0;
- while(ticks<50) {
+ while(ticks<200) {
   asm("nop");
   if(ps2_second_channel_buffer_pointer>0) { //we wait for second byte of response
    if(ps2_second_channel_buffer[0]==0xFA) {
@@ -164,11 +164,11 @@ void initalize_ps2_controller(void) {
  write_ps2_command(0xAA);
  if(read_ps2_data()==0x55) {
   //self-test succesfull
-  log("self-test succesfull\n");
+  log("self-test succesfull");
  }
  else {
   //self-test failed
-  log("self-test failed\n");
+  log("self-test failed");
   ps2_first_channel_present = DEVICE_NOT_PRESENT;
   ps2_second_channel_present = DEVICE_NOT_PRESENT;
   return;
@@ -206,10 +206,10 @@ void initalize_ps2_controller(void) {
  if(ps2_first_channel_present==DEVICE_PRESENT) {
   write_ps2_command(0xAB);
   if(read_ps2_data()==0x00) { //test successfull
-   log("first channel test successfull\n");
+   log("\nfirst channel test successfull");
   }
   else { //test failed
-   log("first channel test failed\n");
+   log("\nfirst channel test failed");
    ps2_first_channel_present = DEVICE_PRESENT_BUT_ERROR_STATE;
   }
  }
@@ -218,10 +218,10 @@ void initalize_ps2_controller(void) {
  if(ps2_second_channel_present==DEVICE_PRESENT) {
   write_ps2_command(0xA9);
   if(read_ps2_data()==0x00) { //test successfull
-   log("second channel test successfull\n");
+   log("\nsecond channel test successfull");
   }
   else { //test failed
-   log("second channel test failed\n");
+   log("\nsecond channel test failed");
    ps2_second_channel_present = DEVICE_PRESENT_BUT_ERROR_STATE;
   }
  }
@@ -244,26 +244,37 @@ void initalize_ps2_controller(void) {
  if(ps2_first_channel_present==DEVICE_PRESENT) {
   write_ps2_command(0xAE);
   write_to_first_ps2_channel(0xFF); //reset
-  ps2_first_channel_wait_for_ack();
-  ps2_first_channel_wait_for_response();
+  if(ps2_first_channel_wait_for_ack()==STATUS_ERROR) {
+   log("\nfirst channel no ACK after reset");
+  }
+  if(ps2_first_channel_wait_for_response()==STATUS_ERROR) {
+   log("\nfirst channel no response after reset");
+  }
  }
  if(ps2_second_channel_present==DEVICE_PRESENT) {
   write_ps2_command(0xA8);
   write_to_second_ps2_channel(0xFF); //reset
-  ps2_second_channel_wait_for_ack();
-  ps2_second_channel_wait_for_response();
+  if(ps2_second_channel_wait_for_ack()==STATUS_ERROR) {
+   log("\nsecond channel no ACK after reset");
+  }
+  if(ps2_second_channel_wait_for_response()==STATUS_ERROR) {
+   log("\nsecond channel no response after reset");
+  }
  }
 
  //check what type of device is connected on first channel
  if(ps2_first_channel_present==DEVICE_PRESENT) {
   //after reset device should not be in streaming mode, but to be sure disable streaming
   write_to_first_ps2_channel(0xF5);
-  ps2_first_channel_wait_for_ack();
+  if(ps2_first_channel_wait_for_ack()==STATUS_ERROR) {
+   log("\nfirst channel no ACK after 0xF5");
+  }
 
   //read device ID
   ps2_first_channel_buffer[1] = 0xFF;
   write_to_first_ps2_channel(0xF2);
   if(ps2_first_channel_wait_for_ack()==STATUS_GOOD) {
+   log("\n");
    if(ps2_first_channel_wait_for_response()==STATUS_GOOD) {
     if(ps2_first_channel_buffer[1]==0xAB || ps2_first_channel_buffer[1]==0xAC) {
      ps2_first_channel_device = PS2_CHANNEL_KEYBOARD_CONNECTED;
@@ -279,14 +290,13 @@ void initalize_ps2_controller(void) {
     for(dword_t i=1; i<ps2_first_channel_buffer_pointer; i++) {
      log_hex_specific_size_with_space(ps2_first_channel_buffer[i], 2);
     }
-    log("\n");
    }
    else {
-    log("first channel device did not send ID data\n");
+    log("first channel device did not send ID data");
    }
   }
   else {
-   log("first channel device did not send ID ack\n");
+   log("first channel device did not send ID ack");
   }
  }
 
@@ -294,12 +304,15 @@ void initalize_ps2_controller(void) {
  if(ps2_second_channel_present==DEVICE_PRESENT) {
   //after reset device should not be in streaming mode, but to be sure disable streaming
   write_to_second_ps2_channel(0xF5);
-  ps2_second_channel_wait_for_ack();
+  if(ps2_second_channel_wait_for_ack()==STATUS_ERROR) {
+   log("\nsecond channel no ACK after 0xF5");
+  }
 
   //read device ID
   ps2_second_channel_buffer[1] = 0xFF;
   write_to_second_ps2_channel(0xF2);
   if(ps2_second_channel_wait_for_ack()==STATUS_GOOD) {
+   log("\n");
    if(ps2_second_channel_wait_for_response()==STATUS_GOOD) {
     if(ps2_second_channel_buffer[1]==0xAB || ps2_second_channel_buffer[1]==0xAC) {
      ps2_second_channel_device = PS2_CHANNEL_KEYBOARD_CONNECTED;
@@ -315,14 +328,13 @@ void initalize_ps2_controller(void) {
     for(dword_t i=1; i<ps2_second_channel_buffer_pointer; i++) {
      log_hex_specific_size_with_space(ps2_second_channel_buffer[i], 2);
     }
-    log("\n");
    }
    else {
-    log("second channel device did not send ID data\n");
+    log("second channel device did not send ID data");
    }
   }
   else {
-   log("second channel device did not send ID ack\n");
+   log("second channel device did not send ID ack");
   }
  }
 }
@@ -331,7 +343,7 @@ void ps2_first_channel_irq_handler(void) {
  //read data
  ps2_first_channel_buffer[ps2_first_channel_buffer_pointer] = inb(0x60);
 
- //pointer to next buffer
+ //move pointer
  ps2_first_channel_buffer_pointer++;
  if(ps2_first_channel_buffer_pointer>=10) {
   ps2_first_channel_buffer_pointer = 0;
@@ -342,17 +354,20 @@ void ps2_first_channel_irq_handler(void) {
   if(ps2_first_channel_buffer[0]==0xE1) {
    if(ps2_first_channel_buffer_pointer>=3) { //if data starts with 0xE1, it means that keyboard will send two more bytes
     keyboard_process_code((ps2_first_channel_buffer[0] | ps2_first_channel_buffer[1]<<8 | 0xE1<<16));
+    ps2_keyboard_wait = 0;
     ps2_first_channel_buffer_pointer = 0;
    }
   }
   else if(ps2_first_channel_buffer[0]==0xE0) {
    if(ps2_first_channel_buffer_pointer>=2) { //if data starts with 0xE0, it means that keyboard will send one more byte
     keyboard_process_code((ps2_first_channel_buffer[1] | 0xE0<<8));
+    ps2_keyboard_wait = 0;
     ps2_first_channel_buffer_pointer = 0;
    }
   }
   else {
    keyboard_process_code(ps2_first_channel_buffer[0]);
+   ps2_keyboard_wait = 0;
    ps2_first_channel_buffer_pointer = 0;
   }
   return;
@@ -366,11 +381,9 @@ void ps2_first_channel_irq_handler(void) {
     }
    }
 
-   //reset variables
+   //set variables
    ps2_first_channel_buffer_pointer = 0;
    ps2_mouse_wait = 0;
-   return;
-   return;
   }
  }
 }
@@ -379,7 +392,7 @@ void ps2_second_channel_irq_handler(void) {
  //read data
  ps2_second_channel_buffer[ps2_second_channel_buffer_pointer] = inb(0x60);
 
- //pointer to next buffer
+ //move pointer
  ps2_second_channel_buffer_pointer++;
  if(ps2_second_channel_buffer_pointer>=10) {
   ps2_second_channel_buffer_pointer = 0;
@@ -390,17 +403,20 @@ void ps2_second_channel_irq_handler(void) {
   if(ps2_second_channel_buffer[0]==0xE1) {
    if(ps2_second_channel_buffer_pointer>=3) { //if data starts with 0xE1, it means that keyboard will send two more bytes
     keyboard_process_code((ps2_second_channel_buffer[0] | ps2_second_channel_buffer[1]<<8 | 0xE1<<16));
+    ps2_keyboard_wait = 0;
     ps2_second_channel_buffer_pointer = 0;
    }
   }
   else if(ps2_second_channel_buffer[0]==0xE0) {
    if(ps2_second_channel_buffer_pointer>=2) { //if data starts with 0xE0, it means that keyboard will send one more byte
     keyboard_process_code((ps2_second_channel_buffer[1] | 0xE0<<8));
+    ps2_keyboard_wait = 0;
     ps2_second_channel_buffer_pointer = 0;
    }
   }
   else {
    keyboard_process_code(ps2_second_channel_buffer[0]);
+   ps2_keyboard_wait = 0;
    ps2_second_channel_buffer_pointer = 0;
   }
   return;
@@ -414,10 +430,9 @@ void ps2_second_channel_irq_handler(void) {
     }
    }
 
-   //reset variables
+   //set variables
    ps2_second_channel_buffer_pointer = 0;
    ps2_mouse_wait = 0;
-   return;
   }
  }
 }

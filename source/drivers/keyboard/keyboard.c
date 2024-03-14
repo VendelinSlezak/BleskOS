@@ -9,67 +9,86 @@
 */
 
 void initalize_keyboard(void) {
- keyboard_layout_ptr = (word_t *) english_keyboard_layout;
- keyboard_shift_layout_ptr = (word_t *) english_shift_keyboard_layout;
- keyboard_control_keys = 0;
- keyboard_diacritic = 0;
+ //english layout is default
+ keyboard_layout_ptr = (word_t *) (english_keyboard_layout);
+ keyboard_shift_layout_ptr = (word_t *) (english_shift_keyboard_layout);
+
+ keyboard_pressed_control_keys = 0;
+ keyboard_diacritic_char_for_next_key = 0;
+ keyboard_led_state = 0;
+ keyboard_change_in_led_state = STATUS_FALSE;
 }
 
 void keyboard_process_code(dword_t code) {
- ps2_keyboard_wait = 0;
- keyboard_value = code;
+ //save code of pressed key
+ keyboard_code_of_pressed_key = code;
+
+ //shift
+ if(keyboard_code_of_pressed_key==KEY_LEFT_SHIFT || keyboard_code_of_pressed_key==KEY_RIGHT_SHIFT) {
+  keyboard_pressed_control_keys |= KEYBOARD_SHIFT;
+  return;
+ }
+ if(keyboard_code_of_pressed_key==RELEASED_KEY_CODE(KEY_LEFT_SHIFT) || keyboard_code_of_pressed_key==RELEASED_KEY_CODE(KEY_RIGHT_SHIFT)) {
+  keyboard_pressed_control_keys &= ~KEYBOARD_SHIFT;
+  return;
+ }
  
  //ctrl
- if(keyboard_value==KEY_LEFT_CTRL || keyboard_value==KEY_RIGHT_CTRL) {
-  keyboard_control_keys |= KEYBOARD_CTRL;
+ if(keyboard_code_of_pressed_key==KEY_LEFT_CTRL || keyboard_code_of_pressed_key==KEY_RIGHT_CTRL) {
+  keyboard_pressed_control_keys |= KEYBOARD_CTRL;
   return;
  }
- if((keyboard_value==RELEASED_KEY(KEY_LEFT_CTRL) || keyboard_value==RELEASED_KEY(KEY_RIGHT_CTRL))) {
-  keyboard_control_keys &= ~KEYBOARD_CTRL;
+ if((keyboard_code_of_pressed_key==RELEASED_KEY_CODE(KEY_LEFT_CTRL) || keyboard_code_of_pressed_key==RELEASED_KEY_CODE(KEY_RIGHT_CTRL))) {
+  keyboard_pressed_control_keys &= ~KEYBOARD_CTRL;
   return;
  }
- 
- //left and right shift
- if(keyboard_value==KEY_LEFT_SHIFT || keyboard_value==KEY_RIGHT_SHIFT) {
-  keyboard_control_keys |= KEYBOARD_SHIFT;
+
+ //alt
+ if(keyboard_code_of_pressed_key==KEY_LEFT_ALT || keyboard_code_of_pressed_key==KEY_RIGHT_ALT) {
+  keyboard_pressed_control_keys |= KEYBOARD_ALT;
   return;
  }
- if(keyboard_value==RELEASED_KEY(KEY_LEFT_SHIFT) || keyboard_value==RELEASED_KEY(KEY_RIGHT_SHIFT)) {
-  keyboard_control_keys &= ~KEYBOARD_SHIFT;
+ if(keyboard_code_of_pressed_key==RELEASED_KEY_CODE(KEY_LEFT_ALT) || keyboard_code_of_pressed_key==RELEASED_KEY_CODE(KEY_RIGHT_ALT)) {
+  keyboard_pressed_control_keys &= ~KEYBOARD_ALT;
   return;
  }
  
  //capslock
- if(keyboard_value==KEY_CAPSLOCK) {
-  if((keyboard_control_keys & KEYBOARD_SHIFT)==0) {
-   keyboard_control_keys |= KEYBOARD_SHIFT;
+ if(keyboard_code_of_pressed_key==KEY_CAPSLOCK) {
+  keyboard_change_in_led_state = STATUS_TRUE;
+
+  //reverse shift
+  if((keyboard_pressed_control_keys & KEYBOARD_CAPSLOCK)==0) {
+   keyboard_pressed_control_keys |= KEYBOARD_CAPSLOCK;
+   keyboard_led_state |= KEYBOARD_LED_CAPSLOCK;
    return;
   }
   else {
-   keyboard_control_keys &= ~KEYBOARD_SHIFT;
+   keyboard_led_state &= ~KEYBOARD_LED_CAPSLOCK;
+   keyboard_pressed_control_keys &= ~KEYBOARD_CAPSLOCK;
    return;
   }
  }
  
  //get unicode value
- if((keyboard_value & 0xFF)>0x80) {
-  keyboard_unicode = 0; //released key do not have unicode value
+ if((keyboard_code_of_pressed_key & 0xFF)>0x80) {
+  keyboard_unicode_value_of_pressed_key = 0; //released keys do not have unicode value
   return;
  }
- if((keyboard_control_keys & KEYBOARD_SHIFT)==0) {
-  keyboard_unicode = keyboard_layout_ptr[code];
+ if((keyboard_pressed_control_keys & (KEYBOARD_SHIFT | KEYBOARD_CAPSLOCK))==0 || (keyboard_pressed_control_keys & (KEYBOARD_SHIFT | KEYBOARD_CAPSLOCK))==(KEYBOARD_SHIFT | KEYBOARD_CAPSLOCK)) {
+  keyboard_unicode_value_of_pressed_key = keyboard_layout_ptr[code];
  }
- else if((keyboard_control_keys & KEYBOARD_SHIFT)==KEYBOARD_SHIFT) {
-  keyboard_unicode = keyboard_shift_layout_ptr[code];
+ else if((keyboard_pressed_control_keys & (KEYBOARD_SHIFT | KEYBOARD_CAPSLOCK))==KEYBOARD_SHIFT || (keyboard_pressed_control_keys & (KEYBOARD_SHIFT | KEYBOARD_CAPSLOCK))==KEYBOARD_CAPSLOCK) {
+  keyboard_unicode_value_of_pressed_key = keyboard_shift_layout_ptr[code];
  }
 
  //convert char with diacritic
- if(keyboard_unicode==UNICODE_COMBINING_ACUTE || keyboard_unicode==UNICODE_COMBINING_CARON) {
-  keyboard_diacritic = keyboard_unicode;
-  keyboard_unicode = 0;
+ if(keyboard_unicode_value_of_pressed_key==UNICODE_COMBINING_ACUTE || keyboard_unicode_value_of_pressed_key==UNICODE_COMBINING_CARON) {
+  keyboard_diacritic_char_for_next_key = keyboard_unicode_value_of_pressed_key;
+  keyboard_unicode_value_of_pressed_key = 0;
  }
  else {
-  keyboard_unicode = get_unicode_char_with_diacritic(keyboard_unicode, keyboard_diacritic);
-  keyboard_diacritic = 0;
+  keyboard_unicode_value_of_pressed_key = get_unicode_char_with_diacritic(keyboard_unicode_value_of_pressed_key, keyboard_diacritic_char_for_next_key);
+  keyboard_diacritic_char_for_next_key = 0;
  }
 }

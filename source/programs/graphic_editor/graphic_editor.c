@@ -82,7 +82,7 @@ void graphic_editor(void) {
   move_mouse_cursor();
 
   //close program
-  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && get_mouse_cursor_click_board_value()==CLICK_ZONE_BACK)) {
+  if(keyboard_code_of_pressed_key==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && get_mouse_cursor_click_board_value()==CLICK_ZONE_BACK)) {
    return;
   }
 
@@ -474,7 +474,7 @@ void graphic_editor_new_file(void) {
   move_mouse_cursor();
 
   //do not create new file
-  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center-50, screen_y_center+50, screen_x_center-32, screen_x_center+32)==STATUS_FALSE)) {
+  if(keyboard_code_of_pressed_key==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center-50, screen_y_center+50, screen_x_center-32, screen_x_center+32)==STATUS_FALSE)) {
    set_program_value(PROGRAM_INTERFACE_FLAGS, (get_program_value(PROGRAM_INTERFACE_FLAGS) & ~PROGRAM_INTERFACE_FLAG_KEYBOARD_EVENTS_DISABLED));
    return;
   }
@@ -484,7 +484,7 @@ void graphic_editor_new_file(void) {
   program_interface_process_mouse_event();
 
   //create file
-  if(keyboard_value==KEY_ENTER || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center+20, screen_y_center+40, screen_x_center-24, screen_x_center+24)==STATUS_TRUE)) {
+  if(keyboard_code_of_pressed_key==KEY_ENTER || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center+20, screen_y_center+40, screen_x_center-24, screen_x_center+24)==STATUS_TRUE)) {
    //get image size
    width = convert_word_string_to_number(width_text_area[TEXT_AREA_INFO_MEMORY]);
    height = convert_word_string_to_number(height_text_area[TEXT_AREA_INFO_MEMORY]);
@@ -537,25 +537,25 @@ void graphic_editor_key_f7_event(void) {
    move_mouse_cursor();
 
    //close menu
-   if(keyboard_value==KEY_ESC || keyboard_value==KEY_F7) {
+   if(keyboard_code_of_pressed_key==KEY_ESC || keyboard_code_of_pressed_key==KEY_F7) {
     program_interface_redraw();
     return;
    }
 
    //perform action
-   if(keyboard_value==KEY_L) {
+   if(keyboard_code_of_pressed_key==KEY_L) {
     image_turn_left(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
     goto finalize_image_action;
    }
-   else if(keyboard_value==KEY_R) {
+   else if(keyboard_code_of_pressed_key==KEY_R) {
     image_turn_right(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
     goto finalize_image_action;
    }
-   else if(keyboard_value==KEY_H) {
+   else if(keyboard_code_of_pressed_key==KEY_H) {
     image_reverse_horizontally(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
     goto finalize_image_action;
    }
-   else if(keyboard_value==KEY_V) {
+   else if(keyboard_code_of_pressed_key==KEY_V) {
     image_reverse_vertically(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
     goto finalize_image_action;
    }
@@ -688,12 +688,12 @@ void graphic_editor_key_t_event(void) {
   draw_full_square(8, GRAPHIC_EDITOR_COLOR_AREA_LINE+20, 40, 20, new_color);
   redraw_part_of_screen(8, GRAPHIC_EDITOR_COLOR_AREA_LINE+20, 40, 20);
   
-  if(keyboard_value==KEY_ESC) {
+  if(keyboard_code_of_pressed_key==KEY_ESC) {
    program_interface_redraw();
    return;
   }
 
-  if(mouse_click_button_state==MOUSE_CLICK || keyboard_value==KEY_ENTER) {
+  if(mouse_click_button_state==MOUSE_CLICK || keyboard_code_of_pressed_key==KEY_ENTER) {
    graphic_editor_color = new_color;
    program_interface_redraw();
    return;

@@ -34,12 +34,15 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
   log("\n\nHDA ERROR: card can not be set to operational state");
   return;
  }
- log("\n\nSound card High Definition Audio");
 
  //read capabilities
+ log("\n\nSound card High Definition Audio ");
+ log_var(mmio_inb(hda_base + 0x03));
+ log(".");
+ log_var(mmio_inb(hda_base + 0x02));
  hda_input_stream_base = (hda_base + 0x80);
  hda_output_stream_base = (hda_base + 0x80 + (0x20*((mmio_inw(hda_base + 0x00)>>8) & 0xF))); //skip input streams ports
- hda_output_buffer_list = aligned_calloc(16*2, 0x7F);
+ hda_output_buffer_list = (dword_t *) (aligned_calloc(16*2, 0x7F));
 
  //disable interrupts
  mmio_outd(hda_base + 0x20, 0);
@@ -57,21 +60,21 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
  mmio_outb(hda_base + 0x5C, 0x0);
  
  //configure CORB
- hda_corb_mem = aligned_calloc(256*4, 0x7F);
- mmio_outd(hda_base + 0x40, hda_corb_mem); //CORB lower memory
+ hda_corb_mem = (dword_t *) (aligned_calloc(256*4, 0x7F));
+ mmio_outd(hda_base + 0x40, (dword_t)hda_corb_mem); //CORB lower memory
  mmio_outd(hda_base + 0x44, 0); //CORB upper memory
  if((mmio_inb(hda_base + 0x4E) & 0x40)==0x40) {
-  hda_corb_entries = 256;
+  hda_corb_number_of_entries = 256;
   mmio_outb(hda_base + 0x4E, 0x2); //256 entries
   log("\nCORB: 256 entries");
  }
  else if((mmio_inb(hda_base + 0x4E) & 0x20)==0x20) {
-  hda_corb_entries = 16;
+  hda_corb_number_of_entries = 16;
   mmio_outb(hda_base + 0x4E, 0x1); //16 entries
   log("\nCORB: 16 entries");
  }
  else if((mmio_inb(hda_base + 0x4E) & 0x10)==0x10) {
-  hda_corb_entries = 2;
+  hda_corb_number_of_entries = 2;
   mmio_outb(hda_base + 0x4E, 0x0); //2 entries
   log("\nCORB: 2 entries");
  }
@@ -87,7 +90,7 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
    break;
   }
  }
- if((mmio_inw(hda_base + 0x4A) & 0x8000)==0x0000) { //CORB was not reseted
+ if((mmio_inw(hda_base + 0x4A) & 0x8000)==0x0000) { //CORB read pointer was not reseted
   log("\nHDA: CORB pointer can not be put to reset state");
   goto hda_use_pio_interface;
  }
@@ -95,11 +98,11 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
  ticks = 0;
  while(ticks<5) {
   asm("nop");
-  if((mmio_inw(hda_base + 0x4A) & 0x8000)==0x0000) { //wait until is CORB in normal state
+  if((mmio_inw(hda_base + 0x4A) & 0x8000)==0x0000) { //wait until is CORB read pointer in normal state
    break;
   }
  }
- if((mmio_inw(hda_base + 0x4A) & 0x8000)==0x8000) { //CORB is still in reset
+ if((mmio_inw(hda_base + 0x4A) & 0x8000)==0x8000) { //CORB read pointer is still in reset
   log("\nHDA: CORB pointer can not be put from reset state");
   goto hda_use_pio_interface;
  }
@@ -107,21 +110,21 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
  hda_corb_pointer = 1;
  
  //configure RIRB
- hda_rirb_mem = aligned_calloc(256*8, 0x7F);
- mmio_outd(hda_base + 0x50, hda_rirb_mem); //RIRB lower memory
+ hda_rirb_mem = (dword_t *) (aligned_calloc(256*8, 0x7F));
+ mmio_outd(hda_base + 0x50, (dword_t)hda_rirb_mem); //RIRB lower memory
  mmio_outd(hda_base + 0x54, 0); //RIRB upper memory
  if((mmio_inb(hda_base + 0x5E) & 0x40)==0x40) {
-  hda_rirb_entries = 256;
+  hda_rirb_number_of_entries = 256;
   mmio_outb(hda_base + 0x5E, 0x2); //256 entries
   log("\nRIRB: 256 entries");
  }
  else if((mmio_inb(hda_base + 0x5E) & 0x20)==0x20) {
-  hda_rirb_entries = 16;
+  hda_rirb_number_of_entries = 16;
   mmio_outb(hda_base + 0x5E, 0x1); //16 entries
   log("\nRIRB: 16 entries");
  }
  else if((mmio_inb(hda_base + 0x5E) & 0x10)==0x10) {
-  hda_rirb_entries = 2;
+  hda_rirb_number_of_entries = 2;
   mmio_outb(hda_base + 0x5E, 0x0); //2 entries
   log("\nRIRB: 2 entries");
  }
@@ -147,7 +150,7 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
   if(codec_id!=0) {
    log("\nHDA: CORB/RIRB communication interface");
    hda_initalize_codec(sound_card_number, codec_number);
-   goto hda_initalization_complete;
+   return; //initalization is complete
   }
  }
 
@@ -163,24 +166,16 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
   if(codec_id!=0) {
    log("\nHDA: PIO communication interface");
    hda_initalize_codec(sound_card_number, codec_number);
-   goto hda_initalization_complete;
   }
  }
-
- //initalization of sound card is complete
- hda_initalization_complete:
- log("\n\nHDA: card sucessfully initalized");
 }
 
 dword_t hda_send_verb(dword_t codec, dword_t node, dword_t verb, dword_t command) {
  dword_t value = ((codec<<28) | (node<<20) | (verb<<8) | (command));
  
  if(hda_communication_type==HDA_CORB_RIRB) { //CORB/RIRB interface
-  dword_t *corb = (dword_t *) (hda_corb_mem);
-  dword_t *rirb = (dword_t *) (hda_rirb_mem);
-
   //write verb
-  corb[hda_corb_pointer] = value;
+  hda_corb_mem[hda_corb_pointer] = value;
   
   //move write pointer
   mmio_outw(hda_base + 0x48, hda_corb_pointer);
@@ -200,15 +195,15 @@ dword_t hda_send_verb(dword_t codec, dword_t node, dword_t verb, dword_t command
   }
   
   //read response
-  value = rirb[hda_rirb_pointer*2];
+  value = hda_rirb_mem[hda_rirb_pointer*2];
 
   //move pointers
   hda_corb_pointer++;
-  if(hda_corb_pointer==hda_corb_entries) {
+  if(hda_corb_pointer==hda_corb_number_of_entries) {
    hda_corb_pointer = 0;
   }
   hda_rirb_pointer++;
-  if(hda_rirb_pointer==hda_rirb_entries) {
+  if(hda_rirb_pointer==hda_rirb_number_of_entries) {
    hda_rirb_pointer = 0;
   }
 
@@ -421,7 +416,7 @@ void hda_initalize_audio_function_group(dword_t sound_card_number, dword_t afg_n
     log("Speaker ");
 
     //first speaker node is default speaker
-    if(pin_speaker_node_number==0) {
+    if(pin_speaker_default_node_number==0) {
      pin_speaker_default_node_number = node;
     }
 
@@ -575,7 +570,6 @@ void hda_initalize_audio_function_group(dword_t sound_card_number, dword_t afg_n
    log("\n\nHeadphone output");
    hda_initalize_output_pin(sound_card_number, pin_headphone_node_number); //initalize headphone output
    hda_pin_headphone_node_number = pin_headphone_node_number; //save headphone node number
-   sound_card_detect_headphone_connection_status = STATUS_TRUE; //keep checking, if headphone was not plugged in or out
 
    //if first path and second path share nodes, left only info for first path
    if(hda_audio_output_node_number==hda_second_audio_output_node_number) {
@@ -588,14 +582,14 @@ void hda_initalize_audio_function_group(dword_t sound_card_number, dword_t afg_n
    //find headphone connection status
    if(hda_is_headphone_connected()==STATUS_TRUE) {
     hda_disable_pin_output(hda_codec_number, hda_pin_output_node_number);
-    hda_enable_pin_output(hda_codec_number, hda_pin_headphone_node_number);
     hda_selected_output_node = hda_pin_headphone_node_number;
    }
    else {
-    hda_disable_pin_output(hda_codec_number, hda_pin_headphone_node_number);
-    hda_enable_pin_output(hda_codec_number, hda_pin_output_node_number);
     hda_selected_output_node = hda_pin_output_node_number;
    }
+
+   //add task for checking headphone connection
+   create_task("HDA check headphone connection", hda_check_headphone_connection_change, TASK_TYPE_USER_INPUT, 50);
   }
  }
  else if(pin_headphone_node_number!=0) { //codec do not have speaker, but only headphone output
@@ -822,6 +816,17 @@ void hda_set_volume(dword_t sound_card_number, dword_t volume) {
  }
 }
 
+void hda_check_headphone_connection_change(void) {
+ if(hda_selected_output_node==hda_pin_output_node_number && hda_is_headphone_connected()==STATUS_TRUE) { //headphone was connected
+  hda_disable_pin_output(hda_codec_number, hda_pin_output_node_number);
+  hda_selected_output_node = hda_pin_headphone_node_number;
+ }
+ else if(hda_selected_output_node==hda_pin_headphone_node_number && hda_is_headphone_connected()==STATUS_FALSE) { //headphone was disconnected
+  hda_enable_pin_output(hda_codec_number, hda_pin_output_node_number);
+  hda_selected_output_node = hda_pin_output_node_number;
+ }
+}
+
 byte_t hda_is_supported_channel_size(dword_t sound_card_number, byte_t size) {
  byte_t channel_sizes[5] = {8, 16, 20, 24, 32};
  dword_t mask=0x00010000;
@@ -978,16 +983,13 @@ void hda_play_memory(dword_t sound_card_number, dword_t memory, dword_t sample_r
  mmio_outb(hda_output_stream_base + 0x03, 0x1C);
 
  //fill buffer entries - there have to be at least two entries in buffer, so we fill second entry with zeroes
- clear_memory(hda_output_buffer_list, 16*2);
- dword_t *buffer = (dword_t *) (hda_output_buffer_list);
- buffer[0]=memory;
- buffer[2]=hda_sound_length;
-
- //tricky thing is that sound card will take buffer entries directly from RAM memory, however above code very likely wrote our values only into processor cache, so we need to flush all cache into RAM memory to be sure, that sound card is not in fact reading values that were in buffer in previous transfer
- asm("wbinvd"); //flush all processor cache into RAM memory
+ clear_memory((dword_t)hda_output_buffer_list, 16*2);
+ hda_output_buffer_list[0]=memory;
+ hda_output_buffer_list[2]=hda_sound_length;
+ asm("wbinvd"); //flush processor cache to RAM to be sure sound card will read correct data
 
  //set buffer registers
- mmio_outd(hda_output_stream_base + 0x18, hda_output_buffer_list);
+ mmio_outd(hda_output_stream_base + 0x18, (dword_t)hda_output_buffer_list);
  mmio_outd(hda_output_stream_base + 0x08, hda_sound_length);
  mmio_outw(hda_output_stream_base + 0x0C, 1); //there are two entries in buffer
 

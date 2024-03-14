@@ -38,8 +38,8 @@ dword_t cdda_read_file(dword_t sector, dword_t length_of_file_in_bytes) {
  }
 
  //prepare for possibility of keyboard event
- keyboard_value = 0;
- usb_keyboard_value = 0;
+ keyboard_code_of_pressed_key = 0;
+ usb_keyboard_code_of_pressed_key = 0;
 
  //read file
  while(1) {
@@ -79,7 +79,7 @@ dword_t cdda_read_file(dword_t sector, dword_t length_of_file_in_bytes) {
   }
 
   //check if there is not request to cancel reading
-  if(keyboard_value==KEY_ESC || usb_keyboard_value==KEY_ESC) {
+  if(keyboard_code_of_pressed_key==KEY_ESC || usb_keyboard_code_of_pressed_key==KEY_ESC) {
    free(memory);
    error_window("You cancelled reading");
    spin_down_optical_drive();
@@ -107,8 +107,8 @@ dword_t cdda_read_file_skipping_errors(dword_t sector, dword_t length_of_file_in
  }
 
  //prepare for possibility of keyboard event
- keyboard_value = 0;
- usb_keyboard_value = 0;
+ keyboard_code_of_pressed_key = 0;
+ usb_keyboard_code_of_pressed_key = 0;
 
  //read file
  for(dword_t i=0; i<number_of_sectors; i++) {
@@ -136,7 +136,7 @@ dword_t cdda_read_file_skipping_errors(dword_t sector, dword_t length_of_file_in
   }
 
   //check if there is not request to cancel reading
-  if(keyboard_value==KEY_ESC || usb_keyboard_value==KEY_ESC) {
+  if(keyboard_code_of_pressed_key==KEY_ESC || usb_keyboard_code_of_pressed_key==KEY_ESC) {
    free(memory);
    error_window("You cancelled reading");
    spin_down_optical_drive();

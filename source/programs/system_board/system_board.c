@@ -374,21 +374,21 @@ void system_board(void) {
   wait_for_user_input();
   move_mouse_cursor();
 
-  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_height-10-5-8-5, screen_height-10, 10, 10+27*8)==STATUS_TRUE)) {
+  if(keyboard_code_of_pressed_key==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_height-10-5-8-5, screen_height-10, 10, 10+27*8)==STATUS_TRUE)) {
    return;
   }
 
-  if(keyboard_value==KEY_L) {
+  if(keyboard_code_of_pressed_key==KEY_L) {
    developer_program_log();
    goto redraw;
   }
 
-  if(keyboard_value==KEY_P) {
+  if(keyboard_code_of_pressed_key==KEY_P) {
    performance_rating();
    goto redraw;
   }
 
-  if(keyboard_value==KEY_UP) {
+  if(keyboard_code_of_pressed_key==KEY_UP) {
    if(system_board_selected_item>0) {
     system_board_selected_item--;
     system_item_variable = 0;
@@ -396,7 +396,7 @@ void system_board(void) {
    }
   }
 
-  if(keyboard_value==KEY_DOWN) {
+  if(keyboard_code_of_pressed_key==KEY_DOWN) {
    if(system_board_selected_item<(system_board_num_of_items-1)) {
     system_board_selected_item++;
     system_item_variable = 0;
@@ -424,17 +424,17 @@ void system_board(void) {
 
   //hardware specific things
   if(system_board_items_list[system_board_selected_item]==SYSTEM_BOARD_MEMORY) {
-   if((keyboard_value==KEY_LEFT || (mouse_wheel!=0 && mouse_wheel<0x80000000)) && system_item_variable>0) {
+   if((keyboard_code_of_pressed_key==KEY_LEFT || (mouse_wheel!=0 && mouse_wheel<0x80000000)) && system_item_variable>0) {
     system_item_variable--;
     goto redraw;
    }
-   else if((keyboard_value==KEY_RIGHT || (mouse_wheel!=0 && mouse_wheel>0x80000000)) && system_item_variable<0xFFFF) {
+   else if((keyboard_code_of_pressed_key==KEY_RIGHT || (mouse_wheel!=0 && mouse_wheel>0x80000000)) && system_item_variable<0xFFFF) {
     system_item_variable++;
     goto redraw;
    }
   }
   else if(system_board_items_list[system_board_selected_item]==SYSTEM_BOARD_PCI) {
-   if(keyboard_value==KEY_SPACE) {
+   if(keyboard_code_of_pressed_key==KEY_SPACE) {
     byte_t *pci_device = (byte_t *) (pci_devices_array_mem+system_item_variable*12);
 
     //draw info about device
@@ -485,49 +485,49 @@ void system_board(void) {
      wait_for_user_input();
      move_mouse_cursor();
 
-     if(keyboard_value==KEY_SPACE || keyboard_value==KEY_LEFT || keyboard_value==KEY_RIGHT || mouse_click_button_state==MOUSE_CLICK) {
+     if(keyboard_code_of_pressed_key==KEY_SPACE || keyboard_code_of_pressed_key==KEY_LEFT || keyboard_code_of_pressed_key==KEY_RIGHT || mouse_click_button_state==MOUSE_CLICK) {
       goto redraw;
      }
     }
    }
 
-   if(((mouse_wheel!=0 && mouse_wheel<0x80000000) || keyboard_value==KEY_LEFT) && system_item_variable>0) {
+   if(((mouse_wheel!=0 && mouse_wheel<0x80000000) || keyboard_code_of_pressed_key==KEY_LEFT) && system_item_variable>0) {
     system_item_variable--;
     goto redraw;
    }
-   else if(((mouse_wheel!=0 && mouse_wheel>0x80000000) || keyboard_value==KEY_RIGHT) && system_item_variable<(pci_num_of_devices-1)) {
+   else if(((mouse_wheel!=0 && mouse_wheel>0x80000000) || keyboard_code_of_pressed_key==KEY_RIGHT) && system_item_variable<(pci_num_of_devices-1)) {
     system_item_variable++;
     goto redraw;
    }
   }
   else if(system_board_items_list[system_board_selected_item]==SYSTEM_BOARD_PC_SPEAKER) {
-   if(keyboard_value==KEY_B) {
+   if(keyboard_code_of_pressed_key==KEY_B) {
     pc_speaker_beep(500);
     goto redraw;
    }
-   else if(keyboard_value==KEY_S) {
+   else if(keyboard_code_of_pressed_key==KEY_S) {
     pc_speaker_mute();
     goto redraw;
    }
   }
   else if(system_board_items_list[system_board_selected_item]==SYSTEM_BOARD_HPET_TIMER) {
-   if(keyboard_value==KEY_SPACE) {
+   if(keyboard_code_of_pressed_key==KEY_SPACE) {
     goto redraw;
    }
-   else if(keyboard_value==KEY_R) {
+   else if(keyboard_code_of_pressed_key==KEY_R) {
     hpet_reset_counter();
     goto redraw;
    }
   }
   else if(system_board_items_list[system_board_selected_item]==SYSTEM_BOARD_IDE_CDROM) {
-   if(keyboard_value==KEY_D) {
+   if(keyboard_code_of_pressed_key==KEY_D) {
     goto redraw;
    }
-   else if(keyboard_value==KEY_E) {
+   else if(keyboard_code_of_pressed_key==KEY_E) {
     eject_optical_disk();
     goto redraw;
    }
-   else if(keyboard_value==KEY_R) {
+   else if(keyboard_code_of_pressed_key==KEY_R) {
     reset_optical_drive();
     goto redraw;
    }

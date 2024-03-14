@@ -47,7 +47,7 @@ void file_manager(void) {
 
   //close program
   dword_t click_zone = get_mouse_cursor_click_board_value();
-  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && click_zone==CLICK_ZONE_BACK)) {
+  if(keyboard_code_of_pressed_key==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && click_zone==CLICK_ZONE_BACK)) {
    return;
   }
 
@@ -473,13 +473,13 @@ void file_manager_key_b_event(void) {
 }
 
 void file_manager_key_c_event(void) {
- if(file_manager_rename_window_showed==STATUS_FALSE && get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0 && get_file_value(FILE_MANAGER_FILE_FOLDER_SELECTED_ENTRY)!=NO_FILE_SELECTED && (keyboard_control_keys & KEYBOARD_CTRL)==KEYBOARD_CTRL) {
+ if(file_manager_rename_window_showed==STATUS_FALSE && get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0 && get_file_value(FILE_MANAGER_FILE_FOLDER_SELECTED_ENTRY)!=NO_FILE_SELECTED && (keyboard_pressed_control_keys & KEYBOARD_CTRL)==KEYBOARD_CTRL) {
   file_manager_copy_file();
  }
 }
 
 void file_manager_key_v_event(void) {
- if(file_manager_rename_window_showed==STATUS_FALSE && get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0 && file_manager_file_copied!=STATUS_FALSE && (keyboard_control_keys & KEYBOARD_CTRL)==KEYBOARD_CTRL) {
+ if(file_manager_rename_window_showed==STATUS_FALSE && get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0 && file_manager_file_copied!=STATUS_FALSE && (keyboard_pressed_control_keys & KEYBOARD_CTRL)==KEYBOARD_CTRL) {
   file_manager_paste_file();
  }
 }
@@ -689,14 +689,14 @@ void file_manager_rename_file(void) {
   move_mouse_cursor();
 
   //do not rename
-  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center+15, screen_y_center+35, screen_x_center-100, screen_x_center-10)==STATUS_TRUE)) {
+  if(keyboard_code_of_pressed_key==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center+15, screen_y_center+35, screen_x_center-100, screen_x_center-10)==STATUS_TRUE)) {
    file_manager_rename_window_showed = STATUS_FALSE;
    program_interface_redraw();
    return;
   }
 
   //rename
-  if(keyboard_value==KEY_ENTER || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center+15, screen_y_center+35, screen_x_center+10, screen_x_center+100)==STATUS_TRUE)) {
+  if(keyboard_code_of_pressed_key==KEY_ENTER || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center+15, screen_y_center+35, screen_x_center+10, screen_x_center+100)==STATUS_TRUE)) {
    file_manager_rename_window_showed = STATUS_FALSE;
    if(text_area_data[0]==0 || text_area_data[0]=='.') { //TODO: more invalid characters
     error_window("Invalid file name");

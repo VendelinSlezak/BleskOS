@@ -8,12 +8,23 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-byte_t ps2_mouse_data[4];
+#define TASK_TYPE_PERIODIC_INTERRUPT 1
+#define TASK_TYPE_USER_INPUT 2
 
-byte_t ps2_mouse_wait, ps2_mouse_enable;
-byte_t ps2_first_channel_mouse_data_bytes, ps2_second_channel_mouse_data_bytes;
+#define SCHEDULER_MAX_NUMBER_OF_TASKS 20
+struct scheduler_task_info {
+ void (*task)(void);
+ byte_t *name;
+ byte_t type;
+ dword_t counter_of_ms;
+ dword_t number_of_ms_to_be_executed;
+}__attribute__((packed));
+struct scheduler_task_info scheduler_tasks[SCHEDULER_MAX_NUMBER_OF_TASKS];
 
-void initalize_ps2_mouse(void);
-void enable_ps2_mouse(void);
-void disable_ps2_mouse(void);
-void ps2_mouse_convert_received_data(void);
+byte_t actual_number_of_tasks, is_task_table_changing;
+
+void initalize_scheduler(void);
+void create_task(byte_t *name, void (*task)(), byte_t type, dword_t number_of_ms_to_be_executed);
+void destroy_task(void (*task)());
+void scheduler_periodic_interrupt(void);
+void scheduler_user_input(void);

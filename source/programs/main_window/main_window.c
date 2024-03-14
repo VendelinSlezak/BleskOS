@@ -254,68 +254,68 @@ void bleskos_main_window(void) {
    goto redraw;
   }
   
-  if(keyboard_value==KEY_D) {
+  if(keyboard_code_of_pressed_key==KEY_D) {
    bleskos_main_window_time_redraw = 0;
    document_editor();
    goto redraw;
   }
-  else if(keyboard_value==KEY_T) {
+  else if(keyboard_code_of_pressed_key==KEY_T) {
    bleskos_main_window_time_redraw = 0;
    text_editor();
    goto redraw;
   }
-  else if(keyboard_value==KEY_G) {
+  else if(keyboard_code_of_pressed_key==KEY_G) {
    bleskos_main_window_time_redraw = 0;
    graphic_editor();
    goto redraw;
   }
-  else if(keyboard_value==KEY_M) {
+  else if(keyboard_code_of_pressed_key==KEY_M) {
    bleskos_main_window_time_redraw = 0;
    media_viewer();
    goto redraw;
   }
-  else if(keyboard_value==KEY_I) {
+  else if(keyboard_code_of_pressed_key==KEY_I) {
    bleskos_main_window_time_redraw = 0;
    internet_browser();
    goto redraw;
   }
-  else if(keyboard_value==KEY_F) {
+  else if(keyboard_code_of_pressed_key==KEY_F) {
    bleskos_main_window_time_redraw = 0;
    file_manager();
    goto redraw;
   }
-  else if(keyboard_value==KEY_C) {
+  else if(keyboard_code_of_pressed_key==KEY_C) {
    bleskos_main_window_time_redraw = 0;
    calculator();
    goto redraw;
   }
-  else if(keyboard_value==KEY_R) {
+  else if(keyboard_code_of_pressed_key==KEY_R) {
    bleskos_main_window_time_redraw = 0;
    screenshooter();
    goto redraw;
   }
-  else if(keyboard_value==KEY_F1) {
+  else if(keyboard_code_of_pressed_key==KEY_F1) {
    bleskos_main_window_time_redraw = 0;
    system_board();
    goto redraw;
   }
-  else if(keyboard_value==KEY_F2) {
+  else if(keyboard_code_of_pressed_key==KEY_F2) {
    bleskos_main_window_change_keyboard_layout();
    goto redraw;
   }
-  else if(keyboard_value==KEY_F10) {
+  else if(keyboard_code_of_pressed_key==KEY_F10) {
    bleskos_main_window_enable_disable_touchpad();
    goto redraw;
   }
-  else if(keyboard_value==KEY_F11 && ide_cdrom_base!=0) { //TODO: also AHCI
+  else if(keyboard_code_of_pressed_key==KEY_F11 && ide_cdrom_base!=0) { //TODO: also AHCI
    eject_optical_disk();
    continue;
   }
-  else if(keyboard_value==KEY_F12) {
+  else if(keyboard_code_of_pressed_key==KEY_F12) {
    bleskos_main_window_shutdown();
    goto redraw;
   }
-  else if(keyboard_value==KEY_RIGHT) {
+  else if(keyboard_code_of_pressed_key==KEY_RIGHT) {
    if(sound_volume>90) {
     sound_volume = 100;
    }
@@ -325,7 +325,7 @@ void bleskos_main_window(void) {
    sound_set_volume(sound_volume);
    bleskos_main_window_redraw_sound_volume();
   }
-  else if(keyboard_value==KEY_LEFT) {
+  else if(keyboard_code_of_pressed_key==KEY_LEFT) {
    if(sound_volume<10) {
     sound_volume = 0;
    }
@@ -453,15 +453,15 @@ void bleskos_main_window_change_keyboard_layout(void) {
   wait_for_user_input();
   move_mouse_cursor();
 
-  if(keyboard_value==KEY_ESC) {
+  if(keyboard_code_of_pressed_key==KEY_ESC) {
    return;
   }
-  else if(keyboard_value==KEY_E) {
+  else if(keyboard_code_of_pressed_key==KEY_E) {
    keyboard_layout_ptr = (word_t *) english_keyboard_layout;
    keyboard_shift_layout_ptr = (word_t *) english_shift_keyboard_layout;
    return;
   }
-  else if(keyboard_value==KEY_S) {
+  else if(keyboard_code_of_pressed_key==KEY_S) {
    keyboard_layout_ptr = (word_t *) slovak_keyboard_layout;
    keyboard_shift_layout_ptr = (word_t *) slovak_shift_keyboard_layout;
    return;

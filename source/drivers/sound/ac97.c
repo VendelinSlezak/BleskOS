@@ -59,7 +59,9 @@ void initalize_ac97_sound_card(byte_t sound_card_number) {
  else {
   ac97_set_output(AC97_SPEAKER_OUTPUT);
  }
- sound_card_detect_headphone_connection_status = STATUS_TRUE;
+
+ //add task for checking headphone connection
+ create_task("AC97 check headphone connection", ac97_check_headphone_connection_change, TASK_TYPE_PERIODIC_INTERRUPT, 50);
  
  //log
  log("\n\nSound card AC97");
@@ -233,4 +235,13 @@ void ac97_play_memory(dword_t sound_memory, dword_t sound_size, dword_t sample_r
  ac97_number_of_samples_in_one_channel = (sound_size/2); //sound have 2 channels
  ac97_free_entry = 1; //playing will start from this entry
  ac97_play_sound(); 
+}
+
+void ac97_check_headphone_connection_change(void) {
+ if(ac97_selected_output==AC97_SPEAKER_OUTPUT && ac97_is_headphone_connected()==STATUS_TRUE) { //headphone was connected
+  ac97_set_output(AC97_HEADPHONE_OUTPUT);
+ }
+ else if(ac97_selected_output==AC97_HEADPHONE_OUTPUT && ac97_is_headphone_connected()==STATUS_FALSE) { //headphone was disconnected
+  ac97_set_output(AC97_SPEAKER_OUTPUT);
+ }
 }

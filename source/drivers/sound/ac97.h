@@ -66,3 +66,4 @@ void ac97_fill_buffer_entry(void);
 void ac97_play_sound(void);
 void ac97_stop_sound(void);
 void ac97_play_memory(dword_t sound_memory, dword_t sound_size, dword_t sample_rate);
+void ac97_check_headphone_connection_change(void);

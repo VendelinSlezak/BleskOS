@@ -17,3 +17,5 @@
 #include "hpet.h"
 #include "processes_on_background.h"
 #include "timer.h"
+#include "user_input.h"
+#include "scheduler.h"

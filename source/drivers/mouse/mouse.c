@@ -15,3 +15,19 @@ void initalize_mouse(void) {
  mouse_movement_y = 0;
  mouse_wheel = 0;
 }
+
+void mouse_update_click_button_state(void) {
+ if((mouse_buttons & 0x1)==0x0) {
+  mouse_click_button_state = MOUSE_NO_DRAG;
+ }
+ else {
+  if(mouse_click_button_state==MOUSE_NO_DRAG) {
+   mouse_click_button_state = MOUSE_CLICK;
+   mouse_cursor_x_click = mouse_cursor_x;
+   mouse_cursor_y_click = mouse_cursor_y;
+  }
+  else {
+   mouse_click_button_state = MOUSE_DRAG;
+  }
+ }
+}

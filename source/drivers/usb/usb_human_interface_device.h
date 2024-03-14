@@ -53,7 +53,7 @@ struct usb_keyboard_informations usb_keyboard[1];
 
 dword_t usb_mouse_data_memory = 0, usb_mouse_packet_received = 0;
 dword_t usb_keyboard_data_memory = 0, usb_keyboard_packet_received = 0;
-dword_t usb_keyboard_count = 0, usb_keyboard_value = 0;
+dword_t usb_keyboard_count = 0, usb_keyboard_code_of_pressed_key = 0;
 byte_t usb_keyboard_code = 0;
 
 dword_t usb_mouse_buttons_data_offset_byte = 0;
@@ -73,4 +73,4 @@ void usb_hid_device_set_protocol(byte_t controller_number, byte_t device_address
 void usb_hid_device_set_idle(byte_t controller_number, byte_t device_address, byte_t device_speed, byte_t interface);
 void usb_keyboard_process_new_packet(void);
 void usb_keyboard_process_no_new_packet(void);
-void wait_for_user_input(void);
+void usb_mouse_process_received_data(void);

@@ -105,3 +105,37 @@ void enable_ps2_mouse(void) {
 void disable_ps2_mouse(void) {
  ps2_mouse_enable = STATUS_FALSE;
 }
+
+void ps2_mouse_convert_received_data(void) {
+ //buttons
+ mouse_buttons = ps2_mouse_data[0];
+
+ //X movement
+ if(ps2_mouse_data[1]<0x80) {
+  mouse_movement_x = ps2_mouse_data[1];
+ }
+ else {
+  mouse_movement_x = (0xFFFFFFFF - (0xFF-ps2_mouse_data[1]));
+ }
+
+ //Y movement
+ if(ps2_mouse_data[2]<0x80) {
+  mouse_movement_y = (0xFFFFFFFF - ps2_mouse_data[2] + 1);
+ }
+ else {
+  mouse_movement_y = (0x100-ps2_mouse_data[2]);
+ }
+
+ //wheel
+ if(ps2_mouse_data[3]!=0) {
+  if(ps2_mouse_data[3]<0x80) {
+   mouse_wheel = (0xFFFFFFFF - ps2_mouse_data[3]);
+  }
+  else {
+   mouse_wheel = (0xFF-ps2_mouse_data[3]+1);
+  }
+ }
+
+ //click button state
+ mouse_update_click_button_state();
+}

@@ -17,9 +17,9 @@
 byte_t ps2_first_channel_buffer[10];
 byte_t ps2_second_channel_buffer[10];
 
-byte_t ps2_controller_present = DEVICE_PRESENT, ps2_first_channel_present = DEVICE_NOT_PRESENT, ps2_second_channel_present = DEVICE_NOT_PRESENT;
-byte_t ps2_first_channel_device = PS2_CHANNEL_NO_DEVICE_CONNECTED, ps2_second_channel_device = PS2_CHANNEL_NO_DEVICE_CONNECTED;
-byte_t ps2_first_channel_buffer_pointer = 0, ps2_second_channel_buffer_pointer = 0;
+byte_t ps2_controller_present, ps2_first_channel_present, ps2_second_channel_present;
+byte_t ps2_first_channel_device, ps2_second_channel_device;
+byte_t ps2_first_channel_buffer_pointer, ps2_second_channel_buffer_pointer;
 
 byte_t read_ps2_data(void);
 void write_ps2(byte_t value);

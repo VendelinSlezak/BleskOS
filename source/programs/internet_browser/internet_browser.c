@@ -69,7 +69,7 @@ void internet_browser(void) {
   move_mouse_cursor();
 
   //close program
-  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && get_mouse_cursor_click_board_value()==CLICK_ZONE_BACK)) {
+  if(keyboard_code_of_pressed_key==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && get_mouse_cursor_click_board_value()==CLICK_ZONE_BACK)) {
    //disable text area
    if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0) {
     text_area_disable_cursor(get_file_value(INTERNET_BROWSER_FILE_TEXT_AREA_MEMORY));

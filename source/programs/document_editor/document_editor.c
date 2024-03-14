@@ -14,7 +14,7 @@
 #include "docx.c"
 
 void initalize_document_editor(void) {
- document_editor_program_interface_memory = create_program_interface_memory(((dword_t)&draw_document_editor), PROGRAM_INTERFACE_FLAG_NO_SAVE_BUTTON | PROGRAM_INTERFACE_FLAG_NO_NEW_BUTTON);
+ document_editor_program_interface_memory = create_program_interface_memory(((dword_t)&draw_document_editor), PROGRAM_INTERFACE_FLAG_NO_NEW_BUTTON);
  document_editor_vertical_scrollbar_height = (screen_height-PROGRAM_INTERFACE_TOP_LINE_HEIGTH-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH);
 
  document_editor_style_stack_pointer = (struct document_editor_style_stack_entry *) (calloc(sizeof(struct document_editor_style_stack_entry)*DOCUMENT_EDITOR_NUMBER_OF_ENTRIES_IN_STYLE_STACK));
@@ -30,7 +30,7 @@ void initalize_document_editor(void) {
 void document_editor(void) {
  set_program_interface(document_editor_program_interface_memory);
  program_interface_add_keyboard_event(KEY_F1, (dword_t)document_editor_open_file);
- // program_interface_add_keyboard_event(KEY_F2, (dword_t)document_editor_save_file);
+ program_interface_add_keyboard_event(KEY_F2, (dword_t)document_editor_save_file);
  program_interface_add_keyboard_event(KEY_F4, (dword_t)document_editor_close_file);
  program_interface_add_keyboard_event(KEY_UP, (dword_t)document_editor_key_up_event);
  program_interface_add_keyboard_event(KEY_DOWN, (dword_t)document_editor_key_down_event);
@@ -47,7 +47,7 @@ void document_editor(void) {
   move_mouse_cursor();
 
   //close program
-  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && get_mouse_cursor_click_board_value()==CLICK_ZONE_BACK)) {
+  if(keyboard_code_of_pressed_key==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && get_mouse_cursor_click_board_value()==CLICK_ZONE_BACK)) {
    return;
   }
 
@@ -58,9 +58,9 @@ void document_editor(void) {
   //process events of opened document
   if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0) {
    //process CTRL events
-   if((keyboard_control_keys & KEYBOARD_CTRL)==KEYBOARD_CTRL && get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0) {
+   if((keyboard_pressed_control_keys & KEYBOARD_CTRL)==KEYBOARD_CTRL && get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0) {
     //process CTRL+C
-    if(keyboard_value==KEY_C && get_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA)!=0) {
+    if(keyboard_code_of_pressed_key==KEY_C && get_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA)!=0) {
      //release previous copied text
      if(text_area_copy_memory!=0) {
       free(text_area_copy_memory);
@@ -118,7 +118,7 @@ void document_editor(void) {
     }
 
     //process CTRL+A
-    if(keyboard_value==KEY_A) {
+    if(keyboard_code_of_pressed_key==KEY_A) {
      dword_t *dllmf = (dword_t *) (dllmf_get_data_memory(get_file_value(DOCUMENT_EDITOR_FILE_DLLMF_MEMORY)));
      set_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA, ((dword_t)dllmf));
      while(*dllmf!=0) {
@@ -138,7 +138,7 @@ void document_editor(void) {
    
    //process events that change text area
    if(get_file_value(DOCUMENT_EDITOR_FILE_CURSOR)!=0) {
-    if(keyboard_value==KEY_LEFT) {
+    if(keyboard_code_of_pressed_key==KEY_LEFT) {
      //unselect if something is selected
      set_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA, 0);
 
@@ -162,7 +162,7 @@ void document_editor(void) {
       program_interface_redraw();
      }
     }
-    else if(keyboard_value==KEY_RIGHT) {
+    else if(keyboard_code_of_pressed_key==KEY_RIGHT) {
      //unselect if something is selected
      set_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA, 0);
 

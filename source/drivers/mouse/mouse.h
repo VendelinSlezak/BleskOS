@@ -14,6 +14,7 @@
 #define MOUSE_DRAG 2
 
 byte_t mouse_click_button_state = MOUSE_NO_DRAG;
-dword_t mouse_buttons = 0, mouse_movement_x = 0, mouse_movement_y = 0, mouse_wheel = 0;
+dword_t mouse_buttons, mouse_movement_x, mouse_movement_y, mouse_wheel;
 
 void initalize_mouse(void);
+void mouse_update_click_button_state(void);

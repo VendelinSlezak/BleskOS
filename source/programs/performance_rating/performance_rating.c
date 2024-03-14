@@ -31,7 +31,7 @@ void performance_rating(void) {
       return;
     }
 
-    switch (keyboard_value) {
+    switch (keyboard_code_of_pressed_key) {
       case KEY_UP:
         if (PERFORMANCE_RATING_CURRENT_TASK > 0) { PERFORMANCE_RATING_CURRENT_TASK--; }
         redraw_performance_rating();
@@ -54,7 +54,7 @@ void performance_rating(void) {
           redraw_performance_rating();
           performance_rating_run_task(PERFORMANCE_RATING_CURRENT_TASK);
           redraw_performance_rating();
-			 if( keyboard_value == KEY_ESC ) {break;}
+			 if( keyboard_code_of_pressed_key == KEY_ESC ) {break;}
         }
         PERFORMANCE_RATING_CURRENT_TASK = 0;
         redraw_performance_rating();
@@ -138,7 +138,7 @@ void performance_rating_inspect_task(dword_t task_number) {  // to be sure what'
     print_var(PERFORMANCE_RATING_RESULT_NUMBER,2,36,WHITE);
     // Todo print results
     redraw_screen();
-    if (keyboard_value == KEY_ESC) { break;}
+    if (keyboard_code_of_pressed_key == KEY_ESC) { break;}
   }
 }
 

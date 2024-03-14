@@ -27,7 +27,6 @@ byte_t selected_sound_card;
 
 byte_t sound_volume = 0;
 dword_t sound_sample_rate = 0, sound_memory = 0, sound_length = 0, sound_position = 0;
-byte_t sound_card_detect_headphone_connection_status;
 
 void initalize_sound_card(void);
 void sound_set_volume(byte_t volume);

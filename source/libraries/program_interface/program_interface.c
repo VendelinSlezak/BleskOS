@@ -103,7 +103,7 @@ void program_interface_process_keyboard_event(void) {
  extern void call(dword_t method);
  dword_t *keyboard_events = (dword_t *) (program_interface_keyboard_events_list_mem);
 
- if(keyboard_value==0) {
+ if(keyboard_code_of_pressed_key==0) {
   return;
  }
  
@@ -111,10 +111,10 @@ void program_interface_process_keyboard_event(void) {
  if(program_interface_element_with_focus!=0xFFFFFFFF) {
   dword_t *element = (dword_t *) (program_interface_elements_list_mem+program_interface_element_with_focus*32);
 
-  if(element[0]==ELEMENT_TEXT_AREA && (keyboard_value & 0xFF)<RELEASED_KEY(0) && (keyboard_value<KEY_F1 || keyboard_value>KEY_F10) && keyboard_value!=KEY_F11 && keyboard_value!=KEY_F12) { //we do not process released keys or F keys
+  if(element[0]==ELEMENT_TEXT_AREA && (keyboard_code_of_pressed_key & 0xFF)<RELEASED_KEY_CODE(0) && (keyboard_code_of_pressed_key<KEY_F1 || keyboard_code_of_pressed_key>KEY_F10) && keyboard_code_of_pressed_key!=KEY_F11 && keyboard_code_of_pressed_key!=KEY_F12) { //we do not process released keys or F keys
    //do not process enter if INPUT line
    dword_t *text_area_info = (dword_t *) (element[2]);
-   if((text_area_info[TEXT_AREA_INFO_TYPE]!=TEXT_AREA_INPUT_LINE && text_area_info[TEXT_AREA_INFO_TYPE]!=TEXT_AREA_NUMBER_INPUT) || keyboard_value!=KEY_ENTER) {
+   if((text_area_info[TEXT_AREA_INFO_TYPE]!=TEXT_AREA_INPUT_LINE && text_area_info[TEXT_AREA_INFO_TYPE]!=TEXT_AREA_NUMBER_INPUT) || keyboard_code_of_pressed_key!=KEY_ENTER) {
     //process event
     text_area_keyboard_event(element[2]);
  
@@ -132,7 +132,7 @@ void program_interface_process_keyboard_event(void) {
  }
 
  //call method of keyboard event
- dword_t pressed_key = keyboard_value;
+ dword_t pressed_key = keyboard_code_of_pressed_key;
  if(pressed_key>0xFFFF) {
   return;
  }
@@ -256,15 +256,15 @@ void program_interface_process_mouse_event(void) {
   }
   else if(click_zone<10) { //default interface buttons
    if(click_zone==CLICK_ZONE_OPEN) {
-    keyboard_value = KEY_F1;
+    keyboard_code_of_pressed_key = KEY_F1;
     program_interface_process_keyboard_event();
    }
    else if(click_zone==CLICK_ZONE_SAVE) {
-    keyboard_value = KEY_F2;
+    keyboard_code_of_pressed_key = KEY_F2;
     program_interface_process_keyboard_event();
    }
    else if(click_zone==CLICK_ZONE_NEW) {
-    keyboard_value = KEY_F3;
+    keyboard_code_of_pressed_key = KEY_F3;
     program_interface_process_keyboard_event();
    }
   }
@@ -464,10 +464,10 @@ byte_t dialog_yes_no(byte_t *string) {
   wait_for_user_input();
   move_mouse_cursor();
   
-  if(keyboard_value==KEY_ESC) {
+  if(keyboard_code_of_pressed_key==KEY_ESC) {
    return STATUS_FALSE;
   }
-  else if(keyboard_value==KEY_ENTER) {
+  else if(keyboard_code_of_pressed_key==KEY_ENTER) {
    return STATUS_TRUE;
   }
   if(mouse_click_button_state==MOUSE_CLICK) {
@@ -489,7 +489,7 @@ void error_window(byte_t *string) {
   wait_for_user_input();
   move_mouse_cursor();
 
-  if(keyboard_value==KEY_ESC || keyboard_value==KEY_ENTER || mouse_click_button_state==MOUSE_CLICK) {
+  if(keyboard_code_of_pressed_key==KEY_ESC || keyboard_code_of_pressed_key==KEY_ENTER || mouse_click_button_state==MOUSE_CLICK) {
    return;
   }
  }
@@ -517,15 +517,15 @@ dword_t window_for_choosing_file_format(dword_t number_of_formats, byte_t *forma
   wait_for_user_input();
   move_mouse_cursor();
 
-  if(keyboard_value!=0) {
-   if(keyboard_value==KEY_ESC) {
+  if(keyboard_code_of_pressed_key!=0) {
+   if(keyboard_code_of_pressed_key==KEY_ESC) {
     return 0xFFFFFFFF;
    }
 
-   keyboard_unicode = get_small_char_value(keyboard_unicode);
+   keyboard_unicode_value_of_pressed_key = get_small_char_value(keyboard_unicode_value_of_pressed_key);
    format_strings_2 = formats_string;
    for(dword_t i=0; i<number_of_formats; i++, format_strings_2+=(get_number_of_chars_in_ascii_string(format_strings_2)+1)) {
-    if(keyboard_unicode==format_strings_2[1]) { //there is key for this format
+    if(keyboard_unicode_value_of_pressed_key==format_strings_2[1]) { //there is key for this format
      return i;
     }
    }

@@ -43,9 +43,12 @@
 #define HDA_INPUT_NODE 0x2
 
 byte_t hda_playing_state, hda_selected_output_node;
-dword_t hda_corb_mem, hda_corb_pointer, hda_corb_entries;
-dword_t hda_rirb_mem, hda_rirb_pointer, hda_rirb_entries;
-dword_t hda_output_buffer_list, hda_sound_length, hda_bytes_on_output_for_stopping_sound;
+dword_t *hda_corb_mem;
+dword_t hda_corb_pointer, hda_corb_number_of_entries;
+dword_t *hda_rirb_mem;
+dword_t hda_rirb_pointer, hda_rirb_number_of_entries;
+dword_t *hda_output_buffer_list;
+dword_t hda_sound_length, hda_bytes_on_output_for_stopping_sound;
 byte_t hda_length_of_node_path;
 
 dword_t hda_base, hda_input_stream_base, hda_output_stream_base;
@@ -62,8 +65,8 @@ dword_t hda_send_verb(dword_t codec, dword_t node, dword_t verb, dword_t command
 byte_t hda_get_node_type(dword_t codec, dword_t node);
 word_t hda_get_node_connection_entry(dword_t codec, dword_t node, dword_t connection_entry_number);
 void hda_set_node_gain(dword_t codec, dword_t node, dword_t node_type, dword_t capabilities, dword_t gain);
-void hda_enable_pin(dword_t codec, dword_t pin_node);
-void hda_disable_pin(dword_t codec, dword_t pin_node);
+void hda_enable_pin_output(dword_t codec, dword_t pin_node);
+void hda_disable_pin_output(dword_t codec, dword_t pin_node);
 byte_t hda_is_headphone_connected(void);
 
 void hda_initalize_codec(dword_t sound_card_number, dword_t codec_number);
@@ -74,6 +77,7 @@ void hda_initalize_audio_mixer(dword_t sound_card_number, dword_t audio_mixer_no
 void hda_initalize_audio_selector(dword_t sound_card_number, dword_t audio_selector_node_number);
 
 void hda_set_volume(dword_t sound_card_number, dword_t volume);
+void hda_check_headphone_connection_change(void);
 
 byte_t hda_is_supported_channel_size(dword_t sound_card_number, byte_t size);
 byte_t hda_is_supported_sample_rate(dword_t sound_card_number, dword_t sample_rate);

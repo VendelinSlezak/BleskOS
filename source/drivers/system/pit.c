@@ -29,4 +29,7 @@ void pit_handler(void) {
  
  //run processes that are on background of programs
  run_processes_on_background();
+
+ //run tasks in scheduler
+ scheduler_periodic_interrupt();
 }

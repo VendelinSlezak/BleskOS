@@ -501,6 +501,9 @@ void convert_dmf_to_odt(dword_t dmf_memory) {
  dword_t number_of_paragraph_style = 1, number_of_text_style = 1;
 
  add_string_to_byte_stream(file_content_xml_byte_stream, "<office:automatic-styles>");
+ //add styles of lists
+ add_string_to_byte_stream(file_content_xml_byte_stream, "<text:list-style style:name=\"L1\"><text:list-level-style-number text:level=\"1\" text:style-name=\"Numbering_20_Symbols\" style:num-suffix=\".\" style:num-format=\"1\"><style:list-level-properties text:list-level-position-and-space-mode=\"label-alignment\"><style:list-level-label-alignment text:label-followed-by=\"listtab\" text:list-tab-stop-position=\"1.27cm\" fo:text-indent=\"-0.635cm\" fo:margin-left=\"1.27cm\"/></style:list-level-properties></text:list-level-style-number><text:list-level-style-number text:level=\"2\" text:style-name=\"Numbering_20_Symbols\" style:num-suffix=\".\" style:num-format=\"1\"><style:list-level-properties text:list-level-position-and-space-mode=\"label-alignment\"><style:list-level-label-alignment text:label-followed-by=\"listtab\" text:list-tab-stop-position=\"1.905cm\" fo:text-indent=\"-0.635cm\" fo:margin-left=\"1.905cm\"/></style:list-level-properties></text:list-level-style-number><text:list-level-style-number text:level=\"3\" text:style-name=\"Numbering_20_Symbols\" style:num-suffix=\".\" style:num-format=\"1\"><style:list-level-properties text:list-level-position-and-space-mode=\"label-alignment\"><style:list-level-label-alignment text:label-followed-by=\"listtab\" text:list-tab-stop-position=\"2.54cm\" fo:text-indent=\"-0.635cm\" fo:margin-left=\"2.54cm\"/></style:list-level-properties></text:list-level-style-number><text:list-level-style-number text:level=\"4\" text:style-name=\"Numbering_20_Symbols\" style:num-suffix=\".\" style:num-format=\"1\"><style:list-level-properties text:list-level-position-and-space-mode=\"label-alignment\"><style:list-level-label-alignment text:label-followed-by=\"listtab\" text:list-tab-stop-position=\"3.175cm\" fo:text-indent=\"-0.635cm\" fo:margin-left=\"3.175cm\"/></style:list-level-properties></text:list-level-style-number><text:list-level-style-number text:level=\"5\" text:style-name=\"Numbering_20_Symbols\" style:num-suffix=\".\" style:num-format=\"1\"><style:list-level-properties text:list-level-position-and-space-mode=\"label-alignment\"><style:list-level-label-alignment text:label-followed-by=\"listtab\" text:list-tab-stop-position=\"3.81cm\" fo:text-indent=\"-0.635cm\" fo:margin-left=\"3.81cm\"/></style:list-level-properties></text:list-level-style-number><text:list-level-style-number text:level=\"6\" text:style-name=\"Numbering_20_Symbols\" style:num-suffix=\".\" style:num-format=\"1\"><style:list-level-properties text:list-level-position-and-space-mode=\"label-alignment\"><style:list-level-label-alignment text:label-followed-by=\"listtab\" text:list-tab-stop-position=\"4.445cm\" fo:text-indent=\"-0.635cm\" fo:margin-left=\"4.445cm\"/></style:list-level-properties></text:list-level-style-number><text:list-level-style-number text:level=\"7\" text:style-name=\"Numbering_20_Symbols\" style:num-suffix=\".\" style:num-format=\"1\"><style:list-level-properties text:list-level-position-and-space-mode=\"label-alignment\"><style:list-level-label-alignment text:label-followed-by=\"listtab\" text:list-tab-stop-position=\"5.08cm\" fo:text-indent=\"-0.635cm\" fo:margin-left=\"5.08cm\"/></style:list-level-properties></text:list-level-style-number><text:list-level-style-number text:level=\"8\" text:style-name=\"Numbering_20_Symbols\" style:num-suffix=\".\" style:num-format=\"1\"><style:list-level-properties text:list-level-position-and-space-mode=\"label-alignment\"><style:list-level-label-alignment text:label-followed-by=\"listtab\" text:list-tab-stop-position=\"5.715cm\" fo:text-indent=\"-0.635cm\" fo:margin-left=\"5.715cm\"/></style:list-level-properties></text:list-level-style-number><text:list-level-style-number text:level=\"9\" text:style-name=\"Numbering_20_Symbols\" style:num-suffix=\".\" style:num-format=\"1\"><style:list-level-properties text:list-level-position-and-space-mode=\"label-alignment\"><style:list-level-label-alignment text:label-followed-by=\"listtab\" text:list-tab-stop-position=\"6.35cm\" fo:text-indent=\"-0.635cm\" fo:margin-left=\"6.35cm\"/></style:list-level-properties></text:list-level-style-number><text:list-level-style-number text:level=\"10\" text:style-name=\"Numbering_20_Symbols\" style:num-suffix=\".\" style:num-format=\"1\"><style:list-level-properties text:list-level-position-and-space-mode=\"label-alignment\"><style:list-level-label-alignment text:label-followed-by=\"listtab\" text:list-tab-stop-position=\"6.985cm\" fo:text-indent=\"-0.635cm\" fo:margin-left=\"6.985cm\"/></style:list-level-properties></text:list-level-style-number></text:list-style>");
+ add_string_to_byte_stream(file_content_xml_byte_stream, "<text:list-style style:name=\"L2\"><text:list-level-style-bullet text:level=\"1\" text:style-name=\"Bullet_20_Symbols\" text:bullet-char=\"•\"><style:list-level-properties text:list-level-position-and-space-mode=\"label-alignment\"><style:list-level-label-alignment text:label-followed-by=\"listtab\" text:list-tab-stop-position=\"1.27cm\" fo:text-indent=\"-0.635cm\" fo:margin-left=\"1.27cm\"/></style:list-level-properties></text:list-level-style-bullet><text:list-level-style-bullet text:level=\"2\" text:style-name=\"Bullet_20_Symbols\" text:bullet-char=\"◦\"><style:list-level-properties text:list-level-position-and-space-mode=\"label-alignment\"><style:list-level-label-alignment text:label-followed-by=\"listtab\" text:list-tab-stop-position=\"1.905cm\" fo:text-indent=\"-0.635cm\" fo:margin-left=\"1.905cm\"/></style:list-level-properties></text:list-level-style-bullet><text:list-level-style-bullet text:level=\"3\" text:style-name=\"Bullet_20_Symbols\" text:bullet-char=\"▪\"><style:list-level-properties text:list-level-position-and-space-mode=\"label-alignment\"><style:list-level-label-alignment text:label-followed-by=\"listtab\" text:list-tab-stop-position=\"2.54cm\" fo:text-indent=\"-0.635cm\" fo:margin-left=\"2.54cm\"/></style:list-level-properties></text:list-level-style-bullet><text:list-level-style-bullet text:level=\"4\" text:style-name=\"Bullet_20_Symbols\" text:bullet-char=\"•\"><style:list-level-properties text:list-level-position-and-space-mode=\"label-alignment\"><style:list-level-label-alignment text:label-followed-by=\"listtab\" text:list-tab-stop-position=\"3.175cm\" fo:text-indent=\"-0.635cm\" fo:margin-left=\"3.175cm\"/></style:list-level-properties></text:list-level-style-bullet><text:list-level-style-bullet text:level=\"5\" text:style-name=\"Bullet_20_Symbols\" text:bullet-char=\"◦\"><style:list-level-properties text:list-level-position-and-space-mode=\"label-alignment\"><style:list-level-label-alignment text:label-followed-by=\"listtab\" text:list-tab-stop-position=\"3.81cm\" fo:text-indent=\"-0.635cm\" fo:margin-left=\"3.81cm\"/></style:list-level-properties></text:list-level-style-bullet><text:list-level-style-bullet text:level=\"6\" text:style-name=\"Bullet_20_Symbols\" text:bullet-char=\"▪\"><style:list-level-properties text:list-level-position-and-space-mode=\"label-alignment\"><style:list-level-label-alignment text:label-followed-by=\"listtab\" text:list-tab-stop-position=\"4.445cm\" fo:text-indent=\"-0.635cm\" fo:margin-left=\"4.445cm\"/></style:list-level-properties></text:list-level-style-bullet><text:list-level-style-bullet text:level=\"7\" text:style-name=\"Bullet_20_Symbols\" text:bullet-char=\"•\"><style:list-level-properties text:list-level-position-and-space-mode=\"label-alignment\"><style:list-level-label-alignment text:label-followed-by=\"listtab\" text:list-tab-stop-position=\"5.08cm\" fo:text-indent=\"-0.635cm\" fo:margin-left=\"5.08cm\"/></style:list-level-properties></text:list-level-style-bullet><text:list-level-style-bullet text:level=\"8\" text:style-name=\"Bullet_20_Symbols\" text:bullet-char=\"◦\"><style:list-level-properties text:list-level-position-and-space-mode=\"label-alignment\"><style:list-level-label-alignment text:label-followed-by=\"listtab\" text:list-tab-stop-position=\"5.715cm\" fo:text-indent=\"-0.635cm\" fo:margin-left=\"5.715cm\"/></style:list-level-properties></text:list-level-style-bullet><text:list-level-style-bullet text:level=\"9\" text:style-name=\"Bullet_20_Symbols\" text:bullet-char=\"▪\"><style:list-level-properties text:list-level-position-and-space-mode=\"label-alignment\"><style:list-level-label-alignment text:label-followed-by=\"listtab\" text:list-tab-stop-position=\"6.35cm\" fo:text-indent=\"-0.635cm\" fo:margin-left=\"6.35cm\"/></style:list-level-properties></text:list-level-style-bullet><text:list-level-style-bullet text:level=\"10\" text:style-name=\"Bullet_20_Symbols\" text:bullet-char=\"•\"><style:list-level-properties text:list-level-position-and-space-mode=\"label-alignment\"><style:list-level-label-alignment text:label-followed-by=\"listtab\" text:list-tab-stop-position=\"6.985cm\" fo:text-indent=\"-0.635cm\" fo:margin-left=\"6.985cm\"/></style:list-level-properties></text:list-level-style-bullet></text:list-style>");
  while(*dmf!=0) {
   if(*dmf==DMF_SECTION_FORMAT_CHANGE_SIGNATURE) {
    //page break
@@ -708,7 +711,8 @@ void convert_dmf_to_odt(dword_t dmf_memory) {
 
  //convert all document data
  dmf = (word_t *) (dmf_memory);
- byte_t inside_of_paragraph_tag = STATUS_FALSE, inside_of_span_tag = STATUS_FALSE;
+ byte_t inside_of_paragraph_tag = STATUS_FALSE, inside_of_span_tag = STATUS_FALSE, inside_of_list_item = STATUS_FALSE;
+ dword_t list_level = 0;
  number_of_paragraph_style = 1;
  number_of_text_style = 1;
 
@@ -725,6 +729,53 @@ void convert_dmf_to_odt(dword_t dmf_memory) {
     if(inside_of_paragraph_tag==STATUS_TRUE) {
      add_string_to_byte_stream(file_content_xml_byte_stream, "</text:p>");
      inside_of_paragraph_tag = STATUS_FALSE;
+    }
+    if(inside_of_list_item==STATUS_TRUE) {
+     add_string_to_byte_stream(file_content_xml_byte_stream, "</text:list-item>");
+     inside_of_list_item = STATUS_FALSE;
+    }
+    if((dmf[DMF_SFCH_PARAGRAPH_DESCRIPTION_OFFSET] & DMF_SFCH_PARAGRAPH_DESCRIPTION_LIST_ENTRY)==0 && list_level>0) {
+     //close all lists
+     for(dword_t i=0; i<list_level; i++) {
+      add_string_to_byte_stream(file_content_xml_byte_stream, "</text:list>");
+      list_level--;
+      if(list_level!=0) {
+       add_string_to_byte_stream(file_content_xml_byte_stream, "</text:list-item>");
+      }
+     }
+    }
+
+    //list
+    if((dmf[DMF_SFCH_PARAGRAPH_DESCRIPTION_OFFSET] & DMF_SFCH_PARAGRAPH_DESCRIPTION_LIST_ENTRY)==DMF_SFCH_PARAGRAPH_DESCRIPTION_LIST_ENTRY) {
+     if(dmf[DMF_SFCH_PARAGRAPH_LIST_LEVEL_OFFSET]>list_level) {
+      //add list
+      if(list_level>0) {
+       add_string_to_byte_stream(file_content_xml_byte_stream, "<text:list-item>");
+      }
+      add_string_to_byte_stream(file_content_xml_byte_stream, "<text:list ");
+      if(dmf[DMF_SFCH_PARAGRAPH_LIST_ENTRY_OFFSET]==DMF_SFCH_PARAGRAPH_LIST_ENTRY_DOT) {
+       add_string_to_byte_stream(file_content_xml_byte_stream, "text:style-name=\"L2\"");
+      }
+      else {
+       add_string_to_byte_stream(file_content_xml_byte_stream, "text:style-name=\"L1\"");   
+      }
+      add_string_to_byte_stream(file_content_xml_byte_stream, ">");
+      list_level++;
+     }
+     else if(dmf[DMF_SFCH_PARAGRAPH_LIST_LEVEL_OFFSET]<list_level) {
+      //close lists
+      for(dword_t i=0; i<(list_level-dmf[DMF_SFCH_PARAGRAPH_LIST_LEVEL_OFFSET]); i++) {
+       add_string_to_byte_stream(file_content_xml_byte_stream, "</text:list>");
+       list_level--;
+       if(list_level!=0) {
+        add_string_to_byte_stream(file_content_xml_byte_stream, "</text:list-item>");
+       }
+      }
+     }
+
+     //create list item
+     add_string_to_byte_stream(file_content_xml_byte_stream, "<text:list-item>");
+     inside_of_list_item = STATUS_TRUE;
     }
 
     //add paragraph tag
@@ -785,11 +836,25 @@ void convert_dmf_to_odt(dword_t dmf_memory) {
    dmf++;
   }
  }
+
+ //close everything because we are at end of document
  if(inside_of_span_tag==STATUS_TRUE) {
   add_string_to_byte_stream(file_content_xml_byte_stream, "</text:span>");
  }
  if(inside_of_paragraph_tag==STATUS_TRUE) {
   add_string_to_byte_stream(file_content_xml_byte_stream, "</text:p>");
+ }
+ if(inside_of_list_item==STATUS_TRUE) {
+  add_string_to_byte_stream(file_content_xml_byte_stream, "</text:list-item>");
+  inside_of_list_item = STATUS_FALSE;
+ }
+ //close all lists
+ for(dword_t i=0; i<list_level; i++) {
+  add_string_to_byte_stream(file_content_xml_byte_stream, "</text:list>");
+  list_level--;
+  if(list_level!=0) {
+   add_string_to_byte_stream(file_content_xml_byte_stream, "</text:list-item>");
+  }
  }
 
  //end document data
