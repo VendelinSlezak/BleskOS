@@ -8,6 +8,9 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 Here is info about most important improvements in several last updates.
 
+**Update 28**
+- HDA driver supports headphone output
+
 **Update 27**
 - AC97 driver supports headphone output
 - Fixed problem with resetting HDA stream
@@ -19,10 +22,6 @@ Here is info about most important improvements in several last updates.
 **Update 25**
 - Further improvement of saving documents to ODT files
 - BleskOS can change monitor backlight for some Intel graphic cards
-
-**Update 24**
-- Improvement of saving documents to ODT file
-- Code fixed to be able to be compiled with -Os flag. Image is now smaller about 100 KB and performance is better.
 
 ## How to try BleskOS
 
