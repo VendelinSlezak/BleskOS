@@ -9,7 +9,7 @@
 */
 
 void initalize_file_dialog(void) {
- file_dialog_selected_device_entry = 0xFFFFFFFF;
+ file_dialog_selected_device_entry = NO_FILE_SELECTED;
  file_dialog_folder_device_type = 0;
  file_dialog_folder_device_number = 0;
  file_dialog_folder_device_partition_type = 0;
@@ -620,12 +620,12 @@ byte_t file_dialog_save_file(byte_t dialog_type, dword_t new_file_memory, dword_
   move_mouse_cursor();
 
   //do not save
-  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center+15, screen_y_center+35, screen_x_center-100, screen_x_center-10)==STATUS_TRUE)) {
+  if(keyboard_code_of_pressed_key==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center+15, screen_y_center+35, screen_x_center-100, screen_x_center-10)==STATUS_TRUE)) {
    return STATUS_ERROR;
   }
 
   //save file
-  if(keyboard_value==KEY_ENTER || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center+15, screen_y_center+35, screen_x_center+10, screen_x_center+100)==STATUS_TRUE)) {
+  if(keyboard_code_of_pressed_key==KEY_ENTER || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center+15, screen_y_center+35, screen_x_center+10, screen_x_center+100)==STATUS_TRUE)) {
    if(text_area_file_name[0]==0 || text_area_file_name[0]=='.') { //TODO: more invalid characters
     error_window("Invalid file name");
     return STATUS_ERROR;
@@ -725,6 +725,7 @@ byte_t file_dialog_save_file(byte_t dialog_type, dword_t new_file_memory, dword_
 }
 
 dword_t file_dialog(byte_t dialog_type, dword_t new_file_memory, dword_t new_file_size) {
+ file_dialog_selected_device_entry = NO_FILE_SELECTED;
  redraw_file_dialog(dialog_type);
 
  while(1) {
@@ -739,22 +740,22 @@ dword_t file_dialog(byte_t dialog_type, dword_t new_file_memory, dword_t new_fil
 
   //close file dialog
   dword_t click_zone = get_mouse_cursor_click_board_value();
-  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && click_zone==CLICK_ZONE_BACK)) {
+  if(keyboard_code_of_pressed_key==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && click_zone==CLICK_ZONE_BACK)) {
    return STATUS_ERROR;
   }
 
   //process keyboard event
   if(file_dialog_folder_number_of_entries!=0) {
-   if(keyboard_value==KEY_UP) {
+   if(keyboard_code_of_pressed_key==KEY_UP) {
     file_dialog_process_key_up_key_down(dialog_type, KEY_UP);
     continue;
    }
-   else if(keyboard_value==KEY_DOWN) {
+   else if(keyboard_code_of_pressed_key==KEY_DOWN) {
     file_dialog_process_key_up_key_down(dialog_type, KEY_DOWN);
     continue;
    }
   }
-  if(keyboard_value==KEY_PAGE_DOWN) {
+  if(keyboard_code_of_pressed_key==KEY_PAGE_DOWN) {
    if(number_of_device_list_entries==0) {
     continue;
    }
@@ -769,7 +770,7 @@ dword_t file_dialog(byte_t dialog_type, dword_t new_file_memory, dword_t new_fil
    }
    goto select_device_entry;
   }
-  else if(keyboard_value==KEY_PAGE_UP) {
+  else if(keyboard_code_of_pressed_key==KEY_PAGE_UP) {
    if(number_of_device_list_entries==0) {
     continue;
    }
@@ -784,11 +785,11 @@ dword_t file_dialog(byte_t dialog_type, dword_t new_file_memory, dword_t new_fil
    }
    goto select_device_entry;
   }
-  else if(keyboard_value==KEY_B) {
+  else if(keyboard_code_of_pressed_key==KEY_B) {
    file_dialog_folder_back(dialog_type);
    continue;
   }
-  else if(keyboard_value==KEY_ENTER && file_dialog_folder_memory!=0 && file_dialog_folder_selected_entry!=NO_FILE_SELECTED) {
+  else if(keyboard_code_of_pressed_key==KEY_ENTER && file_dialog_folder_memory!=0 && file_dialog_folder_selected_entry!=NO_FILE_SELECTED) {
    dword_t value = file_dialog_double_click_on_file(dialog_type, new_file_memory, new_file_size);
    if(value==FILE_DIALOG_FOLDER_WAS_LOADED) {
     continue;
@@ -801,19 +802,19 @@ dword_t file_dialog(byte_t dialog_type, dword_t new_file_memory, dword_t new_fil
    }
    continue;
   }
-  else if(keyboard_value==KEY_S && dialog_type==FILE_DIALOG_TYPE_SAVE) {
+  else if(keyboard_code_of_pressed_key==KEY_S && dialog_type==FILE_DIALOG_TYPE_SAVE) {
    if(file_dialog_save_file(dialog_type, new_file_memory, new_file_size)==STATUS_GOOD) {
     return STATUS_GOOD;
    }
    redraw_file_dialog(dialog_type); //error during saving file
    continue;
   }
-  else if(keyboard_value==KEY_F8) { //refresh device list
+  else if(keyboard_code_of_pressed_key==KEY_F8) { //refresh device list
    device_list_check_optical_drive();
    redraw_file_dialog(dialog_type);
    continue;
   }
-  else if(keyboard_value==KEY_F12 && dialog_type==FILE_DIALOG_TYPE_OPEN && file_dialog_folder_memory!=0 && file_dialog_folder_selected_entry!=NO_FILE_SELECTED && file_dialog_folder_device_partition_type==STORAGE_CDDA) { //CDDA filesystem - read with skipping errors
+  else if(keyboard_code_of_pressed_key==KEY_F12 && dialog_type==FILE_DIALOG_TYPE_OPEN && file_dialog_folder_memory!=0 && file_dialog_folder_selected_entry!=NO_FILE_SELECTED && file_dialog_folder_device_partition_type==STORAGE_CDDA) { //CDDA filesystem - read with skipping errors
    if(dialog_yes_no("This may be slow, do you want to continue?")==STATUS_FALSE) {
     redraw_file_dialog(dialog_type);
     continue;

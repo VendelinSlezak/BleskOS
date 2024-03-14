@@ -39,7 +39,7 @@ void calculator(void) {
   move_mouse_cursor();
 
   //close program
-  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && get_mouse_cursor_click_board_value()==CLICK_ZONE_BACK)) {
+  if(keyboard_code_of_pressed_key==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && get_mouse_cursor_click_board_value()==CLICK_ZONE_BACK)) {
    text_area_disable_cursor(calculator_first_value_text_area_mem);
    text_area_disable_cursor(calculator_second_value_text_area_mem);
    text_area_disable_cursor(calculator_result_text_area_mem);

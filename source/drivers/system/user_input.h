@@ -8,12 +8,4 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-byte_t ps2_mouse_data[4];
-
-byte_t ps2_mouse_wait, ps2_mouse_enable;
-byte_t ps2_first_channel_mouse_data_bytes, ps2_second_channel_mouse_data_bytes;
-
-void initalize_ps2_mouse(void);
-void enable_ps2_mouse(void);
-void disable_ps2_mouse(void);
-void ps2_mouse_convert_received_data(void);
+void wait_for_user_input(void);

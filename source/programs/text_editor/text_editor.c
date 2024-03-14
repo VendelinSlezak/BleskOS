@@ -50,7 +50,7 @@ void text_editor(void) {
   move_mouse_cursor();
 
   //close program
-  if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && get_mouse_cursor_click_board_value()==CLICK_ZONE_BACK)) {
+  if(keyboard_code_of_pressed_key==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && get_mouse_cursor_click_board_value()==CLICK_ZONE_BACK)) {
    text_editor_more_list_on_screen = STATUS_FALSE;
    return;
   }
@@ -297,12 +297,12 @@ void text_editor_key_f10_event(void) {
    wait_for_user_input();
    move_mouse_cursor();
 
-   if(keyboard_value==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center-8-7-8, screen_y_center+12+8+12+8, screen_x_center-4*8, screen_x_center+4*8+2)==STATUS_FALSE)) {
+   if(keyboard_code_of_pressed_key==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center-8-7-8, screen_y_center+12+8+12+8, screen_x_center-4*8, screen_x_center+4*8+2)==STATUS_FALSE)) {
     program_interface_redraw();
     mouse_click_button_state = MOUSE_DRAG;
     return;
    }
-   else if(keyboard_value==KEY_ENTER || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center+12+8, screen_y_center+12+8+10, screen_x_center-24, screen_x_center-24+6*8+2)==STATUS_TRUE)) {
+   else if(keyboard_code_of_pressed_key==KEY_ENTER || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center+12+8, screen_y_center+12+8+10, screen_x_center-24, screen_x_center-24+6*8+2)==STATUS_TRUE)) {
     dword_t *text_area_info = (dword_t *) (get_file_value(TEXT_EDITOR_FILE_TEXT_AREA_MEMORY));
     word_t *text_area_data = (word_t *) (text_area_info[TEXT_AREA_INFO_MEMORY]);
     dword_t line = convert_word_string_to_number(number_text_area_info[TEXT_AREA_INFO_MEMORY]); //get number of line
@@ -326,7 +326,7 @@ void text_editor_key_f10_event(void) {
     mouse_click_button_state = MOUSE_DRAG;
     return;
    }
-   else if(keyboard_value!=0) {
+   else if(keyboard_code_of_pressed_key!=0) {
     text_area_keyboard_event(text_editor_go_to_line_text_area_mem);
     draw_text_area(text_editor_go_to_line_text_area_mem);
     redraw_text_area(text_editor_go_to_line_text_area_mem);

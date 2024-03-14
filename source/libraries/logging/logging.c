@@ -28,10 +28,10 @@ void developer_program_log(void) {
   wait_for_user_input();
   move_mouse_cursor();
   
-  if(keyboard_value==KEY_ESC || mouse_click_button_state==MOUSE_CLICK) {
+  if(keyboard_code_of_pressed_key==KEY_ESC || mouse_click_button_state==MOUSE_CLICK) {
    return;
   }
-  else if(keyboard_value==KEY_F2) {
+  else if(keyboard_code_of_pressed_key==KEY_F2) {
    //count number of chars
    word_t *logging_area = (word_t *) (logging_mem);
    dword_t number_of_chars = 0;
@@ -49,13 +49,13 @@ void developer_program_log(void) {
    free(converted_file_memory);
    goto redraw;
   }
-  else if(keyboard_value==KEY_HOME) {
+  else if(keyboard_code_of_pressed_key==KEY_HOME) {
    logging_mem_draw_pointer = logging_mem; //go to start of logging memory
    log = (word_t *) (logging_mem_draw_pointer);
 
    goto redraw;
   }
-  else if(keyboard_value==KEY_END) {
+  else if(keyboard_code_of_pressed_key==KEY_END) {
    //go to end of logging memory
    while(*log!=0) {
     log++;
@@ -64,7 +64,7 @@ void developer_program_log(void) {
 
    goto redraw;
   }
-  else if(keyboard_value==KEY_UP || (mouse_wheel!=0 && mouse_wheel<0x80000000)) {
+  else if(keyboard_code_of_pressed_key==KEY_UP || (mouse_wheel!=0 && mouse_wheel<0x80000000)) {
    if((dword_t)log==logging_mem) {
     continue; //we are at start of logging memory
    }
@@ -98,7 +98,7 @@ void developer_program_log(void) {
    
    goto redraw;
   }
-  else if(keyboard_value==KEY_DOWN || mouse_wheel>0x80000000) {
+  else if(keyboard_code_of_pressed_key==KEY_DOWN || mouse_wheel>0x80000000) {
    //skip all characters in line
    while(*log!=0xA && *log!=0) {
     log++;

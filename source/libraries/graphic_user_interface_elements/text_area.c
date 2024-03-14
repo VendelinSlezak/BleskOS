@@ -381,8 +381,8 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
  text_area_change_type = TEXT_AREA_NO_CHANGE;
  text_area_info[TEXT_AREA_INFO_REDRAW_X] = 0xFFFFFFFF; //redraw whole text area
  
- if((keyboard_control_keys & KEYBOARD_CTRL)==KEYBOARD_CTRL) {
-  if(keyboard_value==KEY_C) { //copy text
+ if((keyboard_pressed_control_keys & KEYBOARD_CTRL)==KEYBOARD_CTRL) {
+  if(keyboard_code_of_pressed_key==KEY_C) { //copy text
    if(text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]!=0xFFFFFFFF && text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]!=text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]) { //only if some text is selected
     //release previous copied text
     if(text_area_copy_memory!=0) {
@@ -405,7 +405,7 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
     text_area_calculate_number_of_lines_and_columns(text_area_info_mem);
    }
   }
-  else if(keyboard_value==KEY_V) { //insert text
+  else if(keyboard_code_of_pressed_key==KEY_V) { //insert text
    //TODO: do not insert if is text area full of text
 
    //number of copied chars
@@ -456,7 +456,7 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
     text_area_calculate_number_of_lines_and_columns(text_area_info_mem);
    }
   }
-  else if(keyboard_value==KEY_A) {
+  else if(keyboard_code_of_pressed_key==KEY_A) {
    //select from start
    text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]=text_area_info[TEXT_AREA_INFO_MEMORY];
    text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]=text_area_info[TEXT_AREA_INFO_MEMORY];
@@ -468,7 +468,7 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
     text_area_data++;
    }
   }
-  else if(keyboard_value==KEY_Z) {
+  else if(keyboard_code_of_pressed_key==KEY_Z) {
    //perform undo
    text_area_undo(text_area_info_mem);
 
@@ -476,7 +476,7 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
    text_area_change_type = TEXT_AREA_TEXT_CHANGE;
    text_area_info[TEXT_AREA_INFO_FLAGS] |= TEXT_AREA_TEXT_CHANGE_FLAG;
   }
-  else if(keyboard_value==KEY_Y) {
+  else if(keyboard_code_of_pressed_key==KEY_Y) {
    //perform undo
    text_area_redo(text_area_info_mem);
 
@@ -485,7 +485,7 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
    text_area_info[TEXT_AREA_INFO_FLAGS] |= TEXT_AREA_TEXT_CHANGE_FLAG;
   }
  }
- else if(keyboard_value==KEY_LEFT) {
+ else if(keyboard_code_of_pressed_key==KEY_LEFT) {
   //move cursor
   if(text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]>text_area_info[TEXT_AREA_INFO_MEMORY]) {
    text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]-=2; //move cursor
@@ -513,7 +513,7 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
   //disable selected area
   text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]=0xFFFFFFFF;
  }
- else if(keyboard_value==KEY_RIGHT) {
+ else if(keyboard_code_of_pressed_key==KEY_RIGHT) {
   //find actual cursor position
   text_area_calculate_cursor_position(text_area_info_mem);
   
@@ -541,7 +541,7 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
   //hide any selected area
   text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]=0xFFFFFFFF;
  }
- else if(keyboard_value==KEY_UP) {
+ else if(keyboard_code_of_pressed_key==KEY_UP) {
   if((dword_t)text_area_data==text_area_info[TEXT_AREA_INFO_MEMORY]) {
    goto move_text_area_to_cursor;
   }
@@ -598,7 +598,7 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
   //hide any selected area
   text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]=0xFFFFFFFF;
  }
- else if(keyboard_value==KEY_DOWN) {
+ else if(keyboard_code_of_pressed_key==KEY_DOWN) {
   if(*text_area_data==0) {
    goto move_text_area_to_cursor;
   }
@@ -651,7 +651,7 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
   //hide any selected area
   text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]=0xFFFFFFFF;
  }
- else if(keyboard_value==KEY_BACKSPACE) {
+ else if(keyboard_code_of_pressed_key==KEY_BACKSPACE) {
   if(text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]==0xFFFFFFFF || text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]==text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]) {
    if(text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]>text_area_info[TEXT_AREA_INFO_MEMORY]) {
     //move cursor
@@ -683,7 +683,7 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
   //hide any selected area
   text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]=0xFFFFFFFF;
  }
- else if(keyboard_value==KEY_DELETE) {
+ else if(keyboard_code_of_pressed_key==KEY_DELETE) {
   //set change
   text_area_change_type = TEXT_AREA_TEXT_CHANGE;
   text_area_info[TEXT_AREA_INFO_FLAGS] |= TEXT_AREA_TEXT_CHANGE_FLAG;
@@ -745,15 +745,15 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
   //hide any selected area
   text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]=0xFFFFFFFF;
  }
- else if(keyboard_unicode!=0) {
-  if(type==TEXT_AREA_NUMBER_INPUT && (keyboard_unicode<'0' || keyboard_unicode>'9')) { //in number input accept only numbers
+ else if(keyboard_unicode_value_of_pressed_key!=0) {
+  if(type==TEXT_AREA_NUMBER_INPUT && (keyboard_unicode_value_of_pressed_key<'0' || keyboard_unicode_value_of_pressed_key>'9')) { //in number input accept only numbers
    goto move_text_area_to_cursor;
   }
-  if(type==TEXT_AREA_INPUT_LINE && keyboard_unicode==0xA) { //in one line input we can not use enter
+  if(type==TEXT_AREA_INPUT_LINE && keyboard_unicode_value_of_pressed_key==0xA) { //in one line input we can not use enter
    goto move_text_area_to_cursor;
   }
   
-  dword_t keyboard_unicode_save = keyboard_unicode; //we need to save key value, because if user releases key before we finish copying memory, we will write 0 what will broke text area
+  dword_t keyboard_unicode_value_of_pressed_key_save = keyboard_unicode_value_of_pressed_key; //we need to save key value, because if user releases key before we finish copying memory, we will write 0 what will broke text area
   
   //delete selected area
   if(text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]!=0xFFFFFFFF && text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]!=text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]) {
@@ -807,8 +807,8 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
   copy_memory_back((text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-4), (text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-2), (text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE]-text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]-2));
   
   //add char
-  text_area_data[0] = keyboard_unicode_save;
-  if(keyboard_unicode_save!='\n') {
+  text_area_data[0] = keyboard_unicode_value_of_pressed_key_save;
+  if(keyboard_unicode_value_of_pressed_key_save!='\n') {
    //find actual cursor position
    text_area_calculate_cursor_position(text_area_info_mem);
 
@@ -836,7 +836,7 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
   }
 
   //add change
-  text_area_add_change_to_list(text_area_info_mem, TEXT_AREA_CHANGE_ADD_CHAR, keyboard_unicode_save, text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]);
+  text_area_add_change_to_list(text_area_info_mem, TEXT_AREA_CHANGE_ADD_CHAR, keyboard_unicode_value_of_pressed_key_save, text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]);
   
   //move cursor
   text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]+=2;

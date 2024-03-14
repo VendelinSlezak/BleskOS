@@ -25,19 +25,80 @@ void initalize_ps2_keyboard(void) {
  if(ps2_second_channel_device==PS2_CHANNEL_KEYBOARD_CONNECTED) {
   //try to set scan code set 1 because second channel do not have translation to scan code set 1
   write_to_second_ps2_channel(0xF0);
-  if(ps2_second_channel_wait_for_ack()==STATUS_ERROR) {
-   return;
+  if(ps2_second_channel_wait_for_ack()==STATUS_GOOD) {
+   write_to_second_ps2_channel(1);
+   if(ps2_second_channel_wait_for_ack()==STATUS_GOOD) {
+    //enable streaming
+    write_to_second_ps2_channel(0xF4);
+    if(ps2_second_channel_wait_for_ack()==STATUS_GOOD) {
+     ps2_second_channel_buffer_pointer = 0;
+     ps2_second_channel_device = PS2_CHANNEL_KEYBOARD_INITALIZED; //keyboard was successfully initalized
+    }
+   }
   }
-  write_to_second_ps2_channel(1);
-  if(ps2_second_channel_wait_for_ack()==STATUS_ERROR) {
-   return; //TODO: support translation from other scan code sets to scan code set 1
+ }
+
+ //add task for changing PS/2 keyboard LEDs
+ if(ps2_first_channel_device==PS2_CHANNEL_KEYBOARD_INITALIZED || ps2_second_channel_device==PS2_CHANNEL_KEYBOARD_INITALIZED) {
+  create_task("PS/2 keyboard LED changing", ps2_keyboard_check_led_change, TASK_TYPE_USER_INPUT, 16);
+ }
+}
+
+void ps2_keyboard_set_leds(void) {
+ byte_t data = 0;
+ if((keyboard_led_state & KEYBOARD_LED_SCROLLOCK)==KEYBOARD_LED_SCROLLOCK) {
+  data |= 0x1;
+ }
+ if((keyboard_led_state & KEYBOARD_LED_NUMBERLOCK)==KEYBOARD_LED_NUMBERLOCK) {
+  data |= 0x2;
+ }
+ if((keyboard_led_state & KEYBOARD_LED_CAPSLOCK)==KEYBOARD_LED_CAPSLOCK) {
+  data |= 0x4;
+ }
+
+ //set LED state for keyboard on first channel
+ if(ps2_first_channel_device==PS2_CHANNEL_KEYBOARD_INITALIZED) {
+  ps2_first_channel_device = PS2_CHANNEL_KEYBOARD_CONNECTED; //ACK will not be recognized as pressed key
+
+  write_to_first_ps2_channel(0xED);
+  if(ps2_first_channel_wait_for_ack()==STATUS_GOOD) {
+   write_to_first_ps2_channel(data);
+   if(ps2_first_channel_wait_for_ack()==STATUS_ERROR) {
+    log("\nPS/2: LED change data not ACKed");
+   }
+  }
+  else {
+   log("\nPS/2: 0xED not ACKed");
   }
 
-  //enable streaming
-  write_to_second_ps2_channel(0xF4);
+  ps2_first_channel_buffer_pointer = 0;
+  ps2_first_channel_device = PS2_CHANNEL_KEYBOARD_INITALIZED; //keyboard can function normally
+ }
+
+ //set LED state for keyboard on second channel
+ if(ps2_second_channel_device==PS2_CHANNEL_KEYBOARD_INITALIZED) {
+  ps2_second_channel_device = PS2_CHANNEL_KEYBOARD_CONNECTED; //ACK will not be recognized as pressed key
+
+  write_to_second_ps2_channel(0xED);
   if(ps2_second_channel_wait_for_ack()==STATUS_GOOD) {
-   ps2_second_channel_buffer_pointer = 0;
-   ps2_second_channel_device = PS2_CHANNEL_KEYBOARD_INITALIZED; //keyboard was successfully initalized
+   write_to_second_ps2_channel(data);
+   if(ps2_second_channel_wait_for_ack()==STATUS_ERROR) {
+    log("\nPS/2: LED change data not ACKed");
+   }
   }
+  else {
+   log("\nPS/2: 0xED not ACKed");
+  }
+
+  ps2_second_channel_buffer_pointer = 0;
+  ps2_second_channel_device = PS2_CHANNEL_KEYBOARD_INITALIZED; //keyboard can function normally
+ }
+
+ keyboard_change_in_led_state = STATUS_FALSE;
+}
+
+void ps2_keyboard_check_led_change(void) {
+ if(keyboard_change_in_led_state==STATUS_TRUE) {
+  ps2_keyboard_set_leds();
  }
 }
