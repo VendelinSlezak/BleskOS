@@ -88,7 +88,7 @@ Supported file formats
 - PNG (read-only), GIF (read-only), QOI, BMP
 - WAV, CDDA
 - HTML
-- ODT (simple, read-only), DOCX (simple, read-only)
+- ODT, DOCX (read-only)
 
 ## I like this project, can I help you?
 
