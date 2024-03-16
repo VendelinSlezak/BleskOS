@@ -191,7 +191,7 @@ void bleskos_main_window_redraw(void) {
  }
 
  //optical drive control
- if(ide_cdrom_base!=0) { //TODO: also AHCI
+ if(optical_drive_info.controller_type==IDE_CONTROLLER) { //TODO: also AHCI
   bleskos_main_window_drawing_line += 10;
   bleskos_main_window_print_item("Optical drive");
   bleskos_main_window_draw_item("[F11] Eject optical disk drive", 0x00B5FF, MW_EJECT_OPTICAL_DISK_DRIVE);
@@ -307,7 +307,7 @@ void bleskos_main_window(void) {
    bleskos_main_window_enable_disable_touchpad();
    goto redraw;
   }
-  else if(keyboard_code_of_pressed_key==KEY_F11 && ide_cdrom_base!=0) { //TODO: also AHCI
+  else if(keyboard_code_of_pressed_key==KEY_F11 && optical_drive_info.controller_type==IDE_CONTROLLER) { //TODO: also AHCI
    eject_optical_disk();
    continue;
   }

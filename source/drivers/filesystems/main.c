@@ -8,15 +8,68 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+void initalize_storage_controllers(void) {
+ //now we support only one hard disk and one optical drive
+ hard_disk_info.controller_type = NO_CONTROLLER;
+ optical_drive_info.controller_type = NO_CONTROLLER;
+
+ //allocate memory for IDENTIFY command data
+ device_info = (struct ata_identify_command_device_info *) (malloc(512));
+
+ //detect all storage devices
+ log("\n");
+ for(dword_t i=0; i<number_of_storage_controllers; i++) {
+  if(storage_controllers[i].controller_type==IDE_CONTROLLER) {
+   initalize_ide_controller(i);
+  }
+  //TODO: AHCI
+ }
+
+ //free memory
+ free((dword_t)device_info);
+
+ //log
+ log("\n");
+ if(hard_disk_info.controller_type!=NO_CONTROLLER) {
+  log("\nHard disk: ");
+  if(hard_disk_info.controller_type==IDE_CONTROLLER) {
+   log("IDE ");
+   log_hex_specific_size_with_space(hard_disk_info.base_1, 4);
+   log_hex_specific_size_with_space(hard_disk_info.device_port, 2);
+  }
+  else if(hard_disk_info.controller_type==AHCI_CONTROLLER) {
+   log("AHCI ");
+   log_hex_with_space(hard_disk_info.base_1);
+   log_var_with_space(hard_disk_info.device_port);
+  }
+  log("Number of sectors: ");
+  log_var(hard_disk_info.number_of_sectors);
+ }
+
+ if(optical_drive_info.controller_type!=NO_CONTROLLER) {
+  log("\nOptical drive: ");
+  if(optical_drive_info.controller_type==IDE_CONTROLLER) {
+   log("IDE ");
+   log_hex_specific_size_with_space(optical_drive_info.base_1, 4);
+   log_hex_specific_size_with_space(optical_drive_info.device_port, 2);
+  }
+  else if(optical_drive_info.controller_type==AHCI_CONTROLLER) {
+   log("AHCI ");
+   log_hex_with_space(optical_drive_info.base_1);
+   log_var_with_space(optical_drive_info.device_port);
+  }
+ }
+}
+
 byte_t if_storage_medium_exist(byte_t type_of_medium, byte_t medium_number) {
  if(type_of_medium==MEDIUM_HDD && medium_number==DEFAULT_MEDIUM) {
-  if(ahci_hdd_base!=0 || ide_hdd_base!=0) {
+  if(hard_disk_info.controller_type!=NO_CONTROLLER) {
    return STATUS_TRUE;
   }
  }
  
  if(type_of_medium==MEDIUM_CDROM && medium_number==DEFAULT_MEDIUM) {
-  if(ahci_cdrom_base!=0 || ide_cdrom_base!=0) {
+  if(optical_drive_info.controller_type!=NO_CONTROLLER) {
    return STATUS_TRUE;
   }
  }
@@ -39,11 +92,11 @@ void select_storage_medium(byte_t type_of_medium, byte_t medium_number) {
   storage_medium_number = DEFAULT_MEDIUM;
 
   //select HDD
-  if(ahci_hdd_base!=0) { //hard disk is connected to AHCI port
+  if(hard_disk_info.controller_type==AHCI_CONTROLLER) { //hard disk is connected to AHCI port
    return;
   }
-  if(ide_hdd_base!=0) { //hard disk is connected to IDE port
-   ide_select_drive(ide_hdd_base, ide_hdd_drive);
+  else if(hard_disk_info.controller_type==IDE_CONTROLLER) { //hard disk is connected to IDE port
+   ide_select_drive(hard_disk_info.base_1, hard_disk_info.device_port);
    return;
   }
  }
@@ -53,11 +106,11 @@ void select_storage_medium(byte_t type_of_medium, byte_t medium_number) {
   storage_medium_number = DEFAULT_MEDIUM;
   
   //select CDROM
-  if(ahci_cdrom_base!=0) { //CDROM is connected to AHCI port
+  if(optical_drive_info.controller_type==AHCI_CONTROLLER) { //CDROM is connected to AHCI port
    return;
   }
-  if(ide_cdrom_base!=0) { //CDROM is connected to IDE port
-   ide_select_drive(ide_cdrom_base, ide_cdrom_drive);
+  if(optical_drive_info.controller_type==IDE_CONTROLLER) { //CDROM is connected to IDE port
+   ide_select_drive(optical_drive_info.base_1, optical_drive_info.device_port);
    return;
   }
  }
@@ -72,17 +125,17 @@ void select_storage_medium(byte_t type_of_medium, byte_t medium_number) {
 byte_t read_storage_medium(dword_t sector, byte_t num_of_sectors, dword_t memory) {
  if(storage_medium==MEDIUM_HDD) {
   //read HDD
-  if(ahci_hdd_base!=0) { //hard disk is connected to AHCI port
+  if(hard_disk_info.controller_type==AHCI_CONTROLLER) { //hard disk is connected to AHCI port
    return sata_read(ahci_hdd_base, ahci_hdd_cmd_mem, ahci_hdd_fis_mem, sector, num_of_sectors, memory);
   }
-  if(ide_hdd_base!=0) { //hard disk is connected to IDE port
-   return pata_read(ide_hdd_base, sector, num_of_sectors, memory);
+  if(hard_disk_info.controller_type==IDE_CONTROLLER) { //hard disk is connected to IDE port
+   return pata_read(hard_disk_info.base_1, sector, num_of_sectors, memory);
   }
  }
  
  if(storage_medium==MEDIUM_CDROM) {
   //read CDROM
-  if(ahci_cdrom_base!=0) { //CDROM is connected to AHCI port
+  if(optical_drive_info.controller_type==AHCI_CONTROLLER) { //CDROM is connected to AHCI port
    for(int i=0, status=0; i<num_of_sectors; i++, sector++, memory+=2048) {
     status = satapi_read_sector(ahci_cdrom_base, ahci_cdrom_cmd_mem, ahci_cdrom_fis_mem, sector, memory);
     if(status==STATUS_ERROR) {
@@ -91,8 +144,8 @@ byte_t read_storage_medium(dword_t sector, byte_t num_of_sectors, dword_t memory
    }
    return STATUS_GOOD;
   }
-  if(ide_cdrom_base!=0) { //CDROM is connected to IDE port
-   return patapi_read(ide_cdrom_base, ide_cdrom_alt_base, sector, num_of_sectors, memory);
+  if(optical_drive_info.controller_type==IDE_CONTROLLER) { //CDROM is connected to IDE port
+   return patapi_read(optical_drive_info.base_1, optical_drive_info.base_2, sector, num_of_sectors, memory);
   }
  }
  
@@ -114,8 +167,8 @@ byte_t read_storage_medium(dword_t sector, byte_t num_of_sectors, dword_t memory
 
 byte_t read_audio_cd(dword_t sector, dword_t num_of_sectors, dword_t memory) {
  if(storage_medium==MEDIUM_CDROM) {
-  if(ide_cdrom_base!=0) { //CDROM is connected to IDE port
-   return patapi_read_audio_cd_sector(ide_cdrom_base, ide_cdrom_alt_base, sector, num_of_sectors, memory);
+  if(optical_drive_info.controller_type==IDE_CONTROLLER) { //CDROM is connected to IDE port
+   return patapi_read_audio_cd_sector(optical_drive_info.base_1, optical_drive_info.base_2, sector, num_of_sectors, memory);
   }
  }
 
@@ -125,11 +178,11 @@ byte_t read_audio_cd(dword_t sector, dword_t num_of_sectors, dword_t memory) {
 byte_t write_storage_medium(dword_t sector, byte_t num_of_sectors, dword_t memory) {
  if(storage_medium==MEDIUM_HDD) {
   //write HDD
-  if(ahci_hdd_base!=0) { //hard disk is connected to AHCI port
+  if(hard_disk_info.controller_type==AHCI_CONTROLLER) { //hard disk is connected to AHCI port
    return sata_write(ahci_hdd_base, ahci_hdd_cmd_mem, ahci_hdd_fis_mem, sector, num_of_sectors, memory);
   }
-  if(ide_hdd_base!=0) { //hard disk is connected to IDE port
-   return pata_write(ide_hdd_base, sector, num_of_sectors, memory);
+  if(hard_disk_info.controller_type==IDE_CONTROLLER) { //hard disk is connected to IDE port
+   return pata_write(hard_disk_info.base_1, sector, num_of_sectors, memory);
   }
  }
  
@@ -170,20 +223,20 @@ byte_t detect_optical_disk(void) {
  }
  
  //detect disk
- if(ahci_cdrom_base!=0) { //CDROM is connected to AHCI port
+ if(optical_drive_info.controller_type==AHCI_CONTROLLER) { //CDROM is connected to AHCI port
   status = satapi_read_drive_capabilities(ahci_cdrom_base, ahci_cdrom_cmd_mem, ahci_cdrom_fis_mem);
  }
- if(ide_cdrom_base!=0) { //CDROM is connected to IDE port
-  status = patapi_detect_disk(ide_cdrom_base, ide_cdrom_alt_base);
+ if(optical_drive_info.controller_type==IDE_CONTROLLER) { //CDROM is connected to IDE port
+  status = patapi_detect_disk(optical_drive_info.base_1, optical_drive_info.base_2);
  }
 
  //read disk size
  if(status==STATUS_TRUE) {
-  if(ahci_cdrom_base!=0) { //CDROM is connected to AHCI port
+  if(optical_drive_info.controller_type==AHCI_CONTROLLER) { //CDROM is connected to AHCI port
    //status = satapi_read_capabilities(ahci_cdrom_base, ahci_cdrom_cmd_mem, ahci_cdrom_fis_mem); //TODO:
   }
-  if(ide_cdrom_base!=0) { //CDROM is connected to IDE port
-   patapi_read_capabilities(ide_cdrom_base, ide_cdrom_alt_base);
+  if(optical_drive_info.controller_type==IDE_CONTROLLER) { //CDROM is connected to IDE port
+   patapi_read_capabilities(optical_drive_info.base_1, optical_drive_info.base_2);
   }
  }
  
@@ -212,11 +265,11 @@ void eject_optical_disk(void) {
  }
  
  //eject drive
- if(ahci_cdrom_base!=0) { //CDROM is connected to AHCI port
+ if(optical_drive_info.controller_type==AHCI_CONTROLLER) { //CDROM is connected to AHCI port
   satapi_eject_drive(ahci_cdrom_base, ahci_cdrom_cmd_mem, ahci_cdrom_fis_mem);
  }
- if(ide_cdrom_base!=0) { //CDROM is connected to IDE port
-  patapi_eject_drive(ide_cdrom_base, ide_cdrom_alt_base);
+ if(optical_drive_info.controller_type==IDE_CONTROLLER) { //CDROM is connected to IDE port
+  patapi_start_stop_command(optical_drive_info.base_1, optical_drive_info.base_2, PATA_EJECT);
  }
  
  //select previous medium
@@ -229,14 +282,14 @@ void eject_optical_disk(void) {
 }
 
 void spin_down_optical_drive(void) {
- if(ide_cdrom_base!=0) { //CDROM is connected to IDE port
-  patapi_spin_down_drive(ide_cdrom_base, ide_cdrom_alt_base);
+ if(optical_drive_info.controller_type==IDE_CONTROLLER) { //CDROM is connected to IDE port
+  patapi_start_stop_command(optical_drive_info.base_1, optical_drive_info.base_2, PATA_SPIN_DOWN);
  }
 }
 
 void reset_optical_drive(void) {
- if(ide_cdrom_base!=0) { //CDROM is connected to IDE port
-  ide_reset_controller(ide_cdrom_base, ide_cdrom_alt_base);
+ if(optical_drive_info.controller_type==IDE_CONTROLLER) { //CDROM is connected to IDE port
+  ide_reset_controller(optical_drive_info.base_1, optical_drive_info.base_2);
  }
 }
 
@@ -252,8 +305,8 @@ byte_t read_optical_disk_toc(void) {
  }
 
  //read TOC
- if(ide_cdrom_base!=0) { //CDROM is connected to IDE port
-  if(patapi_read_cd_toc(ide_cdrom_base, ide_cdrom_alt_base, (dword_t)(&optical_disk_table_of_content))==STATUS_ERROR) {
+ if(optical_drive_info.controller_type==IDE_CONTROLLER) { //CDROM is connected to IDE port
+  if(patapi_read_cd_toc(optical_drive_info.base_1, optical_drive_info.base_2, (dword_t)(&optical_disk_table_of_content))==STATUS_ERROR) {
    return STATUS_ERROR;
   }
  }

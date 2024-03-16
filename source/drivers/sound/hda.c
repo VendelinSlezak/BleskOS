@@ -166,6 +166,7 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
   if(codec_id!=0) {
    log("\nHDA: PIO communication interface");
    hda_initalize_codec(sound_card_number, codec_number);
+   return; //initalization is complete
   }
  }
 }
@@ -589,7 +590,7 @@ void hda_initalize_audio_function_group(dword_t sound_card_number, dword_t afg_n
    }
 
    //add task for checking headphone connection
-   create_task("HDA check headphone connection", hda_check_headphone_connection_change, TASK_TYPE_USER_INPUT, 50);
+   create_task(hda_check_headphone_connection_change, TASK_TYPE_USER_INPUT, 50);
   }
  }
  else if(pin_headphone_node_number!=0) { //codec do not have speaker, but only headphone output

@@ -10,6 +10,7 @@
 
 dword_t ext_one_sector[128];
 
+dword_t ext_partition_first_sector = 0;
 dword_t ext_block_descriptor_first_sector = 0, ext_size_of_block_in_bytes = 0, ext_size_of_block_in_sectors = 0, ext_number_of_block_groups = 0, ext_number_of_blocks_in_group = 0, ext_number_of_inodes_in_group = 0, ext_inode_size_in_bytes = 0;
 dword_t ext_version = 0, ext_file_size_in_bytes = 0, ext_block_group_descriptor_size_in_bytes = 0, ext_num_of_groups_per_flex_group = 0;
 dword_t ext_max_number_of_blocks_per_one_read = 0, ext_how_many_bytes_to_read = 0, ext_pointer_to_file_in_memory = 0, ext_already_readed_bytes = 0, ext_indirect_block_memory = 0, ext_double_indirect_block_memory = 0, ext_triple_indirect_block_memory = 0;

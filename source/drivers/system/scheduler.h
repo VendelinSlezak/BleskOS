@@ -14,7 +14,6 @@
 #define SCHEDULER_MAX_NUMBER_OF_TASKS 20
 struct scheduler_task_info {
  void (*task)(void);
- byte_t *name;
  byte_t type;
  dword_t counter_of_ms;
  dword_t number_of_ms_to_be_executed;
@@ -24,7 +23,7 @@ struct scheduler_task_info scheduler_tasks[SCHEDULER_MAX_NUMBER_OF_TASKS];
 byte_t actual_number_of_tasks, is_task_table_changing;
 
 void initalize_scheduler(void);
-void create_task(byte_t *name, void (*task)(), byte_t type, dword_t number_of_ms_to_be_executed);
+void create_task(void (*task)(), byte_t type, dword_t number_of_ms_to_be_executed);
 void destroy_task(void (*task)());
 void scheduler_periodic_interrupt(void);
 void scheduler_user_input(void);

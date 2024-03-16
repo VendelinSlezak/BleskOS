@@ -32,6 +32,7 @@ void select_ext_partition(dword_t first_partition_sector) {
  if(ext_one_sector[0]==0) {
   return;
  }
+ ext_partition_first_sector = first_partition_sector;
 
  //read variables
  ext_version = ext_one_sector[19];
@@ -100,6 +101,7 @@ void set_ext_partition_info_in_device_list_entry(void) {
  set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+7, ext_number_of_inodes_in_group);
  set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+8, ext_inode_size_in_bytes);
  set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+9, ext_max_number_of_blocks_per_one_read);
+ set_device_entry_list_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+10, ext_partition_first_sector);
 }
 
 void read_ext_partition_info_from_device_list_entry(void) {
@@ -113,14 +115,15 @@ void read_ext_partition_info_from_device_list_entry(void) {
  ext_number_of_inodes_in_group = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+7);
  ext_inode_size_in_bytes = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+8);
  ext_max_number_of_blocks_per_one_read = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+9);
+ ext_partition_first_sector = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_UNIQUE_INFO+10);
 }
 
 byte_t ext_read_block(dword_t block, dword_t memory) {
- return read_storage_medium(block*ext_size_of_block_in_sectors, ext_size_of_block_in_sectors, memory);
+ return read_storage_medium(ext_partition_first_sector+block*ext_size_of_block_in_sectors, ext_size_of_block_in_sectors, memory);
 }
 
 byte_t ext_read_blocks(dword_t block, dword_t num_of_blocks, dword_t memory) {
- return read_storage_medium(block*ext_size_of_block_in_sectors, ext_size_of_block_in_sectors*num_of_blocks, memory);
+ return read_storage_medium(ext_partition_first_sector+block*ext_size_of_block_in_sectors, ext_size_of_block_in_sectors*num_of_blocks, memory);
 }
 
 dword_t ext_read_inode(dword_t inode) {
@@ -273,6 +276,13 @@ dword_t ext_read_file(dword_t inode, dword_t size_in_bytes) {
   file_mem = calloc(size_in_bytes-(size_in_bytes%ext_size_of_block_in_bytes)+ext_size_of_block_in_bytes); //recalculate to align of blocks
  }
 
+ //TODO: read file with extent tree
+ if((inode32[8] & 0x80000)==0x80000) {
+  log("\nExtent tree");
+  free(inode_mem);
+  return STATUS_ERROR;
+ }
+
  //read file
  ext_how_many_bytes_to_read = size_in_bytes;
  ext_pointer_to_file_in_memory = file_mem;
@@ -328,6 +338,7 @@ dword_t ext_read_file(dword_t inode, dword_t size_in_bytes) {
  free(ext_indirect_block_memory);
  free(ext_double_indirect_block_memory);
  free(ext_triple_indirect_block_memory);
+ free(inode_mem);
  free(file_mem);
  return STATUS_ERROR;
 }
@@ -425,11 +436,14 @@ dword_t ext_read_folder(dword_t folder_inode, dword_t size_in_bytes) {
     byte_t *inode8 = (byte_t *) (inode_mem);
 
     //attribute
-    if((inode8[1] & 0x40)==0x40) {
+    if(ext_folder8[7]==0x2) {
      folder[11]=0x10; //directory
     }
-    else {
+    else if(ext_folder8[7]==0x1) {
      folder[11]=0x20; //normal file
+    }
+    else {
+     folder[11]=0x20; //TODO: special file
     }
 
     //size of file

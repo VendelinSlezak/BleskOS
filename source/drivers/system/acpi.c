@@ -41,10 +41,10 @@ void read_acpi_tables(void) {
   memory_pointer++;
  }
  if(rsdp_mem==0) {
-  log("\nno RSDP table founded\n");
+  log("\n\nno RSDP table founded\n");
   return;
  }
- log("\nRSDP table memory: ");
+ log("\n\nRSDP table memory: ");
  log_hex(rsdp_mem);
  log("\n");
  
@@ -135,7 +135,6 @@ void read_acpi_tables(void) {
  log_hex_with_space(acpi_pm2_control_register);
  log("shutdown value for pm2: ");
  log_hex(shutdown_value_pm2);
- log("\n");
 }
 
 void shutdown(void) {

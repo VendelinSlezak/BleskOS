@@ -54,26 +54,6 @@ void system_board_redraw(void) {
   system_board_print_hardware_item("PS/2 controller");
   system_board_num_of_items++;
  }
- if(ide_hdd_base!=0) {
-  system_board_items_list[system_board_num_of_items]=SYSTEM_BOARD_IDE_HDD;
-  system_board_print_hardware_item("IDE hard disk");
-  system_board_num_of_items++;
- }
- if(ide_cdrom_base!=0) {
-  system_board_items_list[system_board_num_of_items]=SYSTEM_BOARD_IDE_CDROM;
-  system_board_print_hardware_item("IDE optical disk");
-  system_board_num_of_items++;
- }
- if(ahci_hdd_base!=0) {
-  system_board_items_list[system_board_num_of_items]=SYSTEM_BOARD_AHCI_HDD;
-  system_board_print_hardware_item("AHCI hard disk");
-  system_board_num_of_items++;
- }
- if(ahci_cdrom_base!=0) {
-  system_board_items_list[system_board_num_of_items]=SYSTEM_BOARD_AHCI_CDROM;
-  system_board_print_hardware_item("AHCI optical disk drive");
-  system_board_num_of_items++;
- }
 
  //draw item specific things
  if(system_board_items_list[system_board_selected_item]==SYSTEM_BOARD_MEMORY) {
@@ -312,52 +292,6 @@ void system_board_redraw(void) {
    else {
     print_hex(ps2_second_channel_device, screen_x_center+16*8, 30, BLACK);
    }
-  }
- }
- else if(system_board_items_list[system_board_selected_item]==SYSTEM_BOARD_IDE_HDD) {
-  print("Status register:", screen_x_center, 30, BLACK);
-  print_hex(inb(ide_hdd_base+7), screen_x_center+17*8, 30, BLACK);
-  print("Error register:", screen_x_center, 50, BLACK);
-  print_hex(inb(ide_hdd_base+1), screen_x_center+16*8, 50, BLACK);
-  print("Size in sectors:", screen_x_center, 70, BLACK);
-  print_var(hard_disk_size, screen_x_center+17*8, 70, BLACK);
-  print("Size in GB:", screen_x_center, 90, BLACK);
-  print_var(hard_disk_size/2048/1024, screen_x_center+12*8, 90, BLACK);
- }
- else if(system_board_items_list[system_board_selected_item]==SYSTEM_BOARD_IDE_CDROM) {
-  print("Status register:", screen_x_center, 30, BLACK);
-  print_hex(inb(ide_cdrom_base+7), screen_x_center+17*8, 30, BLACK);
-  print("Error register:", screen_x_center, 50, BLACK);
-  print_hex(inb(ide_cdrom_base+1), screen_x_center+16*8, 50, BLACK);
-  print("[d] Detect disk [e] Eject drive [r] Reset", screen_x_center, 90, BLACK);
-  if(detect_optical_disk()==STATUS_TRUE) {
-   print("Optical disk inserted", screen_x_center, 70, BLACK);
-  }
-  else {
-   print("Optical disk not inserted", screen_x_center, 70, BLACK);
-  }
- }
- else if(system_board_items_list[system_board_selected_item]==SYSTEM_BOARD_AHCI_HDD) {
-  /*print("Status register:", screen_x_center, 30, BLACK);
-  print_hex(inb(ide_hdd_base+7), screen_x_center+17*8, 30, BLACK);
-  print("Error register:", screen_x_center, 50, BLACK);
-  print_hex(inb(ide_hdd_base+1), screen_x_center+16*8, 50, BLACK);*/
-  print("Size in sectors:", screen_x_center, 70, BLACK);
-  print_var(hard_disk_size, screen_x_center+17*8, 70, BLACK);
-  print("Size in GB:", screen_x_center, 90, BLACK);
-  print_var(hard_disk_size/2048/1024, screen_x_center+12*8, 90, BLACK);
- }
- else if(system_board_items_list[system_board_selected_item]==SYSTEM_BOARD_AHCI_CDROM) {
-  /*print("Status register:", screen_x_center, 30, BLACK);
-  print_hex(inb(ide_cdrom_base+7), screen_x_center+17*8, 30, BLACK);
-  print("Error register:", screen_x_center, 50, BLACK);
-  print_hex(inb(ide_cdrom_base+1), screen_x_center+16*8, 50, BLACK);*/
-  print("[d] Detect disk [e] Eject drive", screen_x_center, 90, BLACK);
-  if(detect_optical_disk()==STATUS_TRUE) {
-   print("Optical disk inserted", screen_x_center, 70, BLACK);
-  }
-  else {
-   print("Optical disk not inserted", screen_x_center, 70, BLACK);
   }
  }
 }

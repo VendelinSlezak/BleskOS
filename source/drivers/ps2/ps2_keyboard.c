@@ -40,7 +40,7 @@ void initalize_ps2_keyboard(void) {
 
  //add task for changing PS/2 keyboard LEDs
  if(ps2_first_channel_device==PS2_CHANNEL_KEYBOARD_INITALIZED || ps2_second_channel_device==PS2_CHANNEL_KEYBOARD_INITALIZED) {
-  create_task("PS/2 keyboard LED changing", ps2_keyboard_check_led_change, TASK_TYPE_USER_INPUT, 16);
+  create_task(ps2_keyboard_check_led_change, TASK_TYPE_USER_INPUT, 16);
  }
 }
 

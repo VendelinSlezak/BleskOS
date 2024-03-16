@@ -47,8 +47,6 @@ void pci_disable_interrupts(dword_t bus, dword_t device, dword_t function) {
 
 void scan_pci(void) {
  //initalize values that are used to determine presence of devices
- ide_controllers_info_mem = calloc(10*16);
- ide_controllers_pointer = 0;
  ide_0x1F0_controller_present = STATUS_FALSE;
  ide_0x170_controller_present = STATUS_FALSE;
  ahci_controllers_pointer = 0;
@@ -57,6 +55,7 @@ void scan_pci(void) {
  usb_controllers_pointer = 0;
  number_of_graphic_cards = 0;
  number_of_sound_cards = 0;
+ number_of_storage_controllers = 0;
 
  //this array is used in System board
  pci_devices_array_mem = calloc(12*1000);
@@ -120,51 +119,51 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  }
  
  //IDE controller
- if((type_of_device & 0xFFFF00)==0x010100) {
-  log("\nIDE controller");
- 
+ if((type_of_device & 0xFFFF00)==0x010100 && number_of_storage_controllers<MAX_NUMBER_OF_STORAGE_CONTROLLERS) { 
   pci_device_ide_controller:
+  log("\nIDE controller");
   pci_enable_io_busmastering(bus, device, function);
   pci_disable_interrupts(bus, device, function);
 
   //first controller
-  word_t *ide_controllers_info = (word_t *) (ide_controllers_info_mem+ide_controllers_pointer*16);
+  storage_controllers[number_of_storage_controllers].controller_type = IDE_CONTROLLER;
   io_port_base = pci_read_io_bar(bus, device, function, PCI_BAR0);
-  if(ide_controllers_pointer>=10) {
-   return;
-  }
-  if(io_port_base==0 || io_port_base==0x1F0) {
-   if(ide_0x1F0_controller_present==STATUS_FALSE && inb(0x1F7)!=0xFF) {
-    ide_0x1F0_controller_present = STATUS_TRUE;
-    ide_controllers_info[0] = 0x1F0;
-    ide_controllers_info[1] = 0x3F4;
-    ide_controllers_pointer++;
+  if(io_port_base==0 || ide_is_bus_floating(io_port_base)==STATUS_FALSE) {
+   if(io_port_base==0 || io_port_base==0x1F0) {
+    if(ide_0x1F0_controller_present==STATUS_FALSE) {
+     ide_0x1F0_controller_present = STATUS_TRUE;
+     storage_controllers[number_of_storage_controllers].base_1 = 0x1F0;
+     storage_controllers[number_of_storage_controllers].base_2 = 0x3F4;
+     number_of_storage_controllers++;
+    }
+   }
+   else {
+    storage_controllers[number_of_storage_controllers].base_1 = io_port_base;
+    storage_controllers[number_of_storage_controllers].base_2 = pci_read_io_bar(bus, device, function, PCI_BAR1);
+    number_of_storage_controllers++;
    }
   }
-  else {
-   ide_controllers_info[0] = io_port_base;
-   ide_controllers_info[1] = pci_read_io_bar(bus, device, function, PCI_BAR1);
-   ide_controllers_pointer++;
+  if(number_of_storage_controllers>=MAX_NUMBER_OF_STORAGE_CONTROLLERS) {
+   return;
   }
 
   //second controller
-  ide_controllers_info = (word_t *) (ide_controllers_info_mem+ide_controllers_pointer*16);
+  storage_controllers[number_of_storage_controllers].controller_type = IDE_CONTROLLER;
   io_port_base = pci_read_io_bar(bus, device, function, PCI_BAR2);
-  if(ide_controllers_pointer>=10) {
-   return;
-  }
-  if(io_port_base==0 || io_port_base==0x170) {
-   if(ide_0x170_controller_present==STATUS_FALSE && inb(0x177)!=0xFF) {
-    ide_0x170_controller_present = STATUS_TRUE;
-    ide_controllers_info[0] = 0x170;
-    ide_controllers_info[1] = 0x374;
-    ide_controllers_pointer++;
+  if(io_port_base==0 || ide_is_bus_floating(io_port_base)==STATUS_FALSE) {
+   if(io_port_base==0 || io_port_base==0x170) {
+    if(ide_0x170_controller_present==STATUS_FALSE) {
+     ide_0x170_controller_present = STATUS_TRUE;
+     storage_controllers[number_of_storage_controllers].base_1 = 0x170;
+     storage_controllers[number_of_storage_controllers].base_2 = 0x374;
+     number_of_storage_controllers++;
+    }
    }
-  }
-  else {
-   ide_controllers_info[0] = io_port_base;
-   ide_controllers_info[1] = pci_read_io_bar(bus, device, function, PCI_BAR3);
-   ide_controllers_pointer++;
+   else {
+    storage_controllers[number_of_storage_controllers].base_1 = io_port_base;
+    storage_controllers[number_of_storage_controllers].base_2 = pci_read_io_bar(bus, device, function, PCI_BAR3);
+    number_of_storage_controllers++;
+   }
   }
   
   return;

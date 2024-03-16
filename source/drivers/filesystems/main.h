@@ -33,6 +33,36 @@ struct partition partitions[8];
 
 #define ATTRIBUTE_DIRECTORY 0x10
 
+#define NO_CONTROLLER 0
+#define IDE_CONTROLLER 1
+#define AHCI_CONTROLLER 2
+struct storage_controller_info {
+ byte_t controller_type;
+ dword_t base_1;
+ dword_t base_2;
+}__attribute__((packed));
+#define MAX_NUMBER_OF_STORAGE_CONTROLLERS 10
+struct storage_controller_info storage_controllers[MAX_NUMBER_OF_STORAGE_CONTROLLERS];
+dword_t number_of_storage_controllers;
+
+struct storage_device_info {
+ byte_t controller_type;
+ byte_t device_port;
+ dword_t base_1;
+ dword_t base_2;
+ dword_t number_of_sectors;
+}__attribute__((packed));
+struct storage_device_info hard_disk_info;
+struct storage_device_info optical_drive_info;
+
+struct ata_identify_command_device_info {
+ byte_t padding_1[120];
+ dword_t lba28_total_number_of_sectors;
+ byte_t padding_2[76];
+ qword_t lba48_total_number_of_sectors;
+}__attribute__((packed));
+struct ata_identify_command_device_info *device_info;
+
 byte_t storage_medium, storage_medium_number, save_value_storage_medium, save_value_storage_medium_number, selected_partition_number;
 byte_t one_sector[2048];
 byte_t mbr_sector[512];
@@ -57,6 +87,7 @@ struct table_of_content {
 }__attribute__((packed));
 struct table_of_content optical_disk_table_of_content;
 
+void initalize_storage_controllers(void);
 byte_t if_storage_medium_exist(byte_t type_of_medium, byte_t medium_number);
 void select_storage_medium(byte_t type_of_medium, byte_t medium_number);
 byte_t read_storage_medium(dword_t sector, byte_t num_of_sectors, dword_t memory);
