@@ -12,4 +12,3 @@ void pata_select_sector_lba28(word_t base_port, dword_t sector, byte_t number_of
 void pata_select_sector_lba48(word_t base_port, dword_t sector, byte_t number_of_sectors);
 byte_t pata_read(word_t base_port, dword_t sector, byte_t number_of_sectors, dword_t memory);
 byte_t pata_write(word_t base_port, dword_t sector, byte_t number_of_sectors, dword_t memory);
-byte_t pata_delete(word_t base_port, dword_t sector, byte_t number_of_sectors);

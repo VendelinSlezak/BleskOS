@@ -121,7 +121,7 @@ void initalize_ps2_controller(void) {
   return;
  }
  else {
-  log("\nPS/2 controller ");
+  log("\n\nPS/2 controller ");
  }
 
  //initaize variables
@@ -273,8 +273,8 @@ void initalize_ps2_controller(void) {
   //read device ID
   ps2_first_channel_buffer[1] = 0xFF;
   write_to_first_ps2_channel(0xF2);
+  log("\n");
   if(ps2_first_channel_wait_for_ack()==STATUS_GOOD) {
-   log("\n");
    if(ps2_first_channel_wait_for_response()==STATUS_GOOD) {
     if(ps2_first_channel_buffer[1]==0xAB || ps2_first_channel_buffer[1]==0xAC) {
      ps2_first_channel_device = PS2_CHANNEL_KEYBOARD_CONNECTED;
@@ -311,8 +311,8 @@ void initalize_ps2_controller(void) {
   //read device ID
   ps2_second_channel_buffer[1] = 0xFF;
   write_to_second_ps2_channel(0xF2);
+  log("\n");
   if(ps2_second_channel_wait_for_ack()==STATUS_GOOD) {
-   log("\n");
    if(ps2_second_channel_wait_for_response()==STATUS_GOOD) {
     if(ps2_second_channel_buffer[1]==0xAB || ps2_second_channel_buffer[1]==0xAC) {
      ps2_second_channel_device = PS2_CHANNEL_KEYBOARD_CONNECTED;

@@ -16,7 +16,7 @@
 
 #define BOOT_OPTION_DEBUG_MESSAGES 0x1
 
-#define BLESKOS_NUMBER_OF_START_SCREEN_MESSAGES 14
+#define BLESKOS_NUMBER_OF_START_SCREEN_MESSAGES 13
 
 typedef unsigned char byte_t;
 typedef unsigned short word_t;

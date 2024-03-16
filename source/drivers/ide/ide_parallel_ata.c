@@ -84,36 +84,6 @@ byte_t pata_write(word_t base_port, dword_t sector, byte_t number_of_sectors, dw
   }
  }
  
- //flush cache memory for immediate writing
- outb(base_port + 7, 0xE7);
- return ide_wait_drive_not_busy_with_error_status(base_port, 500);
-}
-
-byte_t pata_delete(word_t base_port, dword_t sector, byte_t number_of_sectors) {
- //drive must be already selected
- 
- //select sector
- if(sector<0x01000000) {
-  pata_select_sector_lba28(base_port, sector, number_of_sectors);
-  outb(base_port + 7, 0x30); //LBA28 WRITE command
- }
- else {
-  pata_select_sector_lba48(base_port, sector, number_of_sectors);
-  outb(base_port + 7, 0x34); //LBA48 WRITE command
- }
- 
- //transfer data
- for(int i=0; i<number_of_sectors; i++) {
-  //wait for drive to be ready
-  if(ide_wait_for_data(base_port, 500)==STATUS_ERROR) {
-   return STATUS_ERROR;
-  }
-
-  //write data of sector
-  for(dword_t j=0; j<256; j++) {
-   outw(base_port + 0, 0);
-  }
- }
  
  //flush cache memory for immediate writing
  outb(base_port + 7, 0xE7);

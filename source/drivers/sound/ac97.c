@@ -61,7 +61,7 @@ void initalize_ac97_sound_card(byte_t sound_card_number) {
  }
 
  //add task for checking headphone connection
- create_task("AC97 check headphone connection", ac97_check_headphone_connection_change, TASK_TYPE_PERIODIC_INTERRUPT, 50);
+ create_task(ac97_check_headphone_connection_change, TASK_TYPE_PERIODIC_INTERRUPT, 50);
  
  //log
  log("\n\nSound card AC97");

@@ -8,13 +8,13 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-byte_t patapi_send_packet_command(word_t base_port, word_t transfer_length) {
+byte_t patapi_send_packet_command(word_t base_port, word_t alt_base_port, word_t transfer_length) {
  //drive must be already selected
 
  //reset drive from condition for stucking
  if((inb(base_port + 7) & 0x88)!=0x00) {
   log("\nIDE ATAPI: reset");
-  ide_reset_controller(base_port, ide_cdrom_alt_base);
+  ide_reset_controller(base_port, alt_base_port);
  }
  
  //send command
@@ -41,7 +41,7 @@ byte_t patapi_detect_disk(word_t base_port, word_t alt_base_port) {
  ide_reset_controller(base_port, alt_base_port);
 
  //send packet command
- if(patapi_send_packet_command(base_port, 0)==STATUS_ERROR) {
+ if(patapi_send_packet_command(base_port, alt_base_port, 0)==STATUS_ERROR) {
   log("TEST UNIT READY");
   return STATUS_ERROR;
  }
@@ -78,7 +78,7 @@ byte_t patapi_read_capabilities(word_t base_port, word_t alt_base_port) {
  ide_reset_controller(base_port, alt_base_port);
  
  //send packet command
- if(patapi_send_packet_command(base_port, 8)==STATUS_ERROR) {
+ if(patapi_send_packet_command(base_port, alt_base_port, 8)==STATUS_ERROR) {
   log("READ CAPABILITES");
   return STATUS_ERROR;
  }
@@ -113,41 +113,20 @@ byte_t patapi_read_capabilities(word_t base_port, word_t alt_base_port) {
  return STATUS_GOOD;
 }
 
-byte_t patapi_eject_drive(word_t base_port, word_t alt_base_port) {
+byte_t patapi_start_stop_command(word_t base_port, word_t alt_base_port, byte_t command) {
  //reset controller
  ide_reset_controller(base_port, alt_base_port);
 
  //send packet command
- if(patapi_send_packet_command(base_port, 0)==STATUS_ERROR) {
+ if(patapi_send_packet_command(base_port, alt_base_port, 0)==STATUS_ERROR) {
   log("EJECT");
   return STATUS_ERROR;
  }
  
  //send packet
- outw(base_port + 0, 0x1B); //START-STOP command
+ outw(base_port + 0, 0x1B); //START-STOP
  outw(base_port + 0, 0);
- outw(base_port + 0, 0x2); //spin-down and eject
- outw(base_port + 0, 0);
- outw(base_port + 0, 0);
- outw(base_port + 0, 0);
- 
- return STATUS_GOOD;
-}
-
-byte_t patapi_spin_down_drive(word_t base_port, word_t alt_base_port) {
- //reset controller
- ide_reset_controller(base_port, alt_base_port);
-
- //send packet command
- if(patapi_send_packet_command(base_port, 0)==STATUS_ERROR) {
-  log("SPIN DOWN");
-  return STATUS_ERROR;
- }
- 
- //send packet
- outw(base_port + 0, 0x1B); //START-STOP command
- outw(base_port + 0, 0);
- outw(base_port + 0, 0x0); //spin-down
+ outw(base_port + 0, command);
  outw(base_port + 0, 0);
  outw(base_port + 0, 0);
  outw(base_port + 0, 0);
@@ -169,13 +148,13 @@ byte_t patapi_read_cd_toc(word_t base_port, word_t alt_base_port, dword_t memory
  ide_reset_controller(base_port, alt_base_port);
  
  //send packet command
- if(patapi_send_packet_command(base_port, 252)==STATUS_ERROR) {
+ if(patapi_send_packet_command(base_port, alt_base_port, 252)==STATUS_ERROR) {
   log("TABLE OF CONTENT");
   return STATUS_ERROR;
  }
  
  //send packet
- outw(base_port + 0, 0x43); //read TOC command
+ outw(base_port + 0, 0x43); //read TOC
  outw(base_port + 0, 0);
  outw(base_port + 0, 0);
  outw(base_port + 0, 0);
@@ -190,7 +169,7 @@ byte_t patapi_read_cd_toc(word_t base_port, word_t alt_base_port, dword_t memory
   return STATUS_ERROR;
  }
  
- //read data until device sends data
+ //wait until device sends data
  for(dword_t i=0; i<126; i++) {
   if((inb(base_port+7) & 0x08)==0x08) { //Data Ready bit is set
    *mem = inw(base_port + 0);
@@ -215,7 +194,7 @@ byte_t patapi_read(word_t base_port, word_t alt_base_port, dword_t sector, byte_
  ide_clear_device_output(base_port);
  
  //send packet command
- if(patapi_send_packet_command(base_port, 2048)==STATUS_ERROR) {
+ if(patapi_send_packet_command(base_port, alt_base_port, 2048)==STATUS_ERROR) {
   log("READ");
   return STATUS_ERROR;
  }
@@ -261,7 +240,7 @@ byte_t patapi_read_audio_cd_sector(word_t base_port, word_t alt_base_port, dword
  ide_clear_device_output(base_port);
  
  //send packet command
- if(patapi_send_packet_command(base_port, (number_of_sectors*2352))==STATUS_ERROR) {
+ if(patapi_send_packet_command(base_port, alt_base_port, (number_of_sectors*2352))==STATUS_ERROR) {
   log("READ CD");
   return STATUS_ERROR;
  }

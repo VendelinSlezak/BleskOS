@@ -77,7 +77,7 @@ void initalize_usb_controllers(void) {
  detect_usb_devices_on_hubs();
 
  //add task to continue checking for changes in USB HUBs connections
- create_task("USB HUBs check connection changes", detect_usb_devices_on_hubs, TASK_TYPE_USER_INPUT, 250);
+ create_task(detect_usb_devices_on_hubs, TASK_TYPE_USER_INPUT, 250);
  
  log("\n");
 }

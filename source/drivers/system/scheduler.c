@@ -13,7 +13,7 @@ void initalize_scheduler(void) {
  is_task_table_changing = STATUS_FALSE;
 }
 
-void create_task(byte_t *name, void (*task)(), byte_t type, dword_t number_of_ms_to_be_executed) {
+void create_task(void (*task)(), byte_t type, dword_t number_of_ms_to_be_executed) {
  if(actual_number_of_tasks>=SCHEDULER_MAX_NUMBER_OF_TASKS) {
   return;
  }
@@ -21,7 +21,6 @@ void create_task(byte_t *name, void (*task)(), byte_t type, dword_t number_of_ms
  is_task_table_changing = STATUS_TRUE;
 
  scheduler_tasks[actual_number_of_tasks].task = task;
- scheduler_tasks[actual_number_of_tasks].name = name;
  scheduler_tasks[actual_number_of_tasks].type = type;
  scheduler_tasks[actual_number_of_tasks].counter_of_ms = 0;
  scheduler_tasks[actual_number_of_tasks].number_of_ms_to_be_executed = number_of_ms_to_be_executed;
