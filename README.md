@@ -40,7 +40,7 @@ In dialog windows you can press ENTER for selecting Yes, or ESC for selecting No
 
 ## Compiling BleskOS
 
-BleskOS is designed to be compiled under linux. For compiling you have to have installed gcc, nasm and dd. If you have them, you can run `./compile.sh` script, that will generate bleskos.img file. If you want to compile without any optimizations, you can run it as `./compile fast`. If you want to only test some features from drivers or libraries, you may want to uncomment NO_PROGRAMS macro from source/bleskos.c, what will remove all code related to programs, so it will compile faster.
+BleskOS can be compiled under linux. For compiling you have to have installed gcc, nasm and dd. If you have them, you can run `./compile.sh` script, that will generate bleskos.img file. If you want to compile without any optimizations, you can run it as `./compile fast`. If you want to only test some features from drivers or libraries, you may want to uncomment NO_PROGRAMS macro from source/bleskos.c, what will remove all code related to programs, so it will compile faster.
 
 If you have installed QEMU, you can then use `./testing.sh` script. It will run QEMU with bleskos.img connected as floppy with testing/disk.img connected as hard disk. If you want to run BleskOS with own image with files, you have to copy it to testing folder and then write `./testing.sh yourimagename.img`.
 
@@ -80,7 +80,11 @@ Supported file formats
 
 You are welcome 🙂
 
-- Give us a star
-- Watch repository to be notified about updates
+- Give us a star and watch repository to be notified about updates
 - If you will find some bugs, report them in [Issues](https://github.com/VendelinSlezak/BleskOS/issues)
-- Try BleskOS on some real computer and let us know how it worked in [Discussions](https://github.com/VendelinSlezak/BleskOS/discussions) We would greatly appreciate if you would also add content of System log (Main window>[F1] System board>[L] System log>[F2] Backup the log). It helps us to improve BleskOS. Thank you!
+- Try BleskOS on some real computer and let us know how it worked in [Discussions](https://github.com/VendelinSlezak/BleskOS/discussions) We would greatly appreciate if you would also add content of System log (Main window>[F1] System board>[L] System log>[F2] Backup the log).
+- If you really like this project, you can support it on buymeacoffee.com by buying me some coffee
+
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/cnn4fyv7xh0)
+
+Thank you very much for any support!
