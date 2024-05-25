@@ -84,6 +84,7 @@ byte_t ide_send_identify_drive(word_t base_port) {
  ide_drive_type = (inb(base_port + 4) | (inb(base_port + 5) << 8));
 
  //read device info
+ clear_memory((dword_t)device_info, 512);
  word_t *device_info_pointer = (word_t *) (device_info);
  for(int i=0; i<256; i++) {
   device_info_pointer[i] = inw(base_port + 0);
@@ -102,7 +103,6 @@ byte_t ide_send_identify_drive(word_t base_port) {
   ide_drive_size = device_info->lba28_total_number_of_sectors;
  }
 
- free((dword_t)device_info);
  return STATUS_GOOD;
 }
 

@@ -1,4 +1,4 @@
-;BleskOS bootloader v15/01/2024
+;BleskOS bootloader v04/05/2024
 
 ;;;;;
 ;; MIT License
@@ -613,9 +613,9 @@ error_graphic_mode:
  call print
  jmp error_halt
  
-error_floppy_boot:
+error_0x100000_not_available:
  call error_background
- mov si, boot_error_floppy_boot
+ mov si, boot_error_0x100000_not_available
  call print
  
 error_halt:
@@ -710,13 +710,13 @@ print_hex:
  boot_bleskos_boot_options_str db 'BleskOS special boot options', 0
  boot_options_str db '[a] Boot options', 0
  boot_down_str db 'BleskOS live bootloader', 0
- boot_loading_str db 'Loading BleskOS...', 0
+ boot_loading_str db 'Loading BleskOS', 0
  
  boot_error_memory db 'Size of RAM memory can not be readed', 0
  boot_error_loading db 'Error during loading BleskOS', 0
  boot_error_graphic_info db 'Informations about graphic mode can not be readed', 0
  boot_error_graphic_mode db 'Error during setting graphic mode', 0
- boot_error_floppy_boot db 'Floppy can not be readed by this version of bootloader', 0
+ boot_error_0x100000_not_available db 'Memory at 0x100000 is not free', 0
 
  options_manual_selecting_of_graphic_mode_str db '[m] Manual selecting of graphic mode', 0
  options_graphic_mode_str db '[g] Select graphic mode', 0
@@ -740,6 +740,19 @@ print_hex:
  edid_best_x dw 0
  manual_selecting_of_graphic_mode db 1
  boot_options dd 0
+
+;edi = destination, ecx = how many bytes
+copy_loaded_data:
+ mov esi, 0x10000
+
+ .copy_byte:
+ mov al, byte [esi]
+ mov byte [edi], al
+ inc esi
+ inc edi
+ loop .copy_byte
+
+ ret
 
 load_bleskos:
  ;print message
@@ -788,6 +801,35 @@ load_bleskos:
  je .last_entry
  loop .get_memory_entry
  .last_entry:
+
+ ;found if there is enough free memory at 0x100000
+ mov di, 0
+ mov cx, 50
+ .test_one_memory_block:
+  ;free entry
+  cmp dword [es:di+16], 1
+  jne .test_one_memory_block_next_loop
+
+  ;free entry at 0x100000
+  cmp dword [es:di+4], 0
+  jne .test_one_memory_block_next_loop
+  cmp dword [es:di+0], 0x100000
+  jne .test_one_memory_block_next_loop
+
+  ;length more than 1 MB
+  cmp dword [es:di+12], 0
+  ja .0x100000_is_available
+  cmp dword [es:di+8], 0x100000
+  ja .0x100000_is_available
+ .test_one_memory_block_next_loop:
+ add di, 24
+ loop .test_one_memory_block
+ jmp error_0x100000_not_available
+
+ ;1 MB of memory is for BleskOS code
+ .0x100000_is_available:
+ add dword [es:di+0], 0x100000 ;start of memory entry
+ sub dword [es:di+8], 0x100000 ;length of memory entry - if it is bigger than 4GB this may cause ovewflow, but we do not need to worry about it, because BleskOS will read this as 4 GB long entry because of higher bits, not caring about these lesser bits
  
  ;get EDID
  mov ax, 0x0200
@@ -799,8 +841,31 @@ load_bleskos:
  mov cx, 0
  mov dx, 0
  int 10h
+
+ ;jump to unreal mode to gain access to higher memory
+ cli
+ push ds
+ lgdt [unreal_mode_gdt_wrap]
+
+ mov  eax, cr0
+ or eax, 1
+ mov  cr0, eax
+ jmp 0x0008:protected_mode
+
+ protected_mode:
+ mov bx, 0x0010
+ mov ds, bx
+
+ and al, 0xFE
+ mov  cr0, eax
+ jmp 0x0000:unreal_mode
+
+ unreal_mode:
+ pop ds
+ sti
  
  ;load bleskos
+ mov edi, 0x100000 ;we will copy loaded data here
  cmp byte [boot_drive], 0x80
  jae .hard_disk_boot
 
@@ -812,72 +877,88 @@ load_bleskos:
  mov bx, 0x0000
  mov ax, 0x1000
  mov es, ax
- mov fs, ax
  mov ah, 0x2 ;read
  mov al, 8 ;8 sectors
  pusha
  int 13h
  popa
  jc error_loading
+
+ ;copy loaded data
+ mov ecx, 8*512
+ call copy_loaded_data
  
- mov edi, 0x10000+8*512
- mov esi, 0
+ ;set CHS for next reading
  mov ch, 0 ;cylinder
  mov dh, 1 ;head
  mov cl, 1 ;sector
  
  .floppy_load_cylinder:
-  cmp ch, 22 ;load 22x36 sectors = 396 KB
+  ;print . to show that loading is progressing
+  pusha
+  mov al, '.'
+  mov ah, 0xE
+  int 10h
+  popa
+
+  cmp ch, 29 ;load 29x36 sectors = 522 KB
   ja .select_graphic_mode
+
+  ;we need to read heads separately, because reading more might cause issues on some hardware (e.g. Virtualbox)
   
-  ;load
+  ;load head 1
   mov bx, 0x0000
-  mov ax, 0x7000
+  mov ax, 0x1000
   mov es, ax
   mov ah, 0x2 ;read
-  mov al, 36 ;36 sectors
+  mov al, 18 ;18 sectors
+  mov dh, 1 ;head 1
   pusha ;some hardware change values in registers during int 13h so we have to save everything
   int 13h
   popa
   jc error_loading
+  
+  ;copy loaded data
+  push ecx
+  mov ecx, 18*512
+  call copy_loaded_data
+  pop ecx
+
+  ;next cylinder
   inc ch
+
+  ;load head 0
+  mov bx, 0x0000
+  mov ax, 0x1000
+  mov es, ax
+  mov ah, 0x2 ;read
+  mov al, 18 ;18 sectors
+  mov dh, 0 ;head 0
+  pusha ;some hardware change values in registers during int 13h so we have to save everything
+  int 13h
+  popa
+  jc error_loading
   
-  ;copy to memory
-  push cx
-  mov esi, 0
-  mov cx, 36*512
-  .copy:
-   mov ax, 0x7000
-   mov es, ax
-   mov eax, edi
-   shr eax, 16
-   shl eax, 12
-   mov fs, ax
-  
-   mov al, byte [es:si]
-   mov byte [fs:di], al
-   inc esi
-   inc edi
-  loop .copy
-  pop cx
+  ;copy loaded data
+  push ecx
+  mov ecx, 18*512
+  call copy_loaded_data
+  pop ecx
  jmp .floppy_load_cylinder
  
  .hard_disk_boot:
  mov dword [0xF008], 10 ;first sector of BleskOS code
- mov edx, 10
- mov cx, 12 ;load 12x64 sectors = 384 KB
- mov ax, 0x10
+ mov edx, 10 ;we will store sector number here
+ mov cx, 16 ;load 16x64 sectors = 512 KB
  .load_bleskos_from_hard_disk:
+  ;create descriptor of transfer
   mov word [0xF000], 0x0010 ;signature
   mov word [0xF002], 64
-  mov bx, ax
-  shl bx, 12
-  mov word [0xF004], bx ;memory offset
-  mov bx, ax
-  shl bx, 8
-  and bx, 0xF000
-  mov word [0xF006], bx ;segment
+  mov word [0xF004], 0x0000 ;memory offset
+  mov word [0xF006], 0x1000 ;segment
   mov dword [0xF00C], 0
+
+  ;read
   pusha ;some hardware change values in registers during int 13h so we have to save everything
   mov ah, 0x42
   mov si, 0xF000
@@ -886,9 +967,22 @@ load_bleskos:
   popa
   jc error_loading
   
+  ;sector for next transfer
   add edx, 64
   mov dword [0xF008], edx
-  add ax, 0x8
+
+  ;copy loaded data
+  push ecx
+  mov ecx, 64*512
+  call copy_loaded_data
+  pop ecx
+
+  ;print . to show that loading is progressing
+  pusha
+  mov al, '.'
+  mov ah, 0xE
+  int 10h
+  popa
  loop .load_bleskos_from_hard_disk
  
  ;VESA
@@ -936,19 +1030,31 @@ load_bleskos:
  mov gs, ax
  mov ss, ax
 
- mov esp, 0xFFF0 ;set stack pointer
+ mov esp, 0x80000 ;set stack pointer
  mov eax, dword [boot_options]
  push eax ;push value of boot option to stack for bleskos() method
- jmp 0x10000 ;execute BleskOS
+ jmp 0x100000 ;execute BleskOS
+
+ unreal_mode_gdt:
+  dq 0 ;first item is null
+  ;code
+  dw 0xFFFF, 0
+  db 0, 10011010b, 00000000b, 0
+  ;data
+  dw 0xFFFF, 0
+  db 0, 10010010b, 11001111b, 0
+ unreal_mode_gdt_end:
+
+ unreal_mode_gdt_wrap:
+   dw unreal_mode_gdt_end - unreal_mode_gdt - 1
+   dd unreal_mode_gdt
 
  gdt:
- dq 0 ;first item is null
-
- gdt_code:
+  dq 0 ;first item is null
+  ;code
   dw 0xFFFF, 0
   db 0, 10011010b, 11001111b, 0
-
- gdt_data:
+  ;data
   dw 0xFFFF, 0
   db 0, 10010010b, 11001111b, 0
  gdt_end:

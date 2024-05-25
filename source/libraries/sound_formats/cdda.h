@@ -9,3 +9,5 @@
 */
 
 dword_t convert_cdda_to_sound_data(dword_t cdda_memory, dword_t cdda_length);
+dword_t play_cdda(byte_t *cdda_memory, dword_t cdda_length, dword_t offset_to_first_byte_to_play);
+void cdda_refill_buffer(byte_t *buffer);

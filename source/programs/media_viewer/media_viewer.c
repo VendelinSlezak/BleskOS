@@ -44,10 +44,7 @@ void media_viewer(void) {
 
   //close program
   if(keyboard_code_of_pressed_key==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && get_mouse_cursor_click_board_value()==CLICK_ZONE_BACK)) {
-   media_viewer_pause_sound();
-   if(get_file_value(MEDIA_VIEWER_FILE_TYPE)==MEDIA_VIEWER_FILE_SOUND) {
-    media_viewer_sound_state = MEDIA_VIEWER_SOUND_STATE_STOPPED;
-   }
+   media_viewer_stop_sound();
    return;
   }
 
@@ -119,8 +116,8 @@ void draw_media_viewer(void) {
 
  if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)==0) {
   print("Supported file formats", 10, 30, WHITE);
-  print("Images: PNG/GIF/QOI/BMP", 10, 50, WHITE);
-  print("Sound: WAV", 10, 70, WHITE);
+  print("Images: JPG/PNG/GIF/BMP/QOI", 10, 50, WHITE);
+  print("Sound: MP3/WAV/CDDA", 10, 70, WHITE);
  }
  else if(get_file_value(MEDIA_VIEWER_FILE_TYPE)==MEDIA_VIEWER_FILE_IMAGE) {
   dword_t *image_info = (dword_t *) (get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY));
@@ -164,7 +161,7 @@ void draw_media_viewer(void) {
   draw_char('%', percent_char_column, screen_height-6-7, BLACK);
  }
  else if(get_file_value(MEDIA_VIEWER_FILE_TYPE)==MEDIA_VIEWER_FILE_SOUND) {
-  //set state
+  //set state if this is jump between files
   if(media_viewer_sound_state==MEDIA_VIEWER_SOUND_NO_FILE) {
    media_viewer_sound_state = MEDIA_VIEWER_SOUND_STATE_STOPPED;
   }
@@ -188,11 +185,11 @@ void draw_media_viewer(void) {
   print_var(sound_volume, 10+64, screen_height-80+3, WHITE);
 
   //print length of file
+  struct audio_file_t *audio_info = (struct audio_file_t *) (get_file_value(MEDIA_VIEWER_FILE_AUDIO_INFO_MEMORY));
   print(":  :  /  :  :", screen_width-10-24-24-24-24-24, screen_height-37, WHITE);
-  dword_t seconds = get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)%60000/1000;
-  dword_t minutes = get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)/60000;
-  dword_t hours = minutes/60;
-  minutes -= (hours*60);
+  dword_t seconds = audio_info->length_seconds;
+  dword_t minutes = audio_info->length_minutes;
+  dword_t hours = audio_info->length_hours;
   if(seconds<10) {
    print("0", screen_width-10-16, screen_height-37, WHITE);
    print_var(seconds, screen_width-10-8, screen_height-37, WHITE);
@@ -216,10 +213,9 @@ void draw_media_viewer(void) {
   }
 
   //print length of played part of file
-  seconds = get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)%60000/1000;
-  minutes = get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)/60000;
-  hours = minutes/60;
-  minutes -= (hours*60);
+  seconds = audio_info->played_length_seconds;
+  minutes = audio_info->played_length_minutes;
+  hours = audio_info->played_length_hours;
   draw_full_square(screen_width-10-24-24-24-24-24-16, screen_height-37, 64, 8, BLACK);
   if(seconds<10) {
    print("0", screen_width-82-16, screen_height-37, WHITE);
@@ -246,7 +242,7 @@ void draw_media_viewer(void) {
 
   //draw square of played part of file
   draw_empty_square(10, screen_height-60, screen_width-20, 10, WHITE);
-  draw_full_square(11, screen_height-59, ((screen_width-22)*get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)/get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)), 8, 0x0900FF);
+  draw_full_square(11, screen_height-59, ((audio_info->actually_played_position/1024)*(screen_width-22)/(audio_info->output_length/1024)), 8, 0x0900FF);
   add_zone_to_click_board(11, screen_height-59, screen_width-22, 8, MEDIA_VIEWER_CLICK_ZONE_SOUND_PROGRESS);
  }
 }
@@ -258,15 +254,17 @@ void media_viewer_draw_image(void) {
 
 void media_viewer_open_file(void) {
  //pause sound
- media_viewer_pause_sound();
+ media_viewer_stop_sound();
 
  //open file
  file_dialog_open_file_extensions_clear_mem();
  file_dialog_open_file_add_extension("qoi");
  file_dialog_open_file_add_extension("bmp");
+ file_dialog_open_file_add_extension("jpg");
  file_dialog_open_file_add_extension("png");
  file_dialog_open_file_add_extension("gif");
  file_dialog_open_file_add_extension("wav");
+ file_dialog_open_file_add_extension("mp3");
  file_dialog_open_file_add_extension("cdda");
  dword_t new_file_mem = file_dialog_open();
  if(new_file_mem==0) {
@@ -278,8 +276,9 @@ void media_viewer_open_file(void) {
  add_file((word_t *)file_dialog_file_name, 0, 0, 0, 0, 0);
  
  //set file entry
- if(is_loaded_file_extension("qoi")==STATUS_TRUE ||is_loaded_file_extension("bmp")==STATUS_TRUE || is_loaded_file_extension("png")==STATUS_TRUE || is_loaded_file_extension("gif")==STATUS_TRUE) { //image  
+ if(is_loaded_file_extension("jpg")==STATUS_TRUE || is_loaded_file_extension("qoi")==STATUS_TRUE || is_loaded_file_extension("bmp")==STATUS_TRUE || is_loaded_file_extension("png")==STATUS_TRUE || is_loaded_file_extension("gif")==STATUS_TRUE) { //image  
   //convert image
+  show_message_window("Decoding image...");
   if(is_loaded_file_extension("qoi")==STATUS_TRUE) {
    set_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY, convert_qoi_to_image_data(new_file_mem));
   }
@@ -291,6 +290,9 @@ void media_viewer_open_file(void) {
   }
   else if(is_loaded_file_extension("gif")==STATUS_TRUE) {
    set_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY, convert_gif_to_image_data(new_file_mem, file_dialog_file_size));
+  }
+  else if(is_loaded_file_extension("jpg")==STATUS_TRUE) {
+   set_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY, convert_jpg_to_image_data(new_file_mem, file_dialog_file_size));
   }
   free(new_file_mem);
   if(get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY)==STATUS_ERROR) {
@@ -308,46 +310,29 @@ void media_viewer_open_file(void) {
   //calculate image dimensions, position on screen and scrollbars
   media_viewer_image_recalculate_zoom();
  }
- else if(is_loaded_file_extension("wav")==STATUS_TRUE || is_loaded_file_extension("cdda")==STATUS_TRUE) {
+ else if(is_loaded_file_extension("mp3")==STATUS_TRUE || is_loaded_file_extension("wav")==STATUS_TRUE || is_loaded_file_extension("cdda")==STATUS_TRUE) {
   //convert file
-  if(is_loaded_file_extension("wav")==STATUS_TRUE) {
-   set_file_value(MEDIA_VIEWER_FILE_SOUND_INFO_MEMORY, convert_wav_to_sound_data(new_file_mem, file_dialog_file_size));
-   set_file_value(MEDIA_VIEWER_FILE_SOUND_ORIGINAL_FILE_TYPE, MEDIA_VIEWER_SOUND_WAV);
+  if(is_loaded_file_extension("mp3")==STATUS_TRUE) {
+   set_file_value(MEDIA_VIEWER_FILE_AUDIO_INFO_MEMORY, (dword_t)process_audio_file(AUDIO_FILE_TYPE_MP3, (byte_t *)new_file_mem, file_dialog_file_size));
+  }
+  else if(is_loaded_file_extension("wav")==STATUS_TRUE) {
+   set_file_value(MEDIA_VIEWER_FILE_AUDIO_INFO_MEMORY, (dword_t)process_audio_file(AUDIO_FILE_TYPE_WAV, (byte_t *)new_file_mem, file_dialog_file_size));
   }
   else if(is_loaded_file_extension("cdda")==STATUS_TRUE) {
-   set_file_value(MEDIA_VIEWER_FILE_SOUND_INFO_MEMORY, convert_cdda_to_sound_data(new_file_mem, file_dialog_file_size));
-   set_file_value(MEDIA_VIEWER_FILE_SOUND_ORIGINAL_FILE_TYPE, MEDIA_VIEWER_SOUND_CDDA);
+   set_file_value(MEDIA_VIEWER_FILE_AUDIO_INFO_MEMORY, (dword_t)process_audio_file(AUDIO_FILE_TYPE_CDDA, (byte_t *)new_file_mem, file_dialog_file_size));
   }
   free(new_file_mem);
 
   //test errors
-  dword_t *sound_info = (dword_t *) (get_file_value(MEDIA_VIEWER_FILE_SOUND_INFO_MEMORY));
-  if((dword_t)sound_info==STATUS_ERROR) {
-   free(new_file_mem);
+  if(get_file_value(MEDIA_VIEWER_FILE_AUDIO_INFO_MEMORY)==STATUS_ERROR) {
    remove_file(get_program_value(PROGRAM_INTERFACE_SELECTED_FILE));
    set_program_value(PROGRAM_INTERFACE_SELECTED_FILE, get_program_value(PROGRAM_INTERFACE_SELECTED_FILE_SAVE_VALUE));
    error_window("Error during decoding file, more info in system log");
    return;
   }
-  if(is_supported_sound_format(sound_info[SOUND_INFO_NUMBER_OF_CHANNELS], sound_info[SOUND_INFO_BITS_PER_SAMPLE], sound_info[SOUND_INFO_SAMPLE_RATE])==STATUS_FALSE) {
-   log("\nUnplayable sound file ");
-   log_var_with_space(sound_info[SOUND_INFO_NUMBER_OF_CHANNELS]);
-   log_var_with_space(sound_info[SOUND_INFO_BITS_PER_SAMPLE]);
-   log_var_with_space(sound_info[SOUND_INFO_SAMPLE_RATE]);
-   free(new_file_mem);
-   delete_sound((dword_t)sound_info);
-   remove_file(get_program_value(PROGRAM_INTERFACE_SELECTED_FILE));
-   set_program_value(PROGRAM_INTERFACE_SELECTED_FILE, get_program_value(PROGRAM_INTERFACE_SELECTED_FILE_SAVE_VALUE));
-   error_window("This file can not be played on this hardware");
-   return;
-  }
   
   //set other values of file info
   set_file_value(MEDIA_VIEWER_FILE_TYPE, MEDIA_VIEWER_FILE_SOUND);
-  set_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS, (sound_info[SOUND_INFO_LENGTH_OF_DATA]/sound_info[SOUND_INFO_NUMBER_OF_CHANNELS]/sound_info[SOUND_INFO_BYTES_PER_SAMPLE]/sound_info[SOUND_INFO_SAMPLE_RATE])*1000); //seconds
-  set_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS, get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)+((sound_info[SOUND_INFO_LENGTH_OF_DATA]/sound_info[SOUND_INFO_NUMBER_OF_CHANNELS]/sound_info[SOUND_INFO_BYTES_PER_SAMPLE])%sound_info[SOUND_INFO_SAMPLE_RATE])*1000/sound_info[SOUND_INFO_SAMPLE_RATE]); //milliseconds, we have to calculate them separately, because 32 bit can be easily overflowed
-  set_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS, 0);
-  set_file_value(MEDIA_VIEWER_FILE_SOUND_NEXT_UPDATE_MS, 0);
   
   //set state
   media_viewer_sound_state = MEDIA_VIEWER_SOUND_STATE_STOPPED; 
@@ -356,27 +341,34 @@ void media_viewer_open_file(void) {
 
 void media_viewer_change_between_files(void) {
  if(get_file_value(MEDIA_VIEWER_FILE_TYPE)==MEDIA_VIEWER_FILE_SOUND) {
-  pause_sound();
+  media_viewer_stop_sound();
   media_viewer_sound_state = MEDIA_VIEWER_SOUND_NO_FILE;
  }
 }
 
 void media_viewer_save_file(void) {
  //pause sound
- media_viewer_pause_sound();
+ media_viewer_stop_sound();
 
  if(get_file_value(MEDIA_VIEWER_FILE_TYPE)==MEDIA_VIEWER_FILE_IMAGE) {
-  dword_t file_format_number = window_for_choosing_file_format(2, "[b] BMP\0[q] QOI");
+  dword_t file_format_number = window_for_choosing_file_format(4, "[j] JPG\0[g] GIF\0[b] BMP\0[q] QOI");
   if(file_format_number==0xFFFFFFFF) {
    return;
   }
-  else if(file_format_number==0) {
-   show_message_window("Converting image...");
+  show_message_window("Converting image...");
+  if(file_format_number==0) {
+   file_dialog_save_set_extension("jpg");
+   convert_image_data_to_jpg(get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY), 90);
+  }
+  else if(file_format_number==1) {
+   file_dialog_save_set_extension("gif");
+   convert_image_data_to_gif(get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY));
+  }
+  else if(file_format_number==2) {
    file_dialog_save_set_extension("bmp");
    convert_image_data_to_bmp(get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY));
   }
-  else if(file_format_number==1) {
-   show_message_window("Converting image...");
+  else if(file_format_number==3) {
    file_dialog_save_set_extension("qoi");
    convert_image_data_to_qoi(get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY));
   }
@@ -384,22 +376,34 @@ void media_viewer_save_file(void) {
   free(converted_file_memory);
  }
  else if(get_file_value(MEDIA_VIEWER_FILE_TYPE)==MEDIA_VIEWER_FILE_SOUND) {
-  file_dialog_save_set_extension("wav");
-  convert_sound_data_to_wav(get_file_value(MEDIA_VIEWER_FILE_SOUND_INFO_MEMORY));
-  file_dialog_save(converted_file_memory, converted_file_size);
-  free(converted_file_memory);
+  struct audio_file_t *audio_info = (struct audio_file_t *) (get_file_value(MEDIA_VIEWER_FILE_AUDIO_INFO_MEMORY));
+
+  if(audio_info->type==AUDIO_FILE_TYPE_MP3) {
+   file_dialog_save_set_extension("mp3");
+   file_dialog_save((dword_t)audio_info->file_pointer, audio_info->file_size);
+  }
+  else if(audio_info->type==AUDIO_FILE_TYPE_WAV) {
+   file_dialog_save_set_extension("wav");
+   file_dialog_save((dword_t)audio_info->file_pointer, audio_info->file_size);
+  }
+  else if(audio_info->type==AUDIO_FILE_TYPE_CDDA) {
+   file_dialog_save_set_extension("wav");
+   convert_sound_data_to_wav(audio_info->file_pointer, audio_info->file_size, 16, 2, 44100);
+   file_dialog_save(converted_file_memory, converted_file_size);
+   free(converted_file_memory);
+  }
  }
 }
 
 void media_viewer_close_file(void) {
  //pause sound
- media_viewer_pause_sound();
+ media_viewer_stop_sound();
 
  if(get_file_value(MEDIA_VIEWER_FILE_TYPE)==MEDIA_VIEWER_FILE_IMAGE) {
   delete_image(get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY));
  }
  else if(get_file_value(MEDIA_VIEWER_FILE_TYPE)==MEDIA_VIEWER_FILE_SOUND) {
-  delete_sound(get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY));
+  destroy_audio_file((struct audio_file_t *)get_file_value(MEDIA_VIEWER_FILE_AUDIO_INFO_MEMORY));
   media_viewer_sound_state = MEDIA_VIEWER_SOUND_NO_FILE;
  }
 }
@@ -524,32 +528,21 @@ void media_viewer_key_space_event(void) {
  if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0) {
   if(get_file_value(MEDIA_VIEWER_FILE_TYPE)==MEDIA_VIEWER_FILE_SOUND) {
    if(media_viewer_sound_state==MEDIA_VIEWER_SOUND_STATE_STOPPED) {
-    dword_t *sound_info = (dword_t *) (get_file_value(MEDIA_VIEWER_FILE_SOUND_INFO_MEMORY));
+    struct audio_file_t *audio_info = (struct audio_file_t *) (get_file_value(MEDIA_VIEWER_FILE_AUDIO_INFO_MEMORY));
 
     //if is file fully played, restart playing
-    if(get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)==get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)) {
-     set_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS, 0);
-     set_file_value(MEDIA_VIEWER_FILE_SOUND_NEXT_UPDATE_MS, 0);
+    if(audio_info->actually_played_position==audio_info->output_length) {
+     audio_calculate_time_of_sound_data_offset(audio_info, 0);
     }
 
     //play sound
-    dword_t block_length = (sound_info[SOUND_INFO_BYTES_PER_SAMPLE]*sound_info[SOUND_INFO_NUMBER_OF_CHANNELS]);
-    dword_t length_of_skipped_data = (block_length*sound_info[SOUND_INFO_SAMPLE_RATE]*(get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)/1000)); //seconds
-    length_of_skipped_data += (block_length*sound_info[SOUND_INFO_SAMPLE_RATE]*(get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)%1000))/1000; //milliseconds, we have to do calculate them alone, because together would overflow 32 bits
-    length_of_skipped_data &= 0xFFFFFFFE; //align
-    media_viewer_showed_square_length_of_skipped_data = length_of_skipped_data;
-    play_new_sound(get_sound_data_memory((dword_t)sound_info)+length_of_skipped_data, sound_info[SOUND_INFO_NUMBER_OF_CHANNELS], sound_info[SOUND_INFO_BITS_PER_SAMPLE], sound_info[SOUND_INFO_SAMPLE_RATE], (sound_info[SOUND_INFO_LENGTH_OF_DATA]-length_of_skipped_data)/sound_info[SOUND_INFO_BYTES_PER_SAMPLE]);
+    play_audio_file(audio_info, audio_info->actually_played_position);
     media_viewer_sound_state = MEDIA_VIEWER_SOUND_STATE_PLAYING;
+    create_task(media_viewer_task_sound_update_playing_square, TASK_TYPE_PERIODIC_INTERRUPT, 100);
    }
    else if(media_viewer_sound_state==MEDIA_VIEWER_SOUND_STATE_PLAYING) {
-    //pause sound
-    pause_sound();
-    media_viewer_sound_state = MEDIA_VIEWER_SOUND_STATE_PAUSED;
-   }
-   else if(media_viewer_sound_state==MEDIA_VIEWER_SOUND_STATE_PAUSED) {
-    //resume sound
-    play_sound();
-    media_viewer_sound_state = MEDIA_VIEWER_SOUND_STATE_PLAYING;
+    //stop sound
+    media_viewer_stop_sound();
    }
 
    program_interface_redraw();
@@ -603,7 +596,7 @@ void media_viewer_image_recalculate_zoom(void) {
  
  //calculate width and height by zoom
  image_info[IMAGE_INFO_WIDTH]=(image_info[IMAGE_INFO_REAL_WIDTH]*zoom/100);
- image_info[IMAGE_INFO_HEIGTH]=(image_info[IMAGE_INFO_REAL_HEIGTH]*zoom/100);
+ image_info[IMAGE_INFO_HEIGTH]=(image_info[IMAGE_INFO_REAL_HEIGHT]*zoom/100);
  image_info[IMAGE_INFO_DRAW_WIDTH]=image_info[IMAGE_INFO_WIDTH];
  image_info[IMAGE_INFO_DRAW_HEIGTH]=image_info[IMAGE_INFO_HEIGTH];
 
@@ -635,34 +628,80 @@ void media_viewer_image_recalculate_zoom(void) {
  media_viewer_image_recalculate_scrollbars();
 }
 
-void media_viewer_pause_sound(void) {
+void media_viewer_stop_sound(void) {
  if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0 && get_file_value(MEDIA_VIEWER_FILE_TYPE)==MEDIA_VIEWER_FILE_SOUND && media_viewer_sound_state==MEDIA_VIEWER_SOUND_STATE_PLAYING) {
-  pause_sound();
-  media_viewer_sound_state = MEDIA_VIEWER_SOUND_STATE_PAUSED;
+  stop_sound();
+  destroy_task(media_viewer_task_sound_update_playing_square);
+  media_viewer_sound_state = MEDIA_VIEWER_SOUND_STATE_STOPPED;
  }
 }
 
 void media_viewer_click_on_sound_progress_square(void) {
  if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0 && get_file_value(MEDIA_VIEWER_FILE_TYPE)==MEDIA_VIEWER_FILE_SOUND) {
-  dword_t *sound_info = (dword_t *) (get_file_value(MEDIA_VIEWER_FILE_SOUND_INFO_MEMORY));
+  struct audio_file_t *audio_info = (struct audio_file_t *) (get_file_value(MEDIA_VIEWER_FILE_AUDIO_INFO_MEMORY));
+
+  //stop sound
+  stop_sound();
+  destroy_task(media_viewer_task_sound_update_playing_square);
   
   //calculate where we should move sound
-  set_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS, (get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)*(mouse_cursor_x-11)/(screen_width-22)));
-  set_file_value(MEDIA_VIEWER_FILE_SOUND_NEXT_UPDATE_MS, get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS));
+  audio_calculate_time_of_sound_data_offset(audio_info, ((audio_info->output_length/1024)*(mouse_cursor_x-11)/(screen_width-22))*1024);
   
   //play sound if sound is already playing
   if(media_viewer_sound_state==MEDIA_VIEWER_SOUND_STATE_PLAYING) {
-   dword_t block_length = (sound_info[SOUND_INFO_BYTES_PER_SAMPLE]*sound_info[SOUND_INFO_NUMBER_OF_CHANNELS]);
-   dword_t length_of_skipped_data = (block_length*sound_info[SOUND_INFO_SAMPLE_RATE]*(get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)/1000)); //seconds
-   length_of_skipped_data += (block_length*sound_info[SOUND_INFO_SAMPLE_RATE]*(get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)%1000))/1000; //milliseconds, we have to do calculate them alone, because together would overflow 32 bits
-   length_of_skipped_data &= 0xFFFFFFFE; //align
-   media_viewer_showed_square_length_of_skipped_data = length_of_skipped_data;
-   play_new_sound(get_sound_data_memory((dword_t)sound_info)+length_of_skipped_data, sound_info[SOUND_INFO_NUMBER_OF_CHANNELS], sound_info[SOUND_INFO_BITS_PER_SAMPLE], sound_info[SOUND_INFO_SAMPLE_RATE], (sound_info[SOUND_INFO_LENGTH_OF_DATA]-length_of_skipped_data)/sound_info[SOUND_INFO_BYTES_PER_SAMPLE]);
+   play_audio_file(audio_info, audio_info->actually_played_position);
+   create_task(media_viewer_task_sound_update_playing_square, TASK_TYPE_PERIODIC_INTERRUPT, 100);
   }
   else {
    media_viewer_sound_state = MEDIA_VIEWER_SOUND_STATE_STOPPED;
   }
  
   program_interface_redraw();
+ }
+}
+
+void media_viewer_task_sound_update_playing_square(void) {
+ if(get_file_value(MEDIA_VIEWER_FILE_TYPE)==MEDIA_VIEWER_FILE_SOUND) {
+  struct audio_file_t *audio_info = (struct audio_file_t *) (get_file_value(MEDIA_VIEWER_FILE_AUDIO_INFO_MEMORY));
+
+  //end of file
+  if(audio_info->actually_played_position==audio_info->output_length) {
+   media_viewer_stop_sound();
+   program_interface_redraw();
+  }
+  else {
+   //update square
+   draw_full_square(11, screen_height-59, ((audio_info->actually_played_position/1024)*(screen_width-22)/(audio_info->output_length/1024)), 8, 0x0900FF);
+   redraw_part_of_screen(11, screen_height-59, screen_width-22, 8);
+
+   //update time
+   dword_t seconds = audio_info->played_length_seconds;
+   dword_t minutes = audio_info->played_length_minutes;
+   dword_t hours = audio_info->played_length_hours;
+   draw_full_square(screen_width-10-24-24-24-24-24-16, screen_height-37, 64, 8, BLACK);
+   if(seconds<10) {
+    print("0", screen_width-82-16, screen_height-37, WHITE);
+    print_var(seconds, screen_width-82-8, screen_height-37, WHITE);
+   }
+   else {
+    print_var(seconds, screen_width-82-16, screen_height-37, WHITE);
+   }
+   if(minutes<10) {
+    print("0", screen_width-82-16-24, screen_height-37, WHITE);
+    print_var(minutes, screen_width-82-16-16, screen_height-37, WHITE);
+   }
+   else {
+    print_var(minutes, screen_width-82-16-24, screen_height-37, WHITE);
+   }
+   if(hours<10) {
+    print("0", screen_width-82-16-24-24, screen_height-37, WHITE);
+    print_var(hours, screen_width-82-16-24-16, screen_height-37, WHITE);
+   }
+   else {
+    print_var(hours, screen_width-82-16-24-24, screen_height-37, WHITE);
+   }
+   print(":  :", screen_width-10-24-24-24-24-24, screen_height-37, WHITE);
+   redraw_part_of_screen(screen_width-10-24-24-24-24-24-16, screen_height-37, 64, 8);
+  }
  }
 }

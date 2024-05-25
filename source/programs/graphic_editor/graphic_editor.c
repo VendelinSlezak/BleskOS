@@ -333,10 +333,10 @@ void draw_graphic_editor(void) {
   
   //print image dimensions
   dword_t *image_info = (dword_t *) (get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
-  dword_t size_of_digits_of_width = (get_number_of_digits_in_number(image_info[IMAGE_INFO_REAL_WIDTH])*8), size_of_digits_of_height = (get_number_of_digits_in_number(image_info[IMAGE_INFO_REAL_HEIGTH])*8);
+  dword_t size_of_digits_of_width = (get_number_of_digits_in_number(image_info[IMAGE_INFO_REAL_WIDTH])*8), size_of_digits_of_height = (get_number_of_digits_in_number(image_info[IMAGE_INFO_REAL_HEIGHT])*8);
   print_var(image_info[IMAGE_INFO_REAL_WIDTH], screen_width-8-size_of_digits_of_height-8-size_of_digits_of_width, screen_height-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH+6, BLACK);
   print("x", screen_width-8-size_of_digits_of_height-8, screen_height-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH+6, BLACK);
-  print_var(image_info[IMAGE_INFO_REAL_HEIGTH], screen_width-8-size_of_digits_of_height, screen_height-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH+6, BLACK);
+  print_var(image_info[IMAGE_INFO_REAL_HEIGHT], screen_width-8-size_of_digits_of_height, screen_height-20-GRAPHIC_EDITOR_BOTTOM_PANEL_HEIGTH+6, BLACK);
 
   //draw image
   add_zone_to_click_board(GRAPHIC_EDITOR_SIDE_PANEL_WIDTH, 20, graphic_editor_image_area_width, graphic_editor_image_area_height, NO_CLICK); //clear click board
@@ -374,6 +374,7 @@ void graphic_editor_open_file(void) {
  file_dialog_open_file_extensions_clear_mem();
  file_dialog_open_file_add_extension("qoi");
  file_dialog_open_file_add_extension("bmp");
+ file_dialog_open_file_add_extension("jpg");
  file_dialog_open_file_add_extension("png");
  file_dialog_open_file_add_extension("gif");
  dword_t new_file_mem = file_dialog_open();
@@ -386,11 +387,15 @@ void graphic_editor_open_file(void) {
  add_file((word_t *)file_dialog_file_name, 0, 0, 0, 0, 0);
  
  //convert image
+ show_message_window("Decoding image...");
  if(is_loaded_file_extension("qoi")==STATUS_TRUE) {
   set_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY, convert_qoi_to_image_data(new_file_mem));
  }
  else if(is_loaded_file_extension("bmp")==STATUS_TRUE) {
   set_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY, convert_bmp_to_image_data(new_file_mem));
+ }
+ else if(is_loaded_file_extension("jpg")==STATUS_TRUE) {
+  set_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY, convert_jpg_to_image_data(new_file_mem, file_dialog_file_size));
  }
  else if(is_loaded_file_extension("png")==STATUS_TRUE) {
   set_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY, convert_png_to_image_data(new_file_mem, file_dialog_file_size));
@@ -409,7 +414,7 @@ void graphic_editor_open_file(void) {
  //set variables
  dword_t *image_info = (dword_t *) (get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
  set_file_value(GRAPHIC_EDITOR_FILE_IMAGE_ZOOM, 100);
- set_file_value(GRAPHIC_EDITOR_FILE_IMAGE_PREVIEW_MEMORY, malloc(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGTH]*4));
+ set_file_value(GRAPHIC_EDITOR_FILE_IMAGE_PREVIEW_MEMORY, malloc(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGHT]*4));
  graphic_editor_copy_image_to_preview();
  graphic_editor_image_saved_to_preview = STATUS_TRUE;
  set_program_value(PROGRAM_INTERFACE_SELECTED_CLICK_ZONE, 0);
@@ -419,17 +424,24 @@ void graphic_editor_open_file(void) {
 }
 
 void graphic_editor_save_file(void) {
- dword_t file_format_number = window_for_choosing_file_format(2, "[b] BMP\0[q] QOI");
+ dword_t file_format_number = window_for_choosing_file_format(4, "[j] JPG\0[g] GIF\0[b] BMP\0[q] QOI");
  if(file_format_number==0xFFFFFFFF) {
   return;
  }
- else if(file_format_number==0) {
-  show_message_window("Converting image...");
+ show_message_window("Converting image...");
+ if(file_format_number==0) {
+  file_dialog_save_set_extension("jpg");
+  convert_image_data_to_jpg(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY), 90);
+ }
+ else if(file_format_number==1) {
+  file_dialog_save_set_extension("gif");
+  convert_image_data_to_gif(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
+ }
+ else if(file_format_number==2) {
   file_dialog_save_set_extension("bmp");
   convert_image_data_to_bmp(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
  }
- else if(file_format_number==1) {
-  show_message_window("Converting image...");
+ else if(file_format_number==3) {
   file_dialog_save_set_extension("qoi");
   convert_image_data_to_qoi(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
  }
@@ -853,7 +865,7 @@ void graphic_editor_image_recalculate_zoom(void) {
  
  //calculate width and height by zoom
  image_info[IMAGE_INFO_WIDTH]=(image_info[IMAGE_INFO_REAL_WIDTH]*zoom/100);
- image_info[IMAGE_INFO_HEIGTH]=(image_info[IMAGE_INFO_REAL_HEIGTH]*zoom/100);
+ image_info[IMAGE_INFO_HEIGTH]=(image_info[IMAGE_INFO_REAL_HEIGHT]*zoom/100);
  image_info[IMAGE_INFO_DRAW_WIDTH]=image_info[IMAGE_INFO_WIDTH];
  image_info[IMAGE_INFO_DRAW_HEIGTH]=image_info[IMAGE_INFO_HEIGTH];
 
@@ -890,7 +902,7 @@ void graphic_editor_copy_image_to_preview(void) {
  dword_t *image_data = (dword_t *) (get_image_data_memory((dword_t)image_info));
  dword_t *preview_data = (dword_t *) (get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_PREVIEW_MEMORY));
  
- for(int i=0; i<(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGTH]); i++) {
+ for(int i=0; i<(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGHT]); i++) {
   *preview_data = *image_data;
   preview_data++;
   image_data++;
@@ -902,7 +914,7 @@ void graphic_editor_copy_preview_to_image(void) {
  dword_t *image_data = (dword_t *) (get_image_data_memory((dword_t)image_info));
  dword_t *preview_data = (dword_t *) (get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_PREVIEW_MEMORY));
  
- for(int i=0; i<(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGTH]); i++) {
+ for(int i=0; i<(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGHT]); i++) {
   *image_data = *preview_data;
   image_data++;
   preview_data++;
@@ -917,7 +929,7 @@ void graphic_editor_prepare_drawing_by_tool_without_copying_preview(void) {
  dword_t *image_info = (dword_t *) (get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
  screen_double_buffer_memory_pointer = (byte_t *) get_image_data_memory((dword_t)image_info);
  screen_width = image_info[IMAGE_INFO_REAL_WIDTH];
- screen_height = image_info[IMAGE_INFO_REAL_HEIGTH];
+ screen_height = image_info[IMAGE_INFO_REAL_HEIGHT];
  screen_double_buffer_bytes_per_line = (screen_width*4);
 
  //set pen size

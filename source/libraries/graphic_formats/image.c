@@ -175,7 +175,7 @@ dword_t create_image(dword_t width, dword_t height) {
  dword_t *image_info = (dword_t *) image_info_mem;
 
  image_info[IMAGE_INFO_REAL_WIDTH] = width;
- image_info[IMAGE_INFO_REAL_HEIGTH] = height;
+ image_info[IMAGE_INFO_REAL_HEIGHT] = height;
  image_info[IMAGE_INFO_WIDTH] = width;
  image_info[IMAGE_INFO_HEIGTH] = height;
  image_info[IMAGE_INFO_DRAW_X] = 0;
@@ -219,7 +219,7 @@ void draw_resized_image(dword_t image_info_mem) {
  dword_t *image_info = (dword_t *) image_info_mem;
  
  //draw image
- copy_and_resize_raw_image_data((image_info_mem+IMAGE_SIZE_OF_INFO_IN_BYTES), image_info[IMAGE_INFO_REAL_WIDTH], image_info[IMAGE_INFO_REAL_HEIGTH], image_info[IMAGE_INFO_WIDTH], image_info[IMAGE_INFO_HEIGTH], image_info[IMAGE_INFO_DRAW_X], image_info[IMAGE_INFO_DRAW_Y], image_info[IMAGE_INFO_DRAW_WIDTH], image_info[IMAGE_INFO_DRAW_HEIGTH], (dword_t)screen_double_buffer_memory_pointer, screen_width, image_info[IMAGE_INFO_SCREEN_X], image_info[IMAGE_INFO_SCREEN_Y]);
+ copy_and_resize_raw_image_data((image_info_mem+IMAGE_SIZE_OF_INFO_IN_BYTES), image_info[IMAGE_INFO_REAL_WIDTH], image_info[IMAGE_INFO_REAL_HEIGHT], image_info[IMAGE_INFO_WIDTH], image_info[IMAGE_INFO_HEIGTH], image_info[IMAGE_INFO_DRAW_X], image_info[IMAGE_INFO_DRAW_Y], image_info[IMAGE_INFO_DRAW_WIDTH], image_info[IMAGE_INFO_DRAW_HEIGTH], (dword_t)screen_double_buffer_memory_pointer, screen_width, image_info[IMAGE_INFO_SCREEN_X], image_info[IMAGE_INFO_SCREEN_Y]);
 
  //draw scrollbars
  if(image_info[IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE]>0) {
@@ -264,7 +264,7 @@ void get_mouse_coordinates_on_image(dword_t image_info_mem) {
  dword_t resized_source_width = image_info[IMAGE_INFO_WIDTH];
  dword_t resized_source_height = image_info[IMAGE_INFO_HEIGTH];
  dword_t source_width = image_info[IMAGE_INFO_REAL_WIDTH];
- dword_t source_height = image_info[IMAGE_INFO_REAL_HEIGTH];
+ dword_t source_height = image_info[IMAGE_INFO_REAL_HEIGHT];
  dword_t source_x = image_info[IMAGE_INFO_DRAW_X];
  dword_t source_y = image_info[IMAGE_INFO_DRAW_Y];
  dword_t image_width = image_info[IMAGE_INFO_DRAW_WIDTH];
@@ -397,7 +397,7 @@ void image_reverse_horizontally(dword_t image_info_mem) {
  dword_t *image_data_2 = (dword_t *) image_data_2_starting_point;
  dword_t color = 0;
  
- for(int line=0; line<image_info[IMAGE_INFO_REAL_HEIGTH]; line++) {
+ for(int line=0; line<image_info[IMAGE_INFO_REAL_HEIGHT]; line++) {
   image_data_1 = (dword_t *) image_data_1_starting_point;
   image_data_2 = (dword_t *) image_data_2_starting_point;
   
@@ -418,11 +418,11 @@ void image_reverse_vertically(dword_t image_info_mem) {
  dword_t *image_info = (dword_t *) image_info_mem;
  dword_t image_data_1_starting_point = (image_info_mem+IMAGE_SIZE_OF_INFO_IN_BYTES);
  dword_t *image_data_1 = (dword_t *) image_data_1_starting_point;
- dword_t image_data_2_starting_point = (image_info_mem+IMAGE_SIZE_OF_INFO_IN_BYTES+(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGTH]*4)-(image_info[IMAGE_INFO_REAL_WIDTH]*4));
+ dword_t image_data_2_starting_point = (image_info_mem+IMAGE_SIZE_OF_INFO_IN_BYTES+(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGHT]*4)-(image_info[IMAGE_INFO_REAL_WIDTH]*4));
  dword_t *image_data_2 = (dword_t *) image_data_2_starting_point;
  dword_t color = 0;
  
- for(int line=0; line<(image_info[IMAGE_INFO_REAL_HEIGTH]/2); line++) {
+ for(int line=0; line<(image_info[IMAGE_INFO_REAL_HEIGHT]/2); line++) {
   image_data_1 = (dword_t *) image_data_1_starting_point;
   image_data_2 = (dword_t *) image_data_2_starting_point;
   
@@ -442,18 +442,18 @@ void image_reverse_vertically(dword_t image_info_mem) {
 void image_turn_left(dword_t image_info_mem) {
  dword_t *image_info = (dword_t *) image_info_mem;
  dword_t *image_data = (dword_t *) (image_info_mem+IMAGE_SIZE_OF_INFO_IN_BYTES);
- dword_t second_image_mem = malloc(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGTH]*4);
- dword_t second_image_data_starting_point = (second_image_mem+(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGTH]*4)-(image_info[IMAGE_INFO_REAL_HEIGTH]*4));
+ dword_t second_image_mem = malloc(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGHT]*4);
+ dword_t second_image_data_starting_point = (second_image_mem+(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGHT]*4)-(image_info[IMAGE_INFO_REAL_HEIGHT]*4));
  dword_t *second_image_data = (dword_t *) second_image_data_starting_point;
  
  //turn image
- for(int line=0; line<image_info[IMAGE_INFO_REAL_HEIGTH]; line++) {
+ for(int line=0; line<image_info[IMAGE_INFO_REAL_HEIGHT]; line++) {
   second_image_data = (dword_t *) second_image_data_starting_point;
   
   for(int column=0; column<image_info[IMAGE_INFO_REAL_WIDTH]; column++) {
    *second_image_data = *image_data;
    image_data++;
-   second_image_data -= image_info[IMAGE_INFO_REAL_HEIGTH];
+   second_image_data -= image_info[IMAGE_INFO_REAL_HEIGHT];
   }
   
   second_image_data_starting_point+=4;
@@ -462,34 +462,34 @@ void image_turn_left(dword_t image_info_mem) {
  //copy result
  image_data = (dword_t *) (image_info_mem+IMAGE_SIZE_OF_INFO_IN_BYTES);
  second_image_data = (dword_t *) second_image_mem;
- for(int i=0; i<(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGTH]); i++) {
+ for(int i=0; i<(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGHT]); i++) {
   *image_data = *second_image_data;
   image_data++;
   second_image_data++;
  }
  
  //finalize turn
- dword_t var=image_info[IMAGE_INFO_REAL_HEIGTH];
- image_info[IMAGE_INFO_REAL_HEIGTH] = image_info[IMAGE_INFO_REAL_WIDTH];
+ dword_t var=image_info[IMAGE_INFO_REAL_HEIGHT];
+ image_info[IMAGE_INFO_REAL_HEIGHT] = image_info[IMAGE_INFO_REAL_WIDTH];
  image_info[IMAGE_INFO_REAL_WIDTH] = var;
  free(second_image_mem);
 }
 
 void image_turn_right(dword_t image_info_mem) {
  dword_t *image_info = (dword_t *) image_info_mem;
- dword_t *image_data = (dword_t *) (image_info_mem+IMAGE_SIZE_OF_INFO_IN_BYTES+(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGTH]*4)-4);
- dword_t second_image_mem = malloc(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGTH]*4);
- dword_t second_image_data_starting_point = (second_image_mem+(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGTH]*4)-(image_info[IMAGE_INFO_REAL_HEIGTH]*4));
+ dword_t *image_data = (dword_t *) (image_info_mem+IMAGE_SIZE_OF_INFO_IN_BYTES+(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGHT]*4)-4);
+ dword_t second_image_mem = malloc(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGHT]*4);
+ dword_t second_image_data_starting_point = (second_image_mem+(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGHT]*4)-(image_info[IMAGE_INFO_REAL_HEIGHT]*4));
  dword_t *second_image_data = (dword_t *) second_image_data_starting_point;
  
  //turn image
- for(int line=0; line<image_info[IMAGE_INFO_REAL_HEIGTH]; line++) {
+ for(int line=0; line<image_info[IMAGE_INFO_REAL_HEIGHT]; line++) {
   second_image_data = (dword_t *) second_image_data_starting_point;
   
   for(int column=0; column<image_info[IMAGE_INFO_REAL_WIDTH]; column++) {
    *second_image_data = *image_data;
    image_data--;
-   second_image_data -= image_info[IMAGE_INFO_REAL_HEIGTH];
+   second_image_data -= image_info[IMAGE_INFO_REAL_HEIGHT];
   }
   
   second_image_data_starting_point+=4;
@@ -498,15 +498,15 @@ void image_turn_right(dword_t image_info_mem) {
  //copy result
  image_data = (dword_t *) (image_info_mem+IMAGE_SIZE_OF_INFO_IN_BYTES);
  second_image_data = (dword_t *) second_image_mem;
- for(int i=0; i<(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGTH]); i++) {
+ for(int i=0; i<(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGHT]); i++) {
   *image_data = *second_image_data;
   image_data++;
   second_image_data++;
  }
  
  //finalize turn
- dword_t var=image_info[IMAGE_INFO_REAL_HEIGTH];
- image_info[IMAGE_INFO_REAL_HEIGTH] = image_info[IMAGE_INFO_REAL_WIDTH];
+ dword_t var=image_info[IMAGE_INFO_REAL_HEIGHT];
+ image_info[IMAGE_INFO_REAL_HEIGHT] = image_info[IMAGE_INFO_REAL_WIDTH];
  image_info[IMAGE_INFO_REAL_WIDTH] = var;
  free(second_image_mem);
 }

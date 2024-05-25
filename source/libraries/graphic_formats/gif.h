@@ -9,3 +9,4 @@
 */
 
 dword_t convert_gif_to_image_data(dword_t gif_memory, dword_t gif_file_length);
+void convert_image_data_to_gif(dword_t image_info_memory);

@@ -94,7 +94,7 @@ dword_t convert_bmp_to_image_data(dword_t bmp_memory) {
 void convert_image_data_to_bmp(dword_t image_info_memory) {
  dword_t *image_info = (dword_t *) image_info_memory;
  dword_t *image_data = (dword_t *) (get_image_data_memory(image_info_memory));
- dword_t bmp_file_size = (54+(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGTH]*4));
+ dword_t bmp_file_size = (54+(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGHT]*4));
  dword_t bmp_file_memory = malloc(bmp_file_size);
  byte_t *bmp_file8 = (byte_t *) bmp_file_memory;
  word_t *bmp_file16 = (word_t *) (bmp_file_memory+26);
@@ -108,19 +108,19 @@ void convert_image_data_to_bmp(dword_t image_info_memory) {
  bmp_file32[2]=54; //offset to image data
  bmp_file32[3]=40; //size of extended header
  bmp_file32[4]=image_info[IMAGE_INFO_REAL_WIDTH]; //width of image
- bmp_file32[5]=image_info[IMAGE_INFO_REAL_HEIGTH]; //height of image
+ bmp_file32[5]=image_info[IMAGE_INFO_REAL_HEIGHT]; //height of image
  bmp_file16[0]=1; //number of color planes
  bmp_file16[1]=32; //4 bytes per pixel
  bmp_file32[7]=0; //no compression
  bmp_file32[8]=(bmp_file_size-54); //size of image
  bmp_file32[9]=image_info[IMAGE_INFO_REAL_WIDTH]; //width of image
- bmp_file32[10]=image_info[IMAGE_INFO_REAL_HEIGTH]; //height of image
+ bmp_file32[10]=image_info[IMAGE_INFO_REAL_HEIGHT]; //height of image
  bmp_file32[11]=0; //number of colors in pallete
  bmp_file32[12]=0; //number of important colors
  
  //convert file data
  bmp_file32 = (dword_t *) (bmp_file_memory+bmp_file_size-(image_info[IMAGE_INFO_REAL_WIDTH]*4));
- for(int line=0; line<image_info[IMAGE_INFO_REAL_HEIGTH]; line++) {
+ for(int line=0; line<image_info[IMAGE_INFO_REAL_HEIGHT]; line++) {
   for(int column=0; column<image_info[IMAGE_INFO_REAL_WIDTH]; column++) {
    *bmp_file32 = *image_data;
    bmp_file32++;

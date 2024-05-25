@@ -124,12 +124,16 @@ dword_t http_transfer_file(byte_t *url) { //TODO: another location
  //if this is redirect response, load new url
  if(http_response_type==HTTP_RESPONSE_301_MOVED_PERMANENTLY || http_response_type==HTTP_RESPONSE_302_MOVED_TEMPORARILY) {
   if(file_transfer_num_of_redirect>5) { //max five redirections
+   #ifndef NO_PROGRAMS
    internet_browser_print_message("Too many redirections");
+   #endif
    file_transfer_error_type = FILE_TRANSFER_ERROR_TOO_MANY_REDIRECTIONS;
    return STATUS_ERROR;
   }
   
+  #ifndef NO_PROGRAMS
   internet_browser_print_message("Redirected");
+  #endif
 
   file_transfer_num_of_redirect++;
   free(file_memory); //we do not need keep data about redirecting

@@ -10,5 +10,21 @@
 
 #define WAV_FORMAT_PCM 0x0001
 
+struct wav_info_t {
+ dword_t start_of_pcm_data;
+ dword_t length_of_pcm_data;
+ byte_t pcm_data_number_of_channels;
+ word_t pcm_data_sample_rate;
+ byte_t pcm_data_bits_per_sample;
+
+ dword_t length_of_output_pcm_data; //number of bytes that sound card will play
+ word_t output_pcm_data_sample_rate;
+}__attribute__((packed));
+
+struct wav_info_t *actually_played_wav_info;
+
 dword_t convert_wav_to_sound_data(dword_t wav_memory, dword_t wav_length);
-void convert_sound_data_to_wav(dword_t sound_memory);
+struct wav_info_t *read_wav_info(byte_t *wav_memory, dword_t wav_length);
+dword_t play_wav(struct wav_info_t *wav_info, dword_t offset_to_first_byte_to_play);
+void wav_refill_buffer(byte_t *buffer);
+void convert_sound_data_to_wav(byte_t *pcm_data_pointer, dword_t size_of_pcm_data_in_bytes, byte_t bits_per_sample, byte_t number_of_channels, word_t sample_rate);

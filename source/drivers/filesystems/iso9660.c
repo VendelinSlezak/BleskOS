@@ -75,12 +75,13 @@ dword_t iso9660_read_file(dword_t sector, dword_t length_of_file_in_bytes) {
  //read file
  dword_t write_file_mem = file_mem, readed_sectors = 0, number_of_file_sectors = file_sectors;
  while(file_sectors>0) {
-  if(file_sectors>32) {
-   if(read_storage_medium(sector, 32, write_file_mem)==STATUS_ERROR) {
+  if(file_sectors>16) {
+   if(read_storage_medium(sector, 16, write_file_mem)==STATUS_ERROR) {
     //try read again
-    if(read_storage_medium(sector, 32, write_file_mem)==STATUS_ERROR) {
+    if(read_storage_medium(sector, 16, write_file_mem)==STATUS_ERROR) {
      free(file_mem);
      spin_down_optical_drive();
+     log("\nISO9660: error reading 16 sectors");
      return STATUS_ERROR;
     }
    }
@@ -91,10 +92,10 @@ dword_t iso9660_read_file(dword_t sector, dword_t length_of_file_in_bytes) {
     }
    }
   
-   sector+=32;
-   readed_sectors+=32;
-   file_sectors-=32;
-   write_file_mem += (2048*32);
+   sector+=16;
+   readed_sectors+=16;
+   file_sectors-=16;
+   write_file_mem += (2048*16);
   }
   else {
    if(read_storage_medium(sector, file_sectors, write_file_mem)==STATUS_ERROR) {
@@ -102,6 +103,7 @@ dword_t iso9660_read_file(dword_t sector, dword_t length_of_file_in_bytes) {
     if(read_storage_medium(sector, file_sectors, write_file_mem)==STATUS_ERROR) {
      free(file_mem);
      spin_down_optical_drive();
+     log("\nISO9660: error reading last sectors");
      return STATUS_ERROR;
     }
    }

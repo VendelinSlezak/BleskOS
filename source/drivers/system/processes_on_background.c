@@ -12,6 +12,7 @@ void run_processes_on_background(void) {
  if(ticks_of_processes==0x80) {
   detect_status_change_of_usb_devices();
  }
+ #ifndef NO_PROGRAMS
  else if(ticks_of_processes==0xF0) {
   byte_t time_second_old = time_second;
   read_time_second();
@@ -24,6 +25,7 @@ void run_processes_on_background(void) {
    }
   }
  }
+ #endif
 
  if(ethernet_timer_monitoring_of_line_status==STATUS_TRUE && ticks_of_processes==0x80) {
   read_ethernet_cable_status();
@@ -35,9 +37,6 @@ void run_processes_on_background(void) {
    hda_stop_sound(selected_sound_card);
    hda_playing_state = 0;
    hda_bytes_on_output_for_stopping_sound = hda_sound_length;
-   if(media_viewer_sound_state==MEDIA_VIEWER_SOUND_STATE_PLAYING) {
-    set_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS, get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS));
-   }
   }
   else {
    hda_bytes_on_output_for_stopping_sound = link_position_in_buffer;
@@ -48,65 +47,6 @@ void run_processes_on_background(void) {
    ac97_fill_buffer_entry();
   }
  } 
- 
- if(media_viewer_sound_state==MEDIA_VIEWER_SOUND_STATE_PLAYING) {
-  //update counter of played milliseconds
-  if(hda_playing_state==1) {
-   set_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS, (get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)*((hda_bytes_on_output_for_stopping_sound+media_viewer_showed_square_length_of_skipped_data)/1024)/((hda_sound_length+media_viewer_showed_square_length_of_skipped_data)/1024)));
-  }
-  else {
-   set_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS, get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)+2);
-  }
-
-  //everything from file was played
-  if(get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)>=get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)) {
-   set_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS, get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS));
-
-   media_viewer_sound_state = MEDIA_VIEWER_SOUND_STATE_STOPPED;
-   
-   draw_media_viewer();
-   redraw_part_of_screen(10, screen_height-60, screen_width-20, 40);
-  }
-  else if(get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)>get_file_value(MEDIA_VIEWER_FILE_SOUND_NEXT_UPDATE_MS)) { //update progress in file playing
-   //print length of played part of file
-   dword_t seconds = get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)%60000/1000;
-   dword_t minutes = get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)/60000;
-   dword_t hours = minutes/60;
-   minutes -= (hours*60);
-   draw_full_square(screen_width-10-24-24-24-24-24-16, screen_height-37, 64, 8, BLACK);
-   if(seconds<10) {
-    print("0", screen_width-82-16, screen_height-37, WHITE);
-    print_var(seconds, screen_width-82-8, screen_height-37, WHITE);
-   }
-   else {
-    print_var(seconds, screen_width-82-16, screen_height-37, WHITE);
-   }
-   if(minutes<10) {
-    print("0", screen_width-82-16-24, screen_height-37, WHITE);
-    print_var(minutes, screen_width-82-16-16, screen_height-37, WHITE);
-   }
-   else {
-    print_var(minutes, screen_width-82-16-24, screen_height-37, WHITE);
-   }
-   if(hours<10) {
-    print("0", screen_width-82-16-24-24, screen_height-37, WHITE);
-    print_var(hours, screen_width-82-16-24-16, screen_height-37, WHITE);
-   }
-   else {
-    print_var(hours, screen_width-82-16-24-24, screen_height-37, WHITE);
-   }
-   print(":  :", screen_width-10-24-24-24-24-24, screen_height-37, WHITE);
- 
-   //draw square of played part of file
-   draw_full_square(11, screen_height-59, ((screen_width-22)*get_file_value(MEDIA_VIEWER_FILE_SOUND_ACTUAL_MS)/get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)), 8, 0x0900FF);
-   redraw_part_of_screen(10, screen_height-60, screen_width-20, 40);
-
-   set_file_value(MEDIA_VIEWER_FILE_SOUND_NEXT_UPDATE_MS, get_file_value(MEDIA_VIEWER_FILE_SOUND_NEXT_UPDATE_MS)+200);
-   if(get_file_value(MEDIA_VIEWER_FILE_SOUND_NEXT_UPDATE_MS)>get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS)) {
-    set_file_value(MEDIA_VIEWER_FILE_SOUND_NEXT_UPDATE_MS, get_file_value(MEDIA_VIEWER_FILE_SOUND_LENGTH_IN_MS));
-   }
-  }
- }
 
  if(usb_mouse[0].controller_type!=USB_NO_DEVICE_ATTACHED) {
   dword_t *descriptor = (dword_t *) (usb_mouse[0].transfer_descriptor_check);

@@ -16,7 +16,9 @@ byte_t number_string[MATH_LENGTH_OF_NUMBER_STRING_ARRAY];
 
 int abs(int i);
 float fabs(float i);
-int floor(float i);
+int floor(double i);
+int floorf(float i);
+float ceilf(float number);
 dword_t power(dword_t value, dword_t exponent);
 dword_t get_number_of_digits_in_number(dword_t number);
 dword_t convert_byte_string_to_number(dword_t mem);

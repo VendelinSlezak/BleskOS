@@ -378,6 +378,7 @@ dword_t read_fat_file(dword_t cluster, dword_t size_in_bytes) {
  //check for invalid input
  if(cluster<2 || cluster>(fat_number_of_clusters+2) || get_fat_entry(cluster)<2 || size_in_bytes==0) {
   free(file_mem);
+  log("\nFAT: invalid file input "); log_hex_with_space(cluster); log_hex_with_space(get_fat_entry(cluster)); log_var(size_in_bytes);
   return STATUS_ERROR;
  }
 
@@ -393,6 +394,7 @@ dword_t read_fat_file(dword_t cluster, dword_t size_in_bytes) {
   if(cluster<2 || cluster>(fat_number_of_clusters+2)) {
    free(file_mem);
    free(file_clusters_list_mem);
+   log("\nFAT: invalid cluster pointer");
    return STATUS_ERROR;
   }
 
@@ -467,6 +469,7 @@ dword_t read_fat_file(dword_t cluster, dword_t size_in_bytes) {
   if(read_storage_medium((fat_data_sector + ((*file_cluster_list - 2)*fat_cluster_length)), (num_of_clusters_to_read*fat_cluster_length), file_output_mem_pointer)==STATUS_ERROR) {
    free(file_mem);
    free(file_clusters_list_mem);
+   log("\nFAT: error with reading data");
    return STATUS_ERROR;
   }
   file_output_mem_pointer += (num_of_clusters_to_read*fat_cluster_length_in_bytes);

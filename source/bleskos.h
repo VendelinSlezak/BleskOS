@@ -18,6 +18,7 @@
 
 #define BLESKOS_NUMBER_OF_START_SCREEN_MESSAGES 13
 
+typedef unsigned int size_t;
 typedef unsigned char byte_t;
 typedef unsigned short word_t;
 typedef unsigned int dword_t;

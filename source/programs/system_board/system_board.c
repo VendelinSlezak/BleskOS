@@ -461,10 +461,6 @@ void system_board(void) {
     eject_optical_disk();
     goto redraw;
    }
-   else if(keyboard_code_of_pressed_key==KEY_R) {
-    reset_optical_drive();
-    goto redraw;
-   }
   }
 
  }

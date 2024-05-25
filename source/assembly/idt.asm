@@ -15,10 +15,10 @@ extern isr_handler
 %define EMPTY_IDT_ENTRY dq 0
 
 %macro IDT_ENTRY 1
- dw ((%1 - $$ + 0x10000) & 0xFFFF)
+ dw ((%1 - $$ + 0x100000) & 0xFFFF)
  dw 0x0008
  dw 0x8E00
- dw 0x0001
+ dw 0x0010
 %endmacro
 
 %macro EOI_MASTER_PIC 0

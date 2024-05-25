@@ -4,32 +4,11 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 ![Snímka obrazovky_2024-02-15_17-48-49](https://github.com/VendelinSlezak/BleskOS/assets/43180618/35b483be-73c6-411f-be70-b2866301bb9e)
 
-## What is new
-
-Here is info about most important improvements in several last updates.
-
-**Update 30**
-- Significant improvement of IDE related drivers
-- AHCI drivers are suspended in this update because I will completely rewrite them
-
-**Update 29**
-- Document editor can save files in ODT format
-- Added code for turning on and off PS/2 keyboard capslock LED
-- Many minor fixes, finished reviewing of drivers/sound, drivers/keyboard, drivers/mouse, drivers/ps2
-
-**Update 28**
-- HDA driver supports headphone output
-
-**Update 27**
-- AC97 driver supports headphone output
-- Fixed problem with resetting HDA stream
-- You can use key left and key right to move cursor in Document editor
-
 ## How to try BleskOS
 
 You can download image of last version here on github. Then you have two options:
 
-1. Run BleskOS on emulator - some of well-known are Virtualbox, QEMU, Bochs and so on. If you downloaded image .img, you should to connect it to emulator as floppy or hard disk, if you downloaded image .iso, you should connect it as optical disk.
+1. Run BleskOS on emulator - some of well-known are Virtualbox, QEMU, Bochs and so on. If you downloaded image .img, you should to connect it to emulator as floppy or hard disk, if you downloaded image .iso, you should connect it as optical disk. You can also connect disk.img from testing folder where are some files for testing.
 2. Run BleskOS on real computer - If you want to run BleskOS on your computer, you will need to create bootable medium. You can either burn .iso image on optical disk, or write .img image on USB flash. Do not just copy file! You need to write image right from start of USB flash. In linux, you can use program dd for this: `sudo dd if=bleskos_(actual version).img of=pathToYourUSB` For example if you have USB on /dev/sdg then you can write for example `sudo dd if=bleskos_2024u8.img of=/dev/sdg` Then insert optical disk/USB flash to your computer and boot it from your bootable medium. If you do not see your bootable medium, make sure that you are booting in legacy mode, because BleskOS do not support UEFI.
 
 If you copied BleskOS image on USB flash, it creates one partition, so you can format rest of USB and use it for data. If you have such USB and you want to update BleskOS image without destroying other partitions, you need to skip first sector of BleskOS image and you need to skip first sector of USB flash and start rewriting from second sector. You can do this by following command: `sudo dd if=bleskos_(actual version).img skip=1 of=pathToYourUSB seek=1`
@@ -59,6 +38,12 @@ When you want to switch from one program to another, you can either use mouse, o
 
 In dialog windows you can press ENTER for selecting Yes, or ESC for selecting No. If you see window only with text, you can close it by ENTER, ESC or just clicking somewhere on screen.
 
+## Compiling BleskOS
+
+BleskOS is designed to be compiled under linux. For compiling you have to have installed gcc, nasm and dd. If you have them, you can run `./compile.sh` script, that will generate bleskos.img file. If you want to compile without any optimizations, you can run it as `./compile fast`. If you want to only test some features from drivers or libraries, you may want to uncomment NO_PROGRAMS macro from source/bleskos.c, what will remove all code related to programs, so it will compile faster.
+
+If you have installed QEMU, you can then use `./testing.sh` script. It will run QEMU with bleskos.img connected as floppy with testing/disk.img connected as hard disk. If you want to run BleskOS with own image with files, you have to copy it to testing folder and then write `./testing.sh yourimagename.img`.
+
 ## BleskOS development state
 
 Drivers
@@ -86,8 +71,8 @@ Programs
 Supported file formats
 
 - TXT and all UTF-8 encoded text files
-- PNG (read-only), GIF (read-only), QOI, BMP
-- WAV, CDDA
+- JPG, PNG (read-only), GIF, QOI, BMP
+- MP3, WAV, CDDA
 - HTML
 - ODT, DOCX (read-only)
 
