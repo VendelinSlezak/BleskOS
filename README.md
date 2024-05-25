@@ -83,7 +83,7 @@ You are welcome 🙂
 - Give us a star and watch repository to be notified about updates
 - If you will find some bugs, report them in [Issues](https://github.com/VendelinSlezak/BleskOS/issues)
 - Try BleskOS on some real computer and let us know how it worked in [Discussions](https://github.com/VendelinSlezak/BleskOS/discussions) We would greatly appreciate if you would also add content of System log (Main window>[F1] System board>[L] System log>[F2] Backup the log).
-- If you really like this project, you can support it on buymeacoffee.com by buying me some coffee
+- If you really like this project, you can support it on buymeacoffee.com by buying me some coffee ☕️
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/cnn4fyv7xh0)
 
