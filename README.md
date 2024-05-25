@@ -6,7 +6,7 @@ BleskOS is 32-bit operating system written from scratch. One of main features is
 
 ## How to try BleskOS
 
-You can download image of last version here on github. Then you have two options:
+You can download image of last version here on github from last Release. Then you have two options:
 
 1. Run BleskOS on emulator - some of well-known are Virtualbox, QEMU, Bochs and so on. If you downloaded image .img, you should to connect it to emulator as floppy or hard disk, if you downloaded image .iso, you should connect it as optical disk. You can also connect disk.img from testing folder where are some files for testing.
 2. Run BleskOS on real computer - If you want to run BleskOS on your computer, you will need to create bootable medium. You can either burn .iso image on optical disk, or write .img image on USB flash. Do not just copy file! You need to write image right from start of USB flash. In linux, you can use program dd for this: `sudo dd if=bleskos_(actual version).img of=pathToYourUSB` For example if you have USB on /dev/sdg then you can write for example `sudo dd if=bleskos_2024u8.img of=/dev/sdg` Then insert optical disk/USB flash to your computer and boot it from your bootable medium. If you do not see your bootable medium, make sure that you are booting in legacy mode, because BleskOS do not support UEFI.
