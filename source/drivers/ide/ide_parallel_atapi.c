@@ -17,7 +17,7 @@ byte_t patapi_send_packet_command(word_t base_port, word_t alt_base_port, word_t
   ide_reset_controller(base_port, alt_base_port);
  }
  
- //send command
+ //send packet command
  outb(base_port + 1, 0);
  outb(base_port + 2, 0);
  outb(base_port + 3, 0);
@@ -36,7 +36,7 @@ byte_t patapi_send_packet_command(word_t base_port, word_t alt_base_port, word_t
  return STATUS_GOOD;
 }
 
-byte_t patapi_detect_disk(word_t base_port, word_t alt_base_port) {
+byte_t patapi_test_unit_ready(word_t base_port, word_t alt_base_port) {
  //reset controller
  ide_reset_controller(base_port, alt_base_port);
 
@@ -66,6 +66,17 @@ byte_t patapi_detect_disk(word_t base_port, word_t alt_base_port) {
  }
  else {
   return STATUS_GOOD;
+ }
+}
+
+byte_t patapi_detect_disk(word_t base_port, word_t alt_base_port) {
+ byte_t status = patapi_test_unit_ready(base_port, alt_base_port);
+ if(status==STATUS_GOOD) {
+  return STATUS_GOOD;
+ }
+ else {
+  //when optical disk is loaded, first TEST UNIT READY that will be sended will fail, so after STATUS_ERROR we will chcek again if there is really no disk
+  return patapi_test_unit_ready(base_port, alt_base_port);
  }
 }
 

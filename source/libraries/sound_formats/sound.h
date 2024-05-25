@@ -28,7 +28,37 @@
 
 dword_t converted_pcm_data_length = 0, converted_pcm_data_sample_rate = 0;
 
+#define AUDIO_FILE_TYPE_WAV 0
+#define AUDIO_FILE_TYPE_CDDA 1
+#define AUDIO_FILE_TYPE_MP3 2
+struct audio_file_t {
+ byte_t type;
+ byte_t *file_pointer;
+ dword_t file_size;
+ void *file_info;
+
+ word_t sample_rate;
+ dword_t output_length; //in bytes
+ dword_t actually_played_position; //in bytes
+
+ dword_t offset_to_start_of_playing; //in bytes
+
+ byte_t length_seconds;
+ byte_t length_minutes;
+ byte_t length_hours; 
+
+ byte_t played_length_seconds;
+ byte_t played_length_minutes;
+ byte_t played_length_hours;
+}__attribute__((packed));
+struct audio_file_t *actually_played_audio_file;
+
 dword_t create_sound(dword_t channels, dword_t bits_per_sample, dword_t sample_rate, dword_t length_of_data);
 void delete_sound(dword_t sound_info_mem);
 dword_t get_sound_data_memory(dword_t sound_info_mem);
 dword_t convert_pcm_to_2_channels_16_bit_samples_48000_44100_sample_rate(dword_t pcm_sound_memory, dword_t length_of_data, dword_t channels, dword_t bits_per_sample, dword_t sample_rate);
+
+struct audio_file_t *process_audio_file(byte_t audio_file_type, byte_t *audio_file_memory, dword_t audio_file_length);
+void play_audio_file(struct audio_file_t *audio_file_info, dword_t offset);
+void audio_calculate_time_of_sound_data_offset(struct audio_file_t *audio_file_info, dword_t actually_played_position);
+void destroy_audio_file(struct audio_file_t *audio_file_info);

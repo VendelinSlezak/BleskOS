@@ -9,5 +9,7 @@
 */
 
 #include "sound.h"
+#include "minimp3/minimp3.h"
+#include "mp3.h"
 #include "wav.h"
 #include "cdda.h"

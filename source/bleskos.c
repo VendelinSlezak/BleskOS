@@ -8,6 +8,8 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+// #define NO_PROGRAMS
+
 #include "bleskos.h"
 #include "drivers/system/include.h"
 #include "drivers/other/include.h"
@@ -22,6 +24,7 @@
 #include "drivers/ethernet/include.h"
 #include "drivers/network/include.h"
 #include "drivers/usb/include.h"
+
 #include "libraries/basic/include.h"
 #include "libraries/logging/logging.h"
 #include "libraries/drawing/include.h"
@@ -34,6 +37,8 @@
 #include "libraries/sound_formats/include.h"
 #include "libraries/archive_formats/include.h"
 #include "libraries/program_interface/include.h"
+
+#ifndef NO_PROGRAMS
 #include "programs/main_window/main_window.h"
 #include "programs/system_board/system_board.h"
 #include "programs/text_editor/text_editor.h"
@@ -45,6 +50,7 @@
 #include "programs/screenshooter/screenshooter.h"
 #include "programs/performance_rating/performance_rating.h"
 #include "programs/calculator/calculator.h"
+#endif
 
 #include "drivers/system/include.c"
 #include "drivers/other/include.c"
@@ -59,6 +65,7 @@
 #include "drivers/ethernet/include.c"
 #include "drivers/network/include.c"
 #include "drivers/usb/include.c"
+
 #include "libraries/basic/include.c"
 #include "libraries/logging/logging.c"
 #include "libraries/drawing/include.c"
@@ -71,6 +78,8 @@
 #include "libraries/sound_formats/include.c"
 #include "libraries/archive_formats/include.c"
 #include "libraries/program_interface/include.c"
+
+#ifndef NO_PROGRAMS
 #include "programs/main_window/main_window.c"
 #include "programs/system_board/system_board.c"
 #include "programs/text_editor/text_editor.c"
@@ -82,6 +91,7 @@
 #include "programs/screenshooter/screenshooter.c"
 #include "programs/performance_rating/performance_rating.c"
 #include "programs/calculator/calculator.c"
+#endif
 
 void bleskos(dword_t bootloader_passed_value) {
  boot_options = bootloader_passed_value;
@@ -92,7 +102,7 @@ void bleskos(dword_t bootloader_passed_value) {
  bleskos_boot_debug_top_screen_color(0x00FF00); //green top of screen
  initalize_logging();
  bleskos_boot_debug_top_screen_color(0x0000FF); //blue top of screen
- log("BleskOS 2024 update 30\n\nPress F2 to save System log as TXT file");
+ log("BleskOS 2024 update 31\n\nPress F2 to save System log as TXT file");
  log_starting_memory();
 
  bleskos_boot_debug_top_screen_color(0xFFFF00); //yellow top of screen
@@ -108,7 +118,7 @@ void bleskos(dword_t bootloader_passed_value) {
  clear_screen(0x00C000);
  set_scalable_char_size(64);
  scalable_font_print("BleskOS", screen_x_center-(64*7/2), screen_y_center-92, BLACK);
- print_to_message_window("Version 2024 update 30", screen_y_center);
+ print_to_message_window("Version 2024 update 31", screen_y_center);
  draw_empty_square(screen_x_center-161, screen_y_center+30, 322, 15, BLACK);
  number_of_start_screen_messages = 0;
  (*redraw_framebuffer)();
@@ -162,7 +172,9 @@ void bleskos(dword_t bootloader_passed_value) {
  initalize_file_dialog();
  initalize_lzw();
  initalize_deflate();
+ initalize_mp3_decoder();
 
+ #ifndef NO_PROGRAMS
  bleskos_show_message_on_starting_screen("Initalizing programs...");
  initalize_document_editor();
  initalize_text_editor();
@@ -180,6 +192,7 @@ void bleskos(dword_t bootloader_passed_value) {
  mouse_cursor_x = screen_x_center;
  mouse_cursor_y = screen_y_center;
  bleskos_main_window();
+ #endif
 }
 
 void bleskos_show_message_on_starting_screen(char *string) {

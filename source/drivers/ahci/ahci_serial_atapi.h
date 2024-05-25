@@ -8,8 +8,10 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-byte_t satapi_send_command(dword_t base_port, dword_t commands_memory, dword_t fis_memory, dword_t transfer_length, dword_t cmd1, dword_t cmd2, dword_t cmd3, dword_t memory);
-byte_t satapi_eject_drive(dword_t base_port, dword_t commands_memory, dword_t fis_memory);
-byte_t satapi_detect_disk(dword_t base_port, dword_t commands_memory, dword_t fis_memory);
-byte_t satapi_read_drive_capabilities(dword_t base_port, dword_t commands_memory, dword_t fis_memory);
-byte_t satapi_read_sector(dword_t base_port, dword_t commands_memory, dword_t fis_memory, dword_t sector, dword_t memory);
+byte_t satapi_test_unit_ready(dword_t port_base_address, dword_t command_list_memory);
+byte_t satapi_detect_disk(dword_t port_base_address, dword_t command_list_memory);
+byte_t satapi_start_stop_command(dword_t port_base_address, dword_t command_list_memory, byte_t command);
+byte_t satapi_read_capabilities(dword_t port_base_address, dword_t command_list_memory);
+byte_t satapi_read_cd_toc(dword_t port_base_address, dword_t command_list_memory, dword_t memory);
+byte_t satapi_read(dword_t port_base_address, dword_t command_list_memory, dword_t sector, byte_t number_of_sectors, dword_t memory);
+byte_t satapi_read_audio_cd_sector(dword_t port_base_address, dword_t command_list_memory, dword_t sector, byte_t number_of_sectors, dword_t memory);

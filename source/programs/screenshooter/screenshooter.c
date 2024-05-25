@@ -68,7 +68,7 @@ void screenshooter(void) {
    screenshoot_image_info[IMAGE_INFO_SCREEN_X] = 0;
    screenshoot_image_info[IMAGE_INFO_SCREEN_Y] = 0;
    screenshoot_image_info[IMAGE_INFO_WIDTH] = screenshoot_image_info[IMAGE_INFO_REAL_WIDTH];
-   screenshoot_image_info[IMAGE_INFO_HEIGTH] = screenshoot_image_info[IMAGE_INFO_REAL_HEIGTH];
+   screenshoot_image_info[IMAGE_INFO_HEIGTH] = screenshoot_image_info[IMAGE_INFO_REAL_HEIGHT];
    draw_image(screenshoot_image_info_mem);
    redraw_screen();
    mouse_click_button_state = NO_CLICK;
@@ -147,7 +147,7 @@ void screenshooter(void) {
     cropped_image_info[IMAGE_INFO_WIDTH] = screenshot_crop_width;
     cropped_image_info[IMAGE_INFO_SCREEN_X] = (screen_x_center-(screenshot_crop_width/2));
    }
-   cropped_image_info[IMAGE_INFO_REAL_HEIGTH] = screenshot_crop_height;
+   cropped_image_info[IMAGE_INFO_REAL_HEIGHT] = screenshot_crop_height;
    cropped_image_info[IMAGE_INFO_DRAW_HEIGTH] = screenshot_crop_height;
    if(screenshot_crop_height>screenshot_buffer_image_original_height) {
     cropped_image_info[IMAGE_INFO_HEIGTH] = screenshot_buffer_image_original_height;

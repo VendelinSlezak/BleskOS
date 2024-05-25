@@ -204,6 +204,9 @@ void ac97_stop_sound(void) {
 
  //buffers will not be filled by code in drivers/system/processes_on_background.c
  ac97_playing_state = AC97_BUFFER_FILLED;
+
+ //destroy task for looping
+ destroy_task(task_ac97_play_buffer_in_loop);
 }
 
 void ac97_play_memory(dword_t sound_memory, dword_t sound_size, dword_t sample_rate) {
@@ -244,4 +247,74 @@ void ac97_check_headphone_connection_change(void) {
  else if(ac97_selected_output==AC97_HEADPHONE_OUTPUT && ac97_is_headphone_connected()==STATUS_FALSE) { //headphone was disconnected
   ac97_set_output(AC97_SPEAKER_OUTPUT);
  }
+}
+
+void ac97_play_pcm_data_in_loop(dword_t sample_rate) {
+ //stop sound
+ outb(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_CONTROL, 0x0);
+
+ //set sample rate
+ ac97_set_sample_rate(sample_rate);
+
+ //reset stream
+ outb(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_CONTROL, 0x2);
+ ticks = 0;
+ while((inb(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_CONTROL) & 0x2)==0x2) {
+  asm("nop");
+  if(ticks>50) { //stream was not reseted after 100 ms
+   return;
+  }
+ }
+ outb(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_CONTROL, 0x0);
+
+ //clear buffer
+ clear_memory((dword_t)ac97_buffer_memory_pointer, (sizeof(struct ac97_buffer_entry)*32));
+
+ //set buffer address
+ outd(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_BUFFER_BASE_ADDRESS, (dword_t)ac97_buffer_memory_pointer);
+
+ //fill buffer entries
+ dword_t sound_memory = (dword_t) pcm_data;
+ dword_t sound_length = (sound_buffer_refilling_info->buffer_size*2);
+ for(dword_t i=0; i<32; i++) {
+  if(sound_length>0x2000*2) {
+   ac97_buffer_memory_pointer[i].sample_memory = sound_memory;
+   ac97_buffer_memory_pointer[i].number_of_samples = 0x2000;
+   sound_memory += 0x2000*2;
+   sound_length -= 0x2000*2;
+  }
+  else {
+   ac97_buffer_memory_pointer[i].sample_memory = sound_memory;
+   ac97_buffer_memory_pointer[i].number_of_samples = ((sound_length/2) & 0xFFFE);
+   break;
+  }
+ }
+
+ //clear status
+ outw(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_STATUS, 0x1C);
+
+ //start streaming
+ outb(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_CONTROL, 0x1);
+
+ //add task for playing buffer in loop
+ create_task(task_ac97_play_buffer_in_loop, TASK_TYPE_PERIODIC_INTERRUPT, 1);
+}
+
+void task_ac97_play_buffer_in_loop(void) {
+ //update Last Valid Entry register for all entries to be valid
+ outb(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_LAST_VALID_ENTRY, (inb(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_CURRENTLY_PROCESSED_ENTRY)-1) & 0x1F);
+}
+
+dword_t ac97_get_actual_stream_position(void) {
+ dword_t number_of_processed_bytes = 0;
+
+ //add already played buffers
+ for(dword_t i=0; i<inb(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_CURRENTLY_PROCESSED_ENTRY); i++) {
+  number_of_processed_bytes += ac97_buffer_memory_pointer[i].number_of_samples*2;
+ }
+
+ //add actual entry position
+ number_of_processed_bytes += (ac97_buffer_memory_pointer[inb(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_CURRENTLY_PROCESSED_ENTRY)].number_of_samples*2 - inw(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_CURRENT_ENTRY_POSITION)*2);
+
+ return number_of_processed_bytes;
 }

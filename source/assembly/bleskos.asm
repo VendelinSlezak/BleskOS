@@ -16,7 +16,7 @@ extern bleskos
 
 start:
  call bleskos
- 
+
  halt:
   hlt
  jmp halt

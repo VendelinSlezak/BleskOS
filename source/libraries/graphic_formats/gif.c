@@ -18,6 +18,7 @@ dword_t convert_gif_to_image_data(dword_t gif_memory, dword_t gif_file_length) {
 
  //check signature
  if(gif8[0]!='G' || gif8[1]!='I' || gif8[2]!='F' || gif8[3]!='8' || !(gif8[4]=='7' || gif8[4]=='9') || gif8[5]!='a') {
+  log("\nGIF: wrong signature");
   return STATUS_ERROR;
  }
   
@@ -153,4 +154,34 @@ dword_t convert_gif_to_image_data(dword_t gif_memory, dword_t gif_file_length) {
  }
  
  return image_memory;
+}
+
+void convert_image_data_to_gif(dword_t image_info_memory) {
+ dword_t *image_info = (dword_t *) (image_info_memory);
+
+ //reverse 0xARGB to 0xABGR for encoder
+ byte_t *image_data = (byte_t *) (get_image_data_memory(image_info_memory));
+ for(dword_t i=0; i<image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGHT]; i++) {
+  byte_t blue = image_data[0];
+  image_data[0] = image_data[2]; //move red
+  image_data[2] = blue; //move blue
+  image_data += 4;
+ }
+
+ //create GIF file
+ jo_gif_t *gif = jo_gif_start(image_info[IMAGE_INFO_REAL_WIDTH], image_info[IMAGE_INFO_REAL_HEIGHT], 0);
+ jo_gif_frame(gif, (byte_t *) get_image_data_memory(image_info_memory), 4);
+ jo_gif_end(gif);
+ converted_file_size = gif->fp->size_of_stream;
+ converted_file_memory = (dword_t) close_byte_stream(gif->fp);
+ free((dword_t)gif);
+
+ //reverse 0xABGR to 0xARGB
+ image_data = (byte_t *) (get_image_data_memory(image_info_memory));
+ for(dword_t i=0; i<image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGHT]; i++) {
+  byte_t red = image_data[0];
+  image_data[0] = image_data[2]; //move blue
+  image_data[2] = red; //move red
+  image_data += 4;
+ }
 }

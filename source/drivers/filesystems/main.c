@@ -22,7 +22,9 @@ void initalize_storage_controllers(void) {
   if(storage_controllers[i].controller_type==IDE_CONTROLLER) {
    initalize_ide_controller(i);
   }
-  //TODO: AHCI
+  else if(storage_controllers[i].controller_type==AHCI_CONTROLLER) {
+   initalize_ahci_controller(i);
+  }
  }
 
  //free memory
@@ -40,6 +42,7 @@ void initalize_storage_controllers(void) {
   else if(hard_disk_info.controller_type==AHCI_CONTROLLER) {
    log("AHCI ");
    log_hex_with_space(hard_disk_info.base_1);
+   log("port ");
    log_var_with_space(hard_disk_info.device_port);
   }
   log("Number of sectors: ");
@@ -56,6 +59,7 @@ void initalize_storage_controllers(void) {
   else if(optical_drive_info.controller_type==AHCI_CONTROLLER) {
    log("AHCI ");
    log_hex_with_space(optical_drive_info.base_1);
+   log("port ");
    log_var_with_space(optical_drive_info.device_port);
   }
  }
@@ -126,7 +130,7 @@ byte_t read_storage_medium(dword_t sector, byte_t num_of_sectors, dword_t memory
  if(storage_medium==MEDIUM_HDD) {
   //read HDD
   if(hard_disk_info.controller_type==AHCI_CONTROLLER) { //hard disk is connected to AHCI port
-   return sata_read(ahci_hdd_base, ahci_hdd_cmd_mem, ahci_hdd_fis_mem, sector, num_of_sectors, memory);
+   return sata_read(hard_disk_info.base_1, hard_disk_info.base_2, sector, num_of_sectors, memory);
   }
   if(hard_disk_info.controller_type==IDE_CONTROLLER) { //hard disk is connected to IDE port
    return pata_read(hard_disk_info.base_1, sector, num_of_sectors, memory);
@@ -136,13 +140,7 @@ byte_t read_storage_medium(dword_t sector, byte_t num_of_sectors, dword_t memory
  if(storage_medium==MEDIUM_CDROM) {
   //read CDROM
   if(optical_drive_info.controller_type==AHCI_CONTROLLER) { //CDROM is connected to AHCI port
-   for(int i=0, status=0; i<num_of_sectors; i++, sector++, memory+=2048) {
-    status = satapi_read_sector(ahci_cdrom_base, ahci_cdrom_cmd_mem, ahci_cdrom_fis_mem, sector, memory);
-    if(status==STATUS_ERROR) {
-     return STATUS_ERROR;
-    }
-   }
-   return STATUS_GOOD;
+   return satapi_read(optical_drive_info.base_1, optical_drive_info.base_2, sector, num_of_sectors, memory);
   }
   if(optical_drive_info.controller_type==IDE_CONTROLLER) { //CDROM is connected to IDE port
    return patapi_read(optical_drive_info.base_1, optical_drive_info.base_2, sector, num_of_sectors, memory);
@@ -167,6 +165,9 @@ byte_t read_storage_medium(dword_t sector, byte_t num_of_sectors, dword_t memory
 
 byte_t read_audio_cd(dword_t sector, dword_t num_of_sectors, dword_t memory) {
  if(storage_medium==MEDIUM_CDROM) {
+  if(optical_drive_info.controller_type==AHCI_CONTROLLER) { //CDROM is connected to AHCI port
+   return satapi_read_audio_cd_sector(optical_drive_info.base_1, optical_drive_info.base_2, sector, num_of_sectors, memory);
+  }
   if(optical_drive_info.controller_type==IDE_CONTROLLER) { //CDROM is connected to IDE port
    return patapi_read_audio_cd_sector(optical_drive_info.base_1, optical_drive_info.base_2, sector, num_of_sectors, memory);
   }
@@ -179,7 +180,7 @@ byte_t write_storage_medium(dword_t sector, byte_t num_of_sectors, dword_t memor
  if(storage_medium==MEDIUM_HDD) {
   //write HDD
   if(hard_disk_info.controller_type==AHCI_CONTROLLER) { //hard disk is connected to AHCI port
-   return sata_write(ahci_hdd_base, ahci_hdd_cmd_mem, ahci_hdd_fis_mem, sector, num_of_sectors, memory);
+   return sata_write(hard_disk_info.base_1, hard_disk_info.base_2, sector, num_of_sectors, memory);
   }
   if(hard_disk_info.controller_type==IDE_CONTROLLER) { //hard disk is connected to IDE port
    return pata_write(hard_disk_info.base_1, sector, num_of_sectors, memory);
@@ -224,7 +225,7 @@ byte_t detect_optical_disk(void) {
  
  //detect disk
  if(optical_drive_info.controller_type==AHCI_CONTROLLER) { //CDROM is connected to AHCI port
-  status = satapi_read_drive_capabilities(ahci_cdrom_base, ahci_cdrom_cmd_mem, ahci_cdrom_fis_mem);
+  status = satapi_detect_disk(optical_drive_info.base_1, optical_drive_info.base_2);
  }
  if(optical_drive_info.controller_type==IDE_CONTROLLER) { //CDROM is connected to IDE port
   status = patapi_detect_disk(optical_drive_info.base_1, optical_drive_info.base_2);
@@ -233,7 +234,7 @@ byte_t detect_optical_disk(void) {
  //read disk size
  if(status==STATUS_TRUE) {
   if(optical_drive_info.controller_type==AHCI_CONTROLLER) { //CDROM is connected to AHCI port
-   //status = satapi_read_capabilities(ahci_cdrom_base, ahci_cdrom_cmd_mem, ahci_cdrom_fis_mem); //TODO:
+   satapi_read_capabilities(optical_drive_info.base_1, optical_drive_info.base_2);
   }
   if(optical_drive_info.controller_type==IDE_CONTROLLER) { //CDROM is connected to IDE port
    patapi_read_capabilities(optical_drive_info.base_1, optical_drive_info.base_2);
@@ -266,7 +267,7 @@ void eject_optical_disk(void) {
  
  //eject drive
  if(optical_drive_info.controller_type==AHCI_CONTROLLER) { //CDROM is connected to AHCI port
-  satapi_eject_drive(ahci_cdrom_base, ahci_cdrom_cmd_mem, ahci_cdrom_fis_mem);
+  satapi_start_stop_command(optical_drive_info.base_1, optical_drive_info.base_2, PATA_EJECT);
  }
  if(optical_drive_info.controller_type==IDE_CONTROLLER) { //CDROM is connected to IDE port
   patapi_start_stop_command(optical_drive_info.base_1, optical_drive_info.base_2, PATA_EJECT);
@@ -282,14 +283,11 @@ void eject_optical_disk(void) {
 }
 
 void spin_down_optical_drive(void) {
+ if(optical_drive_info.controller_type==AHCI_CONTROLLER) { //CDROM is connected to AHCI port
+  satapi_start_stop_command(optical_drive_info.base_1, optical_drive_info.base_2, PATA_SPIN_DOWN);
+ }
  if(optical_drive_info.controller_type==IDE_CONTROLLER) { //CDROM is connected to IDE port
   patapi_start_stop_command(optical_drive_info.base_1, optical_drive_info.base_2, PATA_SPIN_DOWN);
- }
-}
-
-void reset_optical_drive(void) {
- if(optical_drive_info.controller_type==IDE_CONTROLLER) { //CDROM is connected to IDE port
-  ide_reset_controller(optical_drive_info.base_1, optical_drive_info.base_2);
  }
 }
 
@@ -305,6 +303,11 @@ byte_t read_optical_disk_toc(void) {
  }
 
  //read TOC
+ if(optical_drive_info.controller_type==AHCI_CONTROLLER) { //CDROM is connected to AHCI port
+  if(satapi_read_cd_toc(optical_drive_info.base_1, optical_drive_info.base_2, (dword_t)(&optical_disk_table_of_content))==STATUS_ERROR) {
+   return STATUS_ERROR;
+  }
+ }
  if(optical_drive_info.controller_type==IDE_CONTROLLER) { //CDROM is connected to IDE port
   if(patapi_read_cd_toc(optical_drive_info.base_1, optical_drive_info.base_2, (dword_t)(&optical_disk_table_of_content))==STATUS_ERROR) {
    return STATUS_ERROR;

@@ -10,3 +10,4 @@
 
 #include "math.c"
 #include "strings.c"
+#include "c_library.c"

@@ -11,6 +11,4 @@
 dword_t qoi_index_array[256];
 
 dword_t convert_qoi_to_image_data(dword_t qoi_memory);
-dword_t convert_qoib_to_image_data(dword_t qoi_memory);
 void convert_image_data_to_qoi(dword_t image_info_memory);
-void convert_image_data_to_qoib(dword_t image_info_memory);

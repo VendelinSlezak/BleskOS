@@ -9,6 +9,8 @@
 */
 
 #include "image.c"
+#include "nanojpeg/nanojpeg.c"
+#include "jpg.c"
 #include "png.c"
 #include "gif.c"
 #include "bmp.c"

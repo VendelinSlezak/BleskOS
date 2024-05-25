@@ -22,7 +22,7 @@ float fabs(float i) {
  return i;
 }
 
-int floor(float i) {
+int floor(double i) {
  if(i==0) {
   return 0;
  }
@@ -34,6 +34,33 @@ int floor(float i) {
  }
  else {
   return ((int) i)-1;
+ }
+}
+
+int floorf(float i) {
+ if(i==0) {
+  return 0;
+ }
+ else if(i>0) {
+  return (int) i;
+ }
+ else if(((int) i)==i){
+  return (int) i;
+ }
+ else {
+  return ((int) i)-1;
+ }
+}
+
+float ceilf(float number) {
+ if((number-((int)number))==0) { //already rounded number
+  return number;
+ }
+ else if(number>0) { //positive number
+  return ((number/1)+1);
+ }
+ else { //negative number
+  return (number/1);
  }
 }
 
@@ -204,6 +231,7 @@ void convert_unix_time(dword_t unix_time) {
  math_year = 1970;
 
  //calculate year
+ byte_t years_with_leap_second[26] = { 72, 73, 74, 75, 76, 77, 78, 79, 81, 82, 83, 85, 87, 89, 90, 92, 93, 94, 95, 97, 98, 5, 8, 12, 15, 16 };
  while(1) {
   if(math_year%400==0 || (math_year%4==0 && math_year%100!=0)) {
    if(math_day<366) {
@@ -223,6 +251,15 @@ void convert_unix_time(dword_t unix_time) {
   }
 
   math_year++;
+  if(math_year==1972) {
+   unix_time--; //there are two leap seconds in this year
+  }
+  for(dword_t i=0; i<26; i++) {
+   if(years_with_leap_second[i]==(math_year%100)) {
+    unix_time--; //leap second
+    break;
+   }
+  }
  }
 
  //calculate month and day

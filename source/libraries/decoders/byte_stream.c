@@ -22,7 +22,7 @@
  add_byte_to_byte_stream(byte_stream_1, 2);
  add_byte_to_byte_stream(byte_stream_1, 3);
  ...
- close_byte_stream(byte_stream_1);
+ destroy_byte_stream(byte_stream_1);
 */
 
 struct byte_stream_descriptor *create_byte_stream(dword_t size_of_block) {
@@ -51,6 +51,30 @@ void add_byte_to_byte_stream(struct byte_stream_descriptor *actual_byte_stream_d
  actual_byte_stream_descriptor->memory_pointer[0] = value;
  actual_byte_stream_descriptor->memory_pointer++;
  actual_byte_stream_descriptor->size_of_stream++;
+}
+
+void add_word_to_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor, word_t value) {
+ add_byte_to_byte_stream(actual_byte_stream_descriptor, (value & 0xFF));
+ add_byte_to_byte_stream(actual_byte_stream_descriptor, (value >> 8));
+}
+
+void add_dword_to_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor, dword_t value) {
+ add_byte_to_byte_stream(actual_byte_stream_descriptor, (value & 0xFF));
+ add_byte_to_byte_stream(actual_byte_stream_descriptor, ((value >> 8) & 0xFF));
+ add_byte_to_byte_stream(actual_byte_stream_descriptor, ((value >> 16) & 0xFF));
+ add_byte_to_byte_stream(actual_byte_stream_descriptor, ((value >> 24) & 0xFF));
+}
+
+void skip_bytes_in_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor, dword_t number_of_bytes) {
+ for(dword_t i=0; i<number_of_bytes; i++) {
+  add_byte_to_byte_stream(actual_byte_stream_descriptor, 0);
+ }
+}
+
+void add_bytes_to_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor, byte_t *pointer, dword_t number_of_bytes) {
+ for(dword_t i=0; i<number_of_bytes; i++) {
+  add_byte_to_byte_stream(actual_byte_stream_descriptor, pointer[i]);
+ }
 }
 
 void add_string_to_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor, byte_t *string) {
@@ -85,7 +109,14 @@ void create_free_space_in_byte_stream(struct byte_stream_descriptor *actual_byte
  }
 }
 
-void close_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor) {
+byte_t *close_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor) {
+ actual_byte_stream_descriptor->start_of_allocated_memory = realloc(actual_byte_stream_descriptor->start_of_allocated_memory, actual_byte_stream_descriptor->size_of_stream);
+ byte_t *stream_start = (byte_t *) actual_byte_stream_descriptor->start_of_allocated_memory;
+ free((dword_t)actual_byte_stream_descriptor);
+ return stream_start;
+}
+
+void destroy_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor) {
  free((dword_t)actual_byte_stream_descriptor->start_of_allocated_memory);
  free((dword_t)actual_byte_stream_descriptor);
 }

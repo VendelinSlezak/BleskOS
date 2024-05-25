@@ -10,6 +10,7 @@
 
 #define BYTE_STREAM_100_KB_BLOCK 100*1024
 #define BYTE_STREAM_1_MB_BLOCK 1024*1024
+#define BYTE_STREAM_10_MB_BLOCK 1024*1024*10
 
 struct byte_stream_descriptor {
  dword_t start_of_allocated_memory;
@@ -22,8 +23,13 @@ struct byte_stream_descriptor {
 
 struct byte_stream_descriptor *create_byte_stream(dword_t size_of_block);
 void add_byte_to_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor, byte_t value);
+void add_word_to_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor, word_t value);
+void add_dword_to_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor, dword_t value);
+void skip_bytes_in_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor, dword_t number_of_bytes);
+void add_bytes_to_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor, byte_t *pointer, dword_t number_of_bytes);
 void add_string_to_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor, byte_t *string);
 void add_number_to_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor, dword_t number);
 void add_hex_number_to_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor, dword_t number, dword_t number_of_chars);
 void create_free_space_in_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor, dword_t space_size);
-void close_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor);
+byte_t *close_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor);
+void destroy_byte_stream(struct byte_stream_descriptor *actual_byte_stream_descriptor);

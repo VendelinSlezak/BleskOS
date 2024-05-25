@@ -49,8 +49,6 @@ void scan_pci(void) {
  //initalize values that are used to determine presence of devices
  ide_0x1F0_controller_present = STATUS_FALSE;
  ide_0x170_controller_present = STATUS_FALSE;
- ahci_controllers_pointer = 0;
- ahci_ports_pointer = 0;
  ethernet_cards_pointer = 0;
  usb_controllers_pointer = 0;
  number_of_graphic_cards = 0;
@@ -170,21 +168,21 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  }
  
  //SATA controller
- if(type_of_device==0x010601) {
+ if(type_of_device==0x010601 && number_of_storage_controllers<MAX_NUMBER_OF_STORAGE_CONTROLLERS) {
   log("\nAHCI controller");
-  
-  ahci_base = pci_read_mmio_bar(bus, device, function, PCI_BAR5);
   pci_enable_mmio_busmastering(bus, device, function);
+  pci_disable_interrupts(bus, device, function);
   
   //test presence of AHCI interface
-  if((mmio_ind(ahci_base + 0x04) & 0x80000000)==0x00000000) {
+  if((mmio_ind(pci_read_mmio_bar(bus, device, function, PCI_BAR5) + 0x04) & 0x80000000)==0x00000000) {
+   log(" with IDE interface");
    goto pci_device_ide_controller; //IDE interface
   }
   
-  if(ahci_controllers_pointer<10) {
-   ahci_controllers[ahci_controllers_pointer]=ahci_base;
-   ahci_controllers_pointer++;
-  }
+  //save device
+  storage_controllers[number_of_storage_controllers].controller_type = AHCI_CONTROLLER;
+  storage_controllers[number_of_storage_controllers].base_1 = pci_read_mmio_bar(bus, device, function, PCI_BAR5);
+  number_of_storage_controllers++;
   return;
  }
  

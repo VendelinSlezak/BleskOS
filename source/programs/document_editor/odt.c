@@ -871,7 +871,7 @@ void convert_dmf_to_odt(dword_t dmf_memory) {
  new_odt_file_size = new_zip_file_size;
 
  //free all memory
- close_byte_stream(file_manifest_xml_byte_stream);
- close_byte_stream(file_mimetype_byte_stream);
- close_byte_stream(file_content_xml_byte_stream);
+ destroy_byte_stream(file_manifest_xml_byte_stream);
+ destroy_byte_stream(file_mimetype_byte_stream);
+ destroy_byte_stream(file_content_xml_byte_stream);
 }

@@ -9,6 +9,10 @@
 */
 
 #include "image.h"
+#include "nanojpeg/nanojpeg.h"
+#include "jpeg_writer/jpeg_writer.h"
+#include "gif_writer/gif_writer.h"
+#include "jpg.h"
 #include "png.h"
 #include "gif.h"
 #include "bmp.h"

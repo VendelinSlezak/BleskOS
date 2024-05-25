@@ -67,3 +67,6 @@ void ac97_play_sound(void);
 void ac97_stop_sound(void);
 void ac97_play_memory(dword_t sound_memory, dword_t sound_size, dword_t sample_rate);
 void ac97_check_headphone_connection_change(void);
+void ac97_play_pcm_data_in_loop(dword_t sample_rate);
+void task_ac97_play_buffer_in_loop(void);
+dword_t ac97_get_actual_stream_position(void);

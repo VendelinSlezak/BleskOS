@@ -586,3 +586,43 @@ void copy_memory_back(dword_t source_memory, dword_t destination_memory, dword_t
   source8--;
  }
 }
+
+/* C library */
+void *memcpy(void *destination, const void *source, dword_t num) {
+ char *dest = (char *) destination;
+ const char *src = (const char *) source;
+
+ for(dword_t i=0; i<num; i++) {
+  dest[i] = src[i];
+ }
+
+ return destination;
+}
+
+void *memset(void *ptr, int value, dword_t num) {
+ char *p = (char *) ptr;
+
+ for(dword_t i=0; i<num; i++) {
+  p[i] = (char) value;
+ }
+
+ return ptr;
+}
+
+void *memmove(void *destination, const void *source, dword_t num) {
+ char *dest = (char *) destination;
+ const char *src = (const char *) source;
+
+ if ((dword_t)dest > (dword_t)src && (dword_t)dest < ((dword_t)src + num)) {
+  for (dword_t i = num; i > 0; i--) {
+   dest[i - 1] = src[i - 1];
+  }
+ }
+ else {
+  for (dword_t i = 0; i < num; i++) {
+   dest[i] = src[i];
+  }
+ }
+
+ return destination;
+}

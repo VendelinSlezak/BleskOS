@@ -14,6 +14,7 @@ void initalize_program_interface(void) {
  program_interface_num_of_click_zone_events = 0;
  program_interface_elements_list_mem = calloc(32*100);
  program_interface_num_of_elements = 0;
+ program_element_layout_areas_info = (struct program_element_layout_area_info *) (calloc(sizeof(struct program_element_layout_area_info) * PROGRAM_ELEMENT_LAYOUT_MAX_NUM_OF_AREAS));
 }
 
 void set_program_interface(dword_t program_interface_mem) {

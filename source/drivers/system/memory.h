@@ -37,3 +37,8 @@ void memory_error_debug(dword_t color);
 void clear_memory(dword_t memory, dword_t length);
 void copy_memory(dword_t source_memory, dword_t destination_memory, dword_t size);
 void copy_memory_back(dword_t source_memory, dword_t destination_memory, dword_t size);
+
+/* C library */
+void *memcpy(void *destination, const void *source, dword_t num);
+void *memset(void *ptr, int value, dword_t num);
+void *memmove(void *destination, const void *source, dword_t num);

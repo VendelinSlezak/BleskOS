@@ -38,11 +38,13 @@ void set_interrupts(void) {
  //disable all variables that affect IRQ0 routine
  ticks = 0;
  ticks_of_processes = 0;
- bleskos_main_window_time_redraw = 0;
  hda_playing_state = 0;
  ac97_playing_state = 0;
  usb_mouse[0].controller_type = USB_NO_DEVICE_ATTACHED;
+ #ifndef NO_PROGRAMS
+ bleskos_main_window_time_redraw = 0;
  media_viewer_sound_state = MEDIA_VIEWER_SOUND_NO_FILE;
+ #endif
  
   //load IDT and enable interrupts
  load_idt();
