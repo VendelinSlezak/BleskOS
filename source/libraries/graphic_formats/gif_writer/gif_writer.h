@@ -33,7 +33,7 @@
 // then include jo_gif->cpp from it.
 
 typedef struct {
-	struct byte_stream_descriptor *fp;
+	struct byte_stream_descriptor_t *fp;
 	unsigned char palette[0x300];
 	short width, height, repeat;
 	int numColors, palSize;
@@ -202,7 +202,7 @@ static void jo_gif_quantize(unsigned char *rgba, int rgbaSize, int sample, unsig
 }
 
 typedef struct {
-	struct byte_stream_descriptor *fp;
+	struct byte_stream_descriptor_t *fp;
 	int numBits;
 	unsigned char buf[256];
 	unsigned char idx;
@@ -226,7 +226,7 @@ static void jo_gif_lzw_write(jo_gif_lzw_t *s, int code) {
 	}
 }
 
-static void jo_gif_lzw_encode(unsigned char *in, int len, struct byte_stream_descriptor *fp) {
+static void jo_gif_lzw_encode(unsigned char *in, int len, struct byte_stream_descriptor_t *fp) {
 	jo_gif_lzw_t state = {fp, 9};
 	int maxcode = 511;
 

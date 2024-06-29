@@ -257,44 +257,34 @@ void media_viewer_open_file(void) {
  media_viewer_stop_sound();
 
  //open file
- file_dialog_open_file_extensions_clear_mem();
- file_dialog_open_file_add_extension("qoi");
- file_dialog_open_file_add_extension("bmp");
- file_dialog_open_file_add_extension("jpg");
- file_dialog_open_file_add_extension("png");
- file_dialog_open_file_add_extension("gif");
- file_dialog_open_file_add_extension("wav");
- file_dialog_open_file_add_extension("mp3");
- file_dialog_open_file_add_extension("cdda");
- dword_t new_file_mem = file_dialog_open();
- if(new_file_mem==0) {
+ if(file_dialog_open("jpg png gif qoi bmp mp3 wav cdda")==FILE_DIALOG_EVENT_EXIT_FILE_NOT_LOADED) {
   return; //file not loaded
  }
 
  //add file entry
  set_program_value(PROGRAM_INTERFACE_SELECTED_FILE_SAVE_VALUE, get_program_value(PROGRAM_INTERFACE_SELECTED_FILE));
- add_file((word_t *)file_dialog_file_name, 0, 0, 0, 0, 0);
+ add_file(file_dialog_file_descriptor->name, 0, 0, 0, 0, 0);
  
  //set file entry
  if(is_loaded_file_extension("jpg")==STATUS_TRUE || is_loaded_file_extension("qoi")==STATUS_TRUE || is_loaded_file_extension("bmp")==STATUS_TRUE || is_loaded_file_extension("png")==STATUS_TRUE || is_loaded_file_extension("gif")==STATUS_TRUE) { //image  
   //convert image
   show_message_window("Decoding image...");
   if(is_loaded_file_extension("qoi")==STATUS_TRUE) {
-   set_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY, convert_qoi_to_image_data(new_file_mem));
+   set_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY, convert_qoi_to_image_data((dword_t)file_dialog_open_file_memory));
   }
   else if(is_loaded_file_extension("bmp")==STATUS_TRUE) {
-   set_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY, convert_bmp_to_image_data(new_file_mem));
+   set_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY, convert_bmp_to_image_data((dword_t)file_dialog_open_file_memory));
   }
   else if(is_loaded_file_extension("png")==STATUS_TRUE) {
-   set_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY, convert_png_to_image_data(new_file_mem, file_dialog_file_size));
+   set_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY, convert_png_to_image_data((dword_t)file_dialog_open_file_memory, file_dialog_file_descriptor->file_size_in_bytes));
   }
   else if(is_loaded_file_extension("gif")==STATUS_TRUE) {
-   set_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY, convert_gif_to_image_data(new_file_mem, file_dialog_file_size));
+   set_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY, convert_gif_to_image_data((dword_t)file_dialog_open_file_memory, file_dialog_file_descriptor->file_size_in_bytes));
   }
   else if(is_loaded_file_extension("jpg")==STATUS_TRUE) {
-   set_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY, convert_jpg_to_image_data(new_file_mem, file_dialog_file_size));
+   set_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY, convert_jpg_to_image_data((dword_t)file_dialog_open_file_memory, file_dialog_file_descriptor->file_size_in_bytes));
   }
-  free(new_file_mem);
+  free((dword_t)file_dialog_open_file_memory);
   if(get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY)==STATUS_ERROR) {
    remove_file(get_program_value(PROGRAM_INTERFACE_SELECTED_FILE));
    set_program_value(PROGRAM_INTERFACE_SELECTED_FILE, get_program_value(PROGRAM_INTERFACE_SELECTED_FILE_SAVE_VALUE));
@@ -312,16 +302,16 @@ void media_viewer_open_file(void) {
  }
  else if(is_loaded_file_extension("mp3")==STATUS_TRUE || is_loaded_file_extension("wav")==STATUS_TRUE || is_loaded_file_extension("cdda")==STATUS_TRUE) {
   //convert file
+  show_message_window("Processing audio file...");
   if(is_loaded_file_extension("mp3")==STATUS_TRUE) {
-   set_file_value(MEDIA_VIEWER_FILE_AUDIO_INFO_MEMORY, (dword_t)process_audio_file(AUDIO_FILE_TYPE_MP3, (byte_t *)new_file_mem, file_dialog_file_size));
+   set_file_value(MEDIA_VIEWER_FILE_AUDIO_INFO_MEMORY, (dword_t)process_audio_file(AUDIO_FILE_TYPE_MP3, file_dialog_open_file_memory, file_dialog_file_descriptor->file_size_in_bytes));
   }
   else if(is_loaded_file_extension("wav")==STATUS_TRUE) {
-   set_file_value(MEDIA_VIEWER_FILE_AUDIO_INFO_MEMORY, (dword_t)process_audio_file(AUDIO_FILE_TYPE_WAV, (byte_t *)new_file_mem, file_dialog_file_size));
+   set_file_value(MEDIA_VIEWER_FILE_AUDIO_INFO_MEMORY, (dword_t)process_audio_file(AUDIO_FILE_TYPE_WAV, file_dialog_open_file_memory, file_dialog_file_descriptor->file_size_in_bytes));
   }
   else if(is_loaded_file_extension("cdda")==STATUS_TRUE) {
-   set_file_value(MEDIA_VIEWER_FILE_AUDIO_INFO_MEMORY, (dword_t)process_audio_file(AUDIO_FILE_TYPE_CDDA, (byte_t *)new_file_mem, file_dialog_file_size));
+   set_file_value(MEDIA_VIEWER_FILE_AUDIO_INFO_MEMORY, (dword_t)process_audio_file(AUDIO_FILE_TYPE_CDDA, file_dialog_open_file_memory, file_dialog_file_descriptor->file_size_in_bytes));
   }
-  free(new_file_mem);
 
   //test errors
   if(get_file_value(MEDIA_VIEWER_FILE_AUDIO_INFO_MEMORY)==STATUS_ERROR) {
@@ -356,40 +346,37 @@ void media_viewer_save_file(void) {
    return;
   }
   show_message_window("Converting image...");
+  byte_t status = 0;
   if(file_format_number==0) {
-   file_dialog_save_set_extension("jpg");
    convert_image_data_to_jpg(get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY), 90);
+   status = file_dialog_save((byte_t *)converted_file_memory, converted_file_size, "jpg");
   }
   else if(file_format_number==1) {
-   file_dialog_save_set_extension("gif");
    convert_image_data_to_gif(get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY));
+   status = file_dialog_save((byte_t *)converted_file_memory, converted_file_size, "gif");
   }
   else if(file_format_number==2) {
-   file_dialog_save_set_extension("bmp");
    convert_image_data_to_bmp(get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY));
+   status = file_dialog_save((byte_t *)converted_file_memory, converted_file_size, "bmp");
   }
   else if(file_format_number==3) {
-   file_dialog_save_set_extension("qoi");
    convert_image_data_to_qoi(get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY));
+   status = file_dialog_save((byte_t *)converted_file_memory, converted_file_size, "qoi");
   }
-  file_dialog_save(converted_file_memory, converted_file_size);
   free(converted_file_memory);
  }
  else if(get_file_value(MEDIA_VIEWER_FILE_TYPE)==MEDIA_VIEWER_FILE_SOUND) {
   struct audio_file_t *audio_info = (struct audio_file_t *) (get_file_value(MEDIA_VIEWER_FILE_AUDIO_INFO_MEMORY));
 
   if(audio_info->type==AUDIO_FILE_TYPE_MP3) {
-   file_dialog_save_set_extension("mp3");
-   file_dialog_save((dword_t)audio_info->file_pointer, audio_info->file_size);
+   file_dialog_save(audio_info->file_pointer, audio_info->file_size, "mp3");
   }
   else if(audio_info->type==AUDIO_FILE_TYPE_WAV) {
-   file_dialog_save_set_extension("wav");
-   file_dialog_save((dword_t)audio_info->file_pointer, audio_info->file_size);
+   file_dialog_save(audio_info->file_pointer, audio_info->file_size, "wav");
   }
   else if(audio_info->type==AUDIO_FILE_TYPE_CDDA) {
-   file_dialog_save_set_extension("wav");
    convert_sound_data_to_wav(audio_info->file_pointer, audio_info->file_size, 16, 2, 44100);
-   file_dialog_save(converted_file_memory, converted_file_size);
+   file_dialog_save((byte_t *)converted_file_memory, converted_file_size, "wav");
    free(converted_file_memory);
   }
  }

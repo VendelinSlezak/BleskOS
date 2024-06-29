@@ -87,11 +87,14 @@ void draw_text_area(dword_t text_area_info_mem) {
  char_column = text_area_info[TEXT_AREA_INFO_X];
  text_area_info[TEXT_AREA_INFO_WIDTH] = text_area_info[TEXT_AREA_INFO_REAL_WIDTH];
  text_area_info[TEXT_AREA_INFO_HEIGTH] = text_area_info[TEXT_AREA_INFO_REAL_HEIGTH];
- if(text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10>text_area_info[TEXT_AREA_INFO_REAL_HEIGTH]) { //vertical scrollbar is present
-  text_area_info[TEXT_AREA_INFO_WIDTH] = (text_area_info[TEXT_AREA_INFO_REAL_WIDTH]-10);
- }
- if(text_area_info[TEXT_AREA_INFO_NUMBER_OF_COLUMNS]*8>text_area_info[TEXT_AREA_INFO_REAL_WIDTH]) { //horizontal scrollbar is present
-  text_area_info[TEXT_AREA_INFO_HEIGTH] = (text_area_info[TEXT_AREA_INFO_REAL_HEIGTH]-10);
+
+ if(type!=TEXT_AREA_INPUT_LINE && type!=TEXT_AREA_NUMBER_INPUT) {
+  if(text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10>text_area_info[TEXT_AREA_INFO_REAL_HEIGTH]) { //vertical scrollbar is present
+   text_area_info[TEXT_AREA_INFO_WIDTH] = (text_area_info[TEXT_AREA_INFO_REAL_WIDTH]-10);
+  }
+  if(text_area_info[TEXT_AREA_INFO_NUMBER_OF_COLUMNS]*8>text_area_info[TEXT_AREA_INFO_REAL_WIDTH]) { //horizontal scrollbar is present
+   text_area_info[TEXT_AREA_INFO_HEIGTH] = (text_area_info[TEXT_AREA_INFO_REAL_HEIGTH]-10);
+  }
  }
  
  //draw text
@@ -241,17 +244,19 @@ void draw_text_area(dword_t text_area_info_mem) {
  }
 
  //draw scrollbars
- text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE] = 0;
- if(text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10>text_area_info[TEXT_AREA_INFO_REAL_HEIGTH]) { //vertical scrollbar is present
-  text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE] = calculate_scrollbar_rider_size(text_area_info[TEXT_AREA_INFO_REAL_HEIGTH], text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10, text_area_info[TEXT_AREA_INFO_HEIGTH]);
-  text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION] = calculate_scrollbar_rider_position(text_area_info[TEXT_AREA_INFO_REAL_HEIGTH], text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE], text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10, text_area_info[TEXT_AREA_INFO_HEIGTH], text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]);
-  draw_vertical_scrollbar(text_area_info[TEXT_AREA_INFO_X]+text_area_info[TEXT_AREA_INFO_REAL_WIDTH]-10, text_area_info[TEXT_AREA_INFO_Y], text_area_info[TEXT_AREA_INFO_REAL_HEIGTH], text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION], text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE]);
- }
- text_area_info[TEXT_AREA_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE] = 0;
- if(text_area_info[TEXT_AREA_INFO_NUMBER_OF_COLUMNS]*8>text_area_info[TEXT_AREA_INFO_REAL_WIDTH]) { //horizontal scrollbar is present
-  text_area_info[TEXT_AREA_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE] = calculate_scrollbar_rider_size(text_area_info[TEXT_AREA_INFO_WIDTH], text_area_info[TEXT_AREA_INFO_NUMBER_OF_COLUMNS]*8, text_area_info[TEXT_AREA_INFO_WIDTH]);
-  text_area_info[TEXT_AREA_INFO_HORIZONTAL_SCROLLBAR_RIDER_POSITION] = calculate_scrollbar_rider_position(text_area_info[TEXT_AREA_INFO_WIDTH], text_area_info[TEXT_AREA_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE], text_area_info[TEXT_AREA_INFO_NUMBER_OF_COLUMNS]*8, text_area_info[TEXT_AREA_INFO_WIDTH], text_area_info[TEXT_AREA_INFO_FIRST_SHOW_COLUMN]);
-  draw_horizontal_scrollbar(text_area_info[TEXT_AREA_INFO_X], text_area_info[TEXT_AREA_INFO_Y]+text_area_info[TEXT_AREA_INFO_HEIGTH], text_area_info[TEXT_AREA_INFO_WIDTH], text_area_info[TEXT_AREA_INFO_HORIZONTAL_SCROLLBAR_RIDER_POSITION], text_area_info[TEXT_AREA_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE]);
+ if(type!=TEXT_AREA_INPUT_LINE && type!=TEXT_AREA_NUMBER_INPUT) {
+  text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE] = 0;
+  if(text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10>text_area_info[TEXT_AREA_INFO_REAL_HEIGTH]) { //vertical scrollbar is present
+   text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE] = calculate_scrollbar_rider_size(text_area_info[TEXT_AREA_INFO_REAL_HEIGTH], text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10, text_area_info[TEXT_AREA_INFO_HEIGTH]);
+   text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION] = calculate_scrollbar_rider_position(text_area_info[TEXT_AREA_INFO_REAL_HEIGTH], text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE], text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10, text_area_info[TEXT_AREA_INFO_HEIGTH], text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]);
+   draw_vertical_scrollbar(text_area_info[TEXT_AREA_INFO_X]+text_area_info[TEXT_AREA_INFO_REAL_WIDTH]-10, text_area_info[TEXT_AREA_INFO_Y], text_area_info[TEXT_AREA_INFO_REAL_HEIGTH], text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION], text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE]);
+  }
+  text_area_info[TEXT_AREA_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE] = 0;
+  if(text_area_info[TEXT_AREA_INFO_NUMBER_OF_COLUMNS]*8>text_area_info[TEXT_AREA_INFO_REAL_WIDTH]) { //horizontal scrollbar is present
+   text_area_info[TEXT_AREA_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE] = calculate_scrollbar_rider_size(text_area_info[TEXT_AREA_INFO_WIDTH], text_area_info[TEXT_AREA_INFO_NUMBER_OF_COLUMNS]*8, text_area_info[TEXT_AREA_INFO_WIDTH]);
+   text_area_info[TEXT_AREA_INFO_HORIZONTAL_SCROLLBAR_RIDER_POSITION] = calculate_scrollbar_rider_position(text_area_info[TEXT_AREA_INFO_WIDTH], text_area_info[TEXT_AREA_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE], text_area_info[TEXT_AREA_INFO_NUMBER_OF_COLUMNS]*8, text_area_info[TEXT_AREA_INFO_WIDTH], text_area_info[TEXT_AREA_INFO_FIRST_SHOW_COLUMN]);
+   draw_horizontal_scrollbar(text_area_info[TEXT_AREA_INFO_X], text_area_info[TEXT_AREA_INFO_Y]+text_area_info[TEXT_AREA_INFO_HEIGTH], text_area_info[TEXT_AREA_INFO_WIDTH], text_area_info[TEXT_AREA_INFO_HORIZONTAL_SCROLLBAR_RIDER_POSITION], text_area_info[TEXT_AREA_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE]);
+  }
  }
 
  //move back to right place

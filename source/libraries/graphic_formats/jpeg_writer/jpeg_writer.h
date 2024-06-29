@@ -34,7 +34,7 @@
 #ifndef JO_INCLUDE_JPEG_H
 #define JO_INCLUDE_JPEG_H
 
-extern struct byte_stream_descriptor *jo_write_jpg(const void *data, int width, int height, int comp, int quality);
+extern struct byte_stream_descriptor_t *jo_write_jpg(const void *data, int width, int height, int comp, int quality);
 
 #endif // JO_INCLUDE_JPEG_H
 
@@ -46,7 +46,7 @@ extern struct byte_stream_descriptor *jo_write_jpg(const void *data, int width, 
 
 static const unsigned char s_jo_ZigZag[] = { 0,1,5,6,14,15,27,28,2,4,7,13,16,26,29,42,3,8,12,17,25,30,41,43,9,11,18,24,31,40,44,53,10,19,23,32,39,45,52,54,20,22,33,38,46,51,55,60,21,34,37,47,50,56,59,61,35,36,48,49,57,58,62,63 };
 
-static void jo_writeBits(struct byte_stream_descriptor *fp, int *bitBuf, int *bitCnt, const unsigned short *bs) {
+static void jo_writeBits(struct byte_stream_descriptor_t *fp, int *bitBuf, int *bitCnt, const unsigned short *bs) {
 	*bitCnt += bs[1];
 	*bitBuf |= bs[0] << (24 - *bitCnt);
 	while(*bitCnt >= 8) {
@@ -113,7 +113,7 @@ static void jo_calcBits(int val, unsigned short bits[2]) {
 	bits[0] = val & ((1<<bits[1])-1);
 }
 
-static int jo_processDU(struct byte_stream_descriptor *fp, int *bitBuf, int *bitCnt, float *CDU, int du_stride, float *fdtbl, int DC, const unsigned short HTDC[256][2], const unsigned short HTAC[256][2]) {
+static int jo_processDU(struct byte_stream_descriptor_t *fp, int *bitBuf, int *bitCnt, float *CDU, int du_stride, float *fdtbl, int DC, const unsigned short HTDC[256][2], const unsigned short HTAC[256][2]) {
 	const unsigned short EOB[2] = { HTAC[0x00][0], HTAC[0x00][1] };
 	const unsigned short M16zeroes[2] = { HTAC[0xF0][0], HTAC[0xF0][1] };
 
@@ -177,7 +177,7 @@ static int jo_processDU(struct byte_stream_descriptor *fp, int *bitBuf, int *bit
 	return DU[0];
 }
 
-struct byte_stream_descriptor *jo_write_jpg(const void *data, int width, int height, int comp, int quality) {
+struct byte_stream_descriptor_t *jo_write_jpg(const void *data, int width, int height, int comp, int quality) {
 	// Constants that don't pollute global namespace
 	static const unsigned char std_dc_luminance_nrcodes[] = {0,0,1,5,1,1,1,1,1,1,0,0,0,0,0,0,0};
 	static const unsigned char std_dc_luminance_values[] = {0,1,2,3,4,5,6,7,8,9,10,11};
@@ -272,7 +272,7 @@ struct byte_stream_descriptor *jo_write_jpg(const void *data, int width, int hei
 	}
 
  //create byte stream
- struct byte_stream_descriptor *fp = create_byte_stream(BYTE_STREAM_1_MB_BLOCK);
+ struct byte_stream_descriptor_t *fp = create_byte_stream(BYTE_STREAM_1_MB_BLOCK);
 
 	// Write Headers
 	static const unsigned char head0[] = { 0xFF,0xD8,  0xFF,0xE0,0,0x10,'J','F','I','F',0,1,1,0,0,1,0,1,0,0,0xFF,  0xDB,0,0x84,0 };

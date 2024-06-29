@@ -8,8 +8,4 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-byte_t is_optical_disk_cdda(void);
-void select_cdda_partition(void);
-dword_t cdda_read_file(dword_t sector, dword_t length_of_file_in_bytes);
-dword_t cdda_read_file_skipping_errors(dword_t sector, dword_t length_of_file_in_bytes);
-dword_t cdda_read_root_folder(void);
+#include "main.c"

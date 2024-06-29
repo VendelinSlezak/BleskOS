@@ -10,8 +10,26 @@
 
 #define SCROLLBAR_SIZE 10
 
+struct scrollbar_info_t {
+ dword_t x;
+ dword_t y;
+ dword_t size;
+
+ dword_t rider_size;
+ dword_t rider_position;
+
+ dword_t full_document_size;
+ dword_t showed_document_size;
+ dword_t showed_document_line;
+}__attribute__((packed));
+
 void draw_vertical_scrollbar(dword_t x, dword_t y, dword_t height, dword_t rider_position, dword_t rider_size);
 void draw_horizontal_scrollbar(dword_t x, dword_t y, dword_t width, dword_t rider_position, dword_t rider_size);
 dword_t calculate_scrollbar_rider_position(dword_t scrollbar_size, dword_t rider_size, dword_t full_document_size, dword_t showed_document_size, dword_t showed_document_line);
 dword_t calculate_scrollbar_rider_size(dword_t scrollbar_size, dword_t full_document_size, dword_t showed_document_size);
 dword_t get_scrollbar_rider_value(dword_t scrollbar_size, dword_t rider_size, dword_t rider_position, dword_t full_document_size, dword_t showed_document_size);
+void scrollbar_struct_calculate_rider_position(struct scrollbar_info_t *scrollbar_info);
+void scrollbar_struct_calculate_rider_size(struct scrollbar_info_t *scrollbar_info);
+void scrollbar_struct_calculate_rider(struct scrollbar_info_t *scrollbar_info);
+void scrollbar_struct_draw_vertical_scrollbar(struct scrollbar_info_t *scrollbar_info, dword_t click_zone);
+void scrollbar_struct_draw_horizontal_scrollbar(struct scrollbar_info_t *scrollbar_info, dword_t click_zone);

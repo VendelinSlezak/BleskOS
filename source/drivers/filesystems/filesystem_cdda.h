@@ -8,17 +8,10 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-dword_t logging_mem, logging_mem_end, logging_mem_draw_pointer, logging_mem_pointer;
+dword_t number_of_files_in_cdda_folder;
 
-void initalize_logging(void);
-void developer_program_log(void);
-void skip_logs(void);
-void show_log(void);
-void log(char *string);
-void log_unicode(word_t *string);
-void log_var(dword_t value);
-void log_var_with_space(dword_t value);
-void log_hex(dword_t value);
-void log_hex_with_space(dword_t value);
-void log_hex_specific_size(dword_t value, dword_t chars);
-void log_hex_specific_size_with_space(dword_t value, dword_t chars);
+byte_t is_optical_disk_cdda(void);
+void filesystem_cdda_read_specific_info(struct connected_partition_info_t *connected_partition_info);
+byte_t *read_cdda_file(dword_t file_location, dword_t file_size_in_bytes);
+byte_t *read_cdda_file_skipping_errors(dword_t file_location, dword_t file_size_in_bytes);
+byte_t *read_cdda_root_folder(void);

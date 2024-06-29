@@ -9,956 +9,1327 @@
 */
 
 void initalize_file_dialog(void) {
- file_dialog_selected_device_entry = NO_FILE_SELECTED;
- file_dialog_folder_device_type = 0;
- file_dialog_folder_device_number = 0;
- file_dialog_folder_device_partition_type = 0;
- file_dialog_folder_device_partition_first_sector = 0;
- file_dialog_folder_path_memory = malloc(FILE_DIALOG_MAX_PATH_FOLDERS*4);
- file_dialog_path_folder_names_memory = calloc(FILE_DIALOG_MAX_PATH_FOLDERS*50*2);
- file_dialog_folder_memory = 0;
- file_dialog_folder_vertical_scrollbar_rider_size = 0;
- file_dialog_array_of_allowed_extension_mem = malloc((FILE_DIALOG_MAX_FILE_EXTENSION_LENGTH+1)*FILE_DIALOG_MAX_OF_ALLOWED_EXTENSIONS);
-
- file_dialog_number_of_files_on_screen = ((screen_height-PROGRAM_INTERFACE_TOP_LINE_HEIGTH-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH-24-8)/10);
- file_dialog_number_of_chars_of_file_name = ((screen_width-FILE_DIALOG_DEVICE_LIST_WIDTH-8-20)/8);
- file_dialog_scrollbar_height = (file_dialog_number_of_files_on_screen*10);
-
- file_dialog_new_name_text_area = create_text_area(TEXT_AREA_INPUT_LINE, 29, screen_x_center-120, screen_y_center-5, 240, 10);
+ file_dialog_folder_descriptor = 0;
+ file_dialog_file_descriptor = (struct file_descriptor_t *) (calloc(sizeof(struct file_descriptor_t)));
+ file_dialog_text_area = (dword_t *) create_text_area(TEXT_AREA_INPUT_LINE, 250, 0, 0, 400, 10);
+ event_interface_set_text_area(file_dialog_name_input_event_interface, (dword_t)file_dialog_text_area);
 }
 
-void redraw_file_dialog(byte_t dialog_type) {
- //clear click board
- clear_click_board();
+byte_t file_dialog_open(byte_t *extensions) {
+ return file_dialog(FILE_DIALOG_OPEN, extensions);
+}
 
- //draw background
- clear_screen(0xFF6600);
+byte_t file_dialog_save(byte_t *file_memory, dword_t file_size_in_bytes, byte_t *extension) {
+ file_dialog_file_memory = file_memory;
+ file_dialog_file_size_in_bytes = file_size_in_bytes;
+ return file_dialog(FILE_DIALOG_SAVE, extension);
+}
 
- //draw borders
- draw_full_square(0, 0, screen_width, 20, 0x00C000);
- draw_straigth_line(0, 20, screen_width, BLACK);
- print("File dialog", 8, 6, BLACK);
- draw_full_square(0, screen_height-19, screen_width, 19, 0x00C000);
- draw_straigth_line(0, screen_height-20, screen_width, BLACK);
- if(dialog_type==FILE_DIALOG_TYPE_SAVE) {
-  dword_t number_of_chars_in_extension = get_number_of_chars_in_unicode_string(file_dialog_file_extension);
-  print("Save file with extension:", screen_width-8-(number_of_chars_in_extension*8)-8-(25*8), 6, BLACK);
-  print_unicode(file_dialog_file_extension, screen_width-8-(number_of_chars_in_extension*8), 6, BLACK);
+byte_t file_dialog(byte_t type, byte_t *extensions) {
+ //draw file dialog
+ file_dialog_type = type;
+ file_dialog_extensions = extensions;
+ redraw_file_dialog();
+
+ //process events
+ while(1) {
+  dword_t event = wait_for_event(file_dialog_event_interface);
+
+  //exit file dialog
+  if(event==FILE_DIALOG_EVENT_EXIT_FILE_NOT_LOADED || event==FILE_DIALOG_EVENT_EXIT_FILE_SUCCESSFULLY_LOADED || event==FILE_DIALOG_EVENT_EXIT_FILE_SUCCESSFULLY_SAVED) {
+   return event;
+  }
+
+  //deselect file by click
+  if((dword_t)file_dialog_folder_descriptor!=0
+     && file_dialog_folder_descriptor->partition_number!=NO_PARTITION_SELECTED
+     && mouse_click_button_state==MOUSE_CLICK
+     && file_dialog_folder_descriptor->selected_entry!=FOLDER_NO_ENTRY_SELECTED
+     && get_mouse_cursor_click_board_value()<CLICK_ZONE_FILE_DIALOG_FIRST_ITEM) {
+   file_dialog_folder_descriptor->selected_entry = FOLDER_NO_ENTRY_SELECTED;
+   redraw_file_dialog();
+   continue;
+  }
+
+  //redraw file dialog
+  if(event==FILE_DIALOG_EVENT_REDRAW || event==EVENT_USB_DEVICE_CHANGE) {
+   redraw_file_dialog();
+  }
  }
+}
 
- //draw "BACK" button
- print("[esc] Back", 8, screen_height-6-7, BLACK);
- draw_straigth_column(8+10*8+8, screen_height-20, 20, BLACK);
- add_zone_to_click_board(0, screen_height-20, 8+10*8+8, 20, CLICK_ZONE_BACK);
+void file_dialog_event_click_on_connected_partitions(void) {
+ dword_t selected_partition = (get_mouse_cursor_click_board_value()-CLICK_ZONE_FILE_DIALOG_FIRST_CONNECTED_PARTITION);
 
- //draw "SAVE" button
- if(dialog_type==FILE_DIALOG_TYPE_SAVE && file_dialog_folder_memory!=0 && is_filesystem_read_write(file_dialog_folder_device_partition_type)==STATUS_TRUE) {
-  print("[s] Save", screen_width-72, screen_height-6-7, BLACK);
-  draw_straigth_column(screen_width-80, screen_height-20, 20, BLACK);
-  add_zone_to_click_board(screen_width-80, screen_height-20, 80, 20, FILE_DIALOG_CLICK_ZONE_SAVE_BUTTON);
- }
-
- //draw connected devices
- draw_full_square(0, 21, FILE_DIALOG_DEVICE_LIST_WIDTH, screen_height-41, 0xB04100);
- dword_t connected_devices_draw_line = (PROGRAM_INTERFACE_TOP_LINE_HEIGTH+2), last_device_type = 0, last_device_number = 0;
- for(device_list_selected_entry=0; device_list_selected_entry<DEVICE_LIST_NUMBER_OF_ENTRIES; device_list_selected_entry++) {
-  if(get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_TYPE)==0) {
-   break; //end of device list
-  }
-  
-  //if this is new device, print it's name
-  if(get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_TYPE)!=last_device_type || get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_NUMBER)!=last_device_number) {
-   dword_t device_type = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_TYPE);
-   if(device_type==MEDIUM_HDD) {
-    print("Hard disk", 8, connected_devices_draw_line+6, BLACK);
-   }
-   else if(device_type==MEDIUM_CDROM) {
-    print("Optical drive", 8, connected_devices_draw_line+6, BLACK);
-   }
-   else if(device_type==MEDIUM_USB_MSD) {
-    print("USB flash drive", 8, connected_devices_draw_line+6, BLACK);
-   }
-   connected_devices_draw_line += 20;
-  }
-
-  //if this is selected entry, draw background
-  if(file_dialog_folder_memory!=0 && get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_TYPE)==file_dialog_folder_device_type && get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_NUMBER)==file_dialog_folder_device_number && get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_TYPE)==file_dialog_folder_device_partition_type && get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_FIRST_SECTOR)==file_dialog_folder_device_partition_first_sector) {
-   draw_full_square(0, connected_devices_draw_line, FILE_DIALOG_DEVICE_LIST_WIDTH, 20, RED);
-  }
-
-  //print parition name
-  add_zone_to_click_board(0, connected_devices_draw_line, FILE_DIALOG_DEVICE_LIST_WIDTH, 20, FILE_DIALOG_CLICK_ZONE_DEVICE_ENTRY+device_list_selected_entry);
-  draw_char(CHAR_COMMA_IN_MIDDLE_OF_LINE, 8, connected_devices_draw_line+6, BLACK);
-  if(get_device_list_entry_name_value(0)!=0) {
-   for(dword_t i=0; i<11; i++) {
-    if(get_device_list_entry_name_value(i)==0) {
-     break;
-    }
-    draw_char(get_device_list_entry_name_value(i), 24+i*8, connected_devices_draw_line+6, BLACK);
-   }
-  }
-  else {
-   print("Partition", 24, connected_devices_draw_line+6, BLACK);
-  }
-  connected_devices_draw_line += 20;
- }
-
- //button "Refresh devices"
- if(connected_devices_draw_line!=PROGRAM_INTERFACE_TOP_LINE_HEIGTH) {
-  connected_devices_draw_line+=10; //add some space if there are some entries
- }
- draw_button_with_click_zone("[F8] Refresh devices", 5, connected_devices_draw_line, FILE_DIALOG_DEVICE_LIST_WIDTH-10, 20, FILE_DIALOG_CLICK_ZONE_BUTTON_REFRESH_DEVICES);
-
- //no connected device
- device_list_selected_entry = 0;
- if(get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_TYPE)==0) {
-  if(file_dialog_folder_memory!=0) { //remove actual showed folder
-   free(file_dialog_folder_memory);
-   file_dialog_folder_memory = 0;
-  }
-  print("There is no storage device with known filesystem connected", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+8, BLACK);
-  redraw_screen();
-  return;
- }
- 
- //device disconnected
- if(does_device_list_entry_exist(file_dialog_folder_device_type, file_dialog_folder_device_number, file_dialog_folder_device_partition_type, file_dialog_folder_device_partition_first_sector)==STATUS_FALSE) {
-  if(file_dialog_folder_memory!=0) { //remove actual showed folder
-   free(file_dialog_folder_memory);
-   file_dialog_folder_memory = 0;
-  }
-  print("This device was removed", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+8, BLACK);
-  redraw_screen();
+ //this was click on already selected partition
+ if((dword_t)file_dialog_folder_descriptor!=0 && selected_partition==file_dialog_folder_descriptor->partition_number) {
   return;
  }
 
- //draw folder items
- if(file_dialog_folder_memory!=0) {
-  dword_t folder_first_showed_entry_offset = (file_dialog_folder_memory+(file_dialog_folder_first_showed_entry*256));
-  byte_t *folder8 = (byte_t *) (folder_first_showed_entry_offset);
-  word_t *folder16 = (word_t *) (folder_first_showed_entry_offset);
-  dword_t *folder32 = (dword_t *) (folder_first_showed_entry_offset);
+ //unload actual structure
+ vfs_destroy_folder_path_structure(file_dialog_folder_descriptor);
 
-  //no files in folder
-  if(file_dialog_folder_number_of_entries==0) {
-   print("There are no files in this directory", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+8, BLACK);
-   redraw_screen();
-   return;
-  }
-  
-  //draw up strings
-  print("Name", FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+8, BLACK);
-  print("Size", (screen_width-12-72-80-8), PROGRAM_INTERFACE_TOP_LINE_HEIGTH+8, BLACK);
-  print("Date", (screen_width-12-80-8), PROGRAM_INTERFACE_TOP_LINE_HEIGTH+8, BLACK);
+ //try to load root folder from selected partition
+ file_dialog_folder_descriptor = vfs_create_folder_path_structure(selected_partition);
+ file_dialog_scrollbar_info.rider_position = 0;
 
-  //draw selected file background
-  if(file_dialog_folder_selected_entry!=NO_FILE_SELECTED && file_dialog_folder_selected_entry>=file_dialog_folder_first_showed_entry && file_dialog_folder_selected_entry<(file_dialog_folder_first_showed_entry+file_dialog_number_of_files_on_screen)) {
-   draw_full_square(FILE_DIALOG_DEVICE_LIST_WIDTH+8, (PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+(file_dialog_folder_selected_entry-file_dialog_folder_first_showed_entry)*10), (screen_width-(FILE_DIALOG_DEVICE_LIST_WIDTH+8)-20), 10, RED);
-   
-   if(dialog_type==FILE_DIALOG_TYPE_OPEN && file_dialog_folder_device_partition_type==STORAGE_CDDA) {
-    set_program_value(PROGRAM_INTERFACE_BOTTOM_LINE_DRAW_COLUMN, 0);
-    draw_bottom_line_button("[F12] Read with skipping errors", FILE_DIALOG_CLICK_ZONE_BUTTON_READ_SKIPPING_ERRORS);
-   }
-  }
-
-  //print file entries
-  for(int i=0, draw_line = PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24+1; i<file_dialog_number_of_files_on_screen; i++) {
-   //no entry
-   if(folder32[(64*i)]==0) {
-    break;
-   }
-
-   //add click zone
-   add_zone_to_click_board(FILE_DIALOG_DEVICE_LIST_WIDTH+8, draw_line-1, (screen_width-FILE_DIALOG_DEVICE_LIST_WIDTH-8-20), 10, FILE_DIALOG_CLICK_ZONE_FIRST_FILE+i);
-   
-   //print name
-   for(int j=0, draw_column = FILE_DIALOG_DEVICE_LIST_WIDTH+8; j<file_dialog_number_of_chars_of_file_name; j++) {
-    if(folder16[(128*i)+16+j]==0) {
-     break; //end of name
-    }
-    draw_char(folder16[(128*i)+16+j], draw_column, draw_line, BLACK);
-    draw_column += 8;
-   }
-   
-   //print size
-   if(folder8[(256*i)+11]!=0x10) { //do not write size of folders
-    dword_t file_size = folder32[(64*i)+7];
-
-    if(file_size<1024) {
-     print_var(file_size, (screen_width-12-72-80-8), draw_line, BLACK);
-     print("B", (screen_width-12-24-80-8), draw_line, BLACK);
-    }
-    else if(file_size<1024*1024) {
-     print_var((file_size/1024), (screen_width-12-72-80-8), draw_line, BLACK);
-     print("KB", (screen_width-12-24-80-8), draw_line, BLACK);
-    }
-    else if(file_size<1024*1024*1024) {
-     print_var((file_size/1024/1024), (screen_width-12-72-80-8), draw_line, BLACK);
-     print("MB", (screen_width-12-24-80-8), draw_line, BLACK);
-    }
-    else {
-     print_var((file_size/1024/1024/1024), (screen_width-12-72-80-8), draw_line, BLACK);
-     print("GB", (screen_width-12-24-80-8), draw_line, BLACK);
-    }
-   }
-   
-   //print date
-   dword_t file_date = folder16[(128*i)+8];
-   print_var((file_date >> 9)+1980, (screen_width-12-80-8), draw_line, BLACK);
-   draw_char('/', (screen_width-12-48-8), draw_line, BLACK);
-   if(((file_date >> 5) & 0xF)<10) {
-    draw_char('0', (screen_width-12-40-8), draw_line, BLACK);
-    print_var(((file_date >> 5) & 0xF), (screen_width-12-32-8), draw_line, BLACK);
-   }
-   else {
-    print_var(((file_date >> 5) & 0xF), (screen_width-12-40-8), draw_line, BLACK);
-   }
-   draw_char('/', (screen_width-12-24-8), draw_line, BLACK);
-   if((file_date & 0x1F)<10) {
-    draw_char('0', (screen_width-12-16-8), draw_line, BLACK);
-    print_var((file_date & 0x1F), (screen_width-12-8-8), draw_line, BLACK);
-   }
-   else {
-    print_var((file_date & 0x1F), (screen_width-12-16-8), draw_line, BLACK);
-   }
-   
-   draw_line+=10;
-  }
-
-  //draw scrollbar
-  if(file_dialog_folder_vertical_scrollbar_rider_size!=0) {
-   draw_vertical_scrollbar(screen_width-15, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, file_dialog_scrollbar_height, file_dialog_folder_vertical_scrollbar_position, file_dialog_folder_vertical_scrollbar_rider_size);
-   //TODO: program_interface_add_vertical_scrollbar(FILE_DIALOG_CLICK_ZONE_SCROLLBAR, ((dword_t)(&file_dialog_scrollbar_height)), ((dword_t)&file_dialog_folder_vertical_scrollbar_position), ((dword_t)&file_dialog_folder_vertical_scrollbar_rider_size), ((dword_t)&file_dialog_verticall_scrollbar_event));
-   add_zone_to_click_board(screen_width-15, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, 10, file_dialog_scrollbar_height, FILE_DIALOG_CLICK_ZONE_SCROLLBAR);
-  }
-
-  //draw back button
-  if(file_dialog_folder_path_actual_folder_number!=0) {
-   draw_button_with_click_zone("[b] Go back", 5, screen_height-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH-24, FILE_DIALOG_DEVICE_LIST_WIDTH-10, 24, FILE_DIALOG_CLICK_ZONE_BUTTON_BACK);
-  }
-
+ //test error
+ if((dword_t)file_dialog_folder_descriptor==0) {
+  error_window("Error during reading root folder");
  }
 
  //redraw screen
- redraw_screen();
+ redraw_file_dialog();
 }
 
-void file_dialog_show_progress(void) {
- draw_full_square(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, (screen_width-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8), 16, 0xFF6600);
- draw_full_square(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, ((screen_width-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8)*file_work_done_percents/100), 16, 0x000CFF);
- dword_t printed_percents_string_x = 0;
- if(file_work_done_percents<10) {
-  printed_percents_string_x = (FILE_DIALOG_DEVICE_LIST_WIDTH+((screen_width-FILE_DIALOG_DEVICE_LIST_WIDTH-8*5)/2));
- }
- else {
-  printed_percents_string_x = (FILE_DIALOG_DEVICE_LIST_WIDTH+((screen_width-FILE_DIALOG_DEVICE_LIST_WIDTH-8*6)/2));
- }
- print_var(file_work_done_percents, printed_percents_string_x, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+28, BLACK);
- draw_char('%', printed_percents_string_x+16, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+28, BLACK);
- redraw_part_of_screen(FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+24, (screen_width-FILE_DIALOG_DEVICE_LIST_WIDTH-8-8), 16);
-}
-
-void file_dialog_print_message(byte_t *message) {
- draw_full_square(FILE_DIALOG_DEVICE_LIST_WIDTH, PROGRAM_INTERFACE_TOP_LINE_HEIGTH, (screen_width-FILE_DIALOG_DEVICE_LIST_WIDTH), (screen_height-PROGRAM_INTERFACE_TOP_LINE_HEIGTH-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH), 0xFF6600);
- print(message, FILE_DIALOG_DEVICE_LIST_WIDTH+8, PROGRAM_INTERFACE_TOP_LINE_HEIGTH+8, BLACK);
- redraw_part_of_screen(FILE_DIALOG_DEVICE_LIST_WIDTH, PROGRAM_INTERFACE_TOP_LINE_HEIGTH, (screen_width-FILE_DIALOG_DEVICE_LIST_WIDTH), (screen_height-PROGRAM_INTERFACE_TOP_LINE_HEIGTH-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH));
-}
-
-void file_dialog_compute_number_of_files_in_directory(void) {
- dword_t *folder = (dword_t *) (file_dialog_folder_memory);
- dword_t number_of_files = 0;
- while(*folder!=0) {
-  number_of_files++;
-  folder+=64;
- }
- file_dialog_folder_number_of_entries = number_of_files;
- if(number_of_files!=0) {
-  file_dialog_folder_vertical_scrollbar_rider_size = calculate_scrollbar_rider_size(file_dialog_scrollbar_height, file_dialog_folder_number_of_entries, file_dialog_number_of_files_on_screen);
-  if(file_dialog_folder_vertical_scrollbar_rider_size!=0) {
-   file_dialog_folder_vertical_scrollbar_position = calculate_scrollbar_rider_position(file_dialog_scrollbar_height, file_dialog_folder_vertical_scrollbar_rider_size, file_dialog_folder_number_of_entries, file_dialog_number_of_files_on_screen, file_dialog_folder_first_showed_entry);
-  }
- }
- else {
-  file_dialog_folder_vertical_scrollbar_rider_size = 0;
- } 
-}
-
-void file_dialog_read_file_properties(dword_t folder_mem, dword_t file_number) {
- word_t *folder16 = (word_t *) (folder_mem+(file_number*256)+32);
- dword_t *folder32 = (dword_t *) (folder_mem+(file_number*256));
- 
- //file size
- file_dialog_file_size = folder32[7];
- 
- //file name
- for(int i=0; i<128; i++) {
-  file_dialog_file_name[i] = folder16[i];
-  if(folder16[i]==0) {
-   break;
-  }
- }
- 
- //file extension
- dword_t file_name_length = get_number_of_chars_in_unicode_string((word_t *)(folder_mem+file_number*256+32));
- folder16 = (word_t *) (folder_mem+file_number*256+32+file_name_length*2); //search from end of file name to find .
- for(int i=0; i<file_name_length; i++, folder16--) {
-  if(*folder16=='.') {
-   folder16++;
-   
-   for(int j=0; j<10; j++) {
-    file_dialog_file_extension[j] = folder16[j];
-    
-    if(file_dialog_file_extension[j]<0x41) {
-     file_dialog_file_extension[j]=0;
-     break;
-    }
-    else if(file_dialog_file_extension[j]<0x61) { //convert to small chars
-     file_dialog_file_extension[j] = (folder16[j]+0x20);
-    }
-   }
-   break;
-  }
- }
-}
-
-void file_dialog_open_file_extensions_clear_mem(void) {
- clear_memory(file_dialog_array_of_allowed_extension_mem, FILE_DIALOG_MAX_FILE_EXTENSION_LENGTH*FILE_DIALOG_MAX_OF_ALLOWED_EXTENSIONS);
- file_dialog_number_of_allowed_extensions = 0;
-}
-
-void file_dialog_open_file_add_extension(byte_t *extension) {
- if(file_dialog_number_of_allowed_extensions>=FILE_DIALOG_MAX_OF_ALLOWED_EXTENSIONS) {
-  file_dialog_number_of_allowed_extensions = FILE_DIALOG_MAX_OF_ALLOWED_EXTENSIONS;
+void file_dialog_event_key_page_up(void) {
+ //first partition is selected
+ if((dword_t)file_dialog_folder_descriptor!=0 && file_dialog_folder_descriptor->partition_number==0) {
   return;
  }
 
- word_t *file_extension_mem = (word_t *) (file_dialog_array_of_allowed_extension_mem+(file_dialog_number_of_allowed_extensions*FILE_DIALOG_MAX_FILE_EXTENSION_LENGTH));
- dword_t extension_length = (get_number_of_chars_in_ascii_string(extension)+1);
-
- for(dword_t i=0; i<extension_length; i++) {
-  file_extension_mem[i]=extension[i];
+ //no partition is selected
+ dword_t partition_to_select = NO_PARTITION_SELECTED;
+ if((dword_t)file_dialog_folder_descriptor==0) {
+  //select last connected partition
+  for(dword_t i=MAX_NUMBER_OF_CONNECTED_PARTITIONS; i>0; i--) {
+   if(connected_partitions[(i-1)].medium_type!=NO_MEDIUM) {
+    partition_to_select = (i-1);
+    break;
+   }
+  }
+ }
+ else {
+  //select previous partition
+  for(dword_t i=file_dialog_folder_descriptor->partition_number; i>0; i--) {
+   if(connected_partitions[(i-1)].medium_type!=NO_MEDIUM) {
+    partition_to_select = (i-1);
+    break;
+   }
+  }
  }
 
- file_dialog_number_of_allowed_extensions++;
+ //select partition
+ if(partition_to_select!=NO_PARTITION_SELECTED) {
+  //unload actual structure
+  vfs_destroy_folder_path_structure(file_dialog_folder_descriptor);
+
+  //try to load root folder from selected partition
+  file_dialog_folder_descriptor = vfs_create_folder_path_structure(partition_to_select);
+  file_dialog_scrollbar_info.rider_position = 0;
+
+  //test error
+  if((dword_t)file_dialog_folder_descriptor==0) {
+   error_window("Error during reading root folder");
+  }
+
+  //redraw screen
+  redraw_file_dialog();
+ }
 }
 
-void file_dialog_save_set_extension(byte_t *extension) {
- for(dword_t i=0; i<127; i++) {
-  file_dialog_file_extension[i] = extension[i];
-  if(extension[i]==0) {
+void file_dialog_event_key_page_down(void) {
+ //last partition is selected
+ if((dword_t)file_dialog_folder_descriptor!=0 && file_dialog_folder_descriptor->partition_number==(MAX_NUMBER_OF_CONNECTED_PARTITIONS-1)) {
+  return;
+ }
+
+ //no partition is selected
+ dword_t partition_to_select = NO_PARTITION_SELECTED;
+ if((dword_t)file_dialog_folder_descriptor==0) {
+  //select first connected partition
+  for(dword_t i=0; i<MAX_NUMBER_OF_CONNECTED_PARTITIONS; i++) {
+   if(connected_partitions[i].medium_type!=NO_MEDIUM) {
+    partition_to_select = i;
+    break;
+   }
+  }
+ }
+ else {
+  //select previous partition
+  for(dword_t i=(file_dialog_folder_descriptor->partition_number+1); i<MAX_NUMBER_OF_CONNECTED_PARTITIONS; i++) {
+   if(connected_partitions[i].medium_type!=NO_MEDIUM) {
+    partition_to_select = i;
+    break;
+   }
+  }
+ }
+
+ //select partition
+ if(partition_to_select!=NO_PARTITION_SELECTED) {
+  //unload actual structure
+  vfs_destroy_folder_path_structure(file_dialog_folder_descriptor);
+
+  //try to load root folder from selected partition
+  file_dialog_folder_descriptor = vfs_create_folder_path_structure(partition_to_select);
+  file_dialog_scrollbar_info.rider_position = 0;
+
+  //test error
+  if((dword_t)file_dialog_folder_descriptor==0) {
+   error_window("Error during reading root folder");
+  }
+
+  //redraw screen
+  redraw_file_dialog();
+ }
+}
+
+void file_dialog_event_key_up(void) {
+ //this works only if some folder is opened
+ if((dword_t)file_dialog_folder_descriptor==0 || file_dialog_folder_descriptor->partition_number==NO_PARTITION_SELECTED) {
+  return;
+ }
+
+ //nothing to change
+ if(file_dialog_folder_descriptor->selected_entry==0 && file_dialog_folder_descriptor->first_showed_entry==0) {
+  return;
+ }
+
+ if(file_dialog_folder_descriptor->view_type==VIEW_FOLDER_LIST) {
+  //move selected entry
+  if(file_dialog_folder_descriptor->selected_entry==FOLDER_NO_ENTRY_SELECTED) {
+   file_dialog_folder_descriptor->selected_entry = (vfs_get_folder_number_of_files(file_dialog_folder_descriptor)-1); //select last entry
+  }
+  else if(file_dialog_folder_descriptor->selected_entry>0) {
+   file_dialog_folder_descriptor->selected_entry--;
+  }
+
+  //calculate first showed entry
+  if(file_dialog_number_of_lines_on_screen<vfs_get_folder_number_of_files(file_dialog_folder_descriptor)) {
+   if(file_dialog_folder_descriptor->first_showed_entry>file_dialog_folder_descriptor->selected_entry) {
+    file_dialog_folder_descriptor->first_showed_entry = file_dialog_folder_descriptor->selected_entry;
+   }
+   else if(file_dialog_folder_descriptor->selected_entry>(file_dialog_folder_descriptor->first_showed_entry+file_dialog_number_of_lines_on_screen-1)) {
+    file_dialog_folder_descriptor->first_showed_entry = (file_dialog_folder_descriptor->selected_entry-file_dialog_number_of_lines_on_screen+1);
+   }
+  }
+
+  //set scrollbar
+  file_dialog_scrollbar_info.showed_document_line = file_dialog_folder_descriptor->first_showed_entry;
+ }
+ else if(file_dialog_folder_descriptor->view_type==VIEW_FOLDER_ICONS) {
+  //move selected entry
+  if(file_dialog_folder_descriptor->selected_entry==FOLDER_NO_ENTRY_SELECTED) {
+   file_dialog_folder_descriptor->selected_entry = (vfs_get_folder_number_of_files(file_dialog_folder_descriptor)-1); //select last entry
+  }
+  else if(file_dialog_folder_descriptor->selected_entry<file_dialog_number_of_columns_on_screen) {
+   file_dialog_folder_descriptor->selected_entry = 0;
+  }
+  else {
+   file_dialog_folder_descriptor->selected_entry -= file_dialog_number_of_columns_on_screen;
+  }
+
+  //calculate first showed entry
+  if(file_dialog_number_of_items_on_screen<vfs_get_folder_number_of_files(file_dialog_folder_descriptor)) {
+   if(file_dialog_folder_descriptor->first_showed_entry>file_dialog_folder_descriptor->selected_entry) {
+    file_dialog_folder_descriptor->first_showed_entry = (file_dialog_folder_descriptor->selected_entry-(file_dialog_folder_descriptor->selected_entry%file_dialog_number_of_columns_on_screen));
+   }
+   else if(file_dialog_folder_descriptor->selected_entry>(file_dialog_folder_descriptor->first_showed_entry+file_dialog_number_of_items_on_screen-1)) {
+    file_dialog_folder_descriptor->first_showed_entry = (file_dialog_folder_descriptor->selected_entry-file_dialog_number_of_items_on_screen+(file_dialog_number_of_columns_on_screen-(file_dialog_folder_descriptor->selected_entry%file_dialog_number_of_columns_on_screen)));
+   }
+  }
+
+  //set scrollbar
+  file_dialog_scrollbar_info.showed_document_line = (file_dialog_folder_descriptor->first_showed_entry/file_dialog_number_of_columns_on_screen);
+ }
+ 
+ //recalculate scrollbar
+ scrollbar_struct_calculate_rider_position((&file_dialog_scrollbar_info));
+
+ //redraw screen
+ redraw_file_dialog();
+}
+
+void file_dialog_event_key_down(void) {
+ //this works only if some folder is opened
+ if((dword_t)file_dialog_folder_descriptor==0 || file_dialog_folder_descriptor->partition_number==NO_PARTITION_SELECTED) {
+  return;
+ }
+
+ if(file_dialog_folder_descriptor->view_type==VIEW_FOLDER_LIST) {
+  //nothing to change
+  if(file_dialog_folder_descriptor->selected_entry==(vfs_get_folder_number_of_files(file_dialog_folder_descriptor)-1)
+     && file_dialog_folder_descriptor->first_showed_entry==(file_dialog_folder_descriptor->selected_entry-file_dialog_number_of_lines_on_screen+1)) {
    return;
   }
- }
 
- file_dialog_file_extension[127] = 0;
-}
+  //move selected entry
+  if(file_dialog_folder_descriptor->selected_entry==FOLDER_NO_ENTRY_SELECTED) {
+   file_dialog_folder_descriptor->selected_entry = 0; //select first entry
+  }
+  else if(file_dialog_folder_descriptor->selected_entry<(vfs_get_folder_number_of_files(file_dialog_folder_descriptor)-1)) {
+   file_dialog_folder_descriptor->selected_entry++;
+  }
 
-void file_dialog_process_key_up_key_down(byte_t dialog_type, dword_t key) {
- if(key==KEY_UP) {
-  if(file_dialog_folder_selected_entry==NO_FILE_SELECTED) {
-   file_dialog_folder_selected_entry = (file_dialog_folder_number_of_entries-1);
-   if(file_dialog_folder_selected_entry>(file_dialog_folder_first_showed_entry+file_dialog_number_of_files_on_screen-1)) {
-    file_dialog_folder_first_showed_entry = (file_dialog_folder_selected_entry-file_dialog_number_of_files_on_screen+1);
+  //calculate first showed entry
+  if(file_dialog_number_of_lines_on_screen<vfs_get_folder_number_of_files(file_dialog_folder_descriptor)) {
+   if(file_dialog_folder_descriptor->first_showed_entry>file_dialog_folder_descriptor->selected_entry) {
+    file_dialog_folder_descriptor->first_showed_entry = file_dialog_folder_descriptor->selected_entry;
    }
+   else if(file_dialog_folder_descriptor->selected_entry>(file_dialog_folder_descriptor->first_showed_entry+file_dialog_number_of_lines_on_screen-1)) {
+    file_dialog_folder_descriptor->first_showed_entry = (file_dialog_folder_descriptor->selected_entry-file_dialog_number_of_lines_on_screen+1);
+   }
+  }
+
+  //set scrollbar
+  file_dialog_scrollbar_info.showed_document_line = file_dialog_folder_descriptor->first_showed_entry;
+ }
+ else if(file_dialog_folder_descriptor->view_type==VIEW_FOLDER_ICONS) {
+  //nothing to change
+  if(file_dialog_folder_descriptor->selected_entry==(vfs_get_folder_number_of_files(file_dialog_folder_descriptor)-1)
+     && file_dialog_folder_descriptor->first_showed_entry==(file_dialog_folder_descriptor->selected_entry-file_dialog_number_of_items_on_screen+1)) {
+   return;
+  }
+
+  //move selected entry
+  if(file_dialog_folder_descriptor->selected_entry==FOLDER_NO_ENTRY_SELECTED) {
+   file_dialog_folder_descriptor->selected_entry = 0; //select first entry
+  }
+  else if(vfs_get_folder_number_of_files(file_dialog_folder_descriptor)<file_dialog_number_of_columns_on_screen
+          || file_dialog_folder_descriptor->selected_entry>=(vfs_get_folder_number_of_files(file_dialog_folder_descriptor)-file_dialog_number_of_columns_on_screen)) {
+   file_dialog_folder_descriptor->selected_entry = (vfs_get_folder_number_of_files(file_dialog_folder_descriptor)-1);
   }
   else {
-   if(file_dialog_folder_selected_entry!=0) {
-    file_dialog_folder_selected_entry = (file_dialog_folder_selected_entry-1);
+   file_dialog_folder_descriptor->selected_entry += file_dialog_number_of_columns_on_screen;
+  }
+
+  //calculate first showed entry
+  if(file_dialog_number_of_items_on_screen<vfs_get_folder_number_of_files(file_dialog_folder_descriptor)) {
+   if(file_dialog_folder_descriptor->first_showed_entry>file_dialog_folder_descriptor->selected_entry) {
+    file_dialog_folder_descriptor->first_showed_entry = (file_dialog_folder_descriptor->selected_entry-(file_dialog_folder_descriptor->selected_entry%file_dialog_number_of_columns_on_screen));
    }
-   if(file_dialog_folder_selected_entry<file_dialog_folder_first_showed_entry) {
-    file_dialog_folder_first_showed_entry = file_dialog_folder_selected_entry;
+   else if(file_dialog_folder_descriptor->selected_entry>(file_dialog_folder_descriptor->first_showed_entry+file_dialog_number_of_items_on_screen-1)) {
+    file_dialog_folder_descriptor->first_showed_entry = (file_dialog_folder_descriptor->selected_entry-file_dialog_number_of_items_on_screen+(file_dialog_number_of_columns_on_screen-(file_dialog_folder_descriptor->selected_entry%file_dialog_number_of_columns_on_screen)));
    }
   }
- }
- else if(key==KEY_DOWN) {
-  if(file_dialog_folder_selected_entry==NO_FILE_SELECTED) {
-   file_dialog_folder_selected_entry = 0;
-   if(file_dialog_folder_selected_entry<file_dialog_folder_first_showed_entry) {
-    file_dialog_folder_first_showed_entry = file_dialog_folder_selected_entry;
-   }
-  }
-  else {
-   if(file_dialog_folder_selected_entry<(file_dialog_folder_number_of_entries-1)) {
-    file_dialog_folder_selected_entry = (file_dialog_folder_selected_entry+1);
-   }
-   if(file_dialog_folder_selected_entry>(file_dialog_folder_first_showed_entry+file_dialog_number_of_files_on_screen-1)) {
-    file_dialog_folder_first_showed_entry = (file_dialog_folder_selected_entry-file_dialog_number_of_files_on_screen+1);
-   }
-  }
+
+  //set scrollbar
+  file_dialog_scrollbar_info.showed_document_line = (file_dialog_folder_descriptor->first_showed_entry/file_dialog_number_of_columns_on_screen);
  }
 
  //recalculate scrollbar
- if(file_dialog_folder_vertical_scrollbar_rider_size!=0) {
-  file_dialog_folder_vertical_scrollbar_rider_size = calculate_scrollbar_rider_position(file_dialog_scrollbar_height, file_dialog_folder_vertical_scrollbar_rider_size, file_dialog_folder_number_of_entries, file_dialog_number_of_files_on_screen, file_dialog_folder_first_showed_entry);
- }
- 
+ scrollbar_struct_calculate_rider_position((&file_dialog_scrollbar_info));
+
  //redraw screen
- redraw_file_dialog(dialog_type);
+ redraw_file_dialog();
 }
 
-dword_t file_dialog_double_click_on_file(byte_t dialog_type, dword_t new_file_memory, dword_t new_file_size) {
- if(file_dialog_folder_number_of_entries!=0 && file_dialog_folder_selected_entry!=NO_FILE_SELECTED && get_char_of_file_from_folder_entry_name(file_dialog_folder_memory, file_dialog_folder_selected_entry, 0)!='.') {
-  if(get_file_attribute(file_dialog_folder_memory, file_dialog_folder_selected_entry)==0x10) { //folder
-   if(file_dialog_folder_path_actual_folder_number>=FILE_DIALOG_MAX_PATH_FOLDERS) { //too many folders
-    error_window("You can not open more than 50 folders");
-    redraw_file_dialog((dialog_type & 0xF));
-    return STATUS_ERROR;
-   }
+void file_dialog_event_key_left(void) {
+ //this works only if some folder is opened and icons are viewed
+ if((dword_t)file_dialog_folder_descriptor==0 || file_dialog_folder_descriptor->partition_number==NO_PARTITION_SELECTED && file_dialog_folder_descriptor->view_type==VIEW_FOLDER_ICONS) {
+  return;
+ }
 
-   //select medium
-   if(select_device_list_entry(file_dialog_folder_device_type, file_dialog_folder_device_number, file_dialog_folder_device_partition_type, file_dialog_folder_device_partition_first_sector)==STATUS_ERROR) {
-    if(file_dialog_folder_memory!=0) {
-     free(file_dialog_folder_memory);
-    }
-    file_dialog_print_message("Device is not inserted");
-    return STATUS_ERROR;
-   }
+ //move selected entry
+ if(file_dialog_folder_descriptor->selected_entry==FOLDER_NO_ENTRY_SELECTED) {
+  file_dialog_folder_descriptor->selected_entry = (vfs_get_folder_number_of_files(file_dialog_folder_descriptor)-1); //select last entry
+ }
+ else if(file_dialog_folder_descriptor->selected_entry>0) {
+  file_dialog_folder_descriptor->selected_entry--;
+ }
 
-   //read folder
-   file_dialog_print_message("Reading directory...");
-   dword_t folder_starting_entry = get_file_starting_entry(file_dialog_folder_memory, file_dialog_folder_selected_entry);
-   dword_t folder_size = get_file_size(file_dialog_folder_memory, file_dialog_folder_selected_entry);
-   dword_t folder_memory = read_folder(folder_starting_entry, folder_size);
-   if(folder_memory==STATUS_ERROR) {
-    error_window("Error during reading folder");
-    redraw_file_dialog((dialog_type & 0xF));
-    return STATUS_ERROR;
-   }
-
-   //update file values
-   file_dialog_folder_path_actual_folder_number = (file_dialog_folder_path_actual_folder_number+1);
-   word_t *folder_name = (word_t *) (file_dialog_folder_memory+(file_dialog_folder_selected_entry*256)+32);
-   word_t *path_folder_name = (word_t *) (file_dialog_path_folder_names_memory+file_dialog_folder_path_actual_folder_number*20);
-   for(dword_t i=0; i<20; i++) {
-    path_folder_name[i] = folder_name[i];
-   }
-   path_folder_name[19] = 0;
-   dword_t *folder_path = (dword_t *) (file_dialog_folder_path_memory+(file_dialog_folder_path_actual_folder_number*8));
-   folder_path[0] = folder_starting_entry;
-   folder_path[1] = folder_size;
-   free(file_dialog_folder_memory);
-   file_dialog_folder_memory = folder_memory;
-   file_dialog_folder_first_showed_entry = 0;
-   file_dialog_folder_selected_entry = NO_FILE_SELECTED;
-   file_dialog_compute_number_of_files_in_directory();
-   
-   //show directory on screen
-   redraw_file_dialog((dialog_type & 0xF));
-   return FILE_DIALOG_FOLDER_WAS_LOADED;
+ //calculate first showed entry
+ if(file_dialog_number_of_items_on_screen<vfs_get_folder_number_of_files(file_dialog_folder_descriptor)) {
+  if(file_dialog_folder_descriptor->first_showed_entry>file_dialog_folder_descriptor->selected_entry) {
+   file_dialog_folder_descriptor->first_showed_entry = (file_dialog_folder_descriptor->selected_entry-(file_dialog_folder_descriptor->selected_entry%file_dialog_number_of_columns_on_screen));
   }
-  else { //file
-   if(dialog_type==FILE_DIALOG_TYPE_OPEN || dialog_type==FILE_DIALOG_TYPE_OPEN_FILE_SKIPPING_ERRORS) {
-    //check if this is file with allowed extension
-    if(file_dialog_number_of_allowed_extensions!=0) { //0 = no extensions, open all files
-     dword_t allowed_extension = STATUS_FALSE;
+  else if(file_dialog_folder_descriptor->selected_entry>(file_dialog_folder_descriptor->first_showed_entry+file_dialog_number_of_items_on_screen-1)) {
+   file_dialog_folder_descriptor->first_showed_entry = (file_dialog_folder_descriptor->selected_entry-file_dialog_number_of_items_on_screen+(file_dialog_number_of_columns_on_screen-(file_dialog_folder_descriptor->selected_entry%file_dialog_number_of_columns_on_screen)));
+  }
+ }
 
-     for(dword_t i=0; i<file_dialog_number_of_allowed_extensions; i++) {
-      if(compare_file_extension(file_dialog_folder_memory, file_dialog_folder_selected_entry, file_dialog_array_of_allowed_extension_mem+i*FILE_DIALOG_MAX_FILE_EXTENSION_LENGTH, get_number_of_chars_in_unicode_string((word_t *)(file_dialog_array_of_allowed_extension_mem+i*FILE_DIALOG_MAX_FILE_EXTENSION_LENGTH)))==STATUS_GOOD) {
-       allowed_extension = STATUS_TRUE;
+ //set scrollbar
+ file_dialog_scrollbar_info.showed_document_line = (file_dialog_folder_descriptor->first_showed_entry/file_dialog_number_of_columns_on_screen);
+
+ //recalculate scrollbar
+ scrollbar_struct_calculate_rider_position((&file_dialog_scrollbar_info));
+
+ //redraw screen
+ redraw_file_dialog();
+}
+
+void file_dialog_event_key_right(void) {
+ //this works only if some folder is opened and icons are viewed
+ if((dword_t)file_dialog_folder_descriptor==0 || file_dialog_folder_descriptor->partition_number==NO_PARTITION_SELECTED && file_dialog_folder_descriptor->view_type==VIEW_FOLDER_ICONS) {
+  return;
+ }
+
+ //move selected entry
+ if(file_dialog_folder_descriptor->selected_entry==FOLDER_NO_ENTRY_SELECTED) {
+  file_dialog_folder_descriptor->selected_entry = 0; //select first entry
+ }
+ else if(file_dialog_folder_descriptor->selected_entry<(vfs_get_folder_number_of_files(file_dialog_folder_descriptor)-1)) {
+  file_dialog_folder_descriptor->selected_entry++;
+ }
+
+ //calculate first showed entry
+ if(file_dialog_number_of_items_on_screen<vfs_get_folder_number_of_files(file_dialog_folder_descriptor)) {
+  if(file_dialog_folder_descriptor->first_showed_entry>file_dialog_folder_descriptor->selected_entry) {
+   file_dialog_folder_descriptor->first_showed_entry = (file_dialog_folder_descriptor->selected_entry-(file_dialog_folder_descriptor->selected_entry%file_dialog_number_of_columns_on_screen));
+  }
+  else if(file_dialog_folder_descriptor->selected_entry>(file_dialog_folder_descriptor->first_showed_entry+file_dialog_number_of_items_on_screen-1)) {
+   file_dialog_folder_descriptor->first_showed_entry = (file_dialog_folder_descriptor->selected_entry-file_dialog_number_of_items_on_screen+(file_dialog_number_of_columns_on_screen-(file_dialog_folder_descriptor->selected_entry%file_dialog_number_of_columns_on_screen)));
+  }
+ }
+
+ //set scrollbar
+ file_dialog_scrollbar_info.showed_document_line = (file_dialog_folder_descriptor->first_showed_entry/file_dialog_number_of_columns_on_screen);
+
+ //recalculate scrollbar
+ scrollbar_struct_calculate_rider_position((&file_dialog_scrollbar_info));
+
+ //redraw screen
+ redraw_file_dialog();
+}
+
+dword_t file_dialog_event_key_enter(void) {
+ //this works only if some folder is opened and file selected
+ if((dword_t)file_dialog_folder_descriptor==0 || file_dialog_folder_descriptor->partition_number==NO_PARTITION_SELECTED || file_dialog_folder_descriptor->selected_entry==FOLDER_NO_ENTRY_SELECTED) {
+  return NO_EVENT;
+ }
+
+ //pointer to folder data
+ struct file_descriptor_t *folder = vfs_get_folder_data_pointer(file_dialog_folder_descriptor);
+
+ //folder
+ if(folder[file_dialog_folder_descriptor->selected_entry].type==FILE_FOLDER) {
+  //open folder
+  show_message_window("Opening folder...");
+  if(vfs_open_folder(file_dialog_folder_descriptor, file_dialog_folder_descriptor->selected_entry)==STATUS_ERROR) {
+   error_window("Error during opening folder");
+  }
+  return FILE_DIALOG_EVENT_REDRAW;
+ }
+ else if(folder[file_dialog_folder_descriptor->selected_entry].type==NORMAL_FILE) { //normal file
+  if(file_dialog_type==FILE_DIALOG_OPEN) {
+   if(vfs_does_file_have_this_extension((&folder[file_dialog_folder_descriptor->selected_entry]), file_dialog_extensions)==STATUS_TRUE) {
+    //load file
+    file_dialog_open_file_memory = vfs_read_file_show_progress(file_dialog_folder_descriptor, file_dialog_folder_descriptor->selected_entry);
+    if(file_dialog_open_file_memory!=STATUS_ERROR) {
+     //copy file descriptor
+     copy_memory((dword_t)(&folder[file_dialog_folder_descriptor->selected_entry]), (dword_t)(file_dialog_file_descriptor), sizeof(struct file_descriptor_t));
+     
+     //unselect entry
+     file_dialog_folder_descriptor->selected_entry = FOLDER_NO_ENTRY_SELECTED;
+     
+     return FILE_DIALOG_EVENT_EXIT_FILE_SUCCESSFULLY_LOADED;
+    }
+    //else below unselect file and redraw screen
+   }
+   else {
+    error_window("Program can not open this type of file");
+   }
+
+   //unselect file and redraw screen
+   file_dialog_folder_descriptor->selected_entry = FOLDER_NO_ENTRY_SELECTED;
+   return FILE_DIALOG_EVENT_REDRAW;
+  }
+  else if(file_dialog_type==FILE_DIALOG_SAVE) {
+   if(dialog_yes_no("Do you really want to rewrite this file?")==STATUS_FALSE) {
+    return FILE_DIALOG_EVENT_REDRAW;
+   }
+
+   //change file extension
+   word_t name[256];
+   clear_memory((dword_t)(&name), 256*2);
+   for(dword_t i=0; i<256; i++) {
+    //copy file name
+    name[i] = folder[file_dialog_folder_descriptor->selected_entry].name[i];
+    if(name[i]=='.' || name[i]==0) {
+     name[i] = '.';
+     i++;
+
+     //copy extension
+     for(dword_t j=0; j<10; j++, i++) {
+      if(i>=256) {
+       error_window("Can not save file: Too long name");
+       return FILE_DIALOG_EVENT_REDRAW;
+      }
+
+      if(file_dialog_extensions[j]==0) {
        break;
       }
+
+      name[i] = file_dialog_extensions[j];
      }
-
-     if(allowed_extension==STATUS_FALSE) {
-      error_window("This file type can not be opened in this program");
-      redraw_file_dialog((dialog_type & 0xF));
-      return STATUS_ERROR;
-     }
-    }
-
-    //test if there is enough free memory
-    dword_t file_size = get_file_size(file_dialog_folder_memory, file_dialog_folder_selected_entry);
-    if(all_actual_free_memory_in_bytes<1024*1024*8 || (all_actual_free_memory_in_bytes-(1024*1024*8))<file_size) { //we always leave at least 8 MB of free memory
-     error_window("There is not enough free memory, try to close some opened files");
-     redraw_file_dialog((dialog_type & 0xF));
-     return STATUS_ERROR;
-    }
-
-    //select medium
-    if(select_device_list_entry(file_dialog_folder_device_type, file_dialog_folder_device_number, file_dialog_folder_device_partition_type, file_dialog_folder_device_partition_first_sector)==STATUS_ERROR) {
-     if(file_dialog_folder_memory!=0) {
-      free(file_dialog_folder_memory);
-     }
-     file_dialog_print_message("Device is not inserted");
-     return STATUS_ERROR;
-    }
-    
-    //read file
-    file_dialog_print_message("Reading file...");
-    dword_t file_starting_entry = get_file_starting_entry(file_dialog_folder_memory, file_dialog_folder_selected_entry);
-    file_show_file_work_progress = STATUS_TRUE;
-    dword_t file_memory = 0;
-    if(dialog_type==FILE_DIALOG_TYPE_OPEN_FILE_SKIPPING_ERRORS && file_dialog_folder_device_partition_type==STORAGE_CDDA) {
-     file_memory = cdda_read_file_skipping_errors(file_starting_entry, file_size);
-    }
-    else {
-     file_memory = read_file(file_starting_entry, file_size);
-    }
-    file_show_file_work_progress = STATUS_FALSE;
-    if(file_memory==STATUS_ERROR) {
-     error_window("Error during reading file");
-     redraw_file_dialog((dialog_type & 0xF));
-     return STATUS_ERROR;
-    }
-    file_dialog_read_file_properties(file_dialog_folder_memory, file_dialog_folder_selected_entry);
-    return file_memory;
-   }
-   else if(dialog_type==FILE_DIALOG_TYPE_SAVE && is_filesystem_read_write(file_dialog_folder_device_partition_type)==STATUS_TRUE) {
-    //select medium
-    if(select_device_list_entry(file_dialog_folder_device_type, file_dialog_folder_device_number, file_dialog_folder_device_partition_type, file_dialog_folder_device_partition_first_sector)==STATUS_ERROR) {
-     if(file_dialog_folder_memory!=0) {
-      free(file_dialog_folder_memory);
-     }
-     file_dialog_print_message("Device is not inserted");
-     return STATUS_ERROR;
-    }
-
-    //dialog window
-    if(dialog_yes_no("Do you really want to rewrite this file?")==STATUS_FALSE) {
-     redraw_file_dialog((dialog_type & 0xF));
-     return STATUS_ERROR;
-    }
-
-    //rewrite file
-    file_dialog_print_message("Rewriting file...");
-    file_show_file_work_progress = STATUS_TRUE;
-    if(rewrite_file(get_file_starting_entry(file_dialog_folder_memory, file_dialog_folder_selected_entry), get_file_size(file_dialog_folder_memory, file_dialog_folder_selected_entry), new_file_memory, new_file_size)==STATUS_ERROR) {
-     file_show_file_work_progress = STATUS_FALSE;
-     error_window("Error during rewriting file");
-     redraw_file_dialog((dialog_type & 0xF));
-     return STATUS_ERROR;
-    }
-    file_show_file_work_progress = STATUS_FALSE;
-    
-    //change file entry
-    set_file_entry_size(file_dialog_folder_memory, file_dialog_folder_selected_entry, new_file_size);
-    file_dialog_read_file_properties(file_dialog_folder_memory, file_dialog_folder_selected_entry);
-
-    //rewrite folder
-    file_dialog_print_message("Saving changes to folder...");
-    dword_t *folder_path = (dword_t *) (file_dialog_folder_path_memory+(file_dialog_folder_path_actual_folder_number*8));
-    dword_t folder_starting_entry = folder_path[0];
-    if(file_dialog_folder_path_actual_folder_number==0) {
-     folder_starting_entry = ROOT_DIRECTORY;
-    }
-    if(rewrite_folder(folder_starting_entry, file_dialog_folder_memory)==STATUS_ERROR) {
-     error_window("Error during rewriting folder");
-     redraw_file_dialog((dialog_type & 0xF));
-     return STATUS_ERROR;
-    }
-    return STATUS_GOOD;
-   }
-  }
- }
-
- return STATUS_ERROR;
-}
-
-void file_dialog_folder_back(byte_t dialog_type) {
- if(file_dialog_folder_path_actual_folder_number!=0) {
-  //select medium
-  if(select_device_list_entry(file_dialog_folder_device_type, file_dialog_folder_device_number, file_dialog_folder_device_partition_type, file_dialog_folder_device_partition_first_sector)==STATUS_ERROR) {
-   if(file_dialog_folder_memory!=0) {
-    free(file_dialog_folder_memory);
-   }
-   file_dialog_print_message("Device is not inserted");
-   return;
-  }
-  
-  //read folder
-  file_dialog_print_message("Reading directory...");
-  file_dialog_folder_path_actual_folder_number--;
-  dword_t *folder_path = (dword_t *) (file_dialog_folder_path_memory+(file_dialog_folder_path_actual_folder_number*8));
-  dword_t folder_starting_entry = folder_path[0];
-  dword_t folder_size = folder_path[1];
-  if(file_dialog_folder_path_actual_folder_number==0) {
-   folder_starting_entry = ROOT_DIRECTORY;
-  }
-  dword_t folder_memory = read_folder(folder_starting_entry, folder_size);
-  if(folder_memory==STATUS_ERROR) {
-   error_window("Error during reading folder");
-   file_dialog_folder_path_actual_folder_number++; //previous value
-   redraw_file_dialog(dialog_type);
-   return;
-  }
-
-  //update file values
-  free(file_dialog_folder_memory);
-  file_dialog_folder_memory = folder_memory;
-  file_dialog_folder_first_showed_entry = 0;
-  file_dialog_folder_selected_entry = NO_FILE_SELECTED;
-  file_dialog_compute_number_of_files_in_directory();
-
-  //show directory on screen
-  redraw_file_dialog(dialog_type);
- }
-}
-
-byte_t file_dialog_save_file(byte_t dialog_type, dword_t new_file_memory, dword_t new_file_size) {
- if(is_filesystem_read_write(file_dialog_folder_device_partition_type)==STATUS_FALSE) { //this filesystem is not read-write
-  return STATUS_ERROR;
- }
-
- //reset text area
- dword_t *text_area_info = (dword_t *) (file_dialog_new_name_text_area);
- word_t *text_area_file_name = (word_t *) (text_area_info[TEXT_AREA_INFO_MEMORY]);
- clear_memory(text_area_info[TEXT_AREA_INFO_MEMORY], 29*2);
- text_area_info[TEXT_AREA_INFO_CURSOR_POSITION] = text_area_info[TEXT_AREA_INFO_MEMORY];
-
- //show dialog window
- clear_click_board();
- draw_message_window(270, 95);
- print("Write name of new file:", screen_x_center-120, screen_y_center-25, BLACK);
- draw_text_area(file_dialog_new_name_text_area);
- draw_button("Cancel", screen_x_center-100, screen_y_center+15, 90, 20);
- draw_button("Save", screen_x_center+10, screen_y_center+15, 90, 20);
- redraw_screen();
-
- //file name window
- while(1) {
-  wait_for_user_input();
-  move_mouse_cursor();
-
-  //do not save
-  if(keyboard_code_of_pressed_key==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center+15, screen_y_center+35, screen_x_center-100, screen_x_center-10)==STATUS_TRUE)) {
-   return STATUS_ERROR;
-  }
-
-  //save file
-  if(keyboard_code_of_pressed_key==KEY_ENTER || (mouse_click_button_state==MOUSE_CLICK && is_mouse_in_zone(screen_y_center+15, screen_y_center+35, screen_x_center+10, screen_x_center+100)==STATUS_TRUE)) {
-   if(text_area_file_name[0]==0 || text_area_file_name[0]=='.') { //TODO: more invalid characters
-    error_window("Invalid file name");
-    return STATUS_ERROR;
-   }
-   break;
-  }
-
-  //process text area events
-  text_area_keyboard_event(file_dialog_new_name_text_area);
-  text_area_mouse_event(file_dialog_new_name_text_area);
-  draw_text_area(file_dialog_new_name_text_area);
-  redraw_text_area(file_dialog_new_name_text_area);
- }
-
- //select medium
- if(select_device_list_entry(file_dialog_folder_device_type, file_dialog_folder_device_number, file_dialog_folder_device_partition_type, file_dialog_folder_device_partition_first_sector)==STATUS_ERROR) {
-  if(file_dialog_folder_memory!=0) {
-   free(file_dialog_folder_memory);
-  }
-  file_dialog_print_message("Device is not inserted");
-  return STATUS_ERROR;
- }
-
- //save file
- file_dialog_print_message("Saving file...");
- file_show_file_work_progress = STATUS_TRUE;
- dword_t file_starting_entry = create_file(new_file_memory, new_file_size);
- file_show_file_work_progress = STATUS_FALSE;
- if(file_starting_entry==STATUS_ERROR) {
-  error_window("Error during saving file");
-  return STATUS_ERROR;
- }
-
- //create new entry in folder
- file_dialog_folder_memory = realloc(file_dialog_folder_memory, (file_dialog_folder_number_of_entries+2)*256);
- byte_t *folder_new_entry8 = (byte_t *) (file_dialog_folder_memory+file_dialog_folder_number_of_entries*256);
- word_t *folder_new_entry16 = (word_t *) (file_dialog_folder_memory+file_dialog_folder_number_of_entries*256);
- dword_t *folder_new_entry32 = (dword_t *) (file_dialog_folder_memory+file_dialog_folder_number_of_entries*256);
- //short name
- for(int i=0; i<8; i++) {
-  folder_new_entry8[i] = text_area_file_name[i];
- }
- //short extension
- folder_new_entry8[8] = file_dialog_file_extension[0];
- folder_new_entry8[9] = file_dialog_file_extension[1];
- folder_new_entry8[10] = file_dialog_file_extension[2];
- //attribute archive
- folder_new_entry8[11] = 0x20;
- //not used
- folder_new_entry8[12] = 0;
- folder_new_entry8[13] = 0;
- //time hour/minute/second
- read_time();
- word_t time_hms = (time_hour<<11 | time_minute<<5 | time_second);
- folder_new_entry16[7] = time_hms;
- folder_new_entry16[11] = time_hms;
- //time year/month/day
- word_t time_ymd = ((time_year-1980)<<9 | time_month<<5 | time_day);
- folder_new_entry16[8] = time_ymd;
- folder_new_entry16[9] = time_ymd;
- folder_new_entry16[12] = time_ymd;
- //file cluster
- folder_new_entry16[10] = (file_starting_entry>>16);
- folder_new_entry16[13] = (file_starting_entry & 0xFFFF);
- //file length
- folder_new_entry32[7] = new_file_size;
- //file name and extension
- for(int i=0; i<50; i++) {
-  if(text_area_file_name[i]==0) {
-   folder_new_entry16[i+16] = '.';
-   folder_new_entry16++;
-   for(int j=0; j<10; j++) {
-    if(file_dialog_file_extension[j]==0) {
      break;
     }
-    folder_new_entry16[i+16+j] = file_dialog_file_extension[j];
+   }
+   copy_memory((dword_t)(&name), (dword_t)(&folder[file_dialog_folder_descriptor->selected_entry].name), 256*2); //copy name with new extension
+   vfs_entry_parse_extension_from_name(&folder[file_dialog_folder_descriptor->selected_entry]); //set extension
+
+   //rewrite file
+   if(vfs_save_file_show_progress(file_dialog_folder_descriptor, file_dialog_folder_descriptor->selected_entry, file_dialog_file_memory, file_dialog_file_size_in_bytes)==STATUS_GOOD) {
+    //copy file descriptor
+    copy_memory((dword_t)(&folder[file_dialog_folder_descriptor->selected_entry]), (dword_t)(file_dialog_file_descriptor), sizeof(struct file_descriptor_t));
+    
+    //unselect entry
+    file_dialog_folder_descriptor->selected_entry = FOLDER_NO_ENTRY_SELECTED;
+    
+    return FILE_DIALOG_EVENT_EXIT_FILE_SUCCESSFULLY_SAVED;
+   }
+   else {
+    return FILE_DIALOG_EVENT_REDRAW;
+   }
+  }
+ }
+
+ return NO_EVENT;
+}
+
+void file_dialog_event_go_to_previous_folder(void) {
+ //this works only if some folder is opened and it is not root folder
+ if((dword_t)file_dialog_folder_descriptor==0 || file_dialog_folder_descriptor->partition_number==NO_PARTITION_SELECTED || file_dialog_folder_descriptor->pointer_to_path==0) {
+  return;
+ }
+
+ //go to previous folder
+ show_message_window("Opening folder...");
+ if(vfs_go_back_in_folder_path(file_dialog_folder_descriptor)==STATUS_ERROR) {
+  error_window("Error during opening folder");
+ }
+ file_dialog_scrollbar_info.rider_position = 0;
+ redraw_file_dialog();
+}
+
+dword_t file_dialog_event_click_on_files(void) {
+ //this works only if some folder is opened
+ if((dword_t)file_dialog_folder_descriptor==0 || file_dialog_folder_descriptor->partition_number==NO_PARTITION_SELECTED) {
+  return NO_EVENT;
+ }
+
+ //calculate what file was clicked on
+ dword_t selected_file = (get_mouse_cursor_click_board_value()-CLICK_ZONE_FILE_DIALOG_FIRST_ITEM);
+
+ //double click
+ if(selected_file==file_dialog_folder_descriptor->selected_entry) {
+  return file_dialog_event_key_enter();
+ }
+ 
+ //first click
+ file_dialog_folder_descriptor->selected_entry = selected_file;
+ return FILE_DIALOG_EVENT_REDRAW;
+}
+
+void file_dialog_event_scrollbar_change(dword_t value) {
+ //set first showed entry
+ if(file_dialog_folder_descriptor->view_type==VIEW_FOLDER_LIST) {
+  file_dialog_folder_descriptor->first_showed_entry = value;
+ }
+ else if(file_dialog_folder_descriptor->view_type==VIEW_FOLDER_ICONS) {
+  file_dialog_folder_descriptor->first_showed_entry = (value*file_dialog_number_of_columns_on_screen);
+ }
+
+ //redraw file dialog
+ redraw_file_dialog();
+}
+
+void file_dialog_change_view_window(void) {
+ //this works only if some folder is opened
+ if((dword_t)file_dialog_folder_descriptor==0 || file_dialog_folder_descriptor->partition_number==NO_PARTITION_SELECTED) {
+  return;
+ }
+
+ //draw message window
+ clear_click_board();
+ draw_message_window(220, 10+16+50+16+90+20+10);
+ program_element_layout_initalize_for_window(220, 10+16+50+16+90+20+10);
+ program_element_layout_add_border_to_area(FIRST_AREA, 10);
+
+ add_label(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, "Show files as:");
+ program_element_move_horizontally(FIRST_AREA, 8);
+ add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[l] List", CLICK_ZONE_FILE_DIALOG_VIEW_WINDOW_LIST, 0);
+ program_element_move_horizontally(FIRST_AREA, 0);
+ add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[i] Icons", CLICK_ZONE_FILE_DIALOG_VIEW_WINDOW_ICONS, 1);
+ program_element_move_horizontally(FIRST_AREA, 10);
+
+ add_label(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, "Sort files by:");
+ program_element_move_horizontally(FIRST_AREA, 8);
+ add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[n] Name", CLICK_ZONE_FILE_DIALOG_VIEW_WINDOW_SORT_BY_NAME, 0);
+ program_element_move_horizontally(FIRST_AREA, 0);
+ add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[e] Extension", CLICK_ZONE_FILE_DIALOG_VIEW_WINDOW_SORT_BY_EXTENSION, 1);
+ program_element_move_horizontally(FIRST_AREA, 0);
+ add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[s] Size", CLICK_ZONE_FILE_DIALOG_VIEW_WINDOW_SORT_BY_SIZE, 2);
+ program_element_move_horizontally(FIRST_AREA, 0);
+ add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[d] Date of creation", CLICK_ZONE_FILE_DIALOG_VIEW_WINDOW_SORT_BY_DATE_OF_CREATION, 3);
+ program_element_move_horizontally(FIRST_AREA, 10);
+
+ add_button(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[esc] Back", CLICK_ZONE_FILE_DIALOG_VIEW_WINDOW_BACK);
+
+ redraw_screen();
+
+ //process events
+ while(1) {
+  dword_t event = wait_for_event(file_dialog_view_window_event_interface);
+
+  if(event==CLICK_ZONE_FILE_DIALOG_VIEW_WINDOW_BACK) {
+   break;
+  }
+  else if(event==CLICK_ZONE_FILE_DIALOG_VIEW_WINDOW_LIST) {
+   file_dialog_folder_descriptor->view_type = VIEW_FOLDER_LIST;
+
+   //calculate first showed entry
+   file_dialog_folder_descriptor->first_showed_entry = 0;
+   if(file_dialog_folder_descriptor->selected_entry!=FOLDER_NO_ENTRY_SELECTED && file_dialog_number_of_lines_on_screen<vfs_get_folder_number_of_files(file_dialog_folder_descriptor)) {
+    if(file_dialog_folder_descriptor->first_showed_entry>file_dialog_folder_descriptor->selected_entry) {
+     file_dialog_folder_descriptor->first_showed_entry = file_dialog_folder_descriptor->selected_entry;
+    }
+    else if(file_dialog_folder_descriptor->selected_entry>(file_dialog_folder_descriptor->first_showed_entry+file_dialog_number_of_lines_on_screen-1)) {
+     file_dialog_folder_descriptor->first_showed_entry = (file_dialog_folder_descriptor->selected_entry-file_dialog_number_of_lines_on_screen+1);
+    }
    }
    break;
   }
-  folder_new_entry16[i+16] = text_area_file_name[i];
- }
- file_dialog_read_file_properties(file_dialog_folder_memory, file_dialog_folder_number_of_entries);
- file_dialog_folder_number_of_entries++;
+  else if(event==CLICK_ZONE_FILE_DIALOG_VIEW_WINDOW_ICONS) {
+   file_dialog_folder_descriptor->view_type = VIEW_FOLDER_ICONS;
 
- //save folder
- file_dialog_print_message("Saving changes to folder...");
- dword_t *folder_path = (dword_t *) (file_dialog_folder_path_memory+(file_dialog_folder_path_actual_folder_number*8));
- dword_t folder_starting_entry = folder_path[0];
- if(file_dialog_folder_path_actual_folder_number==0) {
-  folder_starting_entry = ROOT_DIRECTORY;
+   //calculate first showed entry
+   file_dialog_folder_descriptor->first_showed_entry = 0;
+   if(file_dialog_folder_descriptor->selected_entry!=FOLDER_NO_ENTRY_SELECTED && file_dialog_number_of_items_on_screen<vfs_get_folder_number_of_files(file_dialog_folder_descriptor)) {
+    if(file_dialog_folder_descriptor->first_showed_entry>file_dialog_folder_descriptor->selected_entry) {
+     file_dialog_folder_descriptor->first_showed_entry = (file_dialog_folder_descriptor->selected_entry-(file_dialog_folder_descriptor->selected_entry%file_dialog_number_of_columns_on_screen));
+    }
+    else if(file_dialog_folder_descriptor->selected_entry>(file_dialog_folder_descriptor->first_showed_entry+file_dialog_number_of_items_on_screen-1)) {
+     file_dialog_folder_descriptor->first_showed_entry = (file_dialog_folder_descriptor->selected_entry-file_dialog_number_of_items_on_screen+(file_dialog_number_of_columns_on_screen-(file_dialog_folder_descriptor->selected_entry%file_dialog_number_of_columns_on_screen)));
+    }
+   }
+   break;
+  }
+  else if(event==CLICK_ZONE_FILE_DIALOG_VIEW_WINDOW_SORT_BY_NAME) {
+   vfs_sort_folder_by_name(file_dialog_folder_descriptor, SORT_IN_ASCENDING_ORDER);
+   break;
+  }
+  else if(event==CLICK_ZONE_FILE_DIALOG_VIEW_WINDOW_SORT_BY_EXTENSION) {
+   vfs_sort_folder_by_extension(file_dialog_folder_descriptor, SORT_IN_ASCENDING_ORDER);
+   break;
+  }
+  else if(event==CLICK_ZONE_FILE_DIALOG_VIEW_WINDOW_SORT_BY_SIZE) {
+   vfs_sort_folder_by_size(file_dialog_folder_descriptor, SORT_IN_ASCENDING_ORDER);
+   break;
+  }
+  else if(event==CLICK_ZONE_FILE_DIALOG_VIEW_WINDOW_SORT_BY_DATE_OF_CREATION) {
+   vfs_sort_folder_by_date_of_creation(file_dialog_folder_descriptor, SORT_IN_ASCENDING_ORDER);
+   break;
+  }
  }
- if(rewrite_folder(folder_starting_entry, file_dialog_folder_memory)==STATUS_ERROR) {
-  error_window("Error during rewriting folder");
-  return STATUS_ERROR;
- }
- return STATUS_GOOD;
+
+ //redraw screen
+ redraw_file_dialog();
 }
 
-dword_t file_dialog(byte_t dialog_type, dword_t new_file_memory, dword_t new_file_size) {
- file_dialog_selected_device_entry = NO_FILE_SELECTED;
- redraw_file_dialog(dialog_type);
+dword_t file_dialog_read_file_skipping_errors(void) {
+ //this works only if some folder is opened, filesystem is CDDA and some file is selected
+ if((dword_t)file_dialog_folder_descriptor==0 || file_dialog_folder_descriptor->partition_number==NO_PARTITION_SELECTED || connected_partitions[file_dialog_folder_descriptor->partition_number].filesystem!=PARTITION_FILESYSTEM_CDDA || file_dialog_folder_descriptor->selected_entry==FOLDER_NO_ENTRY_SELECTED) {
+  return NO_EVENT;
+ }
+
+ //read file with skipping errors
+ create_task(dofs_show_progress_in_reading, TASK_TYPE_PERIODIC_INTERRUPT, 100);
+ struct file_descriptor_t *folder = vfs_get_folder_data_pointer(file_dialog_folder_descriptor);
+ file_dialog_open_file_memory = read_cdda_file_skipping_errors(folder[file_dialog_folder_descriptor->selected_entry].file_location, folder[file_dialog_folder_descriptor->selected_entry].file_size_in_bytes);
+ destroy_task(dofs_show_progress_in_reading);
+
+ if(file_dialog_open_file_memory!=STATUS_ERROR) {
+  //copy file descriptor
+  copy_memory((dword_t)(&folder[file_dialog_folder_descriptor->selected_entry]), (dword_t)(file_dialog_file_descriptor), sizeof(struct file_descriptor_t));
+  
+  //unselect entry
+  file_dialog_folder_descriptor->selected_entry = FOLDER_NO_ENTRY_SELECTED;
+  
+  return FILE_DIALOG_EVENT_EXIT_FILE_SUCCESSFULLY_LOADED;
+ }
+ else {
+  if(keyboard_code_of_pressed_key==KEY_ESC) {
+   show_message_window("User cancelled reading");
+   wait(1000);
+  }
+  else {
+   error_window("Error during reading file");
+  }
+
+  //unselect file and redraw screen
+  file_dialog_folder_descriptor->selected_entry = FOLDER_NO_ENTRY_SELECTED;
+  return FILE_DIALOG_EVENT_REDRAW;
+ }
+}
+
+dword_t file_dialog_preview_window(void) {
+ //this works only if some folder is opened and image file is selected
+ if((dword_t)file_dialog_folder_descriptor==0 || file_dialog_folder_descriptor->partition_number==NO_PARTITION_SELECTED || file_dialog_folder_descriptor->selected_entry==FOLDER_NO_ENTRY_SELECTED) {
+  return NO_EVENT;
+ }
+ struct file_descriptor_t *folder = vfs_get_folder_data_pointer(file_dialog_folder_descriptor);
+ if(vfs_does_file_have_this_extension(&folder[file_dialog_folder_descriptor->selected_entry], "jpg png gif qoi bmp")==STATUS_FALSE) {
+  return NO_EVENT;
+ }
+
+ //get where are next and previous image file
+ dword_t next_image_file = 0xFFFFFFFF, actual_image_file = 0xFFFFFFFF, previous_image_file = 0xFFFFFFFF;
+ reload_preview_window:
+ next_image_file = 0xFFFFFFFF;
+ for(dword_t i=(file_dialog_folder_descriptor->selected_entry+1); i<vfs_get_folder_number_of_files(file_dialog_folder_descriptor); i++) {
+  if(vfs_does_file_have_this_extension(&folder[i], "jpg png gif qoi bmp")==STATUS_TRUE) {
+   next_image_file = i;
+   break;
+  }
+ }
+ previous_image_file = 0xFFFFFFFF;
+ for(dword_t i=file_dialog_folder_descriptor->selected_entry; i>0; i--) {
+  if(vfs_does_file_have_this_extension(&folder[(i-1)], "jpg png gif qoi bmp")==STATUS_TRUE) {
+   previous_image_file = (i-1);
+   break;
+  }
+ }
+
+ //load and decode image file
+ actual_image_file = file_dialog_folder_descriptor->selected_entry;
+ byte_t *image_file = vfs_read_file_show_progress(file_dialog_folder_descriptor, file_dialog_folder_descriptor->selected_entry);
+ file_dialog_folder_descriptor->selected_entry = actual_image_file;
+
+ dword_t *image = 0;
+ if((dword_t)image_file==STATUS_ERROR) {
+  image = STATUS_ERROR;
+ }
+ else {
+  show_message_window("Decoding image...");
+
+  if(vfs_does_file_have_this_extension(&folder[file_dialog_folder_descriptor->selected_entry], "jpg")==STATUS_TRUE) {
+   image = (dword_t *) convert_jpg_to_image_data((dword_t)image_file, folder[file_dialog_folder_descriptor->selected_entry].file_size_in_bytes);
+  }
+  else if(vfs_does_file_have_this_extension(&folder[file_dialog_folder_descriptor->selected_entry], "png")==STATUS_TRUE) {
+   image = (dword_t *) convert_png_to_image_data((dword_t)image_file, folder[file_dialog_folder_descriptor->selected_entry].file_size_in_bytes);
+  }
+  else if(vfs_does_file_have_this_extension(&folder[file_dialog_folder_descriptor->selected_entry], "gif")==STATUS_TRUE) {
+   image = (dword_t *) convert_gif_to_image_data((dword_t)image_file, folder[file_dialog_folder_descriptor->selected_entry].file_size_in_bytes);
+  }
+  else if(vfs_does_file_have_this_extension(&folder[file_dialog_folder_descriptor->selected_entry], "qoi")==STATUS_TRUE) {
+   image = (dword_t *) convert_qoi_to_image_data((dword_t)image_file);
+  }
+  else if(vfs_does_file_have_this_extension(&folder[file_dialog_folder_descriptor->selected_entry], "bmp")==STATUS_TRUE) {
+   image = (dword_t *) convert_bmp_to_image_data((dword_t)image_file);
+  }
+
+  free((dword_t)image_file);
+
+  if((dword_t)image==STATUS_ERROR) {
+   show_message_window("Error during decoding image");
+   wait(1000);
+  }
+ }
+
+ //draw message window
+ clear_click_board();
+ draw_message_window(620, 420);
+ program_element_layout_initalize_for_window(620, 420);
+ program_element_layout_add_border_to_area(FIRST_AREA, 10);
+
+ //draw image file name
+ word_t image_file_name[76];
+ copy_memory((dword_t)(&folder[file_dialog_folder_descriptor->selected_entry].name), (dword_t)(&image_file_name), 75*2);
+ image_file_name[75] = 0;
+ program_element_layout_calculate_floating_element_position(FIRST_AREA, 600, 400, ELEMENT_MIDDLE_ALIGNMENT, ELEMENT_TOP_ALIGNMENT, get_number_of_chars_in_unicode_string(image_file_name)*8, 8);
+ print_unicode(image_file_name, element_x, element_y, BLACK);
+ program_element_layout_skip_space_horizontally(FIRST_AREA, 20);
+
+ //draw image
+ if((dword_t)image==STATUS_ERROR) {
+  program_element_layout_calculate_floating_element_position(FIRST_AREA, 600, 350, ELEMENT_MIDDLE_ALIGNMENT, ELEMENT_CENTER_ALIGNMENT, (sizeof("Preview not loaded")-1)*8, 8);
+  print("Preview not loaded", element_x, element_y, BLACK);
+  program_element_layout_skip_space_horizontally(FIRST_AREA, 360);
+ }
+ else {
+  program_element_layout_calculate_element_position(FIRST_AREA, ELEMENT_MIDDLE_ALIGNMENT, 600, 350);
+
+  //recalculate image size to fit in 600x350 rectangle
+  if(image[IMAGE_INFO_REAL_WIDTH]>600) {
+   image[IMAGE_INFO_WIDTH] = 600;
+   image[IMAGE_INFO_DRAW_WIDTH] = 600;
+   image[IMAGE_INFO_HEIGTH] = (image[IMAGE_INFO_REAL_HEIGHT]*600/image[IMAGE_INFO_REAL_WIDTH]);
+   image[IMAGE_INFO_DRAW_HEIGTH] = image[IMAGE_INFO_HEIGTH];
+  }
+  else {
+   image[IMAGE_INFO_WIDTH] = image[IMAGE_INFO_REAL_WIDTH];
+   image[IMAGE_INFO_DRAW_WIDTH] = image[IMAGE_INFO_REAL_WIDTH];
+  }
+
+  if(image[IMAGE_INFO_REAL_HEIGHT]>350) {
+   image[IMAGE_INFO_HEIGTH] = 350;
+   image[IMAGE_INFO_DRAW_HEIGTH] = 350;
+   image[IMAGE_INFO_WIDTH] = (image[IMAGE_INFO_REAL_WIDTH]*350/image[IMAGE_INFO_REAL_HEIGHT]);
+   image[IMAGE_INFO_DRAW_WIDTH] = image[IMAGE_INFO_WIDTH];
+  }
+  else {
+   image[IMAGE_INFO_HEIGTH] = image[IMAGE_INFO_REAL_HEIGHT];
+   image[IMAGE_INFO_DRAW_HEIGTH] = image[IMAGE_INFO_REAL_HEIGHT];
+  }
+
+  image[IMAGE_INFO_SCREEN_X] = element_x+((600-image[IMAGE_INFO_WIDTH])/2);
+  image[IMAGE_INFO_SCREEN_Y] = element_y+((350-image[IMAGE_INFO_HEIGTH])/2);
+
+  //draw image
+  draw_resized_image((dword_t)image);
+
+  program_element_move_horizontally(FIRST_AREA, 10);
+ }
+
+ //draw buttons
+ program_element_layout_calculate_element_position(FIRST_AREA, ELEMENT_MIDDLE_ALIGNMENT, 150+10+150+10+150, 20);
+ if(previous_image_file!=0xFFFFFFFF) {
+  draw_button_with_click_zone("[left] Previous", element_x, element_y, 150, 20, CLICK_ZONE_FILE_DIALOG_PREVIEW_WINDOW_LEFT);
+ }
+ if((dword_t)image!=STATUS_ERROR) {
+  if(file_dialog_type==FILE_DIALOG_OPEN) {
+   draw_button_with_click_zone("[enter] Open", element_x+160, element_y, 150, 20, CLICK_ZONE_FILE_DIALOG_PREVIEW_WINDOW_ENTER);
+  }
+  else if(file_dialog_type==FILE_DIALOG_SAVE) {
+   draw_button_with_click_zone("[enter] Rewrite", element_x+160, element_y, 150, 20, CLICK_ZONE_FILE_DIALOG_PREVIEW_WINDOW_ENTER);
+  }
+ }
+ if(next_image_file!=0xFFFFFFFF) {
+  draw_button_with_click_zone("[right] Next", element_x+320, element_y, 150, 20, CLICK_ZONE_FILE_DIALOG_PREVIEW_WINDOW_RIGHT);
+ }
+
+ redraw_screen();
+
+ //process events
+ while(1) {
+  dword_t event = wait_for_event(file_dialog_preview_window_event_interface);
+
+  //exit
+  if(event==CLICK_ZONE_FILE_DIALOG_PREVIEW_WINDOW_BACK) {
+   if((dword_t)image!=STATUS_ERROR) {
+    free((dword_t)image);
+   }
+   return FILE_DIALOG_EVENT_REDRAW;
+  }
+
+  //open
+  if(event==CLICK_ZONE_FILE_DIALOG_PREVIEW_WINDOW_ENTER && (dword_t)image!=STATUS_ERROR) {
+   free((dword_t)image);
+   return file_dialog_event_key_enter();
+  }
+
+  //move to other file
+  if(event==CLICK_ZONE_FILE_DIALOG_PREVIEW_WINDOW_LEFT && previous_image_file!=0xFFFFFFFF) {
+   if((dword_t)image!=STATUS_ERROR) {
+    free((dword_t)image);
+   }
+   file_dialog_folder_descriptor->selected_entry = previous_image_file;
+   goto reload_preview_window;
+  }
+  if(event==CLICK_ZONE_FILE_DIALOG_PREVIEW_WINDOW_RIGHT && next_image_file!=0xFFFFFFFF) {
+   if((dword_t)image!=STATUS_ERROR) {
+    free((dword_t)image);
+   }
+   file_dialog_folder_descriptor->selected_entry = next_image_file;
+   goto reload_preview_window;
+  }
+ }
+}
+
+dword_t file_dialog_create_folder_in_folder(void) {
+ //this works only if some folder is opened and filesystem is read-write
+ if((dword_t)file_dialog_folder_descriptor==0 || file_dialog_folder_descriptor->partition_number==NO_PARTITION_SELECTED || file_dialog_type!=FILE_DIALOG_SAVE || is_filesystem_read_write(connected_partitions[file_dialog_folder_descriptor->partition_number].filesystem)==STATUS_FALSE) {
+  return NO_EVENT;
+ }
+
+ //draw window
+ clear_click_board();
+ redraw_window:
+ draw_message_window(420, 10+16+10+10+20+10);
+ program_element_layout_initalize_for_window(420, 10+16+10+10+20+10);
+ program_element_layout_add_border_to_area(FIRST_AREA, 10);
+
+ add_label(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, "Name of new folder:");
+ program_element_move_horizontally(FIRST_AREA, 8);
+
+ program_element_layout_calculate_element_position(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, 10);
+ file_dialog_text_area[TEXT_AREA_INFO_X] = element_x;
+ file_dialog_text_area[TEXT_AREA_INFO_Y] = element_y;
+ clear_memory(file_dialog_text_area[TEXT_AREA_INFO_MEMORY], 250*2);
+ text_area_move_cursor_to_start((dword_t)file_dialog_text_area);
+ draw_text_area((dword_t)file_dialog_text_area);
+ program_element_move_horizontally(FIRST_AREA, 10);
+
+ program_element_layout_calculate_element_position(FIRST_AREA, ELEMENT_MIDDLE_ALIGNMENT, 150+10+150, 20);
+ draw_button_with_click_zone("[esc] Cancel", element_x, element_y, 150, 20, CLICK_ZONE_FILE_DIALOG_NAME_INPUT_CANCEL);
+ draw_button_with_click_zone("[enter] Create", element_x+160, element_y, 150, 20, CLICK_ZONE_FILE_DIALOG_NAME_INPUT_APPROVE);
+
+ redraw_screen();
 
  while(1) {
-  wait_for_user_input();
-  move_mouse_cursor();
+  dword_t event = wait_for_event(file_dialog_name_input_event_interface);
 
-  //redraw when there is device change
-  if(usb_new_device_detected==STATUS_TRUE) {
-   redraw_file_dialog(dialog_type);
-   continue;
+  if(event==CLICK_ZONE_FILE_DIALOG_NAME_INPUT_CANCEL) {
+   return FILE_DIALOG_EVENT_REDRAW;
   }
 
-  //close file dialog
-  dword_t click_zone = get_mouse_cursor_click_board_value();
-  if(keyboard_code_of_pressed_key==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && click_zone==CLICK_ZONE_BACK)) {
-   return STATUS_ERROR;
+  if(event==CLICK_ZONE_FILE_DIALOG_NAME_INPUT_APPROVE) {
+   //check if this is valid name
+   word_t *text_area_data = (word_t *) (file_dialog_text_area[TEXT_AREA_INFO_MEMORY]);
+   for(dword_t i=0; i<250; i++) {
+    if(text_area_data[i]=='<'
+       || text_area_data[i]=='>'
+       || text_area_data[i]==':'
+       || text_area_data[i]=='"'
+       || text_area_data[i]=='/'
+       || text_area_data[i]=='\\'
+       || text_area_data[i]=='|'
+       || text_area_data[i]=='?'
+       || text_area_data[i]=='*') {
+     error_window("Please avoid these characters in name: < > : \" / \\ | ? *" );
+     goto redraw_window;
+    }
+   }
+
+   //create folder
+   show_message_window("Creating folder...");
+   if(vfs_create_folder(file_dialog_folder_descriptor, text_area_data)==STATUS_ERROR) {
+    error_window("Error during creating new folder");
+   }
+
+   return FILE_DIALOG_EVENT_REDRAW;
+  }
+ }
+}
+
+dword_t file_dialog_save_file_to_folder(void) {
+ //this works only if some folder is opened and filesystem is read-write
+ if((dword_t)file_dialog_folder_descriptor==0 || file_dialog_folder_descriptor->partition_number==NO_PARTITION_SELECTED || is_filesystem_read_write(connected_partitions[file_dialog_folder_descriptor->partition_number].filesystem)==STATUS_FALSE) {
+  return NO_EVENT;
+ }
+
+ //draw window
+ clear_click_board();
+ redraw_window:
+ draw_message_window(420, 10+16+10+10+20+10);
+ program_element_layout_initalize_for_window(420, 10+16+10+10+20+10);
+ program_element_layout_add_border_to_area(FIRST_AREA, 10);
+
+ add_label(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, "Name of new file:");
+ program_element_move_horizontally(FIRST_AREA, 8);
+
+ program_element_layout_calculate_element_position(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, 10);
+ file_dialog_text_area[TEXT_AREA_INFO_X] = element_x;
+ file_dialog_text_area[TEXT_AREA_INFO_Y] = element_y;
+ clear_memory(file_dialog_text_area[TEXT_AREA_INFO_MEMORY], 250*2);
+ text_area_move_cursor_to_start((dword_t)file_dialog_text_area);
+ draw_text_area((dword_t)file_dialog_text_area);
+ program_element_move_horizontally(FIRST_AREA, 10);
+
+ program_element_layout_calculate_element_position(FIRST_AREA, ELEMENT_MIDDLE_ALIGNMENT, 150+10+150, 20);
+ draw_button_with_click_zone("[esc] Cancel", element_x, element_y, 150, 20, CLICK_ZONE_FILE_DIALOG_NAME_INPUT_CANCEL);
+ draw_button_with_click_zone("[enter] Save", element_x+160, element_y, 150, 20, CLICK_ZONE_FILE_DIALOG_NAME_INPUT_APPROVE);
+
+ redraw_screen();
+
+ while(1) {
+  dword_t event = wait_for_event(file_dialog_name_input_event_interface);
+
+  if(event==CLICK_ZONE_FILE_DIALOG_NAME_INPUT_CANCEL) {
+   return FILE_DIALOG_EVENT_REDRAW;
   }
 
-  //process keyboard event
-  if(file_dialog_folder_number_of_entries!=0) {
-   if(keyboard_code_of_pressed_key==KEY_UP) {
-    file_dialog_process_key_up_key_down(dialog_type, KEY_UP);
-    continue;
+  if(event==CLICK_ZONE_FILE_DIALOG_NAME_INPUT_APPROVE) {
+   //check if this is valid name
+   word_t *text_area_data = (word_t *) (file_dialog_text_area[TEXT_AREA_INFO_MEMORY]);
+   for(dword_t i=0; i<250; i++) {
+    if(text_area_data[i]=='<'
+       || text_area_data[i]=='>'
+       || text_area_data[i]==':'
+       || text_area_data[i]=='"'
+       || text_area_data[i]=='/'
+       || text_area_data[i]=='\\'
+       || text_area_data[i]=='|'
+       || text_area_data[i]=='?'
+       || text_area_data[i]=='*') {
+     error_window("Please avoid these characters in name: < > : \" / \\ | ? *" );
+     goto redraw_window;
+    }
    }
-   else if(keyboard_code_of_pressed_key==KEY_DOWN) {
-    file_dialog_process_key_up_key_down(dialog_type, KEY_DOWN);
-    continue;
-   }
-  }
-  if(keyboard_code_of_pressed_key==KEY_PAGE_DOWN) {
-   if(number_of_device_list_entries==0) {
-    continue;
-   }
-   if(file_dialog_selected_device_entry==0xFFFFFFFF) {
-    file_dialog_selected_device_entry = 0;
-   }
-   else if(file_dialog_selected_device_entry<(number_of_device_list_entries-1)) {
-    file_dialog_selected_device_entry++;
+
+   //save file
+   if(vfs_create_file_show_progress(file_dialog_folder_descriptor, text_area_data, file_dialog_extensions, file_dialog_file_memory, file_dialog_file_size_in_bytes)==STATUS_GOOD) {
+    //copy file descriptor
+    struct file_descriptor_t *folder = vfs_get_folder_data_pointer(file_dialog_folder_descriptor);
+    copy_memory((dword_t)(&folder[(vfs_get_folder_number_of_files(file_dialog_folder_descriptor)-1)]), (dword_t)(file_dialog_file_descriptor), sizeof(struct file_descriptor_t));
+    
+    //unselect entry
+    file_dialog_folder_descriptor->selected_entry = FOLDER_NO_ENTRY_SELECTED;
+    
+    return FILE_DIALOG_EVENT_EXIT_FILE_SUCCESSFULLY_SAVED;
    }
    else {
-    continue;
-   }
-   goto select_device_entry;
-  }
-  else if(keyboard_code_of_pressed_key==KEY_PAGE_UP) {
-   if(number_of_device_list_entries==0) {
-    continue;
-   }
-   if(file_dialog_selected_device_entry==0xFFFFFFFF) {
-    file_dialog_selected_device_entry = (number_of_device_list_entries-1);
-   }
-   else if(file_dialog_selected_device_entry>0) {
-    file_dialog_selected_device_entry--;
-   }
-   else {
-    continue;
-   }
-   goto select_device_entry;
-  }
-  else if(keyboard_code_of_pressed_key==KEY_B) {
-   file_dialog_folder_back(dialog_type);
-   continue;
-  }
-  else if(keyboard_code_of_pressed_key==KEY_ENTER && file_dialog_folder_memory!=0 && file_dialog_folder_selected_entry!=NO_FILE_SELECTED) {
-   dword_t value = file_dialog_double_click_on_file(dialog_type, new_file_memory, new_file_size);
-   if(value==FILE_DIALOG_FOLDER_WAS_LOADED) {
-    continue;
-   }
-   if(dialog_type==FILE_DIALOG_TYPE_OPEN && value!=STATUS_ERROR) {
-    return value;
-   }
-   else if(value==STATUS_GOOD) {
-    return STATUS_GOOD;
-   }
-   continue;
-  }
-  else if(keyboard_code_of_pressed_key==KEY_S && dialog_type==FILE_DIALOG_TYPE_SAVE) {
-   if(file_dialog_save_file(dialog_type, new_file_memory, new_file_size)==STATUS_GOOD) {
-    return STATUS_GOOD;
-   }
-   redraw_file_dialog(dialog_type); //error during saving file
-   continue;
-  }
-  else if(keyboard_code_of_pressed_key==KEY_F8) { //refresh device list
-   device_list_check_optical_drive();
-   redraw_file_dialog(dialog_type);
-   continue;
-  }
-  else if(keyboard_code_of_pressed_key==KEY_F12 && dialog_type==FILE_DIALOG_TYPE_OPEN && file_dialog_folder_memory!=0 && file_dialog_folder_selected_entry!=NO_FILE_SELECTED && file_dialog_folder_device_partition_type==STORAGE_CDDA) { //CDDA filesystem - read with skipping errors
-   if(dialog_yes_no("This may be slow, do you want to continue?")==STATUS_FALSE) {
-    redraw_file_dialog(dialog_type);
-    continue;
-   }
-   dword_t value = file_dialog_double_click_on_file(FILE_DIALOG_TYPE_OPEN_FILE_SKIPPING_ERRORS, new_file_memory, new_file_size);
-   if(value==FILE_DIALOG_FOLDER_WAS_LOADED) {
-    continue;
-   }
-   if(dialog_type==FILE_DIALOG_TYPE_OPEN && value!=STATUS_ERROR) {
-    return value;
-   }
-   else if(value==STATUS_GOOD) {
-    return STATUS_GOOD;
-   }
-   continue;
-  }
-
-  //process mouse event
-  if(mouse_click_button_state==MOUSE_CLICK) {
-   //refresh device list button
-   if(click_zone==FILE_DIALOG_CLICK_ZONE_BUTTON_REFRESH_DEVICES) {
-    device_list_check_optical_drive();
-    redraw_file_dialog(dialog_type);
-    continue;
-   }
-
-   //click on device
-   if(click_zone>=FILE_DIALOG_CLICK_ZONE_DEVICE_ENTRY && click_zone<=FILE_DIALOG_CLICK_ZONE_DEVICE_LAST_ENTRY) {
-    file_dialog_selected_device_entry = (click_zone-FILE_DIALOG_CLICK_ZONE_DEVICE_ENTRY);
-
-    //test if this entry still exist
-    select_device_entry:
-    device_list_selected_entry = file_dialog_selected_device_entry;
-    if(get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_TYPE)==0) {
-     redraw_file_dialog(dialog_type);
-     continue;
-    }
-
-    //entry exist, read root folder
-    select_device_list_entry(get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_TYPE), get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_NUMBER), get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_TYPE), get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_FIRST_SECTOR));
-     
-    //read root directory
-    file_dialog_print_message("Reading root directory...");
-    dword_t root_folder_memory = read_folder(ROOT_DIRECTORY, 0);
-    if(root_folder_memory==STATUS_ERROR) {
-     if(file_dialog_folder_memory!=0) { //remove actual showed folder
-      free(file_dialog_folder_memory);
-      file_dialog_folder_memory = 0;
-     }
-
-     error_window("Error during reading root folder of this device");
-     redraw_file_dialog(dialog_type);
-     continue;
-    }
-
-    if(file_dialog_folder_memory!=0) {
-     free(file_dialog_folder_memory);
-    }
-
-    file_dialog_folder_path_actual_folder_number = 0; //root folder
-    file_dialog_folder_memory = root_folder_memory;
-    file_dialog_folder_first_showed_entry = 0;
-    file_dialog_folder_selected_entry = NO_FILE_SELECTED;
-    file_dialog_compute_number_of_files_in_directory();
-
-    file_dialog_folder_device_type = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_TYPE);
-    file_dialog_folder_device_number = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_NUMBER);
-    file_dialog_folder_device_partition_type = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_TYPE);
-    file_dialog_folder_device_partition_first_sector = get_device_list_entry_value(DEVICE_LIST_ENTRY_DEVICE_PARTITION_FIRST_SECTOR);
-
-    //show directory on screen
-    redraw_file_dialog(dialog_type);
-    continue;
-   }
-
-   //select file
-   if(file_dialog_folder_memory!=0) {
-    if(click_zone>=FILE_DIALOG_CLICK_ZONE_FIRST_FILE) {
-     dword_t selected_entry = (file_dialog_folder_first_showed_entry+(click_zone-FILE_DIALOG_CLICK_ZONE_FIRST_FILE));
-
-     //double click
-     if(file_dialog_folder_selected_entry==selected_entry) {
-      dword_t value = file_dialog_double_click_on_file(dialog_type, new_file_memory, new_file_size);
-      if(value==FILE_DIALOG_FOLDER_WAS_LOADED) {
-       continue;
-      }
-      if(dialog_type==FILE_DIALOG_TYPE_OPEN && value!=STATUS_ERROR) {
-       return value;
-      }
-      else if(value==STATUS_GOOD) {
-       return STATUS_GOOD;
-      }
-      continue;
-     }
-
-     //first click
-     file_dialog_folder_selected_entry = selected_entry;
-     redraw_file_dialog(dialog_type);
-    }
-    else if(click_zone==FILE_DIALOG_CLICK_ZONE_BUTTON_READ_SKIPPING_ERRORS) { //CDDA filesystem - read with skipping errors
-     if(dialog_yes_no("This may be slow, do you want to continue?")==STATUS_FALSE) {
-      redraw_file_dialog(dialog_type);
-      continue;
-     }
-     dword_t value = file_dialog_double_click_on_file(FILE_DIALOG_TYPE_OPEN_FILE_SKIPPING_ERRORS, new_file_memory, new_file_size);
-     if(value==FILE_DIALOG_FOLDER_WAS_LOADED) {
-      continue;
-     }
-     if(dialog_type==FILE_DIALOG_TYPE_OPEN && value!=STATUS_ERROR) {
-      return value;
-     }
-     else if(value==STATUS_GOOD) {
-      return STATUS_GOOD;
-     }
-     continue;
-    }
-    else if(file_dialog_folder_selected_entry!=NO_FILE_SELECTED) {
-     //unselect file
-     file_dialog_folder_selected_entry = NO_FILE_SELECTED;
-     redraw_file_dialog(dialog_type);
-    }
-   }
-
-   //back
-   if(click_zone==FILE_DIALOG_CLICK_ZONE_BUTTON_BACK) {
-    file_dialog_folder_back(dialog_type);
-   }
-
-   //save
-   if(click_zone==FILE_DIALOG_CLICK_ZONE_SAVE_BUTTON) {
-    if(file_dialog_save_file(dialog_type, new_file_memory, new_file_size)==STATUS_GOOD) {
-     return STATUS_GOOD;
-    }
-    redraw_file_dialog(dialog_type); //error during saving file
-    continue;
+    return FILE_DIALOG_EVENT_REDRAW;
    }
   }
  }
 }
 
-dword_t file_dialog_open(void) {
- return file_dialog(FILE_DIALOG_TYPE_OPEN, 0, 0);
+void redraw_file_dialog(void) {
+ //clear click board
+ clear_click_board();
+
+ //initalize layout
+ program_element_layout_initalize_for_program();
+ program_element_layout_split_area_vertically(FIRST_AREA, IN_PIXELS, FILE_DIALOG_WIDTH_OF_CONNECTED_PARTITIONS);
+ program_element_layout_draw_background_of_area(FIRST_AREA, 0xB04100);
+ program_element_layout_draw_background_of_area(SECOND_AREA, 0xFF6600);
+
+ //draw up border
+ draw_full_square(0, 0, screen_width, PROGRAM_INTERFACE_TOP_LINE_HEIGTH, 0x00C000);
+ draw_straigth_line(0, PROGRAM_INTERFACE_TOP_LINE_HEIGTH, screen_width, BLACK);
+ print("File dialog", 8, 6, BLACK);
+ if(file_dialog_type==FILE_DIALOG_SAVE) {
+  dword_t number_of_chars_in_extension = get_number_of_chars_in_ascii_string(file_dialog_extensions);
+  print("Save file with extension:", screen_width-8-(number_of_chars_in_extension*8)-8-(25*8), 6, BLACK);
+  print(file_dialog_extensions, screen_width-8-(number_of_chars_in_extension*8), 6, BLACK);
+ }
+
+ //draw down border
+ draw_full_square(0, screen_height-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH, screen_width, PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH, 0x00C000);
+ draw_straigth_line(0, screen_height-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH, screen_width, BLACK);
+ add_button_to_bottom_line_from_left("[esc] Back", CLICK_ZONE_FILE_DIALOG_BACK);
+ if((dword_t)file_dialog_folder_descriptor!=0 && file_dialog_folder_descriptor->partition_number!=NO_PARTITION_SELECTED) {
+  //if we are not in root folder, add button to go to previous folder
+  if(file_dialog_folder_descriptor->pointer_to_path!=0) {
+   add_button_to_bottom_line_from_left("[b] Go to previous folder", CLICK_ZONE_FILE_DIALOG_GO_TO_PREVIOUS_FOLDER);
+  }
+
+  //add button for changing view
+  add_button_to_bottom_line_from_left("[v] View", CLICK_ZONE_FILE_DIALOG_CHANGE_VIEW_WINDOW);
+
+  //for images add button for showing preview
+  struct file_descriptor_t *folder = vfs_get_folder_data_pointer(file_dialog_folder_descriptor);
+  if(file_dialog_folder_descriptor->selected_entry!=FOLDER_NO_ENTRY_SELECTED && vfs_does_file_have_this_extension(&folder[file_dialog_folder_descriptor->selected_entry], "jpg png gif qoi bmp")==STATUS_TRUE) {
+   add_button_to_bottom_line_from_left("[p] Preview", CLICK_ZONE_FILE_DIALOG_PREVIEW_WINDOW);
+  }
+  else if(connected_partitions[file_dialog_folder_descriptor->partition_number].filesystem==PARTITION_FILESYSTEM_CDDA && file_dialog_folder_descriptor->selected_entry!=FOLDER_NO_ENTRY_SELECTED) {
+   add_button_to_bottom_line_from_left("[r] Read with skipping errors", CLICK_ZONE_FILE_DIALOG_READ_FILE_SKIPPING_ERRORS);
+  }
+
+  //draw other buttons if filesystem is read-write
+  if(is_filesystem_read_write(connected_partitions[file_dialog_folder_descriptor->partition_number].filesystem)==STATUS_TRUE) {
+   if(file_dialog_type==FILE_DIALOG_SAVE) {
+    //draw button for creating folders
+    add_button_to_bottom_line_from_left("[c] Create folder", CLICK_ZONE_FILE_DIALOG_CREATE_NEW_FOLDER);
+
+    //draw button for saving file
+    add_button_to_bottom_line_from_right("[s] Save", CLICK_ZONE_FILE_DIALOG_SAVE_FILE_TO_FOLDER);
+   }
+  }
+  else { //print to right bottom corner that this is read-only filesystem
+   print("Read-only filesystem", screen_width-8-20*8, screen_height-13, BLACK);
+  }
+ }
+
+ //draw connected partitions
+ program_element_layout_skip_space_horizontally(FIRST_AREA, 2);
+ for(dword_t i=0; i<MAX_NUMBER_OF_CONNECTED_PARTITIONS; i++) {
+  if(connected_partitions[i].medium_type!=NO_MEDIUM) {
+   //print type of device if needed
+   if(i==0 || connected_partitions[i].medium_type!=connected_partitions[i-1].medium_type || connected_partitions[i].medium_number!=connected_partitions[i-1].medium_number) {
+    program_element_layout_calculate_element_position(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, FILE_DIALOG_WIDTH_OF_CONNECTED_PARTITIONS, 20);
+    if(connected_partitions[i].medium_type==MEDIUM_HARD_DISK) {
+     print("Hard disk", element_x+8, element_y+6, BLACK);
+    }
+    else if(connected_partitions[i].medium_type==MEDIUM_OPTICAL_DRIVE) {
+     print("Optical disk", element_x+8, element_y+6, BLACK);
+    }
+    else if(connected_partitions[i].medium_type==MEDIUM_USB_MSD) {
+     print("USB flash drive", element_x+8, element_y+6, BLACK);
+    }
+    program_element_move_horizontally(FIRST_AREA, 0);
+   }
+
+   //if this is selected partition, draw background
+   program_element_layout_calculate_element_position(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, FILE_DIALOG_WIDTH_OF_CONNECTED_PARTITIONS, 20);
+   if((dword_t)file_dialog_folder_descriptor!=0 && i==file_dialog_folder_descriptor->partition_number) {
+    draw_full_square(element_x, element_y, element_width, element_height, RED);
+   }
+
+   //print partition name
+   draw_char(CHAR_COMMA_IN_MIDDLE_OF_LINE, element_x+8, element_y+6, BLACK);
+   if(connected_partitions[i].partition_label[0]!=0) {
+    for(dword_t j=0; j<11; j++) {
+     if(connected_partitions[i].partition_label[j]==0) {
+      break;
+     }
+     draw_char(connected_partitions[i].partition_label[j], element_x+24+j*8, element_y+6, BLACK);
+    }
+   }
+   else {
+    print("Partition", element_x+24, element_y+6, BLACK);
+   }
+   add_zone_to_click_board(element_x, element_y, element_width, element_height, CLICK_ZONE_FILE_DIALOG_FIRST_CONNECTED_PARTITION+i);
+   program_element_move_horizontally(FIRST_AREA, 0);
+  }
+ }
+
+ //add button for refreshing devices
+ program_element_layout_skip_space_horizontally(FIRST_AREA, 10);
+ add_button(FIRST_AREA, ELEMENT_MIDDLE_ALIGNMENT, FILE_DIALOG_WIDTH_OF_CONNECTED_PARTITIONS-10, "[F8] Refresh devices", CLICK_ZONE_FILE_DIALOG_REFRESH_DEVICES);
+
+ //draw files in folder
+ if((dword_t)file_dialog_folder_descriptor!=0 && file_dialog_folder_descriptor->partition_number!=NO_PARTITION_SELECTED) {
+  struct file_descriptor_t *folder = vfs_get_folder_data_pointer(file_dialog_folder_descriptor);
+
+  //DRAW LIST
+  if(file_dialog_folder_descriptor->view_type==VIEW_FOLDER_LIST) {
+   program_element_layout_add_border_to_area(SECOND_AREA, 10);
+
+   //calculate how many items will be printed
+   file_dialog_number_of_lines_on_screen = (program_element_layout_areas_info[SECOND_AREA].height/10);
+   if(file_dialog_number_of_lines_on_screen>vfs_get_folder_number_of_files(file_dialog_folder_descriptor)) {
+    file_dialog_number_of_lines_on_screen = vfs_get_folder_number_of_files(file_dialog_folder_descriptor);
+   }
+
+   //add scrollbar if needed
+   if(vfs_get_folder_number_of_files(file_dialog_folder_descriptor)>(program_element_layout_areas_info[SECOND_AREA].height/10)) {
+    //update variables
+    file_dialog_scrollbar_info.size = (program_element_layout_areas_info[SECOND_AREA].height/10*10-2);
+    program_element_layout_calculate_element_position(SECOND_AREA, ELEMENT_RIGHT_ALIGNMENT, SCROLLBAR_SIZE, file_dialog_scrollbar_info.size);
+    file_dialog_scrollbar_info.x = element_x;
+    file_dialog_scrollbar_info.y = element_y;
+    file_dialog_scrollbar_info.full_document_size = vfs_get_folder_number_of_files(file_dialog_folder_descriptor);
+    file_dialog_scrollbar_info.showed_document_size = file_dialog_number_of_lines_on_screen;
+    scrollbar_struct_calculate_rider_size((&file_dialog_scrollbar_info));
+
+    //draw scrollbar
+    scrollbar_struct_draw_vertical_scrollbar((&file_dialog_scrollbar_info), CLICK_ZONE_FILE_DIALOG_SCROLLBAR);
+
+    //remove space reserved for scrollbar
+    program_element_layout_areas_info[SECOND_AREA].width -= (SCROLLBAR_SIZE+5);
+   }
+
+   //print items
+   if(vfs_get_folder_number_of_files(file_dialog_folder_descriptor)==0) {
+    add_label(SECOND_AREA, ELEMENT_LEFT_ALIGNMENT, "There are no files in this folder");
+   }
+   for(dword_t i=file_dialog_folder_descriptor->first_showed_entry; i<(file_dialog_folder_descriptor->first_showed_entry+file_dialog_number_of_lines_on_screen); i++) {
+    //if this is selected item, draw background
+    program_element_layout_calculate_element_position(SECOND_AREA, ELEMENT_LEFT_ALIGNMENT, program_element_layout_areas_info[SECOND_AREA].width, 10);
+    if(i==file_dialog_folder_descriptor->selected_entry) {
+     draw_full_square(element_x, element_y-1, element_width, element_height, RED);
+    }
+
+    //add click zone
+    add_zone_to_click_board(element_x, element_y, element_width, element_height, CLICK_ZONE_FILE_DIALOG_FIRST_ITEM+i);
+
+    //print name
+    program_element_layout_calculate_element_position(SECOND_AREA, ELEMENT_LEFT_ALIGNMENT, program_element_layout_areas_info[SECOND_AREA].width-19*8, 10);
+    for(dword_t j=0; j<((program_element_layout_areas_info[SECOND_AREA].width-19*8)/8); j++) {
+     if(folder[i].name[j]==0) {
+      break;
+     }
+     draw_char(folder[i].name[j], element_x+j*8, element_y, BLACK);
+    }
+    program_element_move_vertically(SECOND_AREA, 0);
+
+    //print size
+    program_element_layout_calculate_element_position(SECOND_AREA, ELEMENT_LEFT_ALIGNMENT, 7*8, 10);
+    if(folder[i].type==NORMAL_FILE) {
+     if(folder[i].file_size_in_bytes<1024) {
+      print_var(folder[i].file_size_in_bytes, element_x, element_y, BLACK);
+      print("B", element_x+5*8, element_y, BLACK);
+     }
+     else if(folder[i].file_size_in_bytes<1024*1024) {
+      print_var((folder[i].file_size_in_bytes/1024), element_x, element_y, BLACK);
+      print("KB", element_x+5*8, element_y, BLACK);
+     }
+     else if(folder[i].file_size_in_bytes<1024*1024*1024) {
+      print_var((folder[i].file_size_in_bytes/1024/1024), element_x, element_y, BLACK);
+      print("MB", element_x+5*8, element_y, BLACK);
+     }
+     else {
+      print_var((folder[i].file_size_in_bytes/1024/1024/1024), element_x, element_y, BLACK);
+      print("GB", element_x+5*8, element_y, BLACK);
+     }
+    }
+    program_element_move_vertically(SECOND_AREA, 16);
+
+    //print date of creation
+    if(vfs_does_file_have_this_extension((&folder[i]), "cdda")==STATUS_FALSE) {
+     program_element_layout_calculate_element_position(SECOND_AREA, ELEMENT_LEFT_ALIGNMENT, 10*8, 10);
+     print_var(folder[i].year_of_creation, element_x, element_y, BLACK);
+     draw_char('/', element_x+4*8, element_y, BLACK);
+     if(folder[i].month_of_creation<10) {
+      draw_char('0', element_x+5*8, element_y, BLACK);
+      print_var(folder[i].month_of_creation, element_x+6*8, element_y, BLACK);
+     }
+     else {
+      print_var(folder[i].month_of_creation, element_x+5*8, element_y, BLACK);
+     }
+     draw_char('/', element_x+7*8, element_y, BLACK);
+     if(folder[i].day_of_creation<10) {
+      draw_char('0', element_x+8*8, element_y, BLACK);
+      print_var(folder[i].day_of_creation, element_x+9*8, element_y, BLACK);
+     }
+     else {
+      print_var(folder[i].day_of_creation, element_x+8*8, element_y, BLACK);
+     }
+    }
+
+    //go to next item
+    program_element_move_horizontally(SECOND_AREA, 0);
+   }
+  }
+  //DRAW ICONS
+  else if(file_dialog_folder_descriptor->view_type==VIEW_FOLDER_ICONS) {
+   //calculate how many items will be printed
+   #define FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE 10
+   #define FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE*8
+   file_dialog_number_of_columns_on_screen = ((program_element_layout_areas_info[SECOND_AREA].width-30)/(FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION+16));
+   file_dialog_number_of_lines_on_screen = ((program_element_layout_areas_info[SECOND_AREA].height-20)/(FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION+8+30+16));
+   file_dialog_number_of_items_on_screen = (file_dialog_number_of_columns_on_screen*file_dialog_number_of_lines_on_screen);
+   if(file_dialog_number_of_items_on_screen>(vfs_get_folder_number_of_files(file_dialog_folder_descriptor)-file_dialog_folder_descriptor->first_showed_entry)) {
+    file_dialog_number_of_items_on_screen = (vfs_get_folder_number_of_files(file_dialog_folder_descriptor)-file_dialog_folder_descriptor->first_showed_entry);
+   }
+
+   //add scrollbar if needed
+   if(vfs_get_folder_number_of_files(file_dialog_folder_descriptor)>file_dialog_number_of_items_on_screen) {
+    //update variables
+    file_dialog_scrollbar_info.size = program_element_layout_areas_info[SECOND_AREA].height;
+    file_dialog_scrollbar_info.x = screen_width-SCROLLBAR_SIZE;
+    file_dialog_scrollbar_info.y = program_element_layout_areas_info[SECOND_AREA].actual_element_y;
+    file_dialog_scrollbar_info.full_document_size = (vfs_get_folder_number_of_files(file_dialog_folder_descriptor)/file_dialog_number_of_columns_on_screen);
+    if((vfs_get_folder_number_of_files(file_dialog_folder_descriptor)%file_dialog_number_of_columns_on_screen)!=0) {
+     file_dialog_scrollbar_info.full_document_size++;
+    }
+    file_dialog_scrollbar_info.showed_document_size = file_dialog_number_of_lines_on_screen;
+    scrollbar_struct_calculate_rider_size((&file_dialog_scrollbar_info));
+
+    //draw scrollbar
+    scrollbar_struct_draw_vertical_scrollbar((&file_dialog_scrollbar_info), CLICK_ZONE_FILE_DIALOG_SCROLLBAR);
+
+    //remove space reserved for scrollbar
+    program_element_layout_areas_info[SECOND_AREA].width -= (SCROLLBAR_SIZE+5);
+   }
+
+   //print items
+   program_element_layout_add_border_to_area(SECOND_AREA, 10);
+   if(vfs_get_folder_number_of_files(file_dialog_folder_descriptor)==0) {
+    add_label(SECOND_AREA, ELEMENT_LEFT_ALIGNMENT, "There are no files in this folder");
+   }
+   for(dword_t i=file_dialog_folder_descriptor->first_showed_entry; i<(file_dialog_folder_descriptor->first_showed_entry+file_dialog_number_of_items_on_screen); i++)  {
+    program_element_layout_calculate_element_position(SECOND_AREA, ELEMENT_LEFT_ALIGNMENT, FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION, FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION+8+30);
+
+    //if selected, draw background
+    if(i==file_dialog_folder_descriptor->selected_entry) {
+     draw_full_square(element_x-4, element_y-4, element_width+8, element_height+8, RED);
+    }
+
+    //add click zone
+    add_zone_to_click_board(element_x, element_y, element_width, element_height, CLICK_ZONE_FILE_DIALOG_FIRST_ITEM+i);
+    
+    //draw icon
+    dword_t color_of_icon = WHITE; //all unknown file formats are white
+    if(folder[i].type==FILE_FOLDER) { //folders are yellow
+     color_of_icon = 0xFFED00;
+    }
+    else if(vfs_does_file_have_this_extension((&folder[i]), "jpg png gif qoi bmp")) { //images are brown
+     color_of_icon = 0x902D00;
+    }
+    else if(vfs_does_file_have_this_extension((&folder[i]), "mp3 wav cdda")) { //sounds are purple
+     color_of_icon = 0xA000FF;
+    }
+    else if(vfs_does_file_have_this_extension((&folder[i]), "mp4 avi mov mod")) { //videos are grey
+     color_of_icon = 0xA0A0A0;
+    }
+    else if(vfs_does_file_have_this_extension((&folder[i]), "doc docx odt rtf pdf")) { //documents are blue
+     color_of_icon = 0x00A0FF;
+    }
+    else if(vfs_does_file_have_this_extension((&folder[i]), "xls xlsx ods")) { //spreadsheets are green
+     color_of_icon = 0x33B600;
+    }
+    else if(vfs_does_file_have_this_extension((&folder[i]), "ppt pptx odp")) { //presentations are orange
+     color_of_icon = 0xFF8000;
+    }
+    draw_full_square(element_x, element_y, FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION, FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION, color_of_icon);
+    if(folder[i].type==FILE_FOLDER) {
+     program_element_layout_calculate_floating_element_position(SECOND_AREA, FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION, FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION, ELEMENT_MIDDLE_ALIGNMENT, ELEMENT_CENTER_ALIGNMENT, 6*8, 8);
+     print("folder", element_x, element_y, BLACK);
+    }
+    else {
+     program_element_layout_calculate_floating_element_position(SECOND_AREA, FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION, FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION, ELEMENT_MIDDLE_ALIGNMENT, ELEMENT_CENTER_ALIGNMENT, get_number_of_chars_in_unicode_string(folder[i].extension)*8, 8);
+     print_unicode(folder[i].extension, element_x, element_y, BLACK);
+    }
+
+    //print name
+    word_t name_line[FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE+1];
+    if(get_number_of_chars_in_unicode_string(folder[i].name)<=FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE) {
+     //print first line
+     program_element_layout_calculate_floating_element_position(SECOND_AREA, FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION, 0, ELEMENT_MIDDLE_ALIGNMENT, ELEMENT_TOP_ALIGNMENT, get_number_of_chars_in_unicode_string(folder[i].name)*8, 8);
+     print_unicode(folder[i].name, element_x, element_y+FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION+8, BLACK);
+    }
+    else if(get_number_of_chars_in_unicode_string(folder[i].name)<=FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE*2) {
+     //print first line
+     for(dword_t j=0; j<FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE; j++) {
+      name_line[j] = folder[i].name[j];
+     }
+     name_line[FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE] = 0;
+     print_unicode(name_line, program_element_layout_areas_info[SECOND_AREA].actual_element_x, program_element_layout_areas_info[SECOND_AREA].actual_element_y+FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION+8, BLACK);
+
+     //print second line
+     program_element_layout_calculate_floating_element_position(SECOND_AREA, FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION, 0, ELEMENT_MIDDLE_ALIGNMENT, ELEMENT_TOP_ALIGNMENT, get_number_of_chars_in_unicode_string(&folder[i].name[FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE])*8, 8);
+     print_unicode(&folder[i].name[FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE], element_x, program_element_layout_areas_info[SECOND_AREA].actual_element_y+FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION+8+10, BLACK);
+    }
+    else if(get_number_of_chars_in_unicode_string(folder[i].name)<=FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE*3) {
+     //print first line
+     for(dword_t j=0; j<FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE; j++) {
+      name_line[j] = folder[i].name[j];
+     }
+     name_line[FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE] = 0;
+     print_unicode(name_line, program_element_layout_areas_info[SECOND_AREA].actual_element_x, program_element_layout_areas_info[SECOND_AREA].actual_element_y+FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION+8, BLACK);
+   
+     //print second line
+     for(dword_t j=0; j<FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE; j++) {
+      name_line[j] = folder[i].name[j+FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE];
+     }
+     name_line[FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE] = 0;
+     print_unicode(name_line, program_element_layout_areas_info[SECOND_AREA].actual_element_x, program_element_layout_areas_info[SECOND_AREA].actual_element_y+FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION+8+10, BLACK);
+
+     program_element_layout_calculate_floating_element_position(SECOND_AREA, FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION, 0, ELEMENT_MIDDLE_ALIGNMENT, ELEMENT_TOP_ALIGNMENT, get_number_of_chars_in_unicode_string(&folder[i].name[FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE+FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE])*8, 8);
+     print_unicode(&folder[i].name[FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE+FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE], element_x, program_element_layout_areas_info[SECOND_AREA].actual_element_y+FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION+8+10+10, BLACK);
+    }
+    else {
+     //print first line
+     for(dword_t j=0; j<FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE; j++) {
+      name_line[j] = folder[i].name[j];
+     }
+     name_line[FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE] = 0;
+     print_unicode(name_line, program_element_layout_areas_info[SECOND_AREA].actual_element_x, program_element_layout_areas_info[SECOND_AREA].actual_element_y+FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION+8, BLACK);
+
+     //print second line
+     for(dword_t j=0; j<FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE; j++) {
+      name_line[j] = folder[i].name[j+FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE];
+     }
+     name_line[FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE] = 0;
+     print_unicode(name_line, program_element_layout_areas_info[SECOND_AREA].actual_element_x, program_element_layout_areas_info[SECOND_AREA].actual_element_y+FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION+8+10, BLACK);
+    
+     for(dword_t j=0; j<FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE; j++) {
+      name_line[j] = folder[i].name[j+FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE+FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE];
+     }
+     name_line[FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE] = 0;
+     print_unicode(name_line, program_element_layout_areas_info[SECOND_AREA].actual_element_x, program_element_layout_areas_info[SECOND_AREA].actual_element_y+FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION+8+10+10, BLACK);
+    
+    }
+
+    //go to next item
+    if((i%file_dialog_number_of_columns_on_screen)==(file_dialog_number_of_columns_on_screen-1)) { //new line
+     program_element_move_horizontally(SECOND_AREA, 16);
+    }
+    else { //new column
+     program_element_move_vertically(SECOND_AREA, 16);
+    }
+   }
+  }
+ }
+
+ //redraw screen
+ redraw_screen();
 }
 
-dword_t file_dialog_save(dword_t file_memory, dword_t file_size) {
- return file_dialog(FILE_DIALOG_TYPE_SAVE, file_memory, file_size);
+byte_t is_loaded_file_extension(byte_t *extension) {
+ return are_equal_b_string_w_string(extension, file_dialog_file_descriptor->extension);
 }

@@ -64,7 +64,7 @@ void set_char_of_file_name(dword_t value_offset, dword_t value) {
 }
 
 void set_file_name_from_file_dialog(void) {
-word_t *file_name = (word_t *) (file_dialog_file_name);
+ word_t *file_name = file_dialog_file_descriptor->name;
 
  for(dword_t i=0; i<20; i++) {
   set_char_of_file_name(i, file_name[i]);

@@ -11,6 +11,7 @@
 #define UNICODE_COMBINING_ACUTE 0x0301
 #define UNICODE_COMBINING_CARON 0x030C
 
+byte_t is_memory_equal_with_memory(byte_t *mem1, byte_t *mem2, dword_t length);
 byte_t are_equal_b_string_b_string(byte_t *string1, byte_t *string2);
 byte_t are_equal_b_string_w_string(byte_t *string1, word_t *string2);
 byte_t are_equal_w_string_w_string(word_t *string1, word_t *string2);

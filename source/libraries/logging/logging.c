@@ -44,8 +44,7 @@ void developer_program_log(void) {
    convert_unicode_to_utf_8(logging_mem, number_of_chars);
 
    //save file
-   file_dialog_save_set_extension("txt");
-   file_dialog_save(converted_file_memory, converted_file_size-1); //size is without zero char ending
+   file_dialog_save((byte_t *)converted_file_memory, converted_file_size-1, "txt"); //size is without zero char ending
    free(converted_file_memory);
    goto redraw;
   }
@@ -113,6 +112,59 @@ void developer_program_log(void) {
 
    goto redraw;
   }
+  else if(keyboard_code_of_pressed_key==KEY_PAGE_UP) {
+   for(dword_t i=0; i<10; i++) {
+    if((dword_t)log==logging_mem) {
+     continue; //we are at start of logging memory
+    }
+
+    log--;
+    logging_mem_draw_pointer-=2;
+    if((dword_t)log==logging_mem) {
+     goto redraw; //we were one char ahead from start of logging memory
+    }
+
+    log--;
+    logging_mem_draw_pointer-=2;
+    if(log[0]==0xA && log[1]==0xA) {
+     //last two chars were enters, so we need to go back just one char - one line
+     log++;
+     logging_mem_draw_pointer+=2;
+     goto redraw;
+    }
+
+    //skip all characters in line
+    while(*log!=0xA && (dword_t)log!=logging_mem) {
+     log--;
+     logging_mem_draw_pointer-=2;
+    }
+
+    //skip enter
+    if(*log==0xA) {
+     log++;
+     logging_mem_draw_pointer+=2;
+    }
+   }
+
+   goto redraw;
+  }
+  else if(keyboard_code_of_pressed_key==KEY_PAGE_DOWN) {
+   for(dword_t i=0; i<10; i++) {
+    //skip all characters in line
+    while(*log!=0xA && *log!=0) {
+     log++;
+     logging_mem_draw_pointer+=2;
+    }
+
+    //skip enter
+    if(*log==0xA) {
+     log++;
+     logging_mem_draw_pointer+=2;
+    }
+   }
+
+   goto redraw;
+  }
  }
 }
 
@@ -152,6 +204,23 @@ void show_log(void) {
 }
 
 void log(char *string) {
+ word_t *log = (word_t *) (logging_mem_pointer);
+ 
+ while(*string!=0) {
+  *log=(word_t)*string;
+  log++;
+  string++;
+  logging_mem_pointer+=2;
+  
+  //if we reach end of logging memory, start again from start
+  if(logging_mem_pointer>=logging_mem_end) {
+   logging_mem_pointer = logging_mem;
+   log = (word_t *) (logging_mem);
+  }
+ }
+}
+
+void log_unicode(word_t *string) {
  word_t *log = (word_t *) (logging_mem_pointer);
  
  while(*string!=0) {

@@ -255,11 +255,7 @@ void document_editor_draw_document(void) {
 
 void document_editor_open_file(void) {
  //open file
- file_dialog_open_file_extensions_clear_mem();
- file_dialog_open_file_add_extension("docx");
- file_dialog_open_file_add_extension("odt");
- dword_t new_file_mem = file_dialog_open();
- if(new_file_mem==0) {
+ if(file_dialog_open("docx odt")==FILE_DIALOG_EVENT_EXIT_FILE_NOT_LOADED) {
   return; //file not loaded
  }
 
@@ -267,14 +263,14 @@ void document_editor_open_file(void) {
  show_message_window("Opening file...");
  dword_t dmf_memory = 0;
  if(is_loaded_file_extension("docx")==STATUS_TRUE) {
-  dmf_memory = convert_docx_to_dmf(new_file_mem, file_dialog_file_size);
+  dmf_memory = convert_docx_to_dmf((dword_t)file_dialog_open_file_memory, file_dialog_file_descriptor->file_size_in_bytes);
  }
  else if(is_loaded_file_extension("odt")==STATUS_TRUE) {
-  dmf_memory = convert_odt_to_dmf(new_file_mem, file_dialog_file_size);
+  dmf_memory = convert_odt_to_dmf((dword_t)file_dialog_open_file_memory, file_dialog_file_descriptor->file_size_in_bytes);
  }
  if(dmf_memory==STATUS_ERROR) { //error during converting file
   error_window("Error during opening file, more info in System log");
-  free(new_file_mem);
+  free((dword_t)file_dialog_open_file_memory);
   return;
  }
 
@@ -283,7 +279,7 @@ void document_editor_open_file(void) {
  convert_dmf_to_dllmf(dmf_memory, dllmf_memory);
 
  //add file
- add_file((word_t *)file_dialog_file_name, 0, 0, 0, 0, 0);
+ add_file(file_dialog_file_descriptor->name, 0, 0, 0, 0, 0);
  set_file_value(DOCUMENT_EDITOR_FILE_DMF_MEMORY, dmf_memory);
  set_file_value(DOCUMENT_EDITOR_FILE_DLLMF_MEMORY, dllmf_memory);
  set_file_value(DOCUMENT_EDITOR_FILE_DOCUMENT_HEIGHT, dllmf_get_document_height(dllmf_memory));
@@ -292,7 +288,7 @@ void document_editor_open_file(void) {
  set_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_COLUMN, 0);
  set_file_value(DOCUMENT_EDITOR_FILE_CURSOR, (dllmf_memory+DLLMF_NUM_OF_PAGE_ENTRIES*DLLMF_PAGE_ENTRY_SIZE));
  set_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA, 0);
- free(new_file_mem);
+ free((dword_t)file_dialog_open_file_memory);
  document_editor_recalculate_scrollbars();
 }
 
@@ -302,9 +298,8 @@ void document_editor_save_file(void) {
  }
 
  //save file
- file_dialog_save_set_extension("odt"); //TODO: more extensions
  convert_dmf_to_odt(get_file_value(DOCUMENT_EDITOR_FILE_DMF_MEMORY));
- if(file_dialog_save(new_odt_file_memory, new_odt_file_size)==STATUS_GOOD) {
+ if(file_dialog_save((byte_t *)new_odt_file_memory, new_odt_file_size, "odt")==FILE_DIALOG_EVENT_EXIT_FILE_SUCCESSFULLY_SAVED) {
   set_file_value(PROGRAM_INTERFACE_FILE_FLAGS, (get_file_value(PROGRAM_INTERFACE_FILE_FLAGS) | PROGRAM_INTERFACE_FILE_FLAG_SAVED));
   set_file_name_from_file_dialog();
  }

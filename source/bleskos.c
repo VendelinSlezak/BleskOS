@@ -19,6 +19,7 @@
 #include "drivers/mouse/mouse.h"
 #include "drivers/ide/include.h"
 #include "drivers/ahci/include.h"
+#include "drivers/storage/include.h"
 #include "drivers/filesystems/include.h"
 #include "drivers/sound/include.h"
 #include "drivers/ethernet/include.h"
@@ -29,7 +30,6 @@
 #include "libraries/logging/logging.h"
 #include "libraries/drawing/include.h"
 #include "libraries/graphic_user_interface_elements/include.h"
-#include "libraries/file_dialog/include.h"
 #include "libraries/decoders/include.h"
 #include "libraries/checksums/include.h"
 #include "libraries/text_formats/include.h"
@@ -37,6 +37,7 @@
 #include "libraries/sound_formats/include.h"
 #include "libraries/archive_formats/include.h"
 #include "libraries/program_interface/include.h"
+#include "libraries/file_dialog/include.h"
 
 #ifndef NO_PROGRAMS
 #include "programs/main_window/main_window.h"
@@ -60,6 +61,7 @@
 #include "drivers/mouse/mouse.c"
 #include "drivers/ide/include.c"
 #include "drivers/ahci/include.c"
+#include "drivers/storage/include.c"
 #include "drivers/filesystems/include.c"
 #include "drivers/sound/include.c"
 #include "drivers/ethernet/include.c"
@@ -70,7 +72,6 @@
 #include "libraries/logging/logging.c"
 #include "libraries/drawing/include.c"
 #include "libraries/graphic_user_interface_elements/include.c"
-#include "libraries/file_dialog/include.c"
 #include "libraries/decoders/include.c"
 #include "libraries/checksums/include.c"
 #include "libraries/text_formats/include.c"
@@ -78,6 +79,7 @@
 #include "libraries/sound_formats/include.c"
 #include "libraries/archive_formats/include.c"
 #include "libraries/program_interface/include.c"
+#include "libraries/file_dialog/include.c"
 
 #ifndef NO_PROGRAMS
 #include "programs/main_window/main_window.c"
@@ -102,7 +104,7 @@ void bleskos(dword_t bootloader_passed_value) {
  bleskos_boot_debug_top_screen_color(0x00FF00); //green top of screen
  initalize_logging();
  bleskos_boot_debug_top_screen_color(0x0000FF); //blue top of screen
- log("BleskOS 2024 update 31\n\nPress F2 to save System log as TXT file");
+ log("BleskOS 2024 update 32\n\nPress F2 to save System log as TXT file");
  log_starting_memory();
 
  bleskos_boot_debug_top_screen_color(0xFFFF00); //yellow top of screen
@@ -118,7 +120,7 @@ void bleskos(dword_t bootloader_passed_value) {
  clear_screen(0x00C000);
  set_scalable_char_size(64);
  scalable_font_print("BleskOS", screen_x_center-(64*7/2), screen_y_center-92, BLACK);
- print_to_message_window("Version 2024 update 31", screen_y_center);
+ print_to_message_window("Version 2024 update 32", screen_y_center);
  draw_empty_square(screen_x_center-161, screen_y_center+30, 322, 15, BLACK);
  number_of_start_screen_messages = 0;
  (*redraw_framebuffer)();
@@ -141,9 +143,9 @@ void bleskos(dword_t bootloader_passed_value) {
  bleskos_boot_debug_log_message();
 
  bleskos_show_message_on_starting_screen("Initalizing storage controllers...");
+ initalize_list_of_connected_partitions();
+ initalize_drivers_of_filesystems();
  initalize_storage_controllers();
- bleskos_boot_debug_log_message();
- initalize_device_list();
  bleskos_boot_debug_log_message();
  
  bleskos_show_message_on_starting_screen("Initalizing sound card...");
@@ -193,6 +195,9 @@ void bleskos(dword_t bootloader_passed_value) {
  mouse_cursor_y = screen_y_center;
  bleskos_main_window();
  #endif
+
+ developer_program_log();
+ shutdown();
 }
 
 void bleskos_show_message_on_starting_screen(char *string) {

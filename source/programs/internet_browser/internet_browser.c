@@ -194,21 +194,17 @@ void internet_browser_print_message(byte_t *string) {
 
 void internet_browser_open_file(void) {
  //open html file
- file_dialog_open_file_extensions_clear_mem();
- file_dialog_open_file_add_extension("htm");
- file_dialog_open_file_add_extension("html");
- dword_t new_file_mem = file_dialog_open();
- if(new_file_mem==0) {
+ if(file_dialog_open("htm html")==FILE_DIALOG_EVENT_EXIT_FILE_NOT_LOADED) {
   return; //file not loaded
  }
 
  //add file entry
- add_file((word_t *)file_dialog_file_name, 0, 0, 0, 0, 0);
+ add_file(file_dialog_file_descriptor->name, 0, 0, 0, 0, 0);
 
  //convert file and set file variables
  set_file_value(INTERNET_BROWSER_FILE_STATUS, FILE_TRANSFER_NO_ERROR);
- set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_MEMORY, convert_html_to_bleskos_webpage(new_file_mem, file_dialog_file_size));
- set_file_value(INTERNET_BROWSER_FILE_HTML_MEMORY, new_file_mem);
+ set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_MEMORY, convert_html_to_bleskos_webpage((dword_t)file_dialog_open_file_memory, file_dialog_file_descriptor->file_size_in_bytes));
+ set_file_value(INTERNET_BROWSER_FILE_HTML_MEMORY, (dword_t)file_dialog_open_file_memory);
  set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH, html_page_height);
  set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE, 0);
  set_file_value(INTERNET_BROWSER_FILE_TEXT_AREA_MEMORY, create_text_area(TEXT_AREA_INPUT_LINE, 2048, 0, 20, screen_width, 10));

@@ -8,17 +8,23 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-dword_t logging_mem, logging_mem_end, logging_mem_draw_pointer, logging_mem_pointer;
+struct connected_partition_info_t {
+ byte_t medium_type;
+ byte_t medium_number;
+ byte_t filesystem;
+ dword_t first_sector;
+ byte_t partition_label[11];
+ byte_t *filesystem_specific_info_pointer;
+}__attribute__((packed));
 
-void initalize_logging(void);
-void developer_program_log(void);
-void skip_logs(void);
-void show_log(void);
-void log(char *string);
-void log_unicode(word_t *string);
-void log_var(dword_t value);
-void log_var_with_space(dword_t value);
-void log_hex(dword_t value);
-void log_hex_with_space(dword_t value);
-void log_hex_specific_size(dword_t value, dword_t chars);
-void log_hex_specific_size_with_space(dword_t value, dword_t chars);
+#define MAX_NUMBER_OF_CONNECTED_PARTITIONS 10
+struct connected_partition_info_t *connected_partitions;
+
+#define NO_PARTITION_SELECTED 0xFF
+byte_t selected_partition;
+
+void initalize_list_of_connected_partitions(void);
+void add_new_partition_to_list(byte_t medium_type, byte_t medium_number, byte_t filesystem, dword_t first_sector);
+void remove_partitions_of_medium_from_list(byte_t medium_type, byte_t medium_number);
+byte_t is_partition_connected(byte_t medium_type, byte_t medium_number, byte_t filesystem, dword_t first_sector);
+byte_t select_partition(byte_t partition_number);
