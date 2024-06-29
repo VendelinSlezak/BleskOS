@@ -197,7 +197,7 @@ byte_t patapi_read_cd_toc(word_t base_port, word_t alt_base_port, dword_t memory
  return STATUS_GOOD;
 }
 
-byte_t patapi_read(word_t base_port, word_t alt_base_port, dword_t sector, byte_t number_of_sectors, dword_t memory) {
+byte_t patapi_read(word_t base_port, word_t alt_base_port, dword_t sector, byte_t number_of_sectors, byte_t *memory) {
  word_t *mem = (word_t *) memory;
  word_t value;
 
@@ -243,7 +243,7 @@ byte_t patapi_read(word_t base_port, word_t alt_base_port, dword_t sector, byte_
  return STATUS_GOOD;
 }
 
-byte_t patapi_read_audio_cd_sector(word_t base_port, word_t alt_base_port, dword_t sector, byte_t number_of_sectors, dword_t memory) {
+byte_t patapi_read_audio_cd(word_t base_port, word_t alt_base_port, dword_t sector, byte_t number_of_sectors, byte_t *memory) {
  word_t *mem = (word_t *) memory;
  word_t value;
 

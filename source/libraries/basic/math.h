@@ -20,6 +20,8 @@ int floor(double i);
 int floorf(float i);
 float ceilf(float number);
 dword_t power(dword_t value, dword_t exponent);
+dword_t convert_big_endian_dword_to_little_endian(byte_t *mem);
+word_t convert_big_endian_word_to_little_endian(byte_t *mem);
 dword_t get_number_of_digits_in_number(dword_t number);
 dword_t convert_byte_string_to_number(dword_t mem);
 dword_t convert_word_string_to_number(dword_t mem);

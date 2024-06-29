@@ -8,6 +8,16 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+byte_t is_memory_equal_with_memory(byte_t *mem1, byte_t *mem2, dword_t length) {
+ for(dword_t i=0; i<length; i++) {
+  if(mem1[i]!=mem2[i]) {
+   return STATUS_FALSE;
+  }
+ }
+
+ return STATUS_TRUE;
+}
+
 byte_t are_equal_b_string_b_string(byte_t *string1, byte_t *string2) {
  while(*string1!=0 && *string2!=0) {
   if(*string1!=*string2) {

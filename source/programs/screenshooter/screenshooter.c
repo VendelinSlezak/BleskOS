@@ -48,14 +48,13 @@ void screenshooter(void) {
 
   //save
   if(keyboard_code_of_pressed_key==KEY_F2 || (mouse_click_button_state==MOUSE_CLICK && click_value==SCREENSHOTER_CLICK_ZONE_SAVE)) {
-   file_dialog_save_set_extension("bmp");
    if(screenshot_is_cropped==STATUS_FALSE) {
     convert_image_data_to_bmp(screenshoot_image_info_mem);
    }
    else {
     convert_image_data_to_bmp(cropped_image_info_mem);
    }
-   file_dialog_save(converted_file_memory, converted_file_size);
+   file_dialog_save((byte_t *)converted_file_memory, converted_file_size, "bmp");
    free(converted_file_memory);
    redraw_screenshooter();
    continue;

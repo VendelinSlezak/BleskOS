@@ -116,7 +116,7 @@ void bleskos_main_window_redraw(void) {
  bleskos_main_window_draw_item("[g] Graphic editor", 0xFFE800, MW_GRAPHIC_EDITOR);
  bleskos_main_window_draw_item("[m] Media viewer", 0xFFE800, MW_MEDIA_VIEWER);
  bleskos_main_window_draw_item("[i] Internet browser", 0xFFE800, MW_INTERNET_BROWSER);
- bleskos_main_window_draw_item("[f] File manager", 0xFFE800, MW_FILE_MANAGER);
+ // bleskos_main_window_draw_item("[f] File manager", 0xFFE800, MW_FILE_MANAGER);
 
  bleskos_main_window_drawing_line += 25;
  bleskos_main_window_print_item("Tools");
@@ -279,11 +279,11 @@ void bleskos_main_window(void) {
    internet_browser();
    goto redraw;
   }
-  else if(keyboard_code_of_pressed_key==KEY_F) {
-   bleskos_main_window_time_redraw = 0;
-   file_manager();
-   goto redraw;
-  }
+  // else if(keyboard_code_of_pressed_key==KEY_F) {
+  //  bleskos_main_window_time_redraw = 0;
+  //  file_manager();
+  //  goto redraw;
+  // }
   else if(keyboard_code_of_pressed_key==KEY_C) {
    bleskos_main_window_time_redraw = 0;
    calculator();
@@ -364,10 +364,10 @@ void bleskos_main_window(void) {
     bleskos_main_window_time_redraw = 0;
     internet_browser();
    }
-   else if(click_value==MW_FILE_MANAGER) {
-    bleskos_main_window_time_redraw = 0;
-    file_manager();
-   }
+   // else if(click_value==MW_FILE_MANAGER) {
+   //  bleskos_main_window_time_redraw = 0;
+   //  file_manager();
+   // }
    else if(click_value==MW_CALCULATOR) {
     bleskos_main_window_time_redraw = 0;
     calculator();

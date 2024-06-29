@@ -64,7 +64,7 @@ void convert_image_data_to_jpg(dword_t image_info_memory, byte_t quality) {
  }
 
  //create JPG file
- struct byte_stream_descriptor *jpeg = jo_write_jpg((byte_t *)get_image_data_memory(image_info_memory), image_info[IMAGE_INFO_REAL_WIDTH], image_info[IMAGE_INFO_REAL_HEIGHT], 4, quality);
+ struct byte_stream_descriptor_t *jpeg = jo_write_jpg((byte_t *)get_image_data_memory(image_info_memory), image_info[IMAGE_INFO_REAL_WIDTH], image_info[IMAGE_INFO_REAL_HEIGHT], 4, quality);
  converted_file_size = jpeg->size_of_stream;
  converted_file_memory = (dword_t) close_byte_stream(jpeg);
 

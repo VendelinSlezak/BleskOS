@@ -78,6 +78,14 @@ dword_t power(dword_t value, dword_t exponent) {
  }
 }
 
+dword_t convert_big_endian_dword_to_little_endian(byte_t *mem) {
+ return ((mem[0]<<24) | (mem[1]<<16) | (mem[2]<<8) | (mem[3]));
+}
+
+word_t convert_big_endian_word_to_little_endian(byte_t *mem) {
+ return ((mem[0]<<8) | (mem[1]));
+}
+
 dword_t get_number_of_digits_in_number(dword_t number) {
  if(number==0) {
   return 1;

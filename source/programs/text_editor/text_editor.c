@@ -158,21 +158,19 @@ void draw_text_editor(void) {
 
 void text_editor_open_file(void) {
  //open any file
- file_dialog_open_file_extensions_clear_mem();
- dword_t new_file_mem = file_dialog_open();
- if(new_file_mem==0) {
+ if(file_dialog_open("")==FILE_DIALOG_EVENT_EXIT_FILE_NOT_LOADED) {
   return; //file not loaded
  }
- new_file_mem = realloc(new_file_mem, file_dialog_file_size+2); //add free char to end
+ file_dialog_open_file_memory = (byte_t *) (realloc((dword_t)file_dialog_open_file_memory, file_dialog_file_descriptor->file_size_in_bytes+2)); //add free char to end
 
  //add file entry with clear text area with as many characters as bytes of file + 100000 more
- add_file((word_t *)file_dialog_file_name, 0, 0, 0, 0, 0);
- set_file_value(TEXT_EDITOR_FILE_TEXT_AREA_MEMORY, create_text_area(TEXT_AREA_NORMAL_DARK, (file_dialog_file_size+100000), 0, 21, screen_width, screen_height-41));
+ add_file(file_dialog_file_descriptor->name, 0, 0, 0, 0, 0);
+ set_file_value(TEXT_EDITOR_FILE_TEXT_AREA_MEMORY, create_text_area(TEXT_AREA_NORMAL_DARK, (file_dialog_file_descriptor->file_size_in_bytes+100000), 0, 21, screen_width, screen_height-41));
 
  //convert file from utf-8 to unicode to text area
  dword_t *text_area_info = (dword_t *) (get_file_value(TEXT_EDITOR_FILE_TEXT_AREA_MEMORY));
- convert_utf_8_to_unicode(new_file_mem, text_area_info[TEXT_AREA_INFO_MEMORY], (file_dialog_file_size+100000));
- free(new_file_mem);
+ convert_utf_8_to_unicode((dword_t)file_dialog_open_file_memory, text_area_info[TEXT_AREA_INFO_MEMORY], (file_dialog_file_descriptor->file_size_in_bytes+100000));
+ free((dword_t)file_dialog_open_file_memory);
 
  //count lines and columns of document
  text_area_calculate_number_of_lines_and_columns(get_file_value(TEXT_EDITOR_FILE_TEXT_AREA_MEMORY));
@@ -200,8 +198,7 @@ void text_editor_save_file(void) {
  convert_unicode_to_utf_8(text_area_info[TEXT_AREA_INFO_MEMORY], number_of_chars);
 
  //save file
- file_dialog_save_set_extension("txt"); //TODO: more extensions
- if(file_dialog_save(converted_file_memory, converted_file_size-1)==STATUS_GOOD) { //size is without zero char ending
+ if(file_dialog_save((byte_t *)converted_file_memory, converted_file_size-1, "txt")==FILE_DIALOG_EVENT_EXIT_FILE_SUCCESSFULLY_SAVED) { //size is without zero char ending
   set_file_value(PROGRAM_INTERFACE_FILE_FLAGS, (get_file_value(PROGRAM_INTERFACE_FILE_FLAGS) | PROGRAM_INTERFACE_FILE_FLAG_SAVED));
   set_file_name_from_file_dialog();
   text_area_info[TEXT_AREA_INFO_FLAGS] &= ~TEXT_AREA_TEXT_CHANGE_FLAG; //remove change flag

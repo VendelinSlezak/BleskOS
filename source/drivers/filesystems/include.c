@@ -8,11 +8,13 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "fat.c"
-#include "ext.c"
-#include "iso9660.c"
-#include "cdda.c"
-#include "bleskos_bootable.c"
-#include "virtual_filesystem.c"
-#include "device_list.c"
+#include "list_of_connected_partitions.c"
+#include "partitions.c"
+#include "descriptor_of_file_sectors.c"
+#include "virtual_file_system.c"
 #include "main.c"
+#include "filesystem_fat.c"
+#include "filesystem_ext.c"
+#include "filesystem_iso9660.c"
+#include "filesystem_cdda.c"
+#include "filesystem_bleskos_bootable_partition.c"

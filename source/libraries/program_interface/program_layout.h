@@ -31,6 +31,10 @@ void program_layout_add_button(void);
 #define ELEMENT_MIDDLE_ALIGNMENT 1
 #define ELEMENT_RIGHT_ALIGNMENT 2
 
+#define ELEMENT_TOP_ALIGNMENT 0
+#define ELEMENT_CENTER_ALIGNMENT 1
+#define ELEMENT_BOTTOM_ALIGNMENT 2
+
 struct program_element_layout_area_info {
  dword_t x;
  dword_t y;
@@ -41,8 +45,10 @@ struct program_element_layout_area_info {
 };
 
 struct program_element_layout_area_info *program_element_layout_areas_info;
-dword_t program_element_layout_number_of_areas, program_element_layout_actual_area;
+dword_t program_element_layout_number_of_areas;
 dword_t element_x, element_y, element_width, element_height;
+dword_t program_element_layout_bottom_line_left_x;
+dword_t program_element_layout_bottom_line_right_x;
 
 void program_element_layout_initalize_for_program(void);
 void program_element_layout_initalize_for_window(dword_t width, dword_t height);
@@ -52,10 +58,20 @@ void program_element_layout_split_area_vertically(byte_t area_number, byte_t uni
 void program_element_layout_split_area_horizontally(byte_t area_number, byte_t unit_type, dword_t number);
 
 void program_element_layout_add_border_to_area(byte_t area_number, dword_t border);
+void program_element_layout_add_borders_to_area(byte_t area_number, dword_t top_border, dword_t left_border, dword_t bottom_border, dword_t right_border);
 
 void program_element_layout_calculate_element_position(byte_t area_number, byte_t alignment, dword_t width, dword_t height);
-void program_element_move_vertically(dword_t border);
-void program_element_move_horizontally(dword_t border);
+void program_element_layout_calculate_floating_element_position(byte_t area_number, dword_t area_width, dword_t area_height, byte_t horizontal_alignment, byte_t vertical_alignment, dword_t width, dword_t height);
+void program_element_move_vertically(byte_t area_number, dword_t border);
+void program_element_layout_skip_space_vertically(byte_t area_number, dword_t border);
+void program_element_move_horizontally(byte_t area_number, dword_t border);
+void program_element_layout_skip_space_horizontally(byte_t area_number, dword_t border);
 
 void add_label(byte_t area_number, byte_t alignment, byte_t *string);
 void add_button(byte_t area_number, byte_t alignment, byte_t width, byte_t *string, dword_t click_zone);
+void add_button_with_specific_color(byte_t area_number, byte_t alignment, byte_t width, byte_t *string, dword_t color, dword_t click_zone);
+void add_list_entry(byte_t area_number, byte_t alignment, byte_t width, byte_t *string, dword_t click_zone, dword_t entry_number);
+void add_button_to_bottom_line_from_left(byte_t *string, dword_t click_zone);
+void add_button_to_bottom_line_from_right(byte_t *string, dword_t click_zone);
+
+void program_element_layout_draw_background_of_area(byte_t area_number, dword_t color);

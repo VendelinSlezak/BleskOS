@@ -8,18 +8,21 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-byte_t is_partition_bleskos_bootable(dword_t first_partition_sector) {
- if(read_storage_medium(first_partition_sector, 1, (dword_t)&one_sector)==STATUS_ERROR) {
+byte_t is_partition_bleskos_bootable_partition(dword_t first_partition_sector) {
+ byte_t sector[512];
+
+ //read first sector of partition
+ if(read_storage_medium(first_partition_sector, 1, (dword_t)(&sector))==STATUS_ERROR) {
   return STATUS_FALSE;
  }
 
- //test signature
- byte_t *signature = (byte_t *) "BleskOS boot partition";
- for(dword_t i=0; i<22; i++) {
-  if(one_sector[i+488]!=signature[i]) {
-   return STATUS_FALSE;
-  }
+ //check signature
+ if(is_memory_equal_with_memory((byte_t *)(((dword_t)(&sector))+488), "BleskOS boot partition", 22)==STATUS_TRUE) {
+  return STATUS_TRUE;
  }
-
- return STATUS_TRUE;
+ else {
+  return STATUS_FALSE;
+ }
 }
+
+//TODO: later there will be option to update BleskOS from USB with newer version and here will be methods to read binary of code

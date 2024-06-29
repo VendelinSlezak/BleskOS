@@ -17,5 +17,5 @@ byte_t patapi_detect_disk(word_t base_port, word_t alt_base_port);
 byte_t patapi_read_capabilities(word_t base_port, word_t alt_base_port);
 byte_t patapi_start_stop_command(word_t base_port, word_t alt_base_port, byte_t command);
 byte_t patapi_read_cd_toc(word_t base_port, word_t alt_base_port, dword_t memory);
-byte_t patapi_read(word_t base_port, word_t alt_base_port, dword_t sector, byte_t number_of_sectors, dword_t memory);
-byte_t patapi_read_audio_cd_sector(word_t base_port, word_t alt_base_port, dword_t sector, byte_t number_of_sectors, dword_t memory);
+byte_t patapi_read(word_t base_port, word_t alt_base_port, dword_t sector, byte_t number_of_sectors, byte_t *memory);
+byte_t patapi_read_audio_cd(word_t base_port, word_t alt_base_port, dword_t sector, byte_t number_of_sectors, byte_t *memory);

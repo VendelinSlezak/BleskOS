@@ -259,7 +259,9 @@ void usb_remove_device(byte_t controller_number, byte_t port_number) {
    usb_mass_storage_devices[i].controller_number = 0;
    usb_mass_storage_devices[i].port = 0;
    release_usb_address(usb_mass_storage_devices[i].address);
-   remove_device_from_device_list(MEDIUM_USB_MSD, i);
+
+   //remove connected partitions from partition list
+   remove_partitions_of_medium_from_list(MEDIUM_USB_MSD, i);
   }
  }
  for(int i=0; i<10; i++) {
@@ -632,21 +634,9 @@ void usb_configure_device_with_zero_address(byte_t controller_number, byte_t dev
      
      usb_mass_storage_initalize(i);
      
-     //add partitions to device list
-     select_storage_medium(MEDIUM_USB_MSD, i);
-     read_partition_info();
-     for(dword_t j=0; j<8; j++) {
-      if(partitions[j].type==STORAGE_NO_PARTITION) {
-       break; //we went through all partitions
-      }
+     //connect all partitions
+     connect_partitions_of_medium(MEDIUM_USB_MSD, i);
 
-      //add partition
-      if(partitions[j].type!=STORAGE_FREE_SPACE && partitions[j].type!=STORAGE_UNKNOWN_FILESYSTEM) {
-       add_device_partition_to_device_list(MEDIUM_USB_MSD, i, partitions[j].type, partitions[j].first_sector);
-      }
-     }
-
-     log("\n");
      return;
     }
    }

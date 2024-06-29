@@ -25,7 +25,7 @@ dword_t convert_mp3_to_sound_data(dword_t mp3_memory, dword_t mp3_length) {
  }
 
  //decode full file
- struct byte_stream_descriptor *mp3_pcm_output = create_byte_stream(BYTE_STREAM_10_MB_BLOCK);
+ struct byte_stream_descriptor_t *mp3_pcm_output = create_byte_stream(BYTE_STREAM_10_MB_BLOCK);
  while(1) {
   //add decoded PCM data to stream
   for(dword_t i=0; i<(samples*mp3_frame_info->channels); i++) {
@@ -91,12 +91,12 @@ struct mp3_info_t *read_mp3_info(byte_t *mp3_memory, dword_t mp3_length) {
  }
 
  //index mp3 file and read length of PCM data
- struct byte_stream_descriptor *mp3_index = create_byte_stream(BYTE_STREAM_100_KB_BLOCK);
+ struct byte_stream_descriptor_t *mp3_index = create_byte_stream(BYTE_STREAM_100_KB_BLOCK);
  dword_t mp3_end_of_file = ((dword_t)mp3_memory+mp3_length);
  dword_t pcm_data_offset = 0;
  while((dword_t)mp3_memory<mp3_end_of_file) {
-  //unpack mp3 frame TODO: faster method
-  samples = mp3dec_decode_frame(mp3_decoder_working_area, (byte_t *)mp3_memory, mp3_length, mp3_frame_pcm_output, mp3_frame_info);
+  //get mp3 frame info without decoding PCM data
+  samples = mp3dec_decode_frame(mp3_decoder_working_area, (byte_t *)mp3_memory, mp3_length, 0, mp3_frame_info);
   if(samples==0) {
    break;
   }
@@ -107,6 +107,7 @@ struct mp3_info_t *read_mp3_info(byte_t *mp3_memory, dword_t mp3_length) {
 
   //move to next frame
   mp3_memory = (byte_t *) ((dword_t)mp3_memory+mp3_frame_info->frame_bytes);
+  mp3_length -= mp3_frame_info->frame_bytes;
   pcm_data_offset += (samples*2*mp3_frame_info->channels);
  }
 

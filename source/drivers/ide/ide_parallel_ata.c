@@ -23,7 +23,7 @@ void pata_select_sector_lba48(word_t base_port, dword_t sector, byte_t number_of
  pata_select_sector_lba28(base_port, (dword_t)sector, number_of_sectors);
 }
 
-byte_t pata_read(word_t base_port, dword_t sector, byte_t number_of_sectors, dword_t memory) {
+byte_t pata_read(word_t base_port, dword_t sector, byte_t number_of_sectors, byte_t *memory) {
  word_t *mem = (word_t *) memory;
  
  //drive must be already selected
@@ -55,7 +55,7 @@ byte_t pata_read(word_t base_port, dword_t sector, byte_t number_of_sectors, dwo
  return STATUS_GOOD;
 }
 
-byte_t pata_write(word_t base_port, dword_t sector, byte_t number_of_sectors, dword_t memory) {
+byte_t pata_write(word_t base_port, dword_t sector, byte_t number_of_sectors, byte_t *memory) {
  word_t *mem = (word_t *) memory;
  
  //drive must be already selected

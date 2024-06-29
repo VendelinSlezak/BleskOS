@@ -145,6 +145,7 @@ struct audio_file_t *process_audio_file(byte_t audio_file_type, byte_t *audio_fi
   audio_file_info->file_info = read_wav_info(audio_file_memory, audio_file_length);
 
   if(audio_file_info->file_info==STATUS_ERROR) {
+   free((dword_t)audio_file_info);
    return STATUS_ERROR;
   }
 
@@ -160,6 +161,7 @@ struct audio_file_t *process_audio_file(byte_t audio_file_type, byte_t *audio_fi
   audio_file_info->file_info = read_mp3_info(audio_file_memory, audio_file_length);
 
   if(audio_file_info->file_info==STATUS_ERROR) {
+   free((dword_t)audio_file_info);
    return STATUS_ERROR;
   }
 
