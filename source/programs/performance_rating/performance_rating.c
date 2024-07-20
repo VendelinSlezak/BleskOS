@@ -109,7 +109,7 @@ void performance_rating_run_task(dword_t task_number) {  // get time of 128 runs
   message_window("Running tasks...");
   redraw_screen();
   mouse_movement_x = screen_width - mouse_cursor_x - (MOUSE_CURSOR_WIDTH>>1);
-  mouse_movement_y = screen_height - mouse_cursor_y - (MOUSE_CURSOR_HEIGTH>>1);
+  mouse_movement_y = screen_height - mouse_cursor_y - (MOUSE_CURSOR_HEIGHT>>1);
   move_mouse_cursor(); // mouse need to be on expected position
   reset_timer();
 
@@ -121,7 +121,7 @@ void performance_rating_run_task(dword_t task_number) {  // get time of 128 runs
 
 void performance_rating_inspect_task(dword_t task_number) {  // to be sure what's going on
   mouse_movement_x = screen_width - mouse_cursor_x - (MOUSE_CURSOR_WIDTH>>1);
-  mouse_movement_y = screen_height - mouse_cursor_y - (MOUSE_CURSOR_HEIGTH>>1);
+  mouse_movement_y = screen_height - mouse_cursor_y - (MOUSE_CURSOR_HEIGHT>>1);
   move_mouse_cursor(); // mouse need to be on expected position
 
   for(PERFORMANCE_RATING_CURRENT_RUN=0; PERFORMANCE_RATING_CURRENT_RUN<PERFORMANCE_RATING_RUN_COUNT; PERFORMANCE_RATING_CURRENT_RUN++) {

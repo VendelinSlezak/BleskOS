@@ -56,6 +56,9 @@ enum {
 
 #define FILE_DIALOG_WIDTH_OF_CONNECTED_PARTITIONS 22*8
 
+#define FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE 10
+#define FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE*8
+
 struct folder_descriptor_t *file_dialog_folder_descriptor;
 struct file_descriptor_t *file_dialog_file_descriptor;
 byte_t *file_dialog_open_file_memory;

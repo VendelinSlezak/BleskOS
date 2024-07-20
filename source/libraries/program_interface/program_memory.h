@@ -46,4 +46,6 @@ word_t get_char_of_file_name(dword_t value_offset);
 void set_char_of_file_name(dword_t value_offset, dword_t value);
 void set_file_name_from_file_dialog(void);
 void add_file(word_t *file_name, byte_t device_type, byte_t device_number, byte_t partition, dword_t file_size, dword_t file_disk_pointer);
+void change_file_name_byte_string(byte_t *name);
+void change_file_name_word_string(word_t *name);
 void remove_file(dword_t file_number);

@@ -112,7 +112,7 @@ void internet_browser_redraw_webpage(dword_t webpage_mem) {
     //draw bottom border
     if(webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_BOTTOM_BORDER_SIZE]!=0) {
      if(webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_BOTTOM_BORDER_TYPE]==WEBPAGE_BORDER_TYPE_SOLID) {
-      internet_browser_calculate_draw_square(ib_draw_column, ib_draw_line+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_TOP_BORDER_SIZE]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGTH], webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_LEFT_BORDER_SIZE]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_WIDTH]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_RIGHT_BORDER_SIZE], webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_BOTTOM_BORDER_SIZE]);
+      internet_browser_calculate_draw_square(ib_draw_column, ib_draw_line+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_TOP_BORDER_SIZE]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGHT], webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_LEFT_BORDER_SIZE]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_WIDTH]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_RIGHT_BORDER_SIZE], webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_BOTTOM_BORDER_SIZE]);
       if(ib_square_height!=0) {
        webpage32 = (dword_t *) ((dword_t)webpage+WEBPAGE_COMMAND_DRAW_BOX_BYTE_OFFSET_BOTTOM_BORDER_COLOR);
        draw_full_square(ib_square_x, ib_square_y, ib_square_width, ib_square_height, *webpage32);
@@ -124,7 +124,7 @@ void internet_browser_redraw_webpage(dword_t webpage_mem) {
     //draw left border
     if(webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_LEFT_BORDER_SIZE]!=0) {
      if(webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_LEFT_BORDER_TYPE]==WEBPAGE_BORDER_TYPE_SOLID) {
-      internet_browser_calculate_draw_square(ib_draw_column, ib_draw_line, webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_LEFT_BORDER_SIZE], webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_TOP_BORDER_SIZE]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGTH]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_BOTTOM_BORDER_SIZE]);
+      internet_browser_calculate_draw_square(ib_draw_column, ib_draw_line, webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_LEFT_BORDER_SIZE], webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_TOP_BORDER_SIZE]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGHT]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_BOTTOM_BORDER_SIZE]);
       if(ib_square_height!=0) {
        webpage32 = (dword_t *) ((dword_t)webpage+WEBPAGE_COMMAND_DRAW_BOX_BYTE_OFFSET_LEFT_BORDER_COLOR);
        draw_full_square(ib_square_x, ib_square_y, ib_square_width, ib_square_height, *webpage32);
@@ -136,7 +136,7 @@ void internet_browser_redraw_webpage(dword_t webpage_mem) {
     //draw right border
     if(webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_RIGHT_BORDER_SIZE]!=0) {
      if(webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_RIGHT_BORDER_TYPE]==WEBPAGE_BORDER_TYPE_SOLID) {
-      internet_browser_calculate_draw_square(ib_draw_column+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_LEFT_BORDER_SIZE]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_WIDTH], ib_draw_line, webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_RIGHT_BORDER_SIZE], webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_TOP_BORDER_SIZE]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGTH]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_BOTTOM_BORDER_SIZE]);
+      internet_browser_calculate_draw_square(ib_draw_column+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_LEFT_BORDER_SIZE]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_WIDTH], ib_draw_line, webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_RIGHT_BORDER_SIZE], webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_TOP_BORDER_SIZE]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGHT]+webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_BOTTOM_BORDER_SIZE]);
       if(ib_square_height!=0) {
        webpage32 = (dword_t *) ((dword_t)webpage+WEBPAGE_COMMAND_DRAW_BOX_BYTE_OFFSET_RIGHT_BORDER_COLOR);
        draw_full_square(ib_square_x, ib_square_y, ib_square_width, ib_square_height, *webpage32);
@@ -150,7 +150,7 @@ void internet_browser_redraw_webpage(dword_t webpage_mem) {
     ib_draw_line += webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_TOP_BORDER_SIZE];
     
     //draw background
-    internet_browser_calculate_draw_square(ib_draw_column, ib_draw_line, webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_WIDTH], webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGTH]);
+    internet_browser_calculate_draw_square(ib_draw_column, ib_draw_line, webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_WIDTH], webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGHT]);
     if(ib_square_height!=0) {
      webpage32 = (dword_t *) ((dword_t)webpage+WEBPAGE_COMMAND_DRAW_BOX_BYTE_OFFSET_BACKGROUND_COLOR);
      if(*webpage32!=WEBPAGE_EMPTY_ENTRY_32) {
@@ -165,7 +165,7 @@ void internet_browser_redraw_webpage(dword_t webpage_mem) {
    }
    else if(*webpage==WEBPAGE_COMMAND_DRAW_BORDER_LINE) {
     if(webpage[WEBPAGE_COMMAND_DRAW_BORDER_LINE_OFFSET_BORDER_TYPE]==WEBPAGE_BORDER_TYPE_SOLID) {
-     internet_browser_calculate_draw_square(ib_draw_column, ib_draw_line, webpage[WEBPAGE_COMMAND_DRAW_BORDER_LINE_OFFSET_BORDER_WIDTH], webpage[WEBPAGE_COMMAND_DRAW_BORDER_LINE_OFFSET_BORDER_HEIGTH]);
+     internet_browser_calculate_draw_square(ib_draw_column, ib_draw_line, webpage[WEBPAGE_COMMAND_DRAW_BORDER_LINE_OFFSET_BORDER_WIDTH], webpage[WEBPAGE_COMMAND_DRAW_BORDER_LINE_OFFSET_BORDER_HEIGHT]);
      if(ib_square_height!=0) {
       webpage32 = (dword_t *) ((dword_t)webpage+WEBPAGE_COMMAND_DRAW_BORDER_LINE_BYTE_OFFSET_BORDER_COLOR);
       draw_full_square(ib_square_x, ib_square_y, ib_square_width, ib_square_height, *webpage32);

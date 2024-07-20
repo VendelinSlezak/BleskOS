@@ -35,8 +35,17 @@ byte_t file_dialog(byte_t type, byte_t *extensions) {
  while(1) {
   dword_t event = wait_for_event(file_dialog_event_interface);
 
+  //redraw file dialog
+  if(event==FILE_DIALOG_EVENT_REDRAW || event==EVENT_USB_DEVICE_CHANGE) {
+   redraw_file_dialog();
+   continue;
+  }
+
   //exit file dialog
   if(event==FILE_DIALOG_EVENT_EXIT_FILE_NOT_LOADED || event==FILE_DIALOG_EVENT_EXIT_FILE_SUCCESSFULLY_LOADED || event==FILE_DIALOG_EVENT_EXIT_FILE_SUCCESSFULLY_SAVED) {
+   if((dword_t)file_dialog_folder_descriptor!=0 && file_dialog_folder_descriptor->partition_number!=NO_PARTITION_SELECTED) {
+    file_dialog_folder_descriptor->selected_entry = FOLDER_NO_ENTRY_SELECTED; //deselect entry
+   }
    return event;
   }
 
@@ -45,15 +54,10 @@ byte_t file_dialog(byte_t type, byte_t *extensions) {
      && file_dialog_folder_descriptor->partition_number!=NO_PARTITION_SELECTED
      && mouse_click_button_state==MOUSE_CLICK
      && file_dialog_folder_descriptor->selected_entry!=FOLDER_NO_ENTRY_SELECTED
-     && get_mouse_cursor_click_board_value()<CLICK_ZONE_FILE_DIALOG_FIRST_ITEM) {
+     && get_mouse_cursor_click_board_value()==0) {
    file_dialog_folder_descriptor->selected_entry = FOLDER_NO_ENTRY_SELECTED;
    redraw_file_dialog();
    continue;
-  }
-
-  //redraw file dialog
-  if(event==FILE_DIALOG_EVENT_REDRAW || event==EVENT_USB_DEVICE_CHANGE) {
-   redraw_file_dialog();
   }
  }
 }
@@ -569,6 +573,7 @@ void file_dialog_change_view_window(void) {
    file_dialog_folder_descriptor->view_type = VIEW_FOLDER_LIST;
 
    //calculate first showed entry
+   file_dialog_number_of_lines_on_screen = (program_element_layout_areas_info[SECOND_AREA].height/10);
    file_dialog_folder_descriptor->first_showed_entry = 0;
    if(file_dialog_folder_descriptor->selected_entry!=FOLDER_NO_ENTRY_SELECTED && file_dialog_number_of_lines_on_screen<vfs_get_folder_number_of_files(file_dialog_folder_descriptor)) {
     if(file_dialog_folder_descriptor->first_showed_entry>file_dialog_folder_descriptor->selected_entry) {
@@ -584,6 +589,9 @@ void file_dialog_change_view_window(void) {
    file_dialog_folder_descriptor->view_type = VIEW_FOLDER_ICONS;
 
    //calculate first showed entry
+   file_dialog_number_of_columns_on_screen = ((program_element_layout_areas_info[SECOND_AREA].width-30)/(FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION+16));
+   file_dialog_number_of_lines_on_screen = ((program_element_layout_areas_info[SECOND_AREA].height-20)/(FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION+8+30+16));
+   file_dialog_number_of_items_on_screen = (file_dialog_number_of_columns_on_screen*file_dialog_number_of_lines_on_screen);
    file_dialog_folder_descriptor->first_showed_entry = 0;
    if(file_dialog_folder_descriptor->selected_entry!=FOLDER_NO_ENTRY_SELECTED && file_dialog_number_of_items_on_screen<vfs_get_folder_number_of_files(file_dialog_folder_descriptor)) {
     if(file_dialog_folder_descriptor->first_showed_entry>file_dialog_folder_descriptor->selected_entry) {
@@ -712,8 +720,7 @@ dword_t file_dialog_preview_window(void) {
   free((dword_t)image_file);
 
   if((dword_t)image==STATUS_ERROR) {
-   show_message_window("Error during decoding image");
-   wait(1000);
+   error_window("Error during decoding image");
   }
  }
 
@@ -741,30 +748,25 @@ dword_t file_dialog_preview_window(void) {
   program_element_layout_calculate_element_position(FIRST_AREA, ELEMENT_MIDDLE_ALIGNMENT, 600, 350);
 
   //recalculate image size to fit in 600x350 rectangle
+  image[IMAGE_INFO_WIDTH] = image[IMAGE_INFO_REAL_WIDTH];
+  image[IMAGE_INFO_HEIGHT] = image[IMAGE_INFO_REAL_HEIGHT];
+  
   if(image[IMAGE_INFO_REAL_WIDTH]>600) {
    image[IMAGE_INFO_WIDTH] = 600;
-   image[IMAGE_INFO_DRAW_WIDTH] = 600;
-   image[IMAGE_INFO_HEIGTH] = (image[IMAGE_INFO_REAL_HEIGHT]*600/image[IMAGE_INFO_REAL_WIDTH]);
-   image[IMAGE_INFO_DRAW_HEIGTH] = image[IMAGE_INFO_HEIGTH];
+   image[IMAGE_INFO_HEIGHT] = (image[IMAGE_INFO_REAL_HEIGHT]*600/image[IMAGE_INFO_REAL_WIDTH]);
+   image[IMAGE_INFO_DRAW_HEIGHT] = image[IMAGE_INFO_HEIGHT];
   }
-  else {
-   image[IMAGE_INFO_WIDTH] = image[IMAGE_INFO_REAL_WIDTH];
-   image[IMAGE_INFO_DRAW_WIDTH] = image[IMAGE_INFO_REAL_WIDTH];
-  }
+  image[IMAGE_INFO_DRAW_WIDTH] = image[IMAGE_INFO_WIDTH];
 
-  if(image[IMAGE_INFO_REAL_HEIGHT]>350) {
-   image[IMAGE_INFO_HEIGTH] = 350;
-   image[IMAGE_INFO_DRAW_HEIGTH] = 350;
-   image[IMAGE_INFO_WIDTH] = (image[IMAGE_INFO_REAL_WIDTH]*350/image[IMAGE_INFO_REAL_HEIGHT]);
+  if(image[IMAGE_INFO_HEIGHT]>350) {
+   image[IMAGE_INFO_WIDTH] = (image[IMAGE_INFO_WIDTH]*350/image[IMAGE_INFO_HEIGHT]);
    image[IMAGE_INFO_DRAW_WIDTH] = image[IMAGE_INFO_WIDTH];
+   image[IMAGE_INFO_HEIGHT] = 350;
   }
-  else {
-   image[IMAGE_INFO_HEIGTH] = image[IMAGE_INFO_REAL_HEIGHT];
-   image[IMAGE_INFO_DRAW_HEIGTH] = image[IMAGE_INFO_REAL_HEIGHT];
-  }
+  image[IMAGE_INFO_DRAW_HEIGHT] = image[IMAGE_INFO_HEIGHT];
 
   image[IMAGE_INFO_SCREEN_X] = element_x+((600-image[IMAGE_INFO_WIDTH])/2);
-  image[IMAGE_INFO_SCREEN_Y] = element_y+((350-image[IMAGE_INFO_HEIGTH])/2);
+  image[IMAGE_INFO_SCREEN_Y] = element_y+((350-image[IMAGE_INFO_HEIGHT])/2);
 
   //draw image
   draw_resized_image((dword_t)image);
@@ -977,8 +979,8 @@ void redraw_file_dialog(void) {
  program_element_layout_draw_background_of_area(SECOND_AREA, 0xFF6600);
 
  //draw up border
- draw_full_square(0, 0, screen_width, PROGRAM_INTERFACE_TOP_LINE_HEIGTH, 0x00C000);
- draw_straigth_line(0, PROGRAM_INTERFACE_TOP_LINE_HEIGTH, screen_width, BLACK);
+ draw_full_square(0, 0, screen_width, PROGRAM_INTERFACE_TOP_LINE_HEIGHT, 0x00C000);
+ draw_straigth_line(0, (PROGRAM_INTERFACE_TOP_LINE_HEIGHT-1), screen_width, BLACK);
  print("File dialog", 8, 6, BLACK);
  if(file_dialog_type==FILE_DIALOG_SAVE) {
   dword_t number_of_chars_in_extension = get_number_of_chars_in_ascii_string(file_dialog_extensions);
@@ -987,8 +989,8 @@ void redraw_file_dialog(void) {
  }
 
  //draw down border
- draw_full_square(0, screen_height-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH, screen_width, PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH, 0x00C000);
- draw_straigth_line(0, screen_height-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGTH, screen_width, BLACK);
+ draw_full_square(0, screen_height-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT, screen_width, PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT, 0x00C000);
+ draw_straigth_line(0, screen_height-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT, screen_width, BLACK);
  add_button_to_bottom_line_from_left("[esc] Back", CLICK_ZONE_FILE_DIALOG_BACK);
  if((dword_t)file_dialog_folder_descriptor!=0 && file_dialog_folder_descriptor->partition_number!=NO_PARTITION_SELECTED) {
   //if we are not in root folder, add button to go to previous folder
@@ -1177,8 +1179,6 @@ void redraw_file_dialog(void) {
   //DRAW ICONS
   else if(file_dialog_folder_descriptor->view_type==VIEW_FOLDER_ICONS) {
    //calculate how many items will be printed
-   #define FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE 10
-   #define FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION FILE_DIALOG_NUMBER_OF_CHARS_IN_ICON_LINE*8
    file_dialog_number_of_columns_on_screen = ((program_element_layout_areas_info[SECOND_AREA].width-30)/(FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION+16));
    file_dialog_number_of_lines_on_screen = ((program_element_layout_areas_info[SECOND_AREA].height-20)/(FILE_DIALOG_NUMBER_OF_PIXELS_IN_ICON_DIMENSION+8+30+16));
    file_dialog_number_of_items_on_screen = (file_dialog_number_of_columns_on_screen*file_dialog_number_of_lines_on_screen);

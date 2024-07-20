@@ -236,7 +236,7 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
    css_background_color = WEBPAGE_EMPTY_ENTRY_32;
    css_width = 0; css_height = 0;
    
-   html_tag_height_calculation_type = HTML_TAG_CSS_ENTRY_HEIGTH_CALCULATION_ADD;
+   html_tag_height_calculation_type = HTML_TAG_CSS_ENTRY_HEIGHT_CALCULATION_ADD;
    
    //ENDING TAG
    if(html[1]=='/') {
@@ -246,22 +246,22 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
     if(is_tag_equal((word_t *)html, "body")==STATUS_TRUE) {
      html_tag_css_list = (dword_t *) html_tag_css_list_mem;     
      if(ib_actual_line_width!=0) {
-      html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH] += ib_line_biggest_spacing;
+      html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT] += ib_line_biggest_spacing;
       if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_DRAW_BOX_MEM]!=0) {
        webpage16 = (word_t *) (html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_DRAW_BOX_MEM]);
-       webpage16[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGTH] = html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH];
+       webpage16[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGHT] = html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT];
       }
      }
      
      //if is page smaller than view, change height to view height
-     if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]<internet_browser_webpage_height) {
+     if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT]<internet_browser_webpage_height) {
       if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_DRAW_BOX_MEM]!=0) {
        webpage16 = (word_t *) (html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_DRAW_BOX_MEM]);
-       webpage16[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGTH] = internet_browser_webpage_height;
+       webpage16[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGHT] = internet_browser_webpage_height;
       }
      }
      
-     html_page_height += html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]; //save height of page
+     html_page_height += html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT]; //save height of page
      goto page_is_finished;
     }
     
@@ -313,18 +313,18 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
     
     //add height of last printed line to ending tag
     if(ib_actual_line_width!=0) {
-     html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH] += ib_line_biggest_spacing;
+     html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT] += ib_line_biggest_spacing;
      
      if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_DRAW_BOX_MEM]!=0) {
       webpage16 = (word_t *) (html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_DRAW_BOX_MEM]);
-      webpage16[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGTH] = html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH];
+      webpage16[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGHT] = html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT];
      }
     }
     
     //go to next line or new column
     if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_WHERE_TO_MOVE_AT_END]==HTML_TAG_CSS_ENTRY_MOVE_TO_NEW_LINE) {  
      //move to next line 
-     ib_draw_line = (html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_STARTING_LINE]+html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]+html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_TOP_AND_BOTTOM_SKIP_SIZE]);
+     ib_draw_line = (html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_STARTING_LINE]+html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT]+html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_TOP_AND_BOTTOM_SKIP_SIZE]);
       
      //change height of all tags except for last one that is ending now
      dword_t add_height = html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_BOTTOM_SKIP_SIZE];
@@ -334,18 +334,18 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
      for(int tag_entry=(html_tag_css_list_pointer-1); tag_entry>0; tag_entry--) {
       html_tag_css_list = (dword_t *) (html_tag_css_list_mem+(tag_entry-1)*HTML_TAG_CSS_ENTRY_SIZE);
     
-      if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH_CALCULATION_TYPE]==HTML_TAG_CSS_ENTRY_HEIGTH_CALCULATION_ADD) {
-       html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH] += add_height;
+      if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT_CALCULATION_TYPE]==HTML_TAG_CSS_ENTRY_HEIGHT_CALCULATION_ADD) {
+       html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT] += add_height;
      
        if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_DRAW_BOX_MEM]!=0) {
         webpage16 = (word_t *) (html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_DRAW_BOX_MEM]);
-        webpage16[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGTH] = html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH];
+        webpage16[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGHT] = html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT];
        }
       }
-      else if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH_CALCULATION_TYPE]==HTML_TAG_CSS_ENTRY_HEIGTH_CALCULATION_COMPARE) {
-       if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]<html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]) {
-        add_height = (html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]-html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]);
-        html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH] = html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH];
+      else if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT_CALCULATION_TYPE]==HTML_TAG_CSS_ENTRY_HEIGHT_CALCULATION_COMPARE) {
+       if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT]<html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT]) {
+        add_height = (html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT]-html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT]);
+        html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT] = html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT];
        }
        else {
         break;
@@ -379,18 +379,18 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
       for(int tag_entry=(html_tag_css_list_pointer-1); tag_entry>0; tag_entry--) {
        html_tag_css_list = (dword_t *) (html_tag_css_list_mem+(tag_entry-1)*HTML_TAG_CSS_ENTRY_SIZE);
     
-       if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH_CALCULATION_TYPE]==HTML_TAG_CSS_ENTRY_HEIGTH_CALCULATION_ADD) {
-        html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH] += add_height;
+       if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT_CALCULATION_TYPE]==HTML_TAG_CSS_ENTRY_HEIGHT_CALCULATION_ADD) {
+        html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT] += add_height;
       
         if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_DRAW_BOX_MEM]!=0) {
          webpage16 = (word_t *) (html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_DRAW_BOX_MEM]);
-         webpage16[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGTH] = html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH];
+         webpage16[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGHT] = html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT];
         }
        }
-       else if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH_CALCULATION_TYPE]==HTML_TAG_CSS_ENTRY_HEIGTH_CALCULATION_COMPARE) {
-        if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]<html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]) {
-         add_height = (html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]-html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]);
-         html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH] = html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH];
+       else if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT_CALCULATION_TYPE]==HTML_TAG_CSS_ENTRY_HEIGHT_CALCULATION_COMPARE) {
+        if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT]<html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT]) {
+         add_height = (html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT]-html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT]);
+         html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT] = html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT];
         }
         else {
          break;
@@ -586,7 +586,7 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
    }
    else if(is_tag_equal((word_t *)html, "tr")==STATUS_TRUE) { //<tr>
     ib_tag_new_line = STATUS_TRUE;
-    html_tag_height_calculation_type = HTML_TAG_CSS_ENTRY_HEIGTH_CALCULATION_COMPARE;
+    html_tag_height_calculation_type = HTML_TAG_CSS_ENTRY_HEIGHT_CALCULATION_COMPARE;
     
     //calculate width of every table cell
     html_num_of_tags_to_skip = 0;
@@ -882,7 +882,7 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
    else if(ib_tag_new_column==STATUS_TRUE) {
     html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_WHERE_TO_MOVE_AT_END] = HTML_TAG_CSS_ENTRY_MOVE_TO_NEW_COLUMN;
    }
-   html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH] = (css_padding_top+css_padding_bottom);
+   html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT] = (css_padding_top+css_padding_bottom);
    html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_WIDTH] = (ib_line_width-(css_margin_left+css_left_border_size+css_right_border_size+css_margin_right));
    html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_DRAW_BOX_MEM] = 0;
    html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_FONT_SIZE] = css_font_size;
@@ -896,7 +896,7 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
    html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_BOTTOM_SKIP_SIZE] = (css_padding_bottom+css_bottom_border_size+css_margin_bottom);
    html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_TOP_AND_BOTTOM_SKIP_SIZE] = (css_margin_top+css_top_border_size+css_bottom_border_size+css_margin_bottom);
    html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_LEFT_AND_RIGHT_SKIP_SIZE] = (css_margin_left+css_left_border_size+css_padding_left+css_padding_right+css_right_border_size+css_margin_right);
-   html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH_CALCULATION_TYPE] = html_tag_height_calculation_type;
+   html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT_CALCULATION_TYPE] = html_tag_height_calculation_type;
    html_tag_css_list_pointer++;
    
    if(is_tag_equal((word_t *)html, "body")==STATUS_TRUE) { //<body>
@@ -926,7 +926,7 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
     //draw box command
     webpage[0] = WEBPAGE_COMMAND_DRAW_BOX;
     webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_WIDTH] = html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_WIDTH];
-    webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGTH] = html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH];
+    webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGHT] = html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT];
     webpage32 = (dword_t *) ((dword_t)webpage+WEBPAGE_COMMAND_DRAW_BOX_BYTE_OFFSET_BACKGROUND_COLOR);
     *webpage32 = css_background_color;
     webpage[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_TOP_BORDER_TYPE] = css_top_border_type;
@@ -971,18 +971,18 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
     for(int tag_entry=tag_list_num_of_cycles; tag_entry>0; tag_entry--) {
      html_tag_css_list = (dword_t *) (html_tag_css_list_mem+(tag_entry-1)*HTML_TAG_CSS_ENTRY_SIZE);
     
-     if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH_CALCULATION_TYPE]==HTML_TAG_CSS_ENTRY_HEIGTH_CALCULATION_ADD) {
-      html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH] += add_height;
+     if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT_CALCULATION_TYPE]==HTML_TAG_CSS_ENTRY_HEIGHT_CALCULATION_ADD) {
+      html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT] += add_height;
      
       if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_DRAW_BOX_MEM]!=0) {
        webpage16 = (word_t *) (html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_DRAW_BOX_MEM]);
-       webpage16[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGTH] = html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH];
+       webpage16[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGHT] = html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT];
       }
      }
-     else if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH_CALCULATION_TYPE]==HTML_TAG_CSS_ENTRY_HEIGTH_CALCULATION_COMPARE) {
-      if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]<html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]) {
-       add_height = (html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]-html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]);
-       html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH] = html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH];
+     else if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT_CALCULATION_TYPE]==HTML_TAG_CSS_ENTRY_HEIGHT_CALCULATION_COMPARE) {
+      if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT]<html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT]) {
+       add_height = (html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT]-html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT]);
+       html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT] = html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT];
       }
       else {
        break;
@@ -1141,18 +1141,18 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
    for(int tag_entry=html_tag_css_list_pointer; tag_entry>0; tag_entry--) {
     html_tag_css_list = (dword_t *) (html_tag_css_list_mem+(tag_entry-1)*HTML_TAG_CSS_ENTRY_SIZE);
     
-    if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH_CALCULATION_TYPE]==HTML_TAG_CSS_ENTRY_HEIGTH_CALCULATION_ADD) {
-     html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH] += add_height;
+    if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT_CALCULATION_TYPE]==HTML_TAG_CSS_ENTRY_HEIGHT_CALCULATION_ADD) {
+     html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT] += add_height;
      
      if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_DRAW_BOX_MEM]!=0) {
       webpage16 = (word_t *) (html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_DRAW_BOX_MEM]);
-      webpage16[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGTH] = html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH];
+      webpage16[WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGHT] = html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT];
      }
     }
-    else if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH_CALCULATION_TYPE]==HTML_TAG_CSS_ENTRY_HEIGTH_CALCULATION_COMPARE) {
-     if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]<html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]) {
-      add_height = (html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]-html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH]);
-      html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH] = html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGTH];
+    else if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT_CALCULATION_TYPE]==HTML_TAG_CSS_ENTRY_HEIGHT_CALCULATION_COMPARE) {
+     if(html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT]<html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT]) {
+      add_height = (html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT]-html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT]);
+      html_tag_css_list[HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT] = html_tag_css_list[HTML_TAG_CSS_ENTRY_NUM_OF_ENTRIES+HTML_TAG_CSS_ENTRY_OFFSET_HEIGHT];
      }
      else {
       break;

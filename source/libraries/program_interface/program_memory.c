@@ -97,6 +97,24 @@ void add_file(word_t *file_name, byte_t device_type, byte_t device_number, byte_
 
 }
 
+void change_file_name_byte_string(byte_t *name) {
+ for(dword_t i=0; i<20; i++) {
+  set_char_of_file_name(i, name[i]);
+  if(name[i]==0) {
+   break;
+  }
+ }
+}
+
+void change_file_name_word_string(word_t *name) {
+ for(dword_t i=0; i<20; i++) {
+  set_char_of_file_name(i, name[i]);
+  if(name[i]==0) {
+   break;
+  }
+ }
+}
+
 void remove_file(dword_t file_number) {
  if(file_number==10) {
   clear_memory(program_interface_memory_pointer+10*256, 256);

@@ -106,7 +106,7 @@ void initalize_graphic(void) {
  fill_second_stack = malloc((screen_width*2+screen_height*2)*32+8);
 
  //allocate memory for mouse cursor background
- mouse_cursor_background = malloc(MOUSE_CURSOR_WIDTH*MOUSE_CURSOR_HEIGTH*4);
+ mouse_cursor_background = malloc(MOUSE_CURSOR_WIDTH*MOUSE_CURSOR_HEIGHT*4);
 
  //log
  log("\n\nGRAPHIC MODE INFO\nLinear frame buffer: ");
@@ -297,7 +297,7 @@ void redraw_part_of_screen(dword_t x, dword_t y, dword_t width, dword_t height) 
  }
  
  //redraw part of screen
- if((mouse_cursor_x+MOUSE_CURSOR_WIDTH)<x && mouse_cursor_x>(x+width) && (mouse_cursor_y+MOUSE_CURSOR_HEIGTH)<y && mouse_cursor_y>(y+height)) { //mouse is not on redrawed part of screen
+ if((mouse_cursor_x+MOUSE_CURSOR_WIDTH)<x && mouse_cursor_x>(x+width) && (mouse_cursor_y+MOUSE_CURSOR_HEIGHT)<y && mouse_cursor_y>(y+height)) { //mouse is not on redrawed part of screen
   (*redraw_part_of_framebuffer)(x, y, width, height);
  }
  else { //mouse is on redrawed part of screen
@@ -312,8 +312,8 @@ void add_mouse_to_screen_double_buffer(void) {
  dword_t *screen;
  dword_t first_line_pixel_pointer_start_value = ((dword_t)screen_double_buffer_memory_pointer + (mouse_cursor_y*screen_double_buffer_bytes_per_line) + (mouse_cursor_x*4));
  dword_t first_line_pixel_pointer = first_line_pixel_pointer_start_value;
- dword_t mouse_height = MOUSE_CURSOR_HEIGTH;
- if((mouse_cursor_y+MOUSE_CURSOR_HEIGTH)>screen_height) {
+ dword_t mouse_height = MOUSE_CURSOR_HEIGHT;
+ if((mouse_cursor_y+MOUSE_CURSOR_HEIGHT)>screen_height) {
   mouse_height = (screen_height-mouse_cursor_y);
  }
  dword_t mouse_width = MOUSE_CURSOR_WIDTH;
@@ -354,8 +354,8 @@ void add_mouse_to_screen_double_buffer(void) {
 
 void remove_mouse_from_screen_double_buffer(void) {
  //initalize variables
- dword_t mouse_height = MOUSE_CURSOR_HEIGTH;
- if((mouse_cursor_y+MOUSE_CURSOR_HEIGTH)>screen_height) {
+ dword_t mouse_height = MOUSE_CURSOR_HEIGHT;
+ if((mouse_cursor_y+MOUSE_CURSOR_HEIGHT)>screen_height) {
   mouse_height = (screen_height-mouse_cursor_y);
  }
  dword_t mouse_width = MOUSE_CURSOR_WIDTH;

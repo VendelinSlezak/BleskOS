@@ -28,7 +28,7 @@
 
 #define WEBPAGE_COMMAND_DRAW_BOX 0xFFF5 // 0xFFF5 / width / height // background color / top border type / top border size // top border color / bottom border type / bottom border size // bottom border color / left border type / left border size // left border color / right border type / right border size // right border color
 #define WEBPAGE_COMMAND_DRAW_BOX_OFFSET_WIDTH 1
-#define WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGTH 2
+#define WEBPAGE_COMMAND_DRAW_BOX_OFFSET_HEIGHT 2
 #define WEBPAGE_COMMAND_DRAW_BOX_BYTE_OFFSET_BACKGROUND_COLOR 6
 #define WEBPAGE_COMMAND_DRAW_BOX_OFFSET_TOP_BORDER_TYPE 5
 #define WEBPAGE_COMMAND_DRAW_BOX_OFFSET_TOP_BORDER_SIZE 6
@@ -46,7 +46,7 @@
 #define WEBPAGE_COMMAND_DRAW_BORDER_LINE 0xFFF6 // 0xFFF6 / border type / border width / border height // border color
 #define WEBPAGE_COMMAND_DRAW_BORDER_LINE_OFFSET_BORDER_TYPE 1
 #define WEBPAGE_COMMAND_DRAW_BORDER_LINE_OFFSET_BORDER_WIDTH 2
-#define WEBPAGE_COMMAND_DRAW_BORDER_LINE_OFFSET_BORDER_HEIGTH 3
+#define WEBPAGE_COMMAND_DRAW_BORDER_LINE_OFFSET_BORDER_HEIGHT 3
 #define WEBPAGE_COMMAND_DRAW_BORDER_LINE_BYTE_OFFSET_BORDER_COLOR 8
 
 #define WEBPAGE_COMMAND_DRAW_IMAGE 0xFFF7

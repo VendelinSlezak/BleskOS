@@ -363,7 +363,7 @@ struct folder_descriptor_t *vfs_create_folder_path_structure(byte_t partition_nu
 
  //fill structure
  folder_path_structure->partition_number = partition_number;
- folder_path_structure->view_type = VIEW_FOLDER_LIST;
+ folder_path_structure->view_type = VIEW_FOLDER_ICONS;
  folder_path_structure->selected_entry = FOLDER_NO_ENTRY_SELECTED;
  folder_path_structure->path_folder_locations[0] = ROOT_FOLDER;
  folder_path_structure->folder_number_in_array_of_loaded_folders = root_folder_aolf_number;
@@ -693,6 +693,7 @@ byte_t *vfs_read_file(struct folder_descriptor_t *folder_path_structure, dword_t
 
  //request for reading nonexisting entry
  if(number_of_entry>=vfs_get_folder_number_of_files(folder_path_structure)) {
+  log("\nVFS: request for nonexisting entry");
   return STATUS_ERROR;
  }
 
@@ -708,6 +709,7 @@ byte_t *vfs_read_file(struct folder_descriptor_t *folder_path_structure, dword_t
   return read_file(folder_path_structure->partition_number, folder[number_of_entry].file_location, folder[number_of_entry].file_size_in_bytes);
  }
  else {
+  log("\nVFS: request for reading not normal file");
   return STATUS_ERROR; //not file entry
  }
 }
@@ -826,6 +828,42 @@ byte_t vfs_create_file(struct folder_descriptor_t *folder_path_structure, word_t
  return STATUS_GOOD;
 }
 
+byte_t vfs_create_file_by_file_descriptor(struct folder_descriptor_t *folder_path_structure, struct file_descriptor_t file_descriptor, byte_t *file_memory) {
+ if(folder_path_structure->partition_number==NO_PARTITION_SELECTED) {
+  log("\nVFS: device was unplugged");
+  return STATUS_ERROR;
+ }
+
+ //create new file
+ dword_t file_location = create_file(folder_path_structure->partition_number, file_memory, file_descriptor.file_size_in_bytes);
+ if(file_location==STATUS_ERROR) {
+  log("\nVFS: error during creating file");
+  return STATUS_ERROR;
+ }
+ file_descriptor.file_location = file_location;
+
+ //create new entry in folder
+ array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].memory_of_entries = (byte_t *) realloc((dword_t)(vfs_get_folder_data_pointer(folder_path_structure)), sizeof(struct file_descriptor_t)*(vfs_get_folder_number_of_files(folder_path_structure)+1));
+ copy_memory((dword_t)(&file_descriptor), ((dword_t)vfs_get_folder_data_pointer(folder_path_structure)+(sizeof(struct file_descriptor_t)*vfs_get_folder_number_of_files(folder_path_structure))), sizeof(struct file_descriptor_t));
+ array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].number_of_files++;
+
+ //save changes to folder
+ if(vfs_save_folder(folder_path_structure)==STATUS_ERROR) {
+  //erase new entry
+  array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].number_of_files--;
+  array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].memory_of_entries = (byte_t *) realloc((dword_t)(vfs_get_folder_data_pointer(folder_path_structure)), sizeof(struct file_descriptor_t)*(vfs_get_folder_number_of_files(folder_path_structure)));
+
+  //try to delete created file, it do not matter if it will work or not
+  delete_file(folder_path_structure->partition_number, file_location);
+
+  log("\nVFS: error with creating new file");
+  return STATUS_ERROR;
+ }
+
+ //new entry was successfully created
+ return STATUS_GOOD;
+}
+
 byte_t vfs_delete_file(struct folder_descriptor_t *folder_path_structure, dword_t number_of_entry) {
  if(folder_path_structure->partition_number==NO_PARTITION_SELECTED) {
   log("\nVFS: device was unplugged");
@@ -860,7 +898,7 @@ byte_t vfs_delete_file(struct folder_descriptor_t *folder_path_structure, dword_
 byte_t *vfs_read_file_show_progress(struct folder_descriptor_t *folder_path_structure, dword_t number_of_entry) {
  //load file
  create_task(dofs_show_progress_in_reading, TASK_TYPE_PERIODIC_INTERRUPT, 100);
- byte_t *file_memory = vfs_read_file(file_dialog_folder_descriptor, file_dialog_folder_descriptor->selected_entry);
+ byte_t *file_memory = vfs_read_file(folder_path_structure, folder_path_structure->selected_entry);
  destroy_task(dofs_show_progress_in_reading);
  
  if(file_memory==STATUS_ERROR) {
@@ -879,7 +917,7 @@ byte_t *vfs_read_file_show_progress(struct folder_descriptor_t *folder_path_stru
 byte_t vfs_save_file_show_progress(struct folder_descriptor_t *folder_path_structure, dword_t number_of_entry, byte_t *file_memory, dword_t file_size_in_bytes) {
  //load file
  create_task(dofs_show_progress_in_writing, TASK_TYPE_PERIODIC_INTERRUPT, 100);
- byte_t status = vfs_save_file(file_dialog_folder_descriptor, number_of_entry, file_memory, file_size_in_bytes);
+ byte_t status = vfs_save_file(folder_path_structure, number_of_entry, file_memory, file_size_in_bytes);
  destroy_task(dofs_show_progress_in_writing);
  
  if(status==STATUS_ERROR) {
@@ -898,7 +936,7 @@ byte_t vfs_save_file_show_progress(struct folder_descriptor_t *folder_path_struc
 byte_t vfs_create_file_show_progress(struct folder_descriptor_t *folder_path_structure, word_t *name, byte_t *extension, byte_t *file_memory, dword_t file_size_in_bytes) {
  //load file
  create_task(dofs_show_progress_in_writing, TASK_TYPE_PERIODIC_INTERRUPT, 100);
- byte_t status = vfs_create_file(file_dialog_folder_descriptor, name, extension, file_memory, file_size_in_bytes);
+ byte_t status = vfs_create_file(folder_path_structure, name, extension, file_memory, file_size_in_bytes);
  destroy_task(dofs_show_progress_in_writing);
  
  if(status==STATUS_ERROR) {
@@ -907,7 +945,26 @@ byte_t vfs_create_file_show_progress(struct folder_descriptor_t *folder_path_str
    wait(1000);
   }
   else {
-   error_window("Error during rewriting file");
+   error_window("Error during creating file");
+  }
+ }
+
+ return status;
+}
+
+byte_t vfs_create_file_by_file_descriptor_show_progress(struct folder_descriptor_t *folder_path_structure, struct file_descriptor_t file_descriptor, byte_t *file_memory) {
+ //load file
+ create_task(dofs_show_progress_in_writing, TASK_TYPE_PERIODIC_INTERRUPT, 100);
+ byte_t status = vfs_create_file_by_file_descriptor(folder_path_structure, file_descriptor, file_memory);
+ destroy_task(dofs_show_progress_in_writing);
+ 
+ if(status==STATUS_ERROR) {
+  if(keyboard_code_of_pressed_key==KEY_ESC) {
+   show_message_window("User cancelled writing");
+   wait(1000);
+  }
+  else {
+   error_window("Error during creating file");
   }
  }
 
