@@ -87,17 +87,17 @@ void draw_text_editor(void) {
 
   //add text area
   if(text_editor_state==TEXT_EDITOR_STATE_TEXT) {
-   text_area_info[TEXT_AREA_INFO_HEIGTH]=screen_height-41;
+   text_area_info[TEXT_AREA_INFO_HEIGHT]=screen_height-41;
   }
   else if(text_editor_state==TEXT_EDITOR_STATE_FIND) {
-   text_area_info[TEXT_AREA_INFO_HEIGTH]=screen_height-41-20;
+   text_area_info[TEXT_AREA_INFO_HEIGHT]=screen_height-41-20;
   }
   else if(text_editor_state==TEXT_EDITOR_STATE_FIND_AND_REPLACE) {
-   text_area_info[TEXT_AREA_INFO_HEIGTH]=screen_height-41-20-20;
+   text_area_info[TEXT_AREA_INFO_HEIGHT]=screen_height-41-20-20;
   }
-  text_area_info[TEXT_AREA_INFO_REAL_HEIGTH]=text_area_info[TEXT_AREA_INFO_HEIGTH];
+  text_area_info[TEXT_AREA_INFO_REAL_HEIGHT]=text_area_info[TEXT_AREA_INFO_HEIGHT];
   draw_text_area(text_area_info_memory);
-  add_zone_to_click_board(0, 21, screen_width, text_area_info[TEXT_AREA_INFO_REAL_HEIGTH], TEXT_EDITOR_CLICK_ZONE_TEXT_AREA);
+  add_zone_to_click_board(0, 21, screen_width, text_area_info[TEXT_AREA_INFO_REAL_HEIGHT], TEXT_EDITOR_CLICK_ZONE_TEXT_AREA);
   program_interface_add_text_area(TEXT_EDITOR_CLICK_ZONE_TEXT_AREA, text_area_info_memory);
   program_interface_element_with_focus = 0; //set focus on main text area
 

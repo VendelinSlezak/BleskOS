@@ -326,11 +326,11 @@ void program_interface_process_mouse_event(void) {
     dword_t *text_area_info = (dword_t *) (element[2]);
 
     //find if this is not click on scrollbar
-    if(text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE]!=0 && is_mouse_in_zone(text_area_info[TEXT_AREA_INFO_Y], text_area_info[TEXT_AREA_INFO_Y]+text_area_info[TEXT_AREA_INFO_REAL_HEIGTH], text_area_info[TEXT_AREA_INFO_X]+text_area_info[TEXT_AREA_INFO_WIDTH], text_area_info[TEXT_AREA_INFO_X]+text_area_info[TEXT_AREA_INFO_REAL_WIDTH])==STATUS_TRUE) {
+    if(text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE]!=0 && is_mouse_in_zone(text_area_info[TEXT_AREA_INFO_Y], text_area_info[TEXT_AREA_INFO_Y]+text_area_info[TEXT_AREA_INFO_REAL_HEIGHT], text_area_info[TEXT_AREA_INFO_X]+text_area_info[TEXT_AREA_INFO_WIDTH], text_area_info[TEXT_AREA_INFO_X]+text_area_info[TEXT_AREA_INFO_REAL_WIDTH])==STATUS_TRUE) {
      program_interface_text_area_selected_scrollbar = ELEMENT_VERTICAL_SCROLLBAR;
      program_interface_text_area_info_memory = element[2];
     }
-    else if(text_area_info[TEXT_AREA_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE]!=0 && is_mouse_in_zone(text_area_info[TEXT_AREA_INFO_Y]+text_area_info[TEXT_AREA_INFO_HEIGTH], text_area_info[TEXT_AREA_INFO_Y]+text_area_info[TEXT_AREA_INFO_REAL_HEIGTH], text_area_info[TEXT_AREA_INFO_X], text_area_info[TEXT_AREA_INFO_X]+text_area_info[TEXT_AREA_INFO_WIDTH])==STATUS_TRUE) {
+    else if(text_area_info[TEXT_AREA_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE]!=0 && is_mouse_in_zone(text_area_info[TEXT_AREA_INFO_Y]+text_area_info[TEXT_AREA_INFO_HEIGHT], text_area_info[TEXT_AREA_INFO_Y]+text_area_info[TEXT_AREA_INFO_REAL_HEIGHT], text_area_info[TEXT_AREA_INFO_X], text_area_info[TEXT_AREA_INFO_X]+text_area_info[TEXT_AREA_INFO_WIDTH])==STATUS_TRUE) {
      program_interface_text_area_selected_scrollbar = ELEMENT_HORIZONTAL_SCROLLBAR;
      program_interface_text_area_info_memory = element[2];
     }
@@ -355,15 +355,15 @@ void program_interface_process_mouse_event(void) {
     //calculate actual rider position
     dword_t movement = (mouse_cursor_y_dnd-mouse_cursor_y_previous_dnd);
     text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION] += movement;
-    if(movement<0x80000000 && text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION]>(text_area_info[TEXT_AREA_INFO_REAL_HEIGTH]-text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE])) {
-     text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION] = (text_area_info[TEXT_AREA_INFO_REAL_HEIGTH]-text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE]);
+    if(movement<0x80000000 && text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION]>(text_area_info[TEXT_AREA_INFO_REAL_HEIGHT]-text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE])) {
+     text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION] = (text_area_info[TEXT_AREA_INFO_REAL_HEIGHT]-text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE]);
     }
     else if(text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION]>0x80000000) {
      text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION] = 0;
     }
 
     //calculate change of first show line in text area
-    text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE] = get_scrollbar_rider_value(text_area_info[TEXT_AREA_INFO_REAL_HEIGTH], text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE], text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION], text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10, text_area_info[TEXT_AREA_INFO_HEIGTH]);
+    text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE] = get_scrollbar_rider_value(text_area_info[TEXT_AREA_INFO_REAL_HEIGHT], text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE], text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION], text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10, text_area_info[TEXT_AREA_INFO_HEIGHT]);
 
     //redraw
     draw_text_area(program_interface_text_area_info_memory);

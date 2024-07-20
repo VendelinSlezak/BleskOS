@@ -25,7 +25,7 @@ void initalize_screenshooter(void) {
  screenshot_buffer_image_original_x = (screen_x_center-(screenshot_buffer_image_original_width/2));
  screenshot_buffer_image_original_y = (screen_y_center-(screenshot_buffer_image_original_height/2));
  screenshoot_image_info[IMAGE_INFO_WIDTH] = screenshot_buffer_image_original_width;
- screenshoot_image_info[IMAGE_INFO_HEIGTH] = screenshot_buffer_image_original_height;
+ screenshoot_image_info[IMAGE_INFO_HEIGHT] = screenshot_buffer_image_original_height;
  screenshoot_image_info[IMAGE_INFO_SCREEN_X] = screenshot_buffer_image_original_x;
  screenshoot_image_info[IMAGE_INFO_SCREEN_Y] = screenshot_buffer_image_original_y;
  screenshot_was_made = STATUS_FALSE;
@@ -67,7 +67,7 @@ void screenshooter(void) {
    screenshoot_image_info[IMAGE_INFO_SCREEN_X] = 0;
    screenshoot_image_info[IMAGE_INFO_SCREEN_Y] = 0;
    screenshoot_image_info[IMAGE_INFO_WIDTH] = screenshoot_image_info[IMAGE_INFO_REAL_WIDTH];
-   screenshoot_image_info[IMAGE_INFO_HEIGTH] = screenshoot_image_info[IMAGE_INFO_REAL_HEIGHT];
+   screenshoot_image_info[IMAGE_INFO_HEIGHT] = screenshoot_image_info[IMAGE_INFO_REAL_HEIGHT];
    draw_image(screenshoot_image_info_mem);
    redraw_screen();
    mouse_click_button_state = NO_CLICK;
@@ -79,7 +79,7 @@ void screenshooter(void) {
 
     if(keyboard_code_of_pressed_key==KEY_ESC) {
      screenshoot_image_info[IMAGE_INFO_WIDTH] = screenshot_buffer_image_original_width;
-     screenshoot_image_info[IMAGE_INFO_HEIGTH] = screenshot_buffer_image_original_height;
+     screenshoot_image_info[IMAGE_INFO_HEIGHT] = screenshot_buffer_image_original_height;
      screenshoot_image_info[IMAGE_INFO_SCREEN_X] = screenshot_buffer_image_original_x;
      screenshoot_image_info[IMAGE_INFO_SCREEN_Y] = screenshot_buffer_image_original_y;
      break;
@@ -147,19 +147,19 @@ void screenshooter(void) {
     cropped_image_info[IMAGE_INFO_SCREEN_X] = (screen_x_center-(screenshot_crop_width/2));
    }
    cropped_image_info[IMAGE_INFO_REAL_HEIGHT] = screenshot_crop_height;
-   cropped_image_info[IMAGE_INFO_DRAW_HEIGTH] = screenshot_crop_height;
+   cropped_image_info[IMAGE_INFO_DRAW_HEIGHT] = screenshot_crop_height;
    if(screenshot_crop_height>screenshot_buffer_image_original_height) {
-    cropped_image_info[IMAGE_INFO_HEIGTH] = screenshot_buffer_image_original_height;
+    cropped_image_info[IMAGE_INFO_HEIGHT] = screenshot_buffer_image_original_height;
     cropped_image_info[IMAGE_INFO_SCREEN_Y] = screenshot_buffer_image_original_y;
    }
    else {
-    cropped_image_info[IMAGE_INFO_HEIGTH] = screenshot_crop_height;
+    cropped_image_info[IMAGE_INFO_HEIGHT] = screenshot_crop_height;
     cropped_image_info[IMAGE_INFO_SCREEN_Y] = (screen_y_center-(screenshot_crop_height/2));
    }
 
    //redraw screen
    screenshoot_image_info[IMAGE_INFO_WIDTH] = (screen_width/15*13);
-   screenshoot_image_info[IMAGE_INFO_HEIGTH] = screenshot_buffer_image_original_height;
+   screenshoot_image_info[IMAGE_INFO_HEIGHT] = screenshot_buffer_image_original_height;
    screenshoot_image_info[IMAGE_INFO_SCREEN_X] = screenshot_buffer_image_original_x;
    screenshoot_image_info[IMAGE_INFO_SCREEN_Y] = screenshot_buffer_image_original_y;
    screenshot_is_cropped = STATUS_TRUE;
@@ -194,7 +194,7 @@ void redraw_screenshooter(void) {
   image_info = (dword_t *)(cropped_image_info_mem);
  }
  draw_resized_image((dword_t)image_info);
- draw_empty_square(image_info[IMAGE_INFO_SCREEN_X]-1, image_info[IMAGE_INFO_SCREEN_Y]-1, image_info[IMAGE_INFO_WIDTH]+2, image_info[IMAGE_INFO_HEIGTH]+2, BLACK);
+ draw_empty_square(image_info[IMAGE_INFO_SCREEN_X]-1, image_info[IMAGE_INFO_SCREEN_Y]-1, image_info[IMAGE_INFO_WIDTH]+2, image_info[IMAGE_INFO_HEIGHT]+2, BLACK);
  if(screen_width>=900) {
   draw_button_with_click_zone("[esc] Back", 20, screen_height-40, 200, 20, SCREENSHOTER_CLICK_ZONE_BACK);
   draw_button_with_click_zone("[F2] Save screenshot", 20+200+20, screen_height-40, 200, 20, SCREENSHOTER_CLICK_ZONE_SAVE);

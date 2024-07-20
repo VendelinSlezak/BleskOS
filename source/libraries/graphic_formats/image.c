@@ -177,11 +177,11 @@ dword_t create_image(dword_t width, dword_t height) {
  image_info[IMAGE_INFO_REAL_WIDTH] = width;
  image_info[IMAGE_INFO_REAL_HEIGHT] = height;
  image_info[IMAGE_INFO_WIDTH] = width;
- image_info[IMAGE_INFO_HEIGTH] = height;
+ image_info[IMAGE_INFO_HEIGHT] = height;
  image_info[IMAGE_INFO_DRAW_X] = 0;
  image_info[IMAGE_INFO_DRAW_Y] = 0;
  image_info[IMAGE_INFO_DRAW_WIDTH] = width;
- image_info[IMAGE_INFO_DRAW_HEIGTH] = height;
+ image_info[IMAGE_INFO_DRAW_HEIGHT] = height;
  image_info[IMAGE_INFO_SCREEN_X] = 0;
  image_info[IMAGE_INFO_SCREEN_Y] = 0;
  image_info[IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE] = 0;
@@ -204,14 +204,14 @@ void draw_image(dword_t image_info_mem) {
  dword_t *image_info = (dword_t *) image_info_mem;
  
  //draw image
- copy_raw_image_data((image_info_mem+IMAGE_SIZE_OF_INFO_IN_BYTES), image_info[IMAGE_INFO_REAL_WIDTH], image_info[IMAGE_INFO_DRAW_X], image_info[IMAGE_INFO_DRAW_Y], image_info[IMAGE_INFO_DRAW_WIDTH], image_info[IMAGE_INFO_DRAW_HEIGTH], (dword_t)screen_double_buffer_memory_pointer, screen_width, image_info[IMAGE_INFO_SCREEN_X], image_info[IMAGE_INFO_SCREEN_Y]);
+ copy_raw_image_data((image_info_mem+IMAGE_SIZE_OF_INFO_IN_BYTES), image_info[IMAGE_INFO_REAL_WIDTH], image_info[IMAGE_INFO_DRAW_X], image_info[IMAGE_INFO_DRAW_Y], image_info[IMAGE_INFO_DRAW_WIDTH], image_info[IMAGE_INFO_DRAW_HEIGHT], (dword_t)screen_double_buffer_memory_pointer, screen_width, image_info[IMAGE_INFO_SCREEN_X], image_info[IMAGE_INFO_SCREEN_Y]);
 
  //draw scrollbars
  if(image_info[IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE]>0) {
-  draw_vertical_scrollbar(image_info[IMAGE_INFO_SCREEN_X]+image_info[IMAGE_INFO_DRAW_WIDTH], image_info[IMAGE_INFO_SCREEN_Y], image_info[IMAGE_INFO_DRAW_HEIGTH], image_info[IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION], image_info[IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE]);
+  draw_vertical_scrollbar(image_info[IMAGE_INFO_SCREEN_X]+image_info[IMAGE_INFO_DRAW_WIDTH], image_info[IMAGE_INFO_SCREEN_Y], image_info[IMAGE_INFO_DRAW_HEIGHT], image_info[IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION], image_info[IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE]);
  }
  if(image_info[IMAGE_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE]>0) {
-  draw_horizontal_scrollbar(image_info[IMAGE_INFO_SCREEN_X], image_info[IMAGE_INFO_SCREEN_Y]+image_info[IMAGE_INFO_DRAW_HEIGTH], image_info[IMAGE_INFO_DRAW_WIDTH], image_info[IMAGE_INFO_HORIZONTAL_SCROLLBAR_RIDER_POSITION], image_info[IMAGE_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE]);
+  draw_horizontal_scrollbar(image_info[IMAGE_INFO_SCREEN_X], image_info[IMAGE_INFO_SCREEN_Y]+image_info[IMAGE_INFO_DRAW_HEIGHT], image_info[IMAGE_INFO_DRAW_WIDTH], image_info[IMAGE_INFO_HORIZONTAL_SCROLLBAR_RIDER_POSITION], image_info[IMAGE_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE]);
  }
 }
 
@@ -219,14 +219,14 @@ void draw_resized_image(dword_t image_info_mem) {
  dword_t *image_info = (dword_t *) image_info_mem;
  
  //draw image
- copy_and_resize_raw_image_data((image_info_mem+IMAGE_SIZE_OF_INFO_IN_BYTES), image_info[IMAGE_INFO_REAL_WIDTH], image_info[IMAGE_INFO_REAL_HEIGHT], image_info[IMAGE_INFO_WIDTH], image_info[IMAGE_INFO_HEIGTH], image_info[IMAGE_INFO_DRAW_X], image_info[IMAGE_INFO_DRAW_Y], image_info[IMAGE_INFO_DRAW_WIDTH], image_info[IMAGE_INFO_DRAW_HEIGTH], (dword_t)screen_double_buffer_memory_pointer, screen_width, image_info[IMAGE_INFO_SCREEN_X], image_info[IMAGE_INFO_SCREEN_Y]);
+ copy_and_resize_raw_image_data((image_info_mem+IMAGE_SIZE_OF_INFO_IN_BYTES), image_info[IMAGE_INFO_REAL_WIDTH], image_info[IMAGE_INFO_REAL_HEIGHT], image_info[IMAGE_INFO_WIDTH], image_info[IMAGE_INFO_HEIGHT], image_info[IMAGE_INFO_DRAW_X], image_info[IMAGE_INFO_DRAW_Y], image_info[IMAGE_INFO_DRAW_WIDTH], image_info[IMAGE_INFO_DRAW_HEIGHT], (dword_t)screen_double_buffer_memory_pointer, screen_width, image_info[IMAGE_INFO_SCREEN_X], image_info[IMAGE_INFO_SCREEN_Y]);
 
  //draw scrollbars
  if(image_info[IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE]>0) {
-  draw_vertical_scrollbar(image_info[IMAGE_INFO_SCREEN_X]+image_info[IMAGE_INFO_DRAW_WIDTH], image_info[IMAGE_INFO_SCREEN_Y], image_info[IMAGE_INFO_DRAW_HEIGTH], image_info[IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION], image_info[IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE]);
+  draw_vertical_scrollbar(image_info[IMAGE_INFO_SCREEN_X]+image_info[IMAGE_INFO_DRAW_WIDTH], image_info[IMAGE_INFO_SCREEN_Y], image_info[IMAGE_INFO_DRAW_HEIGHT], image_info[IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION], image_info[IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE]);
  }
  if(image_info[IMAGE_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE]>0) {
-  draw_horizontal_scrollbar(image_info[IMAGE_INFO_SCREEN_X], image_info[IMAGE_INFO_SCREEN_Y]+image_info[IMAGE_INFO_DRAW_HEIGTH], image_info[IMAGE_INFO_DRAW_WIDTH], image_info[IMAGE_INFO_HORIZONTAL_SCROLLBAR_RIDER_POSITION], image_info[IMAGE_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE]);
+  draw_horizontal_scrollbar(image_info[IMAGE_INFO_SCREEN_X], image_info[IMAGE_INFO_SCREEN_Y]+image_info[IMAGE_INFO_DRAW_HEIGHT], image_info[IMAGE_INFO_DRAW_WIDTH], image_info[IMAGE_INFO_HORIZONTAL_SCROLLBAR_RIDER_POSITION], image_info[IMAGE_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE]);
  }
 }
 
@@ -238,10 +238,10 @@ void calculate_image_scrollbars(dword_t image_info_mem) {
  image_info[IMAGE_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE] = 0;
  image_info[IMAGE_INFO_HORIZONTAL_SCROLLBAR_RIDER_POSITION] = 0;
 
- if(image_info[IMAGE_INFO_DRAW_HEIGTH]<image_info[IMAGE_INFO_HEIGTH]) {
-  dword_t rider_size = calculate_scrollbar_rider_size(image_info[IMAGE_INFO_DRAW_HEIGTH], image_info[IMAGE_INFO_HEIGTH], image_info[IMAGE_INFO_DRAW_HEIGTH]);
+ if(image_info[IMAGE_INFO_DRAW_HEIGHT]<image_info[IMAGE_INFO_HEIGHT]) {
+  dword_t rider_size = calculate_scrollbar_rider_size(image_info[IMAGE_INFO_DRAW_HEIGHT], image_info[IMAGE_INFO_HEIGHT], image_info[IMAGE_INFO_DRAW_HEIGHT]);
   image_info[IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE] = rider_size;
-  image_info[IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION] = calculate_scrollbar_rider_position(image_info[IMAGE_INFO_DRAW_HEIGTH], rider_size, image_info[IMAGE_INFO_HEIGTH], image_info[IMAGE_INFO_DRAW_HEIGTH], image_info[IMAGE_INFO_DRAW_Y]);
+  image_info[IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION] = calculate_scrollbar_rider_position(image_info[IMAGE_INFO_DRAW_HEIGHT], rider_size, image_info[IMAGE_INFO_HEIGHT], image_info[IMAGE_INFO_DRAW_HEIGHT], image_info[IMAGE_INFO_DRAW_Y]);
  }
  if(image_info[IMAGE_INFO_DRAW_WIDTH]<image_info[IMAGE_INFO_WIDTH]) { 
   dword_t rider_size = calculate_scrollbar_rider_size(image_info[IMAGE_INFO_DRAW_WIDTH], image_info[IMAGE_INFO_WIDTH], image_info[IMAGE_INFO_DRAW_WIDTH]);
@@ -262,13 +262,13 @@ void get_mouse_coordinates_on_image(dword_t image_info_mem) {
  }
  
  dword_t resized_source_width = image_info[IMAGE_INFO_WIDTH];
- dword_t resized_source_height = image_info[IMAGE_INFO_HEIGTH];
+ dword_t resized_source_height = image_info[IMAGE_INFO_HEIGHT];
  dword_t source_width = image_info[IMAGE_INFO_REAL_WIDTH];
  dword_t source_height = image_info[IMAGE_INFO_REAL_HEIGHT];
  dword_t source_x = image_info[IMAGE_INFO_DRAW_X];
  dword_t source_y = image_info[IMAGE_INFO_DRAW_Y];
  dword_t image_width = image_info[IMAGE_INFO_DRAW_WIDTH];
- dword_t image_height = image_info[IMAGE_INFO_DRAW_HEIGTH];
+ dword_t image_height = image_info[IMAGE_INFO_DRAW_HEIGHT];
  
  //add base pixels
  dword_t width_base = (resized_source_width/source_width); 

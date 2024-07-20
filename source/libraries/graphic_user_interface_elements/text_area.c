@@ -17,9 +17,9 @@ dword_t create_text_area(dword_t type, dword_t length_in_chars, dword_t x, dword
  text_area_info[TEXT_AREA_INFO_NUM_OF_CHARS] = length_in_chars; //maximum number of chars in this text area
  text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE] = (text_area_info[TEXT_AREA_INFO_MEMORY] + length_in_chars*2); //last byte in text area memory
  text_area_info[TEXT_AREA_INFO_WIDTH] = width;
- text_area_info[TEXT_AREA_INFO_HEIGTH] = height;
+ text_area_info[TEXT_AREA_INFO_HEIGHT] = height;
  text_area_info[TEXT_AREA_INFO_REAL_WIDTH] = width;
- text_area_info[TEXT_AREA_INFO_REAL_HEIGTH] = height;
+ text_area_info[TEXT_AREA_INFO_REAL_HEIGHT] = height;
  text_area_info[TEXT_AREA_INFO_FIRST_SHOW_COLUMN] = 0; //first column in pixels to show
  text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE] = 0; //first line in pixels to show
  text_area_info[TEXT_AREA_INFO_CURSOR_POSITION] = text_area_info[TEXT_AREA_INFO_MEMORY]; //cursor position
@@ -36,7 +36,7 @@ dword_t create_text_area(dword_t type, dword_t length_in_chars, dword_t x, dword
  text_area_info[TEXT_AREA_INFO_REDRAW_X] = 0;
  text_area_info[TEXT_AREA_INFO_REDRAW_Y] = 0;
  text_area_info[TEXT_AREA_INFO_REDRAW_WIDTH] = 0;
- text_area_info[TEXT_AREA_INFO_REDRAW_HEIGTH] = 0;
+ text_area_info[TEXT_AREA_INFO_REDRAW_HEIGHT] = 0;
  text_area_info[TEXT_AREA_INFO_CHANGES_LIST] = malloc(TEXT_AREA_MAX_NUMBER_OF_CHANGES_IN_LIST*8);
  text_area_info[TEXT_AREA_INFO_CHANGES_LIST_POINTER] = 0;
  text_area_info[TEXT_AREA_INFO_CHANGES_LIST_LAST_ENTRY_POINTER] = 0;
@@ -68,11 +68,11 @@ void draw_text_area(dword_t text_area_info_mem) {
   chars_color = WHITE;
  }
  if(type==TEXT_AREA_NORMAL || type==TEXT_AREA_NORMAL_DARK) {
-  draw_full_square(text_area_info[TEXT_AREA_INFO_X], text_area_info[TEXT_AREA_INFO_Y], text_area_info[TEXT_AREA_INFO_WIDTH], text_area_info[TEXT_AREA_INFO_HEIGTH], background_color);
+  draw_full_square(text_area_info[TEXT_AREA_INFO_X], text_area_info[TEXT_AREA_INFO_Y], text_area_info[TEXT_AREA_INFO_WIDTH], text_area_info[TEXT_AREA_INFO_HEIGHT], background_color);
  }
  else if(type==TEXT_AREA_INPUT_LINE || type==TEXT_AREA_NUMBER_INPUT) {
-  draw_full_square(text_area_info[TEXT_AREA_INFO_X]+1, text_area_info[TEXT_AREA_INFO_Y]+1, text_area_info[TEXT_AREA_INFO_WIDTH], text_area_info[TEXT_AREA_INFO_HEIGTH], background_color);
-  draw_empty_square(text_area_info[TEXT_AREA_INFO_X], text_area_info[TEXT_AREA_INFO_Y], text_area_info[TEXT_AREA_INFO_WIDTH]+2, text_area_info[TEXT_AREA_INFO_HEIGTH]+2, chars_color);
+  draw_full_square(text_area_info[TEXT_AREA_INFO_X]+1, text_area_info[TEXT_AREA_INFO_Y]+1, text_area_info[TEXT_AREA_INFO_WIDTH], text_area_info[TEXT_AREA_INFO_HEIGHT], background_color);
+  draw_empty_square(text_area_info[TEXT_AREA_INFO_X], text_area_info[TEXT_AREA_INFO_Y], text_area_info[TEXT_AREA_INFO_WIDTH]+2, text_area_info[TEXT_AREA_INFO_HEIGHT]+2, chars_color);
   text_area_info[TEXT_AREA_INFO_X]++;
   text_area_info[TEXT_AREA_INFO_Y]++;
  }
@@ -86,14 +86,14 @@ void draw_text_area(dword_t text_area_info_mem) {
  char_line = text_area_info[TEXT_AREA_INFO_Y];
  char_column = text_area_info[TEXT_AREA_INFO_X];
  text_area_info[TEXT_AREA_INFO_WIDTH] = text_area_info[TEXT_AREA_INFO_REAL_WIDTH];
- text_area_info[TEXT_AREA_INFO_HEIGTH] = text_area_info[TEXT_AREA_INFO_REAL_HEIGTH];
+ text_area_info[TEXT_AREA_INFO_HEIGHT] = text_area_info[TEXT_AREA_INFO_REAL_HEIGHT];
 
  if(type!=TEXT_AREA_INPUT_LINE && type!=TEXT_AREA_NUMBER_INPUT) {
-  if(text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10>text_area_info[TEXT_AREA_INFO_REAL_HEIGTH]) { //vertical scrollbar is present
+  if(text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10>text_area_info[TEXT_AREA_INFO_REAL_HEIGHT]) { //vertical scrollbar is present
    text_area_info[TEXT_AREA_INFO_WIDTH] = (text_area_info[TEXT_AREA_INFO_REAL_WIDTH]-10);
   }
   if(text_area_info[TEXT_AREA_INFO_NUMBER_OF_COLUMNS]*8>text_area_info[TEXT_AREA_INFO_REAL_WIDTH]) { //horizontal scrollbar is present
-   text_area_info[TEXT_AREA_INFO_HEIGTH] = (text_area_info[TEXT_AREA_INFO_REAL_HEIGTH]-10);
+   text_area_info[TEXT_AREA_INFO_HEIGHT] = (text_area_info[TEXT_AREA_INFO_REAL_HEIGHT]-10);
   }
  }
  
@@ -103,7 +103,7 @@ void draw_text_area(dword_t text_area_info_mem) {
   if(char_drawing_line_down<=text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]) {
    goto next_char;
   }
-  if(char_drawing_line_up>=(text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]+text_area_info[TEXT_AREA_INFO_HEIGTH])) {
+  if(char_drawing_line_up>=(text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]+text_area_info[TEXT_AREA_INFO_HEIGHT])) {
    break; //char is on line after visible part, so it mean we draw everything
   }
   if(char_drawing_column_right<=text_area_info[TEXT_AREA_INFO_FIRST_SHOW_COLUMN]) {
@@ -135,10 +135,10 @@ void draw_text_area(dword_t text_area_info_mem) {
    first_char_line = (text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]-(char_drawing_line_up+1));
    last_char_line = 8;
   }
-  else if(char_drawing_line_down>(text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]+text_area_info[TEXT_AREA_INFO_HEIGTH])) {
+  else if(char_drawing_line_down>(text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]+text_area_info[TEXT_AREA_INFO_HEIGHT])) {
    char_line = (text_area_info[TEXT_AREA_INFO_Y]+(char_drawing_line_up-text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]))+1;
    first_char_line = 0;
-   last_char_line = ((text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]+text_area_info[TEXT_AREA_INFO_HEIGTH])-(char_drawing_line_up+1));
+   last_char_line = ((text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]+text_area_info[TEXT_AREA_INFO_HEIGHT])-(char_drawing_line_up+1));
   }
   else {
    char_line = (text_area_info[TEXT_AREA_INFO_Y]+(char_drawing_line_up-text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]))+1;
@@ -222,10 +222,10 @@ void draw_text_area(dword_t text_area_info_mem) {
    first_char_line = (text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]-char_drawing_line_up);
    last_char_line = 8;
   }
-  else if(char_drawing_line_down>(text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]+text_area_info[TEXT_AREA_INFO_HEIGTH])) {
+  else if(char_drawing_line_down>(text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]+text_area_info[TEXT_AREA_INFO_HEIGHT])) {
    char_line = (text_area_info[TEXT_AREA_INFO_Y]+(char_drawing_line_up-text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]))+1;
    first_char_line = 0;
-   last_char_line = ((text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]+text_area_info[TEXT_AREA_INFO_HEIGTH])-char_drawing_line_up);
+   last_char_line = ((text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]+text_area_info[TEXT_AREA_INFO_HEIGHT])-char_drawing_line_up);
   }
   else {
    char_line = (text_area_info[TEXT_AREA_INFO_Y]+(char_drawing_line_up-text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]))+1;
@@ -246,16 +246,16 @@ void draw_text_area(dword_t text_area_info_mem) {
  //draw scrollbars
  if(type!=TEXT_AREA_INPUT_LINE && type!=TEXT_AREA_NUMBER_INPUT) {
   text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE] = 0;
-  if(text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10>text_area_info[TEXT_AREA_INFO_REAL_HEIGTH]) { //vertical scrollbar is present
-   text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE] = calculate_scrollbar_rider_size(text_area_info[TEXT_AREA_INFO_REAL_HEIGTH], text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10, text_area_info[TEXT_AREA_INFO_HEIGTH]);
-   text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION] = calculate_scrollbar_rider_position(text_area_info[TEXT_AREA_INFO_REAL_HEIGTH], text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE], text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10, text_area_info[TEXT_AREA_INFO_HEIGTH], text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]);
-   draw_vertical_scrollbar(text_area_info[TEXT_AREA_INFO_X]+text_area_info[TEXT_AREA_INFO_REAL_WIDTH]-10, text_area_info[TEXT_AREA_INFO_Y], text_area_info[TEXT_AREA_INFO_REAL_HEIGTH], text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION], text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE]);
+  if(text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10>text_area_info[TEXT_AREA_INFO_REAL_HEIGHT]) { //vertical scrollbar is present
+   text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE] = calculate_scrollbar_rider_size(text_area_info[TEXT_AREA_INFO_REAL_HEIGHT], text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10, text_area_info[TEXT_AREA_INFO_HEIGHT]);
+   text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION] = calculate_scrollbar_rider_position(text_area_info[TEXT_AREA_INFO_REAL_HEIGHT], text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE], text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10, text_area_info[TEXT_AREA_INFO_HEIGHT], text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]);
+   draw_vertical_scrollbar(text_area_info[TEXT_AREA_INFO_X]+text_area_info[TEXT_AREA_INFO_REAL_WIDTH]-10, text_area_info[TEXT_AREA_INFO_Y], text_area_info[TEXT_AREA_INFO_REAL_HEIGHT], text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION], text_area_info[TEXT_AREA_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE]);
   }
   text_area_info[TEXT_AREA_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE] = 0;
   if(text_area_info[TEXT_AREA_INFO_NUMBER_OF_COLUMNS]*8>text_area_info[TEXT_AREA_INFO_REAL_WIDTH]) { //horizontal scrollbar is present
    text_area_info[TEXT_AREA_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE] = calculate_scrollbar_rider_size(text_area_info[TEXT_AREA_INFO_WIDTH], text_area_info[TEXT_AREA_INFO_NUMBER_OF_COLUMNS]*8, text_area_info[TEXT_AREA_INFO_WIDTH]);
    text_area_info[TEXT_AREA_INFO_HORIZONTAL_SCROLLBAR_RIDER_POSITION] = calculate_scrollbar_rider_position(text_area_info[TEXT_AREA_INFO_WIDTH], text_area_info[TEXT_AREA_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE], text_area_info[TEXT_AREA_INFO_NUMBER_OF_COLUMNS]*8, text_area_info[TEXT_AREA_INFO_WIDTH], text_area_info[TEXT_AREA_INFO_FIRST_SHOW_COLUMN]);
-   draw_horizontal_scrollbar(text_area_info[TEXT_AREA_INFO_X], text_area_info[TEXT_AREA_INFO_Y]+text_area_info[TEXT_AREA_INFO_HEIGTH], text_area_info[TEXT_AREA_INFO_WIDTH], text_area_info[TEXT_AREA_INFO_HORIZONTAL_SCROLLBAR_RIDER_POSITION], text_area_info[TEXT_AREA_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE]);
+   draw_horizontal_scrollbar(text_area_info[TEXT_AREA_INFO_X], text_area_info[TEXT_AREA_INFO_Y]+text_area_info[TEXT_AREA_INFO_HEIGHT], text_area_info[TEXT_AREA_INFO_WIDTH], text_area_info[TEXT_AREA_INFO_HORIZONTAL_SCROLLBAR_RIDER_POSITION], text_area_info[TEXT_AREA_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE]);
   }
  }
 
@@ -272,16 +272,16 @@ void redraw_text_area(dword_t text_area_info_mem) {
  //redraw input line
  dword_t type = text_area_info[TEXT_AREA_INFO_TYPE];
  if(type==TEXT_AREA_INPUT_LINE || type==TEXT_AREA_NUMBER_INPUT) {
-  redraw_part_of_screen(text_area_info[TEXT_AREA_INFO_X]+1, text_area_info[TEXT_AREA_INFO_Y]+1, text_area_info[TEXT_AREA_INFO_REAL_WIDTH], text_area_info[TEXT_AREA_INFO_REAL_HEIGTH]);
+  redraw_part_of_screen(text_area_info[TEXT_AREA_INFO_X]+1, text_area_info[TEXT_AREA_INFO_Y]+1, text_area_info[TEXT_AREA_INFO_REAL_WIDTH], text_area_info[TEXT_AREA_INFO_REAL_HEIGHT]);
   return;
  }
 
  //redraw text area
  if(text_area_info[TEXT_AREA_INFO_REDRAW_X]==0xFFFFFFFF) { //redraw full text area
-  redraw_part_of_screen(text_area_info[TEXT_AREA_INFO_X], text_area_info[TEXT_AREA_INFO_Y], text_area_info[TEXT_AREA_INFO_REAL_WIDTH], text_area_info[TEXT_AREA_INFO_REAL_HEIGTH]);
+  redraw_part_of_screen(text_area_info[TEXT_AREA_INFO_X], text_area_info[TEXT_AREA_INFO_Y], text_area_info[TEXT_AREA_INFO_REAL_WIDTH], text_area_info[TEXT_AREA_INFO_REAL_HEIGHT]);
  }
  else { //redraw part of text area
-  redraw_part_of_screen(text_area_info[TEXT_AREA_INFO_REDRAW_X], text_area_info[TEXT_AREA_INFO_REDRAW_Y], text_area_info[TEXT_AREA_INFO_REDRAW_WIDTH], text_area_info[TEXT_AREA_INFO_REDRAW_HEIGTH]);
+  redraw_part_of_screen(text_area_info[TEXT_AREA_INFO_REDRAW_X], text_area_info[TEXT_AREA_INFO_REDRAW_Y], text_area_info[TEXT_AREA_INFO_REDRAW_WIDTH], text_area_info[TEXT_AREA_INFO_REDRAW_HEIGHT]);
  }
 }
 
@@ -293,8 +293,8 @@ void text_area_set_show_line_and_column(dword_t text_area_info_mem) {
   text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]=text_area_absoulte_cursor_line;
   text_area_info[TEXT_AREA_INFO_REDRAW_X] = 0xFFFFFFFF; //redraw whole text area
  }
- else if(text_area_absoulte_cursor_line>(text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]+text_area_info[TEXT_AREA_INFO_HEIGTH]-10)) {
-  text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]=(text_area_absoulte_cursor_line-text_area_info[TEXT_AREA_INFO_HEIGTH]+10);
+ else if(text_area_absoulte_cursor_line>(text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]+text_area_info[TEXT_AREA_INFO_HEIGHT]-10)) {
+  text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]=(text_area_absoulte_cursor_line-text_area_info[TEXT_AREA_INFO_HEIGHT]+10);
   text_area_info[TEXT_AREA_INFO_REDRAW_X] = 0xFFFFFFFF; //redraw whole text area
  }
  if(text_area_absoulte_cursor_column<text_area_info[TEXT_AREA_INFO_FIRST_SHOW_COLUMN]) {
@@ -305,8 +305,8 @@ void text_area_set_show_line_and_column(dword_t text_area_info_mem) {
   text_area_info[TEXT_AREA_INFO_FIRST_SHOW_COLUMN]=(text_area_absoulte_cursor_column-text_area_info[TEXT_AREA_INFO_WIDTH]+8);
   text_area_info[TEXT_AREA_INFO_REDRAW_X] = 0xFFFFFFFF; //redraw whole text area
  }
- if((text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10>text_area_info[TEXT_AREA_INFO_REAL_HEIGTH]) && (text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]+text_area_info[TEXT_AREA_INFO_HEIGTH])>text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10) {
-  text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE] = (text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10-text_area_info[TEXT_AREA_INFO_HEIGTH]);
+ if((text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10>text_area_info[TEXT_AREA_INFO_REAL_HEIGHT]) && (text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]+text_area_info[TEXT_AREA_INFO_HEIGHT])>text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10) {
+  text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE] = (text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10-text_area_info[TEXT_AREA_INFO_HEIGHT]);
   text_area_info[TEXT_AREA_INFO_REDRAW_X] = 0xFFFFFFFF; //redraw whole text area
  }
  if((text_area_info[TEXT_AREA_INFO_NUMBER_OF_COLUMNS]*8>text_area_info[TEXT_AREA_INFO_REAL_WIDTH]) && (text_area_info[TEXT_AREA_INFO_FIRST_SHOW_COLUMN]+text_area_info[TEXT_AREA_INFO_WIDTH])>text_area_info[TEXT_AREA_INFO_NUMBER_OF_COLUMNS]*8) {
@@ -504,14 +504,14 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
     text_area_info[TEXT_AREA_INFO_REDRAW_X] = 0;
     text_area_info[TEXT_AREA_INFO_REDRAW_Y] = (text_area_info[TEXT_AREA_INFO_Y]+(text_area_absoulte_cursor_line-text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]));
     text_area_info[TEXT_AREA_INFO_REDRAW_WIDTH] = text_area_info[TEXT_AREA_INFO_WIDTH];
-    text_area_info[TEXT_AREA_INFO_REDRAW_HEIGTH] = 20;
+    text_area_info[TEXT_AREA_INFO_REDRAW_HEIGHT] = 20;
    }
    else {
     //redraw only line where is cursor
     text_area_info[TEXT_AREA_INFO_REDRAW_X] = 0;
     text_area_info[TEXT_AREA_INFO_REDRAW_Y] = (text_area_info[TEXT_AREA_INFO_Y]+(text_area_absoulte_cursor_line-text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]));
     text_area_info[TEXT_AREA_INFO_REDRAW_WIDTH] = text_area_info[TEXT_AREA_INFO_WIDTH];
-    text_area_info[TEXT_AREA_INFO_REDRAW_HEIGTH] = 10;
+    text_area_info[TEXT_AREA_INFO_REDRAW_HEIGHT] = 10;
    }
   }
   
@@ -528,14 +528,14 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
    text_area_info[TEXT_AREA_INFO_REDRAW_X] = 0;
    text_area_info[TEXT_AREA_INFO_REDRAW_Y] = (text_area_info[TEXT_AREA_INFO_Y]+(text_area_absoulte_cursor_line-text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]));
    text_area_info[TEXT_AREA_INFO_REDRAW_WIDTH] = text_area_info[TEXT_AREA_INFO_WIDTH];
-   text_area_info[TEXT_AREA_INFO_REDRAW_HEIGTH] = 20;
+   text_area_info[TEXT_AREA_INFO_REDRAW_HEIGHT] = 20;
   }
   else {
    //redraw only line where is cursor
    text_area_info[TEXT_AREA_INFO_REDRAW_X] = 0;
    text_area_info[TEXT_AREA_INFO_REDRAW_Y] = (text_area_info[TEXT_AREA_INFO_Y]+(text_area_absoulte_cursor_line-text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]));
    text_area_info[TEXT_AREA_INFO_REDRAW_WIDTH] = text_area_info[TEXT_AREA_INFO_WIDTH];
-   text_area_info[TEXT_AREA_INFO_REDRAW_HEIGTH] = 10;
+   text_area_info[TEXT_AREA_INFO_REDRAW_HEIGHT] = 10;
   }
 
   //move cursor
@@ -598,7 +598,7 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
   text_area_info[TEXT_AREA_INFO_REDRAW_X] = 0;
   text_area_info[TEXT_AREA_INFO_REDRAW_Y] = (text_area_info[TEXT_AREA_INFO_Y]+(text_area_absoulte_cursor_line-text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]));
   text_area_info[TEXT_AREA_INFO_REDRAW_WIDTH] = text_area_info[TEXT_AREA_INFO_WIDTH];
-  text_area_info[TEXT_AREA_INFO_REDRAW_HEIGTH] = 20;
+  text_area_info[TEXT_AREA_INFO_REDRAW_HEIGHT] = 20;
 
   //hide any selected area
   text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]=0xFFFFFFFF;
@@ -615,7 +615,7 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
   text_area_info[TEXT_AREA_INFO_REDRAW_X] = 0;
   text_area_info[TEXT_AREA_INFO_REDRAW_Y] = (text_area_info[TEXT_AREA_INFO_Y]+(text_area_absoulte_cursor_line-text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]));
   text_area_info[TEXT_AREA_INFO_REDRAW_WIDTH] = text_area_info[TEXT_AREA_INFO_WIDTH];
-  text_area_info[TEXT_AREA_INFO_REDRAW_HEIGTH] = 20;
+  text_area_info[TEXT_AREA_INFO_REDRAW_HEIGHT] = 20;
   
   //compute number of chars to start of line
   count_chars = 0;
@@ -821,7 +821,7 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
    text_area_info[TEXT_AREA_INFO_REDRAW_X] = 0;
    text_area_info[TEXT_AREA_INFO_REDRAW_Y] = (text_area_info[TEXT_AREA_INFO_Y]+(text_area_absoulte_cursor_line-text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]));
    text_area_info[TEXT_AREA_INFO_REDRAW_WIDTH] = text_area_info[TEXT_AREA_INFO_WIDTH];
-   text_area_info[TEXT_AREA_INFO_REDRAW_HEIGTH] = 10;
+   text_area_info[TEXT_AREA_INFO_REDRAW_HEIGHT] = 10;
 
    //count number of chars in line
    while(text_area_data[-1]!='\n' && (dword_t)text_area_data>text_area_info[TEXT_AREA_INFO_MEMORY]) {
@@ -905,10 +905,10 @@ void text_area_mouse_event(dword_t text_area_info_mem) {
     text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE] = 0;
    }
   }
-  else if(text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10>text_area_info[TEXT_AREA_INFO_REAL_HEIGTH]) {
+  else if(text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10>text_area_info[TEXT_AREA_INFO_REAL_HEIGHT]) {
    text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE] += 30;
-   if(text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]>(text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10-text_area_info[TEXT_AREA_INFO_HEIGTH])) {
-    text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE] = (text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10-text_area_info[TEXT_AREA_INFO_HEIGTH]);
+   if(text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]>(text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10-text_area_info[TEXT_AREA_INFO_HEIGHT])) {
+    text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE] = (text_area_info[TEXT_AREA_INFO_NUMBER_OF_LINES]*10-text_area_info[TEXT_AREA_INFO_HEIGHT]);
    }
   }
  }

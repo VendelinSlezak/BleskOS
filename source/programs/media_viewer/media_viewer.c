@@ -77,12 +77,12 @@ void media_viewer(void) {
      dword_t movement = (mouse_cursor_y_dnd-mouse_cursor_y_previous_dnd);
      image_info[IMAGE_INFO_DRAW_Y] -= movement;
      if(movement<0x80000000) {
-      if(image_info[IMAGE_INFO_DRAW_Y]>image_info[IMAGE_INFO_HEIGTH]) {
+      if(image_info[IMAGE_INFO_DRAW_Y]>image_info[IMAGE_INFO_HEIGHT]) {
        image_info[IMAGE_INFO_DRAW_Y] = 0;
       }
      }
-     else if(image_info[IMAGE_INFO_DRAW_Y]>(image_info[IMAGE_INFO_HEIGTH]-image_info[IMAGE_INFO_DRAW_HEIGTH])) {
-      image_info[IMAGE_INFO_DRAW_Y] = (image_info[IMAGE_INFO_HEIGTH]-image_info[IMAGE_INFO_DRAW_HEIGTH]);
+     else if(image_info[IMAGE_INFO_DRAW_Y]>(image_info[IMAGE_INFO_HEIGHT]-image_info[IMAGE_INFO_DRAW_HEIGHT])) {
+      image_info[IMAGE_INFO_DRAW_Y] = (image_info[IMAGE_INFO_HEIGHT]-image_info[IMAGE_INFO_DRAW_HEIGHT]);
      }
     }
 
@@ -135,16 +135,16 @@ void draw_media_viewer(void) {
 
   //draw image on screen
   draw_resized_image((dword_t)image_info);
-  add_zone_to_click_board(image_info[IMAGE_INFO_SCREEN_X], image_info[IMAGE_INFO_SCREEN_Y], image_info[IMAGE_INFO_DRAW_WIDTH], image_info[IMAGE_INFO_DRAW_HEIGTH], MEDIA_VIEWER_CLICK_ZONE_IMAGE);
+  add_zone_to_click_board(image_info[IMAGE_INFO_SCREEN_X], image_info[IMAGE_INFO_SCREEN_Y], image_info[IMAGE_INFO_DRAW_WIDTH], image_info[IMAGE_INFO_DRAW_HEIGHT], MEDIA_VIEWER_CLICK_ZONE_IMAGE);
 
   //add scrollbars
   if(image_info[IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE]!=0) {
-   program_interface_add_vertical_scrollbar(MEDIA_VIEWER_CLICK_ZONE_IMAGE_VERTICAL_SCROLLBAR, ((dword_t)image_info)+IMAGE_INFO_DRAW_HEIGTH*4, ((dword_t)image_info)+IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION*4, ((dword_t)image_info)+IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE*4, ((dword_t)&media_viewer_image_vertical_scrollbar_event));
-   add_zone_to_click_board(image_info[IMAGE_INFO_SCREEN_X]+image_info[IMAGE_INFO_DRAW_WIDTH], image_info[IMAGE_INFO_SCREEN_Y], 10, image_info[IMAGE_INFO_DRAW_HEIGTH], MEDIA_VIEWER_CLICK_ZONE_IMAGE_VERTICAL_SCROLLBAR);
+   program_interface_add_vertical_scrollbar(MEDIA_VIEWER_CLICK_ZONE_IMAGE_VERTICAL_SCROLLBAR, ((dword_t)image_info)+IMAGE_INFO_DRAW_HEIGHT*4, ((dword_t)image_info)+IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION*4, ((dword_t)image_info)+IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE*4, ((dword_t)&media_viewer_image_vertical_scrollbar_event));
+   add_zone_to_click_board(image_info[IMAGE_INFO_SCREEN_X]+image_info[IMAGE_INFO_DRAW_WIDTH], image_info[IMAGE_INFO_SCREEN_Y], 10, image_info[IMAGE_INFO_DRAW_HEIGHT], MEDIA_VIEWER_CLICK_ZONE_IMAGE_VERTICAL_SCROLLBAR);
   }
   if(image_info[IMAGE_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE]!=0) {
    program_interface_add_horizontal_scrollbar(MEDIA_VIEWER_CLICK_ZONE_IMAGE_HORIZONTAL_SCROLLBAR, ((dword_t)image_info)+IMAGE_INFO_DRAW_WIDTH*4, ((dword_t)image_info)+IMAGE_INFO_HORIZONTAL_SCROLLBAR_RIDER_POSITION*4, ((dword_t)image_info)+IMAGE_INFO_HORIZONTAL_SCROLLBAR_RIDER_SIZE*4, ((dword_t)&media_viewer_image_horizontal_scrollbar_event));
-   add_zone_to_click_board(image_info[IMAGE_INFO_SCREEN_X], image_info[IMAGE_INFO_SCREEN_Y]+image_info[IMAGE_INFO_DRAW_HEIGTH], image_info[IMAGE_INFO_DRAW_WIDTH], 10, MEDIA_VIEWER_CLICK_ZONE_IMAGE_HORIZONTAL_SCROLLBAR);
+   add_zone_to_click_board(image_info[IMAGE_INFO_SCREEN_X], image_info[IMAGE_INFO_SCREEN_Y]+image_info[IMAGE_INFO_DRAW_HEIGHT], image_info[IMAGE_INFO_DRAW_WIDTH], 10, MEDIA_VIEWER_CLICK_ZONE_IMAGE_HORIZONTAL_SCROLLBAR);
   }
 
   //print zoom
@@ -397,7 +397,7 @@ void media_viewer_close_file(void) {
 
 void media_viewer_image_vertical_scrollbar_event(void) {
  dword_t *image_info = (dword_t *) (get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY));
- image_info[IMAGE_INFO_DRAW_Y] = get_scrollbar_rider_value(image_info[IMAGE_INFO_DRAW_HEIGTH], image_info[IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE], image_info[IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION], image_info[IMAGE_INFO_HEIGTH], image_info[IMAGE_INFO_DRAW_HEIGTH]);
+ image_info[IMAGE_INFO_DRAW_Y] = get_scrollbar_rider_value(image_info[IMAGE_INFO_DRAW_HEIGHT], image_info[IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_SIZE], image_info[IMAGE_INFO_VERTICAL_SCROLLBAR_RIDER_POSITION], image_info[IMAGE_INFO_HEIGHT], image_info[IMAGE_INFO_DRAW_HEIGHT]);
  media_viewer_draw_image();
 }
 
@@ -454,8 +454,8 @@ void media_viewer_key_down_event(void) {
   dword_t *image_info = (dword_t *) (get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY));
   media_viewer_image_recalculate_scrollbars();
   image_info[IMAGE_INFO_DRAW_Y]+=50;
-  if(image_info[IMAGE_INFO_DRAW_Y]>(image_info[IMAGE_INFO_HEIGTH]-image_info[IMAGE_INFO_DRAW_HEIGTH])) {
-   image_info[IMAGE_INFO_DRAW_Y] = (image_info[IMAGE_INFO_HEIGTH]-image_info[IMAGE_INFO_DRAW_HEIGTH]);
+  if(image_info[IMAGE_INFO_DRAW_Y]>(image_info[IMAGE_INFO_HEIGHT]-image_info[IMAGE_INFO_DRAW_HEIGHT])) {
+   image_info[IMAGE_INFO_DRAW_Y] = (image_info[IMAGE_INFO_HEIGHT]-image_info[IMAGE_INFO_DRAW_HEIGHT]);
   }
   media_viewer_image_recalculate_scrollbars();
   media_viewer_draw_image();
@@ -550,25 +550,25 @@ void media_viewer_image_recalculate_scrollbars(void) {
  else {
   image_info[IMAGE_INFO_DRAW_WIDTH] = screen_width;
  }
- if(image_info[IMAGE_INFO_HEIGTH]<(screen_height-60)) {
-  image_info[IMAGE_INFO_DRAW_HEIGTH] = image_info[IMAGE_INFO_HEIGTH];
+ if(image_info[IMAGE_INFO_HEIGHT]<(screen_height-60)) {
+  image_info[IMAGE_INFO_DRAW_HEIGHT] = image_info[IMAGE_INFO_HEIGHT];
  }
  else {
-  image_info[IMAGE_INFO_DRAW_HEIGTH] = (screen_height-60);
+  image_info[IMAGE_INFO_DRAW_HEIGHT] = (screen_height-60);
  }
- if(image_info[IMAGE_INFO_WIDTH]>screen_width && image_info[IMAGE_INFO_HEIGTH]>(screen_height-60)) { //both scrollbars
-  image_info[IMAGE_INFO_DRAW_HEIGTH] -= 10;
+ if(image_info[IMAGE_INFO_WIDTH]>screen_width && image_info[IMAGE_INFO_HEIGHT]>(screen_height-60)) { //both scrollbars
+  image_info[IMAGE_INFO_DRAW_HEIGHT] -= 10;
   image_info[IMAGE_INFO_DRAW_WIDTH] -= 10;
  }
- else if(image_info[IMAGE_INFO_HEIGTH]>(screen_height-60) && image_info[IMAGE_INFO_WIDTH]<=screen_width) { //vertical scrollbar
+ else if(image_info[IMAGE_INFO_HEIGHT]>(screen_height-60) && image_info[IMAGE_INFO_WIDTH]<=screen_width) { //vertical scrollbar
   if((screen_width-image_info[IMAGE_INFO_WIDTH])<20 || (screen_width-image_info[IMAGE_INFO_WIDTH])>0x80000000) { //also horizontal scrollbar
-   image_info[IMAGE_INFO_DRAW_HEIGTH] -= 10;
+   image_info[IMAGE_INFO_DRAW_HEIGHT] -= 10;
    image_info[IMAGE_INFO_DRAW_WIDTH] -= 10;
   }
  }
- else if(image_info[IMAGE_INFO_HEIGTH]<=(screen_height-60) && image_info[IMAGE_INFO_WIDTH]>screen_width) { //horizontal scrollbar
-  if((screen_height-60-image_info[IMAGE_INFO_HEIGTH])<20 || (screen_height-60-image_info[IMAGE_INFO_HEIGTH])>0x80000000) { //also vertical scrollbar
-   image_info[IMAGE_INFO_DRAW_HEIGTH] -= 10;
+ else if(image_info[IMAGE_INFO_HEIGHT]<=(screen_height-60) && image_info[IMAGE_INFO_WIDTH]>screen_width) { //horizontal scrollbar
+  if((screen_height-60-image_info[IMAGE_INFO_HEIGHT])<20 || (screen_height-60-image_info[IMAGE_INFO_HEIGHT])>0x80000000) { //also vertical scrollbar
+   image_info[IMAGE_INFO_DRAW_HEIGHT] -= 10;
    image_info[IMAGE_INFO_DRAW_WIDTH] -= 10;
   }
  }
@@ -583,9 +583,9 @@ void media_viewer_image_recalculate_zoom(void) {
  
  //calculate width and height by zoom
  image_info[IMAGE_INFO_WIDTH]=(image_info[IMAGE_INFO_REAL_WIDTH]*zoom/100);
- image_info[IMAGE_INFO_HEIGTH]=(image_info[IMAGE_INFO_REAL_HEIGHT]*zoom/100);
+ image_info[IMAGE_INFO_HEIGHT]=(image_info[IMAGE_INFO_REAL_HEIGHT]*zoom/100);
  image_info[IMAGE_INFO_DRAW_WIDTH]=image_info[IMAGE_INFO_WIDTH];
- image_info[IMAGE_INFO_DRAW_HEIGTH]=image_info[IMAGE_INFO_HEIGTH];
+ image_info[IMAGE_INFO_DRAW_HEIGHT]=image_info[IMAGE_INFO_HEIGHT];
 
  //set dimensions of image for screen
  if(image_info[IMAGE_INFO_WIDTH]<screen_width) {
@@ -599,15 +599,15 @@ void media_viewer_image_recalculate_zoom(void) {
    image_info[IMAGE_INFO_DRAW_X] = (image_info[IMAGE_INFO_WIDTH]-screen_width);
   }
  }
- if(image_info[IMAGE_INFO_HEIGTH]<(screen_height-60)) {
-  image_info[IMAGE_INFO_SCREEN_Y] = (screen_y_center+10-(image_info[IMAGE_INFO_HEIGTH]/2));
+ if(image_info[IMAGE_INFO_HEIGHT]<(screen_height-60)) {
+  image_info[IMAGE_INFO_SCREEN_Y] = (screen_y_center+10-(image_info[IMAGE_INFO_HEIGHT]/2));
   image_info[IMAGE_INFO_DRAW_Y] = 0;
  }
  else {
-  image_info[IMAGE_INFO_DRAW_HEIGTH] = (screen_height-60);
+  image_info[IMAGE_INFO_DRAW_HEIGHT] = (screen_height-60);
   image_info[IMAGE_INFO_SCREEN_Y] = 40;
-  if(image_info[IMAGE_INFO_DRAW_Y]>(image_info[IMAGE_INFO_HEIGTH]-(screen_height-60))) {
-   image_info[IMAGE_INFO_DRAW_Y] = (image_info[IMAGE_INFO_HEIGTH]-(screen_height-60));
+  if(image_info[IMAGE_INFO_DRAW_Y]>(image_info[IMAGE_INFO_HEIGHT]-(screen_height-60))) {
+   image_info[IMAGE_INFO_DRAW_Y] = (image_info[IMAGE_INFO_HEIGHT]-(screen_height-60));
   }
  }
  

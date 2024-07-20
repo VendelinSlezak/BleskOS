@@ -86,8 +86,10 @@ byte_t vfs_delete_folder(struct folder_descriptor_t *folder_path_structure, dwor
 byte_t *vfs_read_file(struct folder_descriptor_t *folder_path_structure, dword_t number_of_entry);
 byte_t vfs_save_file(struct folder_descriptor_t *folder_path_structure, dword_t number_of_entry, byte_t *file_memory, dword_t file_size_in_bytes);
 byte_t vfs_create_file(struct folder_descriptor_t *folder_path_structure, word_t *name, byte_t *extension, byte_t *file_memory, dword_t file_size_in_bytes);
+byte_t vfs_create_file_by_file_descriptor(struct folder_descriptor_t *folder_path_structure, struct file_descriptor_t file_descriptor, byte_t *file_memory);
 byte_t vfs_delete_file(struct folder_descriptor_t *folder_path_structure, dword_t number_of_entry);
 
 byte_t *vfs_read_file_show_progress(struct folder_descriptor_t *folder_path_structure, dword_t number_of_entry);
 byte_t vfs_save_file_show_progress(struct folder_descriptor_t *folder_path_structure, dword_t number_of_entry, byte_t *file_memory, dword_t file_size_in_bytes);
 byte_t vfs_create_file_show_progress(struct folder_descriptor_t *folder_path_structure, word_t *name, byte_t *extension, byte_t *file_memory, dword_t file_size_in_bytes);
+byte_t vfs_create_file_by_file_descriptor_show_progress(struct folder_descriptor_t *folder_path_structure, struct file_descriptor_t file_descriptor, byte_t *file_memory);

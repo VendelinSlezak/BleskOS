@@ -9,7 +9,7 @@
 */
 
 void redraw_mouse_cursor(void) {
- redraw_part_of_screen(mouse_cursor_x, mouse_cursor_y, MOUSE_CURSOR_WIDTH, MOUSE_CURSOR_HEIGTH);
+ redraw_part_of_screen(mouse_cursor_x, mouse_cursor_y, MOUSE_CURSOR_WIDTH, MOUSE_CURSOR_HEIGHT);
 }
 
 void move_mouse_cursor(void) {
@@ -73,8 +73,8 @@ void move_mouse_cursor(void) {
  }
  
  //show cursor change on screen
- redraw_part_of_screen(mouse_cursor_x, mouse_cursor_y, MOUSE_CURSOR_WIDTH, MOUSE_CURSOR_HEIGTH);
- redraw_part_of_screen(old_mouse_cursor_x, old_mouse_cursor_y, MOUSE_CURSOR_WIDTH, MOUSE_CURSOR_HEIGTH);
+ redraw_part_of_screen(mouse_cursor_x, mouse_cursor_y, MOUSE_CURSOR_WIDTH, MOUSE_CURSOR_HEIGHT);
+ redraw_part_of_screen(old_mouse_cursor_x, old_mouse_cursor_y, MOUSE_CURSOR_WIDTH, MOUSE_CURSOR_HEIGHT);
 }
 
 byte_t is_mouse_in_zone(dword_t up, dword_t down, dword_t left, dword_t right) {
