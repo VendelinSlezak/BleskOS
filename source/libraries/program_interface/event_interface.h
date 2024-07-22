@@ -11,8 +11,10 @@
 enum {
  END_OF_EVENTS = 0,
  KEYBOARD_EVENT_PRESSED_KEY, //number of pressed key, method to be called, return value
+ KEYBOARD_EVENT_PRESSED_KEY_WITH_CONTROL_KEY, //control key, number of pressed key, method to be called, return value
  MOUSE_EVENT_CLICK_ON_ZONE, //number of click zone, method to be called, return value
  MOUSE_EVENT_CLICK_ON_ZONES, //number of first click zone in range, number of last click zone in range, method to be called, return value
+ MOUSE_WHEEL_EVENT, //method to be called, return value
  VERTICAL_SCROLLBAR_EVENT, //click zone of scrollbar, pointer to scrollbar info, method to be called if there is change on scrollbar
  HORIZONTAL_SCROLLBAR_EVENT, //click zone of scrollbar, pointer to scrollbar info, method to be called if there is change on scrollbar
  TEXT_AREA_WITH_PERMANENT_FOCUS_EVENT, //pointer to text area info
@@ -24,9 +26,11 @@ enum {
  RETURN_EVENT_FROM_METHOD,
  EVENT_EXIT,
  EVENT_USB_DEVICE_CHANGE,
+ EVENT_REDRAW,
  PROGRAM_DEFINED_EVENTS,
 };
 
-dword_t wait_for_event(dword_t *event_interface);
+dword_t wait_for_event(dword_t *event_interface, void (*redraw_method)(void));
+dword_t wait_for_one_event(dword_t *event_interface);
 
 void event_interface_set_text_area(dword_t *event_interface, dword_t text_area_pointer);

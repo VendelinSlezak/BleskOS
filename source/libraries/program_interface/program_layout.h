@@ -35,6 +35,8 @@ void program_layout_add_button(void);
 #define ELEMENT_CENTER_ALIGNMENT 1
 #define ELEMENT_BOTTOM_ALIGNMENT 2
 
+#define SELECTED_LIST_ENTRY 0xFFFFFFFF
+
 struct program_element_layout_area_info {
  dword_t x;
  dword_t y;

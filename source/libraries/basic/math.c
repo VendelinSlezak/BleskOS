@@ -78,6 +78,20 @@ dword_t power(dword_t value, dword_t exponent) {
  }
 }
 
+float ldexp(float value, dword_t exponent) {
+ if(exponent==0) {
+  return 1;
+ }
+ else {
+  exponent--;
+  float multiply_value = value;
+  for(dword_t i=0; i<exponent; i++) {
+   value *= multiply_value;
+  }
+  return value;
+ }
+}
+
 dword_t convert_big_endian_dword_to_little_endian(byte_t *mem) {
  return ((mem[0]<<24) | (mem[1]<<16) | (mem[2]<<8) | (mem[3]));
 }

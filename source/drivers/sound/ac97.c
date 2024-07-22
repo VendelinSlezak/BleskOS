@@ -145,101 +145,6 @@ void ac97_set_sample_rate(word_t sample_rate) {
  }
 }
 
-void ac97_fill_buffer_entry(void) {
- //return if we do not need to add entry / buffer is full
- if(ac97_number_of_samples_in_one_channel==0 || ac97_free_entry==inb(ac97_nabm_base + 0x14)) {
-  return;
- }
- 
- //fill entry
- if(ac97_number_of_samples_in_one_channel>0xFFFF) { //we will need more entries to play whole sound
-  ac97_buffer_memory_pointer[ac97_free_entry].sample_memory = ac97_sound_memory;
-  ac97_buffer_memory_pointer[ac97_free_entry].number_of_samples = 0xFFFE;
-  ac97_buffer_memory_pointer[ac97_free_entry].reserved = 0;
-  ac97_buffer_memory_pointer[ac97_free_entry].last_buffer_entry = 0;
-  ac97_buffer_memory_pointer[ac97_free_entry].interrupt_on_completion = 0;
-
-  ac97_sound_memory += 0xFFFF*2; //there are two channels
-  ac97_number_of_samples_in_one_channel -= 0xFFFF;
- }
- else { //this is last entry, we do not need more entries to play whole sound
-  ac97_buffer_memory_pointer[ac97_free_entry].sample_memory = ac97_sound_memory;
-  ac97_buffer_memory_pointer[ac97_free_entry].number_of_samples = (ac97_number_of_samples_in_one_channel-1);
-  ac97_buffer_memory_pointer[ac97_free_entry].reserved = 0;
-  ac97_buffer_memory_pointer[ac97_free_entry].last_buffer_entry = 1;
-  ac97_buffer_memory_pointer[ac97_free_entry].interrupt_on_completion = 0;
-
-  ac97_sound_memory += ac97_number_of_samples_in_one_channel*2;
-  ac97_number_of_samples_in_one_channel = 0;
-  ac97_playing_state = AC97_BUFFER_FILLED; //we do not need more entries
- }
- 
- //update Last Valid Entry register
- outb(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_LAST_VALID_ENTRY, ac97_free_entry);
-
- //next entry
- ac97_free_entry = ((ac97_free_entry+1) & 0x1F); //roll over 32 entries
-}
-
-void ac97_play_sound(void) {
- //always have at least one buffer filled
- ac97_fill_buffer_entry();
-
- //clear status
- outw(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_STATUS, 0x1C);
-
- //start streaming
- outb(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_CONTROL, 0x1);
-
- //other buffers will be filled while playing by code in drivers/system/processes_on_background.c
- ac97_playing_state = AC97_BUFFER_NOT_FILLED;
-}
-
-void ac97_stop_sound(void) {
- //stop streaming
- outb(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_CONTROL, 0x0);
-
- //clear status
- outw(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_STATUS, 0x1C);
-
- //buffers will not be filled by code in drivers/system/processes_on_background.c
- ac97_playing_state = AC97_BUFFER_FILLED;
-
- //destroy task for looping
- destroy_task(task_ac97_play_buffer_in_loop);
-}
-
-void ac97_play_memory(dword_t sound_memory, dword_t sound_size, dword_t sample_rate) {
- //stop sound
- outb(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_CONTROL, 0x0);
-
- //set sample rate
- ac97_set_sample_rate(sample_rate);
-
- //reset stream
- outb(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_CONTROL, 0x2);
- ticks = 0;
- while((inb(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_CONTROL) & 0x2)==0x2) {
-  asm("nop");
-  if(ticks>50) { //stream was not reseted after 100 ms
-   return;
-  }
- }
- outb(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_CONTROL, 0x0);
-
- //clear buffer
- clear_memory((dword_t)ac97_buffer_memory_pointer, (sizeof(struct ac97_buffer_entry)*32));
-
- //set buffer address
- outd(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_BUFFER_BASE_ADDRESS, (dword_t)ac97_buffer_memory_pointer);
-
- //play sound
- ac97_sound_memory = sound_memory;
- ac97_number_of_samples_in_one_channel = (sound_size/2); //sound have 2 channels
- ac97_free_entry = 1; //playing will start from this entry
- ac97_play_sound(); 
-}
-
 void ac97_check_headphone_connection_change(void) {
  if(ac97_selected_output==AC97_SPEAKER_OUTPUT && ac97_is_headphone_connected()==STATUS_TRUE) { //headphone was connected
   ac97_set_output(AC97_HEADPHONE_OUTPUT);
@@ -317,4 +222,18 @@ dword_t ac97_get_actual_stream_position(void) {
  number_of_processed_bytes += (ac97_buffer_memory_pointer[inb(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_CURRENTLY_PROCESSED_ENTRY)].number_of_samples*2 - inw(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_CURRENT_ENTRY_POSITION)*2);
 
  return number_of_processed_bytes;
+}
+
+void ac97_stop_sound(void) {
+ //stop streaming
+ outb(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_CONTROL, 0x0);
+
+ //clear status
+ outw(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_STATUS, 0x1C);
+
+ //buffers will not be filled by code in drivers/system/processes_on_background.c
+ ac97_playing_state = AC97_BUFFER_FILLED;
+
+ //destroy task for looping
+ destroy_task(task_ac97_play_buffer_in_loop);
 }

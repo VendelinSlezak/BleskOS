@@ -12,13 +12,18 @@ void vfs_entry_parse_extension_from_name(struct file_descriptor_t *file_descript
  //clear extension
  clear_memory((dword_t)(&file_descriptor->extension), 10*2);
 
+ //do not copy extension from folder
+ if(file_descriptor->type==FILE_FOLDER) {
+  return;
+ }
+
  //parse extension from name
  for(dword_t i=255; i>0; i--) {
   if(file_descriptor->name[i]=='.') { //find dot
    i++; //skip dot
 
-   for(dword_t j=0; j<10; j++) { //copy extension after dot
-    if(file_descriptor->name[i+j]==0 || (i+j)>=256) { //end of extension
+   for(dword_t j=0; j<9; j++) { //copy extension after dot
+    if(is_char(file_descriptor->name[i+j])==STATUS_FALSE || (i+j)>=256) { //end of extension
      break;
     }
     file_descriptor->extension[j] = get_small_char_value(file_descriptor->name[i+j]); //convert big chars to small chars
@@ -289,59 +294,45 @@ dword_t vfs_sort_folders_at_start(struct folder_descriptor_t *folder_path_struct
  return number_of_folders;
 }
 
-void vfs_sort_folder_by_name(struct folder_descriptor_t *folder_path_structure, byte_t type) {
+void vfs_sort_folder(struct folder_descriptor_t *folder_path_structure) {
  struct file_descriptor_t *file_descriptor = vfs_get_folder_data_pointer(folder_path_structure);
  dword_t number_of_folders = vfs_sort_folders_at_start(folder_path_structure);
 
- if(type==SORT_IN_ASCENDING_ORDER) {
-  vfs_sort_file_descriptors((&file_descriptor[0]), number_of_folders, swap_descriptors_by_name_in_ascending_order);
-  vfs_sort_file_descriptors((&file_descriptor[number_of_folders]), vfs_get_folder_number_of_files(folder_path_structure)-number_of_folders, swap_descriptors_by_name_in_ascending_order);
+ if(folder_path_structure->sort_direction==SORT_FOLDER_IN_ASCENDING_ORDER) {
+  if(folder_path_structure->sort_type==SORT_FOLDER_BY_NAME) {
+   vfs_sort_file_descriptors((&file_descriptor[0]), number_of_folders, swap_descriptors_by_name_in_ascending_order);
+   vfs_sort_file_descriptors((&file_descriptor[number_of_folders]), vfs_get_folder_number_of_files(folder_path_structure)-number_of_folders, swap_descriptors_by_name_in_ascending_order);
+  }
+  else if(folder_path_structure->sort_type==SORT_FOLDER_BY_EXTENSION) {
+   vfs_sort_file_descriptors((&file_descriptor[0]), number_of_folders, swap_descriptors_by_name_in_ascending_order); //folders do not have extension
+   vfs_sort_file_descriptors((&file_descriptor[number_of_folders]), vfs_get_folder_number_of_files(folder_path_structure)-number_of_folders, swap_descriptors_by_extension_in_ascending_order);
+  }
+  else if(folder_path_structure->sort_type==SORT_FOLDER_BY_SIZE) {
+   vfs_sort_file_descriptors((&file_descriptor[0]), number_of_folders, swap_descriptors_by_name_in_ascending_order); //folders do not have size
+   vfs_sort_file_descriptors((&file_descriptor[number_of_folders]), vfs_get_folder_number_of_files(folder_path_structure)-number_of_folders, swap_descriptors_by_size_in_ascending_order);
+  }
+  else if(folder_path_structure->sort_type==SORT_FOLDER_BY_DATE_OF_CREATION) {
+   vfs_sort_file_descriptors((&file_descriptor[0]), number_of_folders, swap_descriptors_by_date_of_creation_in_ascending_order);
+   vfs_sort_file_descriptors((&file_descriptor[number_of_folders]), vfs_get_folder_number_of_files(folder_path_structure)-number_of_folders, swap_descriptors_by_date_of_creation_in_ascending_order);
+  }
  }
- else {
-  vfs_sort_file_descriptors((&file_descriptor[0]), number_of_folders, swap_descriptors_by_name_in_descending_order);
-  vfs_sort_file_descriptors((&file_descriptor[number_of_folders]), vfs_get_folder_number_of_files(folder_path_structure)-number_of_folders, swap_descriptors_by_name_in_descending_order);
- }
-}
-
-void vfs_sort_folder_by_extension(struct folder_descriptor_t *folder_path_structure, byte_t type) {
- struct file_descriptor_t *file_descriptor = vfs_get_folder_data_pointer(folder_path_structure);
- dword_t number_of_folders = vfs_sort_folders_at_start(folder_path_structure);
-
- if(type==SORT_IN_ASCENDING_ORDER) {
-  vfs_sort_file_descriptors((&file_descriptor[0]), number_of_folders, swap_descriptors_by_name_in_ascending_order); //folders do not have extension
-  vfs_sort_file_descriptors((&file_descriptor[number_of_folders]), vfs_get_folder_number_of_files(folder_path_structure)-number_of_folders, swap_descriptors_by_extension_in_ascending_order);
- }
- else {
-  vfs_sort_file_descriptors((&file_descriptor[0]), number_of_folders, swap_descriptors_by_name_in_ascending_order); //folders do not have extension
-  vfs_sort_file_descriptors((&file_descriptor[number_of_folders]), vfs_get_folder_number_of_files(folder_path_structure)-number_of_folders, swap_descriptors_by_extension_in_descending_order);
- }
-}
-
-void vfs_sort_folder_by_size(struct folder_descriptor_t *folder_path_structure, byte_t type) {
- struct file_descriptor_t *file_descriptor = vfs_get_folder_data_pointer(folder_path_structure);
- dword_t number_of_folders = vfs_sort_folders_at_start(folder_path_structure);
-
- if(type==SORT_IN_ASCENDING_ORDER) {
-  vfs_sort_file_descriptors((&file_descriptor[0]), number_of_folders, swap_descriptors_by_name_in_ascending_order); //folders do not have size
-  vfs_sort_file_descriptors((&file_descriptor[number_of_folders]), vfs_get_folder_number_of_files(folder_path_structure)-number_of_folders, swap_descriptors_by_size_in_ascending_order);
- }
- else {
-  vfs_sort_file_descriptors((&file_descriptor[0]), number_of_folders, swap_descriptors_by_name_in_ascending_order); //folders do not have size
-  vfs_sort_file_descriptors((&file_descriptor[number_of_folders]), vfs_get_folder_number_of_files(folder_path_structure)-number_of_folders, swap_descriptors_by_size_in_descending_order);
- }
-}
-
-void vfs_sort_folder_by_date_of_creation(struct folder_descriptor_t *folder_path_structure, byte_t type) {
- struct file_descriptor_t *file_descriptor = vfs_get_folder_data_pointer(folder_path_structure);
- dword_t number_of_folders = vfs_sort_folders_at_start(folder_path_structure);
-
- if(type==SORT_IN_ASCENDING_ORDER) {
-  vfs_sort_file_descriptors((&file_descriptor[0]), number_of_folders, swap_descriptors_by_date_of_creation_in_ascending_order);
-  vfs_sort_file_descriptors((&file_descriptor[number_of_folders]), vfs_get_folder_number_of_files(folder_path_structure)-number_of_folders, swap_descriptors_by_date_of_creation_in_ascending_order);
- }
- else {
-  vfs_sort_file_descriptors((&file_descriptor[0]), number_of_folders, swap_descriptors_by_date_of_creation_in_descending_order);
-  vfs_sort_file_descriptors((&file_descriptor[number_of_folders]), vfs_get_folder_number_of_files(folder_path_structure)-number_of_folders, swap_descriptors_by_date_of_creation_in_descending_order);
+ else { //in descending order
+  if(folder_path_structure->sort_type==SORT_FOLDER_BY_NAME) {
+   vfs_sort_file_descriptors((&file_descriptor[0]), number_of_folders, swap_descriptors_by_name_in_descending_order);
+   vfs_sort_file_descriptors((&file_descriptor[number_of_folders]), vfs_get_folder_number_of_files(folder_path_structure)-number_of_folders, swap_descriptors_by_name_in_descending_order);
+  }
+  else if(folder_path_structure->sort_type==SORT_FOLDER_BY_EXTENSION) {
+   vfs_sort_file_descriptors((&file_descriptor[0]), number_of_folders, swap_descriptors_by_name_in_ascending_order); //folders do not have extension
+   vfs_sort_file_descriptors((&file_descriptor[number_of_folders]), vfs_get_folder_number_of_files(folder_path_structure)-number_of_folders, swap_descriptors_by_extension_in_descending_order);
+  }
+  else if(folder_path_structure->sort_type==SORT_FOLDER_BY_SIZE) {
+   vfs_sort_file_descriptors((&file_descriptor[0]), number_of_folders, swap_descriptors_by_name_in_ascending_order); //folders do not have size
+   vfs_sort_file_descriptors((&file_descriptor[number_of_folders]), vfs_get_folder_number_of_files(folder_path_structure)-number_of_folders, swap_descriptors_by_size_in_descending_order);
+  }
+  else if(folder_path_structure->sort_type==SORT_FOLDER_BY_DATE_OF_CREATION) {
+   vfs_sort_file_descriptors((&file_descriptor[0]), number_of_folders, swap_descriptors_by_date_of_creation_in_descending_order);
+   vfs_sort_file_descriptors((&file_descriptor[number_of_folders]), vfs_get_folder_number_of_files(folder_path_structure)-number_of_folders, swap_descriptors_by_date_of_creation_in_descending_order);
+  }
  }
 }
 
@@ -364,6 +355,8 @@ struct folder_descriptor_t *vfs_create_folder_path_structure(byte_t partition_nu
  //fill structure
  folder_path_structure->partition_number = partition_number;
  folder_path_structure->view_type = VIEW_FOLDER_ICONS;
+ folder_path_structure->sort_type = SORT_FOLDER_BY_NAME;
+ folder_path_structure->sort_direction = SORT_FOLDER_IN_ASCENDING_ORDER;
  folder_path_structure->selected_entry = FOLDER_NO_ENTRY_SELECTED;
  folder_path_structure->path_folder_locations[0] = ROOT_FOLDER;
  folder_path_structure->folder_number_in_array_of_loaded_folders = root_folder_aolf_number;
@@ -373,7 +366,7 @@ struct folder_descriptor_t *vfs_create_folder_path_structure(byte_t partition_nu
  number_of_folder_structures++;
 
  //sort folder files by name
- vfs_sort_folder_by_name(folder_path_structure, SORT_IN_ASCENDING_ORDER);
+ vfs_sort_folder(folder_path_structure);
 
  //return structure
  return folder_path_structure;
@@ -446,8 +439,8 @@ byte_t vfs_open_folder(struct folder_descriptor_t *folder_path_structure, dword_
   folder_path_structure->first_showed_entry = 0;
   folder_path_structure->selected_entry = FOLDER_NO_ENTRY_SELECTED;
 
-  //sort folder files by name
-  vfs_sort_folder_by_name(folder_path_structure, SORT_IN_ASCENDING_ORDER);
+  //sort folder files
+  vfs_sort_folder(folder_path_structure);
   
   //folder was successfully loaded
   return STATUS_GOOD;
@@ -486,8 +479,8 @@ byte_t vfs_go_back_in_folder_path(struct folder_descriptor_t *folder_path_struct
  folder_path_structure->first_showed_entry = 0;
  folder_path_structure->selected_entry = FOLDER_NO_ENTRY_SELECTED;
 
- //sort folder files by name
- vfs_sort_folder_by_name(folder_path_structure, SORT_IN_ASCENDING_ORDER);
+ //sort folder files
+ vfs_sort_folder(folder_path_structure);
  
  //folder was successfully loaded
  return STATUS_GOOD;

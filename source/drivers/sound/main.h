@@ -51,9 +51,6 @@ byte_t *pcm_data;
 void initalize_sound_card(void);
 void sound_set_volume(byte_t volume);
 byte_t is_supported_sound_format(byte_t channels, byte_t bits_per_channel, dword_t sample_rate);
-void play_new_sound(dword_t sound_memory, dword_t channels, dword_t bits_per_sample, dword_t sample_rate, dword_t number_of_samples);
-void pause_sound(void);
-void play_sound(void);
 
 dword_t sound_get_actual_stream_position(void);
 void play_sound_with_refilling_buffer(byte_t *source_data_pointer, dword_t source_data_length, dword_t size_of_full_pcm_output_in_bytes, dword_t sample_rate, dword_t size_of_buffer, void (*fill_buffer)(byte_t *buffer));

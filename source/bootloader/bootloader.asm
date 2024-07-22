@@ -901,7 +901,7 @@ load_bleskos:
   int 10h
   popa
 
-  cmp ch, 29 ;load 29x36 sectors = 522 KB
+  cmp ch, 50 ;load 50 sectors = 900 KB
   ja .select_graphic_mode
 
   ;we need to read heads separately, because reading more might cause issues on some hardware (e.g. Virtualbox)
@@ -949,7 +949,7 @@ load_bleskos:
  .hard_disk_boot:
  mov dword [0xF008], 10 ;first sector of BleskOS code
  mov edx, 10 ;we will store sector number here
- mov cx, 16 ;load 16x64 sectors = 512 KB
+ mov cx, 30 ;load 30x64 sectors = 960 KB
  .load_bleskos_from_hard_disk:
   ;create descriptor of transfer
   mov word [0xF000], 0x0010 ;signature

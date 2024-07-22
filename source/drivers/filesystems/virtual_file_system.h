@@ -11,11 +11,19 @@
 #define MAX_NUMBER_OF_FOLDERS_IN_PATH 50
 #define VIEW_FOLDER_LIST 0
 #define VIEW_FOLDER_ICONS 1
+#define SORT_FOLDER_IN_ASCENDING_ORDER 0
+#define SORT_FOLDER_IN_DESCENDING_ORDER 1
+#define SORT_FOLDER_BY_NAME 0
+#define SORT_FOLDER_BY_EXTENSION 1
+#define SORT_FOLDER_BY_SIZE 2
+#define SORT_FOLDER_BY_DATE_OF_CREATION 3
 #define FOLDER_NO_ENTRY_SELECTED 0xFFFFFFFF
 struct folder_descriptor_t {
  byte_t partition_number; //partition where folder is
  
  byte_t view_type; //VIEW_FOLDER_LIST or VIEW_FOLDER_ICONS
+ byte_t sort_type: 7; //SORT_FOLDER_BY_NAME, SORT_FOLDER_BY_EXTENSION, SORT_FOLDER_BY_SIZE or SORT_FOLDER_BY_DATE_OF_CREATION
+ byte_t sort_direction: 1; //SORT_FOLDER_IN_ASCENDING_ORDER or SORT_FOLDER_IN_DESCENDING_ORDER
  dword_t first_showed_entry;
  dword_t selected_entry;
 
@@ -55,8 +63,6 @@ struct file_descriptor_t last_loaded_file_descriptor;
 void vfs_entry_parse_extension_from_name(struct file_descriptor_t *file_descriptor);
 byte_t vfs_does_file_have_this_extension(struct file_descriptor_t *file_descriptor, byte_t *extensions);
 
-#define SORT_IN_ASCENDING_ORDER 0
-#define SORT_IN_DESCENDING_ORDER 1
 void vfs_sort_file_descriptors(struct file_descriptor_t *file_descriptor, dword_t number_of_descriptors, byte_t swap_descriptors(struct file_descriptor_t *file_descriptor1, struct file_descriptor_t *file_descriptor2));
 byte_t swap_descriptors_by_name_in_ascending_order(struct file_descriptor_t *file_descriptor1, struct file_descriptor_t *file_descriptor2);
 byte_t swap_descriptors_by_name_in_descending_order(struct file_descriptor_t *file_descriptor1, struct file_descriptor_t *file_descriptor2);
@@ -67,10 +73,7 @@ byte_t swap_descriptors_by_size_in_descending_order(struct file_descriptor_t *fi
 byte_t swap_descriptors_by_date_of_creation_in_ascending_order(struct file_descriptor_t *file_descriptor1, struct file_descriptor_t *file_descriptor2);
 byte_t swap_descriptors_by_date_of_creation_in_descending_order(struct file_descriptor_t *file_descriptor1, struct file_descriptor_t *file_descriptor2);
 dword_t vfs_sort_folders_at_start(struct folder_descriptor_t *folder_path_structure);
-void vfs_sort_folder_by_name(struct folder_descriptor_t *folder_path_structure, byte_t type);
-void vfs_sort_folder_by_extension(struct folder_descriptor_t *folder_path_structure, byte_t type);
-void vfs_sort_folder_by_size(struct folder_descriptor_t *folder_path_structure, byte_t type);
-void vfs_sort_folder_by_date_of_creation(struct folder_descriptor_t *folder_path_structure, byte_t type);
+void vfs_sort_folder(struct folder_descriptor_t *folder_path_structure);
 
 struct folder_descriptor_t *vfs_create_folder_path_structure(byte_t partition_number);
 struct file_descriptor_t *vfs_get_folder_data_pointer(struct folder_descriptor_t *folder_path_structure);
