@@ -75,39 +75,6 @@ byte_t is_supported_sound_format(byte_t channels, byte_t bits_per_channel, dword
  return STATUS_ERROR; 
 }
 
-void play_new_sound(dword_t sound_memory, dword_t channels, dword_t bits_per_sample, dword_t sample_rate, dword_t number_of_samples) {
- if(selected_sound_card!=NO_SOUND_CARD) {
-  if(sound_cards_info[selected_sound_card].driver==SOUND_CARD_DRIVER_AC97) {
-   ac97_play_memory(sound_memory, number_of_samples*(bits_per_sample/8), sample_rate);
-  }
-  else if(sound_cards_info[selected_sound_card].driver==SOUND_CARD_DRIVER_HDA) {
-   hda_play_memory(selected_sound_card, sound_memory, sample_rate, channels, bits_per_sample, (number_of_samples/channels));
-  }
- }
-}
-
-void pause_sound(void) {
- if(selected_sound_card!=NO_SOUND_CARD) {
-  if(sound_cards_info[selected_sound_card].driver==SOUND_CARD_DRIVER_AC97) {
-   ac97_stop_sound();
-  }
-  else if(sound_cards_info[selected_sound_card].driver==SOUND_CARD_DRIVER_HDA) {
-   hda_stop_sound(selected_sound_card);
-  }
- }
-}
-
-void play_sound(void) {
- if(selected_sound_card!=NO_SOUND_CARD) {
-  if(sound_cards_info[selected_sound_card].driver==SOUND_CARD_DRIVER_AC97) {
-   ac97_play_sound();
-  }
-  else if(sound_cards_info[selected_sound_card].driver==SOUND_CARD_DRIVER_HDA) {
-   hda_resume_sound(selected_sound_card);
-  }
- }
-}
-
 void play_sound_with_refilling_buffer(byte_t *source_data_pointer, dword_t source_data_length, dword_t size_of_full_pcm_output_in_bytes, dword_t sample_rate, dword_t size_of_buffer, void (*fill_buffer)(byte_t *buffer)) {
  //set info about sound
  sound_buffer_refilling_info->source_data_pointer = source_data_pointer;

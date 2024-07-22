@@ -926,93 +926,6 @@ word_t hda_return_sound_data_format(dword_t sample_rate, dword_t channels, dword
  return data_format;
 }
 
-void hda_play_memory(dword_t sound_card_number, dword_t memory, dword_t sample_rate, dword_t channels, dword_t bits_per_sample, dword_t number_of_samples_in_one_channel) {
- if((hda_audio_output_node_stream_format_capabilities & 0x1)==0x0) {
-  return; //this Audio Output do not support PCM sound data
- }
-
- //calculate length of data in bytes
- dword_t bytes_per_sample = (bits_per_sample/8); //8 bits/16 bits
- if(bits_per_sample>16) { //20 bits/24 bits/32 bits
-  bytes_per_sample = 4;
- }
- hda_sound_length = (number_of_samples_in_one_channel*bytes_per_sample*channels);
-
- //stop stream
- hda_playing_state = 0;
- mmio_outb(hda_output_stream_base + 0x00, 0x00);
- ticks = 0;
- while(ticks<2) {
-  asm("nop");
-  if((mmio_inb(hda_output_stream_base + 0x00) & 0x2)==0x0) {
-   break;
-  }
- }
- if((mmio_inb(hda_output_stream_base + 0x00) & 0x2)==0x2) {
-  log("\nHDA: can not stop stream");
-  return;
- }
- 
- //reset stream registers
- mmio_outb(hda_output_stream_base + 0x00, 0x01);
- ticks = 0;
- while(ticks<10) {
-  asm("nop");
-  if((mmio_inb(hda_output_stream_base + 0x00) & 0x1)==0x1) {
-   break;
-  }
- }
- if((mmio_inb(hda_output_stream_base + 0x00) & 0x1)==0x0) {
-  log("\nHDA: can not start resetting stream");
- }
- wait(5);
- mmio_outb(hda_output_stream_base + 0x00, 0x00);
- ticks = 0;
- while(ticks<10) {
-  asm("nop");
-  if((mmio_inb(hda_output_stream_base + 0x00) & 0x1)==0x0) {
-   break;
-  }
- }
- if((mmio_inb(hda_output_stream_base + 0x00) & 0x1)==0x1) {
-  log("\nHDA: can not stop resetting stream");
-  return;
- }
- wait(5);
-
- //clear error bits
- mmio_outb(hda_output_stream_base + 0x03, 0x1C);
-
- //fill buffer entries - there have to be at least two entries in buffer, so we fill second entry with zeroes
- clear_memory((dword_t)hda_output_buffer_list, 16*2);
- hda_output_buffer_list[0]=memory;
- hda_output_buffer_list[2]=hda_sound_length;
- asm("wbinvd"); //flush processor cache to RAM to be sure sound card will read correct data
-
- //set buffer registers
- mmio_outd(hda_output_stream_base + 0x18, (dword_t)hda_output_buffer_list);
- mmio_outd(hda_output_stream_base + 0x08, hda_sound_length);
- mmio_outw(hda_output_stream_base + 0x0C, 1); //there are two entries in buffer
-
- //set stream data format
- mmio_outw(hda_output_stream_base + 0x12, hda_return_sound_data_format(sample_rate, channels, bits_per_sample));
-
- //set Audio Output node data format
- hda_send_verb(hda_codec_number, hda_audio_output_node_number, 0x200, hda_return_sound_data_format(sample_rate, channels, bits_per_sample));
- if(hda_second_audio_output_node_number!=0) {
-  hda_send_verb(hda_codec_number, hda_second_audio_output_node_number, 0x200, hda_return_sound_data_format(sample_rate, channels, bits_per_sample));
- }
- wait(10);
-
- //start streaming to stream 1
- mmio_outb(hda_output_stream_base + 0x02, 0x14);
- mmio_outb(hda_output_stream_base + 0x00, 0x02);
- hda_bytes_on_output_for_stopping_sound = 0;
- hda_playing_state = 1;
-
- //sound will be automatically stopped by drivers/system/processes_on_background.c
-}
-
 void hda_play_pcm_data_in_loop(dword_t sound_card_number, dword_t sample_rate) {
  if((hda_audio_output_node_stream_format_capabilities & 0x1)==0x0) {
   return; //this Audio Output do not support PCM sound data
@@ -1091,11 +1004,6 @@ void hda_play_pcm_data_in_loop(dword_t sound_card_number, dword_t sample_rate) {
 void hda_stop_sound(dword_t sound_card_number) {
  mmio_outb(hda_output_stream_base + 0x00, 0x00);
  hda_playing_state = 0;
-}
-
-void hda_resume_sound(dword_t sound_card_number) {
- mmio_outb(hda_output_stream_base + 0x00, 0x02);
- hda_playing_state = 1;
 }
 
 dword_t hda_get_actual_stream_position(dword_t sound_card_number) {

@@ -82,8 +82,6 @@ void hda_check_headphone_connection_change(void);
 byte_t hda_is_supported_channel_size(dword_t sound_card_number, byte_t size);
 byte_t hda_is_supported_sample_rate(dword_t sound_card_number, dword_t sample_rate);
 word_t hda_return_sound_data_format(dword_t sample_rate, dword_t channels, dword_t bits_per_sample);
-void hda_play_memory(dword_t sound_card_number, dword_t memory, dword_t sample_rate, dword_t channels, dword_t bits_per_sample, dword_t number_of_samples_in_one_channel);
 void hda_play_pcm_data_in_loop(dword_t sound_card_number, dword_t sample_rate);
 void hda_stop_sound(dword_t sound_card_number);
-void hda_resume_sound(dword_t sound_card_number);
 dword_t hda_get_actual_stream_position(dword_t sound_card_number);

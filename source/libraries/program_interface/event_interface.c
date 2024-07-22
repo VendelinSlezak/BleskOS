@@ -8,7 +8,17 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-dword_t wait_for_event(dword_t *event_interface) {
+dword_t wait_for_event(dword_t *event_interface, void (*redraw_method)(void)) {
+ dword_t event = wait_for_one_event(event_interface);
+
+ if(event==EVENT_REDRAW && (dword_t)redraw_method!=0) {
+  (*redraw_method)();
+ }
+
+ return event;
+}
+
+dword_t wait_for_one_event(dword_t *event_interface) {
  void (*method)(void);
  dword_t (*method_with_return)(void);
  void (*scrollbar_change_method)(dword_t value);
@@ -59,6 +69,29 @@ dword_t wait_for_event(dword_t *event_interface) {
    event_interface += 4;
   }
 
+  //pressed key with control key event
+  if(event_interface[0]==KEYBOARD_EVENT_PRESSED_KEY_WITH_CONTROL_KEY) {
+   if((keyboard_pressed_control_keys & event_interface[1])==event_interface[1] && keyboard_code_of_pressed_key==event_interface[2]) {
+    //call method
+    if(event_interface[3]!=0) {
+     if(event_interface[4]==RETURN_EVENT_FROM_METHOD) {
+      method_with_return = (dword_t (*)(void)) event_interface[3];
+      return (*method_with_return)();
+     }
+     else {
+      method = (void (*)(void)) event_interface[3];
+      (*method)();
+     }
+    }
+
+    //return
+    return event_interface[4];
+   }
+
+   //go to next event
+   event_interface += 5;
+  }
+
   //click to mouse zone event
   if(event_interface[0]==MOUSE_EVENT_CLICK_ON_ZONE) {
    if(mouse_click_button_state==MOUSE_CLICK && click_zone==event_interface[1]) {
@@ -103,6 +136,29 @@ dword_t wait_for_event(dword_t *event_interface) {
 
    //go to next event
    event_interface += 5;
+  }
+
+  //mouse wheel event
+  if(event_interface[0]==MOUSE_WHEEL_EVENT) {
+   if(mouse_wheel!=0) {
+    //call method
+    if(event_interface[1]!=0) {
+     if(event_interface[2]==RETURN_EVENT_FROM_METHOD) {
+      method_with_return = (dword_t (*)(void)) event_interface[1];
+      return (*method_with_return)();
+     }
+     else {
+      method = (void (*)(void)) event_interface[1];
+      (*method)();
+     }
+    }
+
+    //return
+    return event_interface[2];
+   }
+
+   //go to next event
+   event_interface += 3;
   }
 
   //scrollbar

@@ -639,14 +639,16 @@ byte_t *read_fat_folder(dword_t cluster) {
     }
 
     //copy extension
-    for(dword_t i=0; i<3; i++) {
-     vfs_folder[vfs_entry].extension[i] = fat_folder[fat_entry].extension[i];
+    if(vfs_folder[vfs_entry].type==NORMAL_FILE) {
+     vfs_folder[vfs_entry].name[8] = '.';
+     for(dword_t i=0; i<3; i++) {
+      vfs_folder[vfs_entry].name[9+i] = fat_folder[fat_entry].extension[i];
+     }
     }
    }
-   else {
-    //parse extension from name
-    vfs_entry_parse_extension_from_name((struct file_descriptor_t *)(&vfs_folder[vfs_entry]));
-   }
+
+   //parse extension from name
+   vfs_entry_parse_extension_from_name((struct file_descriptor_t *)(&vfs_folder[vfs_entry]));
 
    //move to next entry
    vfs_entry++;

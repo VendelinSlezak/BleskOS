@@ -18,11 +18,13 @@ enum {
  CLICK_ZONE_FILE_MANAGER_CHANGE_VIEW_WINDOW,
  CLICK_ZONE_FILE_MANAGER_PREVIEW_WINDOW,
  CLICK_ZONE_FILE_MANAGER_GO_TO_PREVIOUS_FOLDER,
+ CLICK_ZONE_FILE_MANAGER_MORE,
  CLICK_ZONE_FILE_MANAGER_CREATE_NEW_FOLDER,
  CLICK_ZONE_FILE_MANAGER_DELETE,
  CLICK_ZONE_FILE_MANAGER_RENAME,
  CLICK_ZONE_FILE_MANAGER_COPY,
  CLICK_ZONE_FILE_MANAGER_PASTE,
+ CLICK_ZONE_FILE_MANAGER_PROPERTIES,
  CLICK_ZONE_FILE_MANAGER_SCROLLBAR,
  CLICK_ZONE_FILE_MANAGER_FIRST_CONNECTED_PARTITION,
  CLICK_ZONE_FILE_MANAGER_LAST_CONNECTED_PARTITION = (CLICK_ZONE_FILE_MANAGER_FIRST_CONNECTED_PARTITION+9),
@@ -30,13 +32,11 @@ enum {
 };
 
 enum {
- FILE_MANAGER_EVENT_REDRAW = PROGRAM_DEFINED_EVENTS,
-};
-
-enum {
  CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_BACK = 1,
  CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_LIST,
  CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_ICONS,
+ CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_IN_ASCENDING_ORDER,
+ CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_IN_DESCENDING_ORDER,
  CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_BY_NAME,
  CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_BY_EXTENSION,
  CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_BY_SIZE,
@@ -87,16 +87,18 @@ dword_t file_manager_event_click_on_files(void);
 dword_t file_manager_event_go_to_previous_folder(void);
 void file_manager_event_scrollbar_change(dword_t value);
 
-void file_manager_change_view_window(void);
+dword_t file_manager_change_view_window(void);
 dword_t file_manager_preview_window(void);
 
-dword_t file_manager_keyboard_event_c(void);
 dword_t file_manager_rename_file_in_folder(void);
 dword_t file_manager_delete_file_in_folder(void);
 dword_t file_manager_create_folder_in_folder(void);
 dword_t file_manager_copy_file(void);
-dword_t file_manager_keyboard_event_v(void);
 dword_t file_manager_paste_file(void);
+
+dword_t file_manager_mouse_wheel_event(void);
+dword_t file_manager_more_buttons(void);
+void file_manager_properties(void);
 
 void redraw_file_manager(void);
 void file_manager_new_tab(void);
@@ -109,8 +111,8 @@ dword_t file_manager_event_interface[] = { 0,
  MOUSE_EVENT_CLICK_ON_ZONES, CLICK_ZONE_FILE_MANAGER_FIRST_CONNECTED_PARTITION, CLICK_ZONE_FILE_MANAGER_LAST_CONNECTED_PARTITION, (dword_t)(&file_manager_event_click_on_connected_partitions), NO_EVENT,
  
  //refresh devices
- KEYBOARD_EVENT_PRESSED_KEY, KEY_F8, (dword_t)(&refresh_devices), FILE_MANAGER_EVENT_REDRAW,
- MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_REFRESH_DEVICES, (dword_t)(&refresh_devices), FILE_MANAGER_EVENT_REDRAW,
+ KEYBOARD_EVENT_PRESSED_KEY, KEY_F8, (dword_t)(&refresh_devices), EVENT_REDRAW,
+ MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_REFRESH_DEVICES, (dword_t)(&refresh_devices), EVENT_REDRAW,
 
  //events in file zone
  KEYBOARD_EVENT_PRESSED_KEY, KEY_UP, (dword_t)(&file_manager_event_key_up), RETURN_EVENT_FROM_METHOD,
@@ -120,16 +122,25 @@ dword_t file_manager_event_interface[] = { 0,
  KEYBOARD_EVENT_PRESSED_KEY, KEY_ENTER, (dword_t)(&file_manager_event_key_enter), RETURN_EVENT_FROM_METHOD,
  MOUSE_EVENT_CLICK_ON_ZONES, CLICK_ZONE_FILE_MANAGER_FIRST_ITEM, 0xFFFFFFFF, (dword_t)(&file_manager_event_click_on_files), RETURN_EVENT_FROM_METHOD,
  VERTICAL_SCROLLBAR_EVENT, CLICK_ZONE_FILE_MANAGER_SCROLLBAR, (dword_t)(&file_manager_scrollbar_info), (dword_t)(&file_manager_event_scrollbar_change),
+ MOUSE_WHEEL_EVENT, (dword_t)(&file_manager_mouse_wheel_event), RETURN_EVENT_FROM_METHOD,
+
+ //more
+ MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_MORE, (dword_t)(&file_manager_more_buttons), RETURN_EVENT_FROM_METHOD,
+ 
+ //copy file
+ KEYBOARD_EVENT_PRESSED_KEY_WITH_CONTROL_KEY, KEYBOARD_CTRL, KEY_C, (dword_t)(&file_manager_copy_file), RETURN_EVENT_FROM_METHOD,
+ MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_COPY, (dword_t)(&file_manager_copy_file), RETURN_EVENT_FROM_METHOD,
+
+ //paste file
+ KEYBOARD_EVENT_PRESSED_KEY_WITH_CONTROL_KEY, KEYBOARD_CTRL, KEY_V, (dword_t)(&file_manager_paste_file), RETURN_EVENT_FROM_METHOD,
 
  //go to previous folder
  KEYBOARD_EVENT_PRESSED_KEY, KEY_B, (dword_t)(&file_manager_event_go_to_previous_folder), RETURN_EVENT_FROM_METHOD,
  MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_GO_TO_PREVIOUS_FOLDER, (dword_t)(&file_manager_event_go_to_previous_folder), RETURN_EVENT_FROM_METHOD,
 
- //change view / paste file
- KEYBOARD_EVENT_PRESSED_KEY, KEY_V, (dword_t)(&file_manager_keyboard_event_v), RETURN_EVENT_FROM_METHOD,
-
  //change view
- MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_CHANGE_VIEW_WINDOW, (dword_t)(&file_manager_change_view_window), NO_EVENT,
+ KEYBOARD_EVENT_PRESSED_KEY, KEY_V, (dword_t)(&file_manager_change_view_window), RETURN_EVENT_FROM_METHOD,
+ MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_CHANGE_VIEW_WINDOW, (dword_t)(&file_manager_change_view_window), RETURN_EVENT_FROM_METHOD,
 
  //image preview
  KEYBOARD_EVENT_PRESSED_KEY, KEY_P, (dword_t)(&file_manager_preview_window), RETURN_EVENT_FROM_METHOD,
@@ -137,23 +148,16 @@ dword_t file_manager_event_interface[] = { 0,
 
  //rename file
  KEYBOARD_EVENT_PRESSED_KEY, KEY_R, (dword_t)(&file_manager_rename_file_in_folder), RETURN_EVENT_FROM_METHOD,
- MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_RENAME, (dword_t)(&file_manager_rename_file_in_folder), RETURN_EVENT_FROM_METHOD,
 
  //delete file
  KEYBOARD_EVENT_PRESSED_KEY, KEY_DELETE, (dword_t)(&file_manager_delete_file_in_folder), RETURN_EVENT_FROM_METHOD,
- MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_DELETE, (dword_t)(&file_manager_delete_file_in_folder), RETURN_EVENT_FROM_METHOD,
-
- //create folder / copy file
- KEYBOARD_EVENT_PRESSED_KEY, KEY_C, (dword_t)(&file_manager_keyboard_event_c), RETURN_EVENT_FROM_METHOD,
 
  //create folder
- MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_CREATE_NEW_FOLDER, (dword_t)(&file_manager_create_folder_in_folder), RETURN_EVENT_FROM_METHOD,
+ KEYBOARD_EVENT_PRESSED_KEY, KEY_C, (dword_t)(&file_manager_create_folder_in_folder), RETURN_EVENT_FROM_METHOD,
 
- //copy file
- MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_COPY, (dword_t)(&file_manager_copy_file), RETURN_EVENT_FROM_METHOD,
-
- //paste file
- MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_PASTE, (dword_t)(&file_manager_paste_file), RETURN_EVENT_FROM_METHOD,
+ //properties
+ KEYBOARD_EVENT_PRESSED_KEY, KEY_F5, (dword_t)(&file_manager_properties), EVENT_REDRAW,
+ MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_PROPERTIES, (dword_t)(&file_manager_properties), EVENT_REDRAW,
 
  END_OF_EVENTS,
 };
@@ -166,6 +170,11 @@ dword_t file_manager_view_window_event_interface[] = { 0,
  MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_LIST, 0, CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_LIST,
  KEYBOARD_EVENT_PRESSED_KEY, KEY_I, 0, CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_ICONS,
  MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_ICONS, 0, CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_ICONS,
+
+ KEYBOARD_EVENT_PRESSED_KEY, KEY_A, 0, CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_IN_ASCENDING_ORDER,
+ MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_IN_ASCENDING_ORDER, 0, CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_IN_ASCENDING_ORDER,
+ KEYBOARD_EVENT_PRESSED_KEY, KEY_B, 0, CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_IN_DESCENDING_ORDER,
+ MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_IN_DESCENDING_ORDER, 0, CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_IN_DESCENDING_ORDER,
 
  KEYBOARD_EVENT_PRESSED_KEY, KEY_N, 0, CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_BY_NAME,
  MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_BY_NAME, 0, CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_BY_NAME,
@@ -198,6 +207,37 @@ dword_t file_manager_name_input_event_interface[] = { 0,
  MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_NAME_INPUT_APPROVE, 0, CLICK_ZONE_FILE_MANAGER_NAME_INPUT_APPROVE,
 
  TEXT_AREA_WITH_PERMANENT_FOCUS_EVENT, 0,
+
+ END_OF_EVENTS,
+};
+
+dword_t file_manager_more_buttons_event_interface[] = { 0,
+ KEYBOARD_EVENT_PRESSED_KEY, KEY_ESC, 0, EVENT_EXIT,
+ MOUSE_EVENT_CLICK_ON_ZONE, 0, 0, EVENT_EXIT,
+
+ //copy file
+ KEYBOARD_EVENT_PRESSED_KEY_WITH_CONTROL_KEY, KEYBOARD_CTRL, KEY_C, (dword_t)(&file_manager_copy_file), RETURN_EVENT_FROM_METHOD,
+ MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_COPY, (dword_t)(&file_manager_copy_file), RETURN_EVENT_FROM_METHOD,
+
+ //paste file
+ KEYBOARD_EVENT_PRESSED_KEY_WITH_CONTROL_KEY, KEYBOARD_CTRL, KEY_V, (dword_t)(&file_manager_paste_file), RETURN_EVENT_FROM_METHOD,
+ MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_PASTE, (dword_t)(&file_manager_paste_file), RETURN_EVENT_FROM_METHOD,
+
+ //rename file
+ KEYBOARD_EVENT_PRESSED_KEY, KEY_R, (dword_t)(&file_manager_rename_file_in_folder), RETURN_EVENT_FROM_METHOD,
+ MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_RENAME, (dword_t)(&file_manager_rename_file_in_folder), RETURN_EVENT_FROM_METHOD,
+
+ //delete file
+ KEYBOARD_EVENT_PRESSED_KEY, KEY_DELETE, (dword_t)(&file_manager_delete_file_in_folder), RETURN_EVENT_FROM_METHOD,
+ MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_DELETE, (dword_t)(&file_manager_delete_file_in_folder), RETURN_EVENT_FROM_METHOD,
+
+ //create folder
+ KEYBOARD_EVENT_PRESSED_KEY, KEY_C, (dword_t)(&file_manager_create_folder_in_folder), RETURN_EVENT_FROM_METHOD,
+ MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_CREATE_NEW_FOLDER, (dword_t)(&file_manager_create_folder_in_folder), RETURN_EVENT_FROM_METHOD,
+
+ //properties
+ KEYBOARD_EVENT_PRESSED_KEY, KEY_F5, (dword_t)(&file_manager_properties), EVENT_REDRAW,
+ MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_PROPERTIES, (dword_t)(&file_manager_properties), EVENT_REDRAW,
 
  END_OF_EVENTS,
 };

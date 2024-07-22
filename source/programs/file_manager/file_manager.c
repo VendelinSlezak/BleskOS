@@ -22,10 +22,13 @@ void file_manager(void) {
  program_interface_redraw();
 
  while(1) {
-  dword_t event = wait_for_event(file_manager_event_interface);
+  dword_t event = wait_for_event(file_manager_event_interface, redraw_file_manager);
 
   //process event
-  if(event==FILE_MANAGER_EVENT_REDRAW) {
+  if(event==EVENT_REDRAW) {
+   continue;
+  }
+  else if(event==EVENT_USB_DEVICE_CHANGE) {
    redraw_file_manager();
    continue;
   }
@@ -52,13 +55,14 @@ void file_manager(void) {
      && file_manager_folder_descriptor->selected_entry!=FOLDER_NO_ENTRY_SELECTED
      && get_mouse_cursor_click_board_value()==0) {
    file_manager_folder_descriptor->selected_entry = FOLDER_NO_ENTRY_SELECTED;
-   event = FILE_MANAGER_EVENT_REDRAW;
+   redraw_file_manager();
   }
  }
 }
 
 void file_manager_event_click_on_connected_partitions(void) {
  dword_t selected_partition = (get_mouse_cursor_click_board_value()-CLICK_ZONE_FILE_MANAGER_FIRST_CONNECTED_PARTITION);
+ int view_type = -1, sort_type = -1, sort_direction = -1;
 
  //open new tab and load root folder
  if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)==0) {
@@ -86,7 +90,14 @@ void file_manager_event_click_on_connected_partitions(void) {
   return;
  }
 
- //change partition
+ //save selected view type, sort type and sort direction
+ if((dword_t)file_manager_folder_descriptor!=0) {
+  view_type = file_manager_folder_descriptor->view_type;
+  sort_type = file_manager_folder_descriptor->sort_type;
+  sort_direction = file_manager_folder_descriptor->sort_direction;
+ }
+
+ //unload partition
  vfs_destroy_folder_path_structure((struct folder_descriptor_t *)get_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY));
 
  //load selected partition
@@ -94,6 +105,15 @@ void file_manager_event_click_on_connected_partitions(void) {
  set_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY, (dword_t)vfs_create_folder_path_structure(selected_partition));
  set_file_value(FILE_MANAGER_SCROLLBAR_RIDER_POSITION, 0);
  file_manager_scrollbar_info.showed_document_line = 0;
+
+ //set previously selected view type, sort type and sort direction
+ file_manager_folder_descriptor = (struct folder_descriptor_t *) (get_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY));
+ if(view_type!=-1) {
+  file_manager_folder_descriptor->view_type = view_type;
+  file_manager_folder_descriptor->sort_type = sort_type;
+  file_manager_folder_descriptor->sort_direction = sort_direction;
+  vfs_sort_folder(file_manager_folder_descriptor);
+ }
 
  //test error
  if(get_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY)==0) {
@@ -109,13 +129,52 @@ void file_manager_event_click_on_connected_partitions(void) {
 }
 
 void file_manager_event_key_page_up(void) {
- struct folder_descriptor_t *file_manager_folder_descriptor = (struct folder_descriptor_t *) (get_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY));
- if(((dword_t)file_manager_folder_descriptor!=0 && file_manager_folder_descriptor->partition_number==0)) {
+ dword_t partition_to_select = NO_PARTITION_SELECTED;
+
+ //add new tab and load root folder
+ if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)==0) {
+  //select last connected partition
+  for(dword_t i=MAX_NUMBER_OF_CONNECTED_PARTITIONS; i>0; i--) {
+   if(connected_partitions[(i-1)].medium_type!=NO_MEDIUM) {
+    partition_to_select = (i-1);
+    break;
+   }
+  }
+  if(partition_to_select==NO_PARTITION_SELECTED) { //no partition connected
+   return;
+  }
+
+  //add tab
+  add_file((word_t *)"N\0e\0w\0\0\0", 0, 0, 0, 0, 0);
+  set_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY, 0);
+  set_file_value(FILE_MANAGER_FOLDER_PATH_NAMES, calloc(20*2*(MAX_NUMBER_OF_FOLDERS_IN_PATH+2)));
+  set_file_value(FILE_MANAGER_SCROLLBAR_RIDER_POSITION, 0);
+  word_t *path_names = (word_t *) (get_file_value(FILE_MANAGER_FOLDER_PATH_NAMES));
+  path_names[0] = 'R';
+  path_names[1] = 'o';
+  path_names[2] = 'o';
+  path_names[3] = 't';
+
+  set_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY, (dword_t)vfs_create_folder_path_structure(partition_to_select));
+  set_file_value(FILE_MANAGER_SCROLLBAR_RIDER_POSITION, 0);
+  file_manager_scrollbar_info.showed_document_line = 0;
+
+  //test error
+  if(get_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY)==0) {
+   error_window("Error during reading root folder");
+   change_file_name_byte_string("Error");
+  }
+  else {
+   change_file_name_byte_string("Root");
+  }
+
+  //redraw screen
+  redraw_file_manager();
   return;
  }
 
  //no partition is selected
- dword_t partition_to_select = NO_PARTITION_SELECTED;
+ struct folder_descriptor_t *file_manager_folder_descriptor = (struct folder_descriptor_t *) (get_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY));
  if((dword_t)file_manager_folder_descriptor==0) {
   //select last connected partition
   for(dword_t i=MAX_NUMBER_OF_CONNECTED_PARTITIONS; i>0; i--) {
@@ -133,18 +192,36 @@ void file_manager_event_key_page_up(void) {
     break;
    }
   }
+  if(file_manager_folder_descriptor->partition_number==partition_to_select) { //this partition is already selected
+   return;
+  }
  }
 
  //select partition
  if(partition_to_select!=NO_PARTITION_SELECTED) {
-  //unload actual structure
-  vfs_destroy_folder_path_structure(file_manager_folder_descriptor);
+  //save selected view type, sort type and sort direction and unload actual structure
+  int view_type = -1, sort_type = -1, sort_direction = -1;
+  if((dword_t)file_manager_folder_descriptor!=0) {
+   view_type = file_manager_folder_descriptor->view_type;
+   sort_type = file_manager_folder_descriptor->sort_type;
+   sort_direction = file_manager_folder_descriptor->sort_direction;
+   vfs_destroy_folder_path_structure(file_manager_folder_descriptor);
+  }
 
   //try to load root folder from selected partition
   set_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY, (dword_t)vfs_create_folder_path_structure(partition_to_select));
   set_file_value(FILE_MANAGER_SCROLLBAR_RIDER_POSITION, 0);
   file_manager_scrollbar_info.showed_document_line = 0;
 
+  //set previously selected view type, sort type and sort direction
+  if(view_type!=-1) {
+   file_manager_folder_descriptor = (struct folder_descriptor_t *) (get_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY));
+   file_manager_folder_descriptor->view_type = view_type;
+   file_manager_folder_descriptor->sort_type = sort_type;
+   file_manager_folder_descriptor->sort_direction = sort_direction;
+   vfs_sort_folder(file_manager_folder_descriptor);
+  }
+  
   //test error
   if(get_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY)==0) {
    error_window("Error during reading root folder");
@@ -160,13 +237,52 @@ void file_manager_event_key_page_up(void) {
 }
 
 void file_manager_event_key_page_down(void) {
- struct folder_descriptor_t *file_manager_folder_descriptor = (struct folder_descriptor_t *) (get_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY));
- if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)==0 || ((dword_t)file_manager_folder_descriptor!=0 && file_manager_folder_descriptor->partition_number==(MAX_NUMBER_OF_CONNECTED_PARTITIONS-1))) {
+ word_t partition_to_select = NO_PARTITION_SELECTED;
+
+ //add new tab and load root folder
+ if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)==0) {
+  //select first connected partition
+  for(dword_t i=0; i<MAX_NUMBER_OF_CONNECTED_PARTITIONS; i++) {
+   if(connected_partitions[i].medium_type!=NO_MEDIUM) {
+    partition_to_select = i;
+    break;
+   }
+  }
+  if(partition_to_select==NO_PARTITION_SELECTED) { //no partition connected
+   return;
+  }
+
+  //add tab
+  add_file((word_t *)"N\0e\0w\0\0\0", 0, 0, 0, 0, 0);
+  set_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY, 0);
+  set_file_value(FILE_MANAGER_FOLDER_PATH_NAMES, calloc(20*2*(MAX_NUMBER_OF_FOLDERS_IN_PATH+2)));
+  set_file_value(FILE_MANAGER_SCROLLBAR_RIDER_POSITION, 0);
+  word_t *path_names = (word_t *) (get_file_value(FILE_MANAGER_FOLDER_PATH_NAMES));
+  path_names[0] = 'R';
+  path_names[1] = 'o';
+  path_names[2] = 'o';
+  path_names[3] = 't';
+
+  set_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY, (dword_t)vfs_create_folder_path_structure(partition_to_select));
+  set_file_value(FILE_MANAGER_SCROLLBAR_RIDER_POSITION, 0);
+  file_manager_scrollbar_info.showed_document_line = 0;
+
+  //test error
+  if(get_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY)==0) {
+   error_window("Error during reading root folder");
+   change_file_name_byte_string("Error");
+  }
+  else {
+   change_file_name_byte_string("Root");
+  }
+
+  //redraw screen
+  redraw_file_manager();
   return;
  }
 
  //no partition is selected
- dword_t partition_to_select = NO_PARTITION_SELECTED;
+ struct folder_descriptor_t *file_manager_folder_descriptor = (struct folder_descriptor_t *) (get_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY));
  if((dword_t)file_manager_folder_descriptor==0) {
   //select first connected partition
   for(dword_t i=0; i<MAX_NUMBER_OF_CONNECTED_PARTITIONS; i++) {
@@ -184,17 +300,35 @@ void file_manager_event_key_page_down(void) {
     break;
    }
   }
+  if(file_manager_folder_descriptor->partition_number==partition_to_select) { //this partition is already selected
+   return;
+  }
  }
 
  //select partition
  if(partition_to_select!=NO_PARTITION_SELECTED) {
-  //unload actual structure
-  vfs_destroy_folder_path_structure(file_manager_folder_descriptor);
+  //save selected view type, sort type and sort direction and unload actual structure
+  int view_type = -1, sort_type = -1, sort_direction = -1;
+  if((dword_t)file_manager_folder_descriptor!=0) {
+   view_type = file_manager_folder_descriptor->view_type;
+   sort_type = file_manager_folder_descriptor->sort_type;
+   sort_direction = file_manager_folder_descriptor->sort_direction;
+   vfs_destroy_folder_path_structure(file_manager_folder_descriptor);
+  }
 
   //try to load root folder from selected partition
   set_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY, (dword_t)vfs_create_folder_path_structure(partition_to_select));
   set_file_value(FILE_MANAGER_SCROLLBAR_RIDER_POSITION, 0);
   file_manager_scrollbar_info.showed_document_line = 0;
+
+  //set previously selected view type, sort type and sort direction
+  if(view_type!=-1) {
+   file_manager_folder_descriptor = (struct folder_descriptor_t *) (get_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY));
+   file_manager_folder_descriptor->view_type = view_type;
+   file_manager_folder_descriptor->sort_type = sort_type;
+   file_manager_folder_descriptor->sort_direction = sort_direction;
+   vfs_sort_folder(file_manager_folder_descriptor);
+  }
 
   //test error
   if(get_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY)==0) {
@@ -274,7 +408,7 @@ dword_t file_manager_event_key_up(void) {
  set_file_value(FILE_MANAGER_SCROLLBAR_RIDER_POSITION, file_manager_scrollbar_info.rider_position);
 
  //redraw screen
- return FILE_MANAGER_EVENT_REDRAW;
+ return EVENT_REDRAW;
 }
 
 dword_t file_manager_event_key_down(void) {
@@ -349,7 +483,7 @@ dword_t file_manager_event_key_down(void) {
  set_file_value(FILE_MANAGER_SCROLLBAR_RIDER_POSITION, file_manager_scrollbar_info.rider_position);
 
  //redraw screen
- return FILE_MANAGER_EVENT_REDRAW;
+ return EVENT_REDRAW;
 }
 
 dword_t file_manager_event_key_left(void) {
@@ -384,7 +518,7 @@ dword_t file_manager_event_key_left(void) {
  set_file_value(FILE_MANAGER_SCROLLBAR_RIDER_POSITION, file_manager_scrollbar_info.rider_position);
 
  //redraw screen
- return FILE_MANAGER_EVENT_REDRAW;
+ return EVENT_REDRAW;
 }
 
 dword_t file_manager_event_key_right(void) {
@@ -419,7 +553,7 @@ dword_t file_manager_event_key_right(void) {
  set_file_value(FILE_MANAGER_SCROLLBAR_RIDER_POSITION, file_manager_scrollbar_info.rider_position);
 
  //redraw screen
- return FILE_MANAGER_EVENT_REDRAW;
+ return EVENT_REDRAW;
 }
 
 dword_t file_manager_event_key_enter(void) {
@@ -447,7 +581,7 @@ dword_t file_manager_event_key_enter(void) {
   }
   file_manager_scrollbar_info.rider_position = 0;
   set_file_value(FILE_MANAGER_SCROLLBAR_RIDER_POSITION, 0);
-  return FILE_MANAGER_EVENT_REDRAW;
+  return EVENT_REDRAW;
  }
  else if(folder[file_manager_folder_descriptor->selected_entry].type==NORMAL_FILE) { //normal file
   error_window("This version can not open files directly from File Manager"); //TODO:
@@ -474,7 +608,7 @@ dword_t file_manager_event_click_on_files(void) {
  
  //first click
  file_manager_folder_descriptor->selected_entry = selected_file;
- return FILE_MANAGER_EVENT_REDRAW;
+ return EVENT_REDRAW;
 }
 
 dword_t file_manager_event_go_to_previous_folder(void) {
@@ -497,7 +631,7 @@ dword_t file_manager_event_go_to_previous_folder(void) {
  file_manager_scrollbar_info.rider_position = 0;
  set_file_value(FILE_MANAGER_SCROLLBAR_RIDER_POSITION, 0);
 
- return FILE_MANAGER_EVENT_REDRAW;
+ return EVENT_REDRAW;
 }
 
 void file_manager_event_scrollbar_change(dword_t value) {
@@ -518,36 +652,43 @@ void file_manager_event_scrollbar_change(dword_t value) {
  redraw_file_manager();
 }
 
-void file_manager_change_view_window(void) {
+dword_t file_manager_change_view_window(void) {
  struct folder_descriptor_t *file_manager_folder_descriptor = (struct folder_descriptor_t *) (get_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY));
 
  //this works only if some folder is opened
  if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)==0 || (dword_t)file_manager_folder_descriptor==0 || file_manager_folder_descriptor->partition_number==NO_PARTITION_SELECTED) {
-  return;
+  return NO_EVENT;
  }
 
  //draw message window
  clear_click_board();
- draw_message_window(220, 10+16+50+16+90+20+10);
- program_element_layout_initalize_for_window(220, 10+16+50+16+90+20+10);
+ draw_message_window(220, 10+16+50+16+50+16+90+20+10);
+ program_element_layout_initalize_for_window(220, 10+16+50+16+50+16+90+20+10);
  program_element_layout_add_border_to_area(FIRST_AREA, 10);
 
- add_label(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, "Show files as:");
+ add_label(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, "Show files as");
  program_element_move_horizontally(FIRST_AREA, 8);
- add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[l] List", CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_LIST, 0);
+ add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[i] Icons", CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_ICONS, ((file_manager_folder_descriptor->view_type==VIEW_FOLDER_ICONS) ? SELECTED_LIST_ENTRY : 0));
  program_element_move_horizontally(FIRST_AREA, 0);
- add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[i] Icons", CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_ICONS, 1);
+ add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[l] List", CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_LIST, ((file_manager_folder_descriptor->view_type==VIEW_FOLDER_LIST) ? SELECTED_LIST_ENTRY : 1));
  program_element_move_horizontally(FIRST_AREA, 10);
 
- add_label(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, "Sort files by:");
+ add_label(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, "Sort files");
  program_element_move_horizontally(FIRST_AREA, 8);
- add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[n] Name", CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_BY_NAME, 0);
+ add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[a] In ascending order", CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_IN_ASCENDING_ORDER, ((file_manager_folder_descriptor->sort_direction==SORT_FOLDER_IN_ASCENDING_ORDER) ? SELECTED_LIST_ENTRY : 0));
  program_element_move_horizontally(FIRST_AREA, 0);
- add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[e] Extension", CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_BY_EXTENSION, 1);
+ add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[b] In descending order", CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_IN_DESCENDING_ORDER, ((file_manager_folder_descriptor->sort_direction==SORT_FOLDER_IN_DESCENDING_ORDER) ? SELECTED_LIST_ENTRY : 1));
+ program_element_move_horizontally(FIRST_AREA, 10);
+
+ add_label(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, "by");
+ program_element_move_horizontally(FIRST_AREA, 8);
+ add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[n] Name", CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_BY_NAME, ((file_manager_folder_descriptor->sort_type==SORT_FOLDER_BY_NAME) ? SELECTED_LIST_ENTRY : 0));
  program_element_move_horizontally(FIRST_AREA, 0);
- add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[s] Size", CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_BY_SIZE, 2);
+ add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[e] Extension", CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_BY_EXTENSION, ((file_manager_folder_descriptor->sort_type==SORT_FOLDER_BY_EXTENSION) ? SELECTED_LIST_ENTRY : 1));
  program_element_move_horizontally(FIRST_AREA, 0);
- add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[d] Date of creation", CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_BY_DATE_OF_CREATION, 3);
+ add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[s] Size", CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_BY_SIZE, ((file_manager_folder_descriptor->sort_type==SORT_FOLDER_BY_SIZE) ? SELECTED_LIST_ENTRY : 2));
+ program_element_move_horizontally(FIRST_AREA, 0);
+ add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[d] Date of creation", CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_BY_DATE_OF_CREATION, ((file_manager_folder_descriptor->sort_type==SORT_FOLDER_BY_DATE_OF_CREATION) ? SELECTED_LIST_ENTRY : 3));
  program_element_move_horizontally(FIRST_AREA, 10);
 
  add_button(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[esc] Back", CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_BACK);
@@ -556,7 +697,7 @@ void file_manager_change_view_window(void) {
 
  //process events
  while(1) {
-  dword_t event = wait_for_event(file_manager_view_window_event_interface);
+  dword_t event = wait_for_event(file_manager_view_window_event_interface, 0);
 
   if(event==CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_BACK) {
    break;
@@ -595,26 +736,40 @@ void file_manager_change_view_window(void) {
    }
    break;
   }
+  else if(event==CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_IN_ASCENDING_ORDER) {
+   file_manager_folder_descriptor->sort_direction = SORT_FOLDER_IN_ASCENDING_ORDER;
+   vfs_sort_folder(file_manager_folder_descriptor);
+   break;
+  }
+  else if(event==CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_IN_DESCENDING_ORDER) {
+   file_manager_folder_descriptor->sort_direction = SORT_FOLDER_IN_DESCENDING_ORDER;
+   vfs_sort_folder(file_manager_folder_descriptor);
+   break;
+  }
   else if(event==CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_BY_NAME) {
-   vfs_sort_folder_by_name(file_manager_folder_descriptor, SORT_IN_ASCENDING_ORDER);
+   file_manager_folder_descriptor->sort_type = SORT_FOLDER_BY_NAME;
+   vfs_sort_folder(file_manager_folder_descriptor);
    break;
   }
   else if(event==CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_BY_EXTENSION) {
-   vfs_sort_folder_by_extension(file_manager_folder_descriptor, SORT_IN_ASCENDING_ORDER);
+   file_manager_folder_descriptor->sort_type = SORT_FOLDER_BY_EXTENSION;
+   vfs_sort_folder(file_manager_folder_descriptor);
    break;
   }
   else if(event==CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_BY_SIZE) {
-   vfs_sort_folder_by_size(file_manager_folder_descriptor, SORT_IN_ASCENDING_ORDER);
+   file_manager_folder_descriptor->sort_type = SORT_FOLDER_BY_SIZE;
+   vfs_sort_folder(file_manager_folder_descriptor);
    break;
   }
   else if(event==CLICK_ZONE_FILE_MANAGER_VIEW_WINDOW_SORT_BY_DATE_OF_CREATION) {
-   vfs_sort_folder_by_date_of_creation(file_manager_folder_descriptor, SORT_IN_ASCENDING_ORDER);
+   file_manager_folder_descriptor->sort_type = SORT_FOLDER_BY_DATE_OF_CREATION;
+   vfs_sort_folder(file_manager_folder_descriptor);
    break;
   }
  }
 
  //redraw file manager
- redraw_file_manager();
+ return EVENT_REDRAW;
 }
 
 dword_t file_manager_preview_window(void) {
@@ -743,14 +898,14 @@ dword_t file_manager_preview_window(void) {
 
  //process events
  while(1) {
-  dword_t event = wait_for_event(file_manager_preview_window_event_interface);
+  dword_t event = wait_for_event(file_manager_preview_window_event_interface, 0);
 
   //exit
   if(event==CLICK_ZONE_FILE_MANAGER_PREVIEW_WINDOW_BACK) {
    if((dword_t)image!=STATUS_ERROR) {
     free((dword_t)image);
    }
-   return FILE_MANAGER_EVENT_REDRAW;
+   return EVENT_REDRAW;
   }
 
   //move to other file
@@ -768,16 +923,6 @@ dword_t file_manager_preview_window(void) {
    file_manager_folder_descriptor->selected_entry = next_image_file;
    goto reload_preview_window;
   }
- }
-}
-
-dword_t file_manager_keyboard_event_c(void) {
- //check if ctrl+c is pressed
- if((keyboard_pressed_control_keys & KEYBOARD_CTRL)==KEYBOARD_CTRL) {
-  return file_manager_copy_file();
- }
- else {
-  return file_manager_create_folder_in_folder();
  }
 }
 
@@ -814,10 +959,10 @@ dword_t file_manager_create_folder_in_folder(void) {
  redraw_screen();
 
  while(1) {
-  dword_t event = wait_for_event(file_manager_name_input_event_interface);
+  dword_t event = wait_for_event(file_manager_name_input_event_interface, 0);
 
   if(event==CLICK_ZONE_FILE_MANAGER_NAME_INPUT_CANCEL) {
-   return FILE_MANAGER_EVENT_REDRAW;
+   return EVENT_REDRAW;
   }
 
   if(event==CLICK_ZONE_FILE_MANAGER_NAME_INPUT_APPROVE) {
@@ -844,7 +989,7 @@ dword_t file_manager_create_folder_in_folder(void) {
     error_window("Error during creating new folder");
    }
 
-   return FILE_MANAGER_EVENT_REDRAW;
+   return EVENT_REDRAW;
   }
  }
 }
@@ -885,7 +1030,7 @@ dword_t file_manager_delete_file_in_folder(void) {
  //unselect entry
  file_manager_folder_descriptor->selected_entry = FOLDER_NO_ENTRY_SELECTED;
 
- return FILE_MANAGER_EVENT_REDRAW;
+ return EVENT_REDRAW;
 }
 
 dword_t file_manager_rename_file_in_folder(void) {
@@ -923,10 +1068,10 @@ dword_t file_manager_rename_file_in_folder(void) {
  redraw_screen();
 
  while(1) {
-  dword_t event = wait_for_event(file_manager_name_input_event_interface);
+  dword_t event = wait_for_event(file_manager_name_input_event_interface, 0);
 
   if(event==CLICK_ZONE_FILE_MANAGER_NAME_INPUT_CANCEL) {
-   return FILE_MANAGER_EVENT_REDRAW;
+   return EVENT_REDRAW;
   }
 
   if(event==CLICK_ZONE_FILE_MANAGER_NAME_INPUT_APPROVE) {
@@ -959,7 +1104,7 @@ dword_t file_manager_rename_file_in_folder(void) {
     error_window("Error during saving folder");
    }
 
-   return FILE_MANAGER_EVENT_REDRAW;
+   return EVENT_REDRAW;
   }
  }
 }
@@ -991,19 +1136,7 @@ dword_t file_manager_copy_file(void) {
   copy_memory((dword_t)(&folder[file_manager_folder_descriptor->selected_entry]), (dword_t)(&file_manager_copied_file_descriptor), sizeof(struct file_descriptor_t));
  }
 
- return FILE_MANAGER_EVENT_REDRAW;
-}
-
-dword_t file_manager_keyboard_event_v(void) {
- //check if ctrl+v is pressed
- if((keyboard_pressed_control_keys & KEYBOARD_CTRL)==KEYBOARD_CTRL) {
-  return file_manager_paste_file();
- }
- else {
-  file_manager_change_view_window();
- }
- 
- return NO_EVENT;
+ return EVENT_REDRAW;
 }
 
 dword_t file_manager_paste_file(void) {
@@ -1027,7 +1160,302 @@ dword_t file_manager_paste_file(void) {
   error_window("Error during pasting file");
  }
 
- return FILE_MANAGER_EVENT_REDRAW;
+ return EVENT_REDRAW;
+}
+
+dword_t file_manager_mouse_wheel_event(void) {
+ struct folder_descriptor_t *file_manager_folder_descriptor = (struct folder_descriptor_t *) (get_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY));
+
+ //this works only if some folder is opened
+ if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)==0 || (dword_t)file_manager_folder_descriptor==0 || file_manager_folder_descriptor->partition_number==NO_PARTITION_SELECTED) {
+  return NO_EVENT;
+ }
+
+ if(mouse_wheel<0x80000000) { //up
+  if(file_manager_folder_descriptor->view_type==VIEW_FOLDER_LIST) {
+   //move first showed entry
+   file_manager_folder_descriptor->first_showed_entry -= 10;
+   if(file_manager_folder_descriptor->first_showed_entry>0x80000000) {
+    file_manager_folder_descriptor->first_showed_entry = 0;
+   }
+
+   //set scrollbar
+   file_manager_scrollbar_info.showed_document_line = file_manager_folder_descriptor->first_showed_entry;
+  }
+  else if(file_manager_folder_descriptor->view_type==VIEW_FOLDER_ICONS) {
+   //move first showed entry
+   file_manager_folder_descriptor->first_showed_entry -= file_manager_number_of_columns_on_screen;
+   if(file_manager_folder_descriptor->first_showed_entry>0x80000000) {
+    file_manager_folder_descriptor->first_showed_entry = 0;
+   }
+
+   //set scrollbar
+   file_manager_scrollbar_info.showed_document_line = (file_manager_folder_descriptor->first_showed_entry/file_manager_number_of_columns_on_screen);
+  }
+ }
+ else { //down
+  if(file_manager_folder_descriptor->view_type==VIEW_FOLDER_LIST) {
+   //move first showed entry
+   if(vfs_get_folder_number_of_files(file_manager_folder_descriptor)>file_manager_number_of_lines_on_screen) {
+    file_manager_folder_descriptor->first_showed_entry += 10;
+    if(file_manager_folder_descriptor->first_showed_entry>(vfs_get_folder_number_of_files(file_manager_folder_descriptor)-file_manager_number_of_lines_on_screen)) {
+     file_manager_folder_descriptor->first_showed_entry = (vfs_get_folder_number_of_files(file_manager_folder_descriptor)-file_manager_number_of_lines_on_screen);
+    }
+   }
+
+   //set scrollbar
+   file_manager_scrollbar_info.showed_document_line = file_manager_folder_descriptor->first_showed_entry;
+  }
+  else if(file_manager_folder_descriptor->view_type==VIEW_FOLDER_ICONS) {
+   //move first showed entry
+   if(vfs_get_folder_number_of_files(file_manager_folder_descriptor)>file_manager_number_of_items_on_screen && file_manager_folder_descriptor->first_showed_entry<(vfs_get_folder_number_of_files(file_manager_folder_descriptor)-file_manager_number_of_items_on_screen)) {
+    file_manager_folder_descriptor->first_showed_entry += file_manager_number_of_columns_on_screen;
+   }
+
+   //set scrollbar
+   file_manager_scrollbar_info.showed_document_line = (file_manager_folder_descriptor->first_showed_entry/file_manager_number_of_columns_on_screen);
+  }
+ }
+
+ //recalculate scrollbar
+ scrollbar_struct_calculate_rider_position((&file_manager_scrollbar_info));
+ set_file_value(FILE_MANAGER_SCROLLBAR_RIDER_POSITION, file_manager_scrollbar_info.rider_position);
+
+ //redraw screen
+ return EVENT_REDRAW;
+}
+
+dword_t file_manager_more_buttons(void) {
+ struct folder_descriptor_t *file_manager_folder_descriptor = (struct folder_descriptor_t *) (get_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY));
+
+ //this works only if some folder is opened
+ if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)==0 || (dword_t)file_manager_folder_descriptor==0 || file_manager_folder_descriptor->partition_number==NO_PARTITION_SELECTED) {
+  return EVENT_REDRAW;
+ }
+
+ struct file_descriptor_t *folder = vfs_get_folder_data_pointer(file_manager_folder_descriptor);
+
+ //count number of showed buttons
+ dword_t number_of_buttons = 1, list_entry_number = 0; //"Create folder"
+ if(file_manager_folder_descriptor->selected_entry!=FOLDER_NO_ENTRY_SELECTED) {
+  //"Properties" "Rename" "Delete"
+  number_of_buttons += 3;
+
+  //"Copy"
+  if(folder[file_manager_folder_descriptor->selected_entry].type==NORMAL_FILE) {
+   number_of_buttons++;
+  }
+ }
+ //"Paste"
+ if((dword_t)file_manager_copied_file_memory!=STATUS_ERROR) {
+  number_of_buttons++;
+ }
+
+ //draw window
+ clear_click_board();
+ draw_message_window(220, 10+20*number_of_buttons+10);
+ program_element_layout_initalize_for_window(220, 10+20*number_of_buttons+10);
+ program_element_layout_add_border_to_area(FIRST_AREA, 10);
+
+ if(file_manager_folder_descriptor->selected_entry!=FOLDER_NO_ENTRY_SELECTED) {
+  //draw button for showing file properties
+  add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[F5] Properties", CLICK_ZONE_FILE_MANAGER_PROPERTIES, list_entry_number);
+  program_element_move_horizontally(FIRST_AREA, 0);
+  list_entry_number++;
+
+  //draw button for renaming files
+  add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[r] Rename", CLICK_ZONE_FILE_MANAGER_RENAME, list_entry_number);
+  program_element_move_horizontally(FIRST_AREA, 0);
+  list_entry_number++;
+
+  //draw button for deleting files
+  add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[del] Delete", CLICK_ZONE_FILE_MANAGER_DELETE, list_entry_number);
+  program_element_move_horizontally(FIRST_AREA, 0);
+  list_entry_number++;
+
+  //draw button for copying files
+  if(folder[file_manager_folder_descriptor->selected_entry].type==NORMAL_FILE) {
+   add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[ctrl+c] Copy", CLICK_ZONE_FILE_MANAGER_COPY, list_entry_number);
+   program_element_move_horizontally(FIRST_AREA, 0);
+   list_entry_number++;
+  }
+ }
+
+ //draw button for pasting files
+ if((dword_t)file_manager_copied_file_memory!=STATUS_ERROR) {
+  add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[ctrl+v] Paste", CLICK_ZONE_FILE_MANAGER_PASTE, list_entry_number);
+  program_element_move_horizontally(FIRST_AREA, 0);
+  list_entry_number++;
+ }
+
+ //draw button for creating folders
+ add_list_entry(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, 200, "[c] Create folder", CLICK_ZONE_FILE_MANAGER_CREATE_NEW_FOLDER, list_entry_number);
+
+ redraw_screen();
+
+ while(1) {
+  dword_t event = wait_for_event(file_manager_more_buttons_event_interface, 0);
+
+  if(event==EVENT_EXIT) {
+   return EVENT_REDRAW;
+  }
+  else if(event!=NO_EVENT) {
+   return event;
+  }
+ }
+}
+
+void file_manager_properties(void) {
+ struct folder_descriptor_t *file_manager_folder_descriptor = (struct folder_descriptor_t *) (get_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY));
+
+ //this works only if some folder is opened and some file is selected
+ if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)==0 || (dword_t)file_manager_folder_descriptor==0 || file_manager_folder_descriptor->partition_number==NO_PARTITION_SELECTED || file_manager_folder_descriptor->selected_entry==FOLDER_NO_ENTRY_SELECTED) {
+  return;
+ }
+
+ //draw window
+ struct file_descriptor_t *folder = vfs_get_folder_data_pointer(file_manager_folder_descriptor);
+ dword_t number_of_lines_of_name_on_screen = (get_number_of_chars_in_unicode_string(folder[file_manager_folder_descriptor->selected_entry].name)/64);
+ if((get_number_of_chars_in_unicode_string(folder[file_manager_folder_descriptor->selected_entry].name)%64)!=0) {
+  number_of_lines_of_name_on_screen++;
+ }
+ draw_message_window(10+64*8+10, 10+16+16+(number_of_lines_of_name_on_screen*8)+8+32+32+32+32+24+10);
+ program_element_layout_initalize_for_window(10+64*8+10, 10+16+16+(number_of_lines_of_name_on_screen*8)+8+32+32+32+32+24+10);
+ program_element_layout_add_border_to_area(FIRST_AREA, 10);
+
+ add_label(FIRST_AREA, ELEMENT_MIDDLE_ALIGNMENT, "Properties of file");
+ program_element_move_horizontally(FIRST_AREA, 8);
+
+ add_label(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, "File name:");
+ program_element_move_horizontally(FIRST_AREA, 8);
+ for(dword_t i=0; i<number_of_lines_of_name_on_screen; i++) {
+  for(dword_t j=0; j<64; j++) {
+   if(folder[file_manager_folder_descriptor->selected_entry].name[i*64+j]==0) {
+    break;
+   }
+   draw_char(folder[file_manager_folder_descriptor->selected_entry].name[i*64+j], program_element_layout_areas_info[FIRST_AREA].actual_element_x+j*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+  }
+  program_element_move_horizontally(FIRST_AREA, 0);
+ }
+ program_element_move_horizontally(FIRST_AREA, 0);
+
+ add_label(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, "File extension:");
+ program_element_move_horizontally(FIRST_AREA, 8);
+ if(folder[file_manager_folder_descriptor->selected_entry].type==FILE_FOLDER) {
+  print("folder", program_element_layout_areas_info[FIRST_AREA].actual_element_x, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ }
+ else {
+  for(dword_t i=0; i<10; i++) {
+   if(folder[file_manager_folder_descriptor->selected_entry].extension[i]==0) {
+    break;
+   }
+   draw_char(folder[file_manager_folder_descriptor->selected_entry].extension[i], program_element_layout_areas_info[FIRST_AREA].actual_element_x+i*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+  }
+ }
+ program_element_move_horizontally(FIRST_AREA, 8);
+
+ add_label(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, "Location in filesystem:");
+ program_element_move_horizontally(FIRST_AREA, 8);
+ print_hex(folder[file_manager_folder_descriptor->selected_entry].file_location, program_element_layout_areas_info[FIRST_AREA].actual_element_x, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ program_element_move_horizontally(FIRST_AREA, 8);
+
+ add_label(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, "File size in bytes:");
+ program_element_move_horizontally(FIRST_AREA, 8);
+ print_var(folder[file_manager_folder_descriptor->selected_entry].file_size_in_bytes, program_element_layout_areas_info[FIRST_AREA].actual_element_x, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ program_element_move_horizontally(FIRST_AREA, 8);
+
+ add_label(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, "Date of creation:");
+ program_element_move_horizontally(FIRST_AREA, 8);
+ print("    /  /     :  :", program_element_layout_areas_info[FIRST_AREA].actual_element_x, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ print_var(folder[file_manager_folder_descriptor->selected_entry].year_of_creation, program_element_layout_areas_info[FIRST_AREA].actual_element_x, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ if(folder[file_manager_folder_descriptor->selected_entry].month_of_creation>=10) {
+  print_var(folder[file_manager_folder_descriptor->selected_entry].month_of_creation, program_element_layout_areas_info[FIRST_AREA].actual_element_x+5*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ }
+ else {
+  draw_char('0', program_element_layout_areas_info[FIRST_AREA].actual_element_x+5*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+  print_var(folder[file_manager_folder_descriptor->selected_entry].month_of_creation, program_element_layout_areas_info[FIRST_AREA].actual_element_x+6*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ }
+ if(folder[file_manager_folder_descriptor->selected_entry].day_of_creation>=10) {
+  print_var(folder[file_manager_folder_descriptor->selected_entry].day_of_creation, program_element_layout_areas_info[FIRST_AREA].actual_element_x+8*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ }
+ else {
+  draw_char('0', program_element_layout_areas_info[FIRST_AREA].actual_element_x+8*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+  print_var(folder[file_manager_folder_descriptor->selected_entry].day_of_creation, program_element_layout_areas_info[FIRST_AREA].actual_element_x+9*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ }
+ if(folder[file_manager_folder_descriptor->selected_entry].hour_of_creation>=10) {
+  print_var(folder[file_manager_folder_descriptor->selected_entry].hour_of_creation, program_element_layout_areas_info[FIRST_AREA].actual_element_x+11*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ }
+ else {
+  draw_char('0', program_element_layout_areas_info[FIRST_AREA].actual_element_x+11*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+  print_var(folder[file_manager_folder_descriptor->selected_entry].hour_of_creation, program_element_layout_areas_info[FIRST_AREA].actual_element_x+12*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ }
+ if(folder[file_manager_folder_descriptor->selected_entry].minute_of_creation>=10) {
+  print_var(folder[file_manager_folder_descriptor->selected_entry].minute_of_creation, program_element_layout_areas_info[FIRST_AREA].actual_element_x+14*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ }
+ else {
+  draw_char('0', program_element_layout_areas_info[FIRST_AREA].actual_element_x+14*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+  print_var(folder[file_manager_folder_descriptor->selected_entry].minute_of_creation, program_element_layout_areas_info[FIRST_AREA].actual_element_x+15*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ }
+ if(folder[file_manager_folder_descriptor->selected_entry].second_of_creation>=10) {
+  print_var(folder[file_manager_folder_descriptor->selected_entry].second_of_creation, program_element_layout_areas_info[FIRST_AREA].actual_element_x+17*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ }
+ else {
+  draw_char('0', program_element_layout_areas_info[FIRST_AREA].actual_element_x+17*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+  print_var(folder[file_manager_folder_descriptor->selected_entry].second_of_creation, program_element_layout_areas_info[FIRST_AREA].actual_element_x+18*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ }
+ program_element_move_horizontally(FIRST_AREA, 8);
+
+ add_label(FIRST_AREA, ELEMENT_LEFT_ALIGNMENT, "Date of last modification:");
+ program_element_move_horizontally(FIRST_AREA, 8);
+ print("    /  /     :  :", program_element_layout_areas_info[FIRST_AREA].actual_element_x, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ print_var(folder[file_manager_folder_descriptor->selected_entry].year_of_modification, program_element_layout_areas_info[FIRST_AREA].actual_element_x, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ if(folder[file_manager_folder_descriptor->selected_entry].month_of_modification>=10) {
+  print_var(folder[file_manager_folder_descriptor->selected_entry].month_of_modification, program_element_layout_areas_info[FIRST_AREA].actual_element_x+5*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ }
+ else {
+  draw_char('0', program_element_layout_areas_info[FIRST_AREA].actual_element_x+5*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+  print_var(folder[file_manager_folder_descriptor->selected_entry].month_of_modification, program_element_layout_areas_info[FIRST_AREA].actual_element_x+6*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ }
+ if(folder[file_manager_folder_descriptor->selected_entry].day_of_modification>=10) {
+  print_var(folder[file_manager_folder_descriptor->selected_entry].day_of_modification, program_element_layout_areas_info[FIRST_AREA].actual_element_x+8*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ }
+ else {
+  draw_char('0', program_element_layout_areas_info[FIRST_AREA].actual_element_x+8*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+  print_var(folder[file_manager_folder_descriptor->selected_entry].day_of_modification, program_element_layout_areas_info[FIRST_AREA].actual_element_x+9*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ }
+ if(folder[file_manager_folder_descriptor->selected_entry].hour_of_modification>=10) {
+  print_var(folder[file_manager_folder_descriptor->selected_entry].hour_of_modification, program_element_layout_areas_info[FIRST_AREA].actual_element_x+11*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ }
+ else {
+  draw_char('0', program_element_layout_areas_info[FIRST_AREA].actual_element_x+11*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+  print_var(folder[file_manager_folder_descriptor->selected_entry].hour_of_modification, program_element_layout_areas_info[FIRST_AREA].actual_element_x+12*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ }
+ if(folder[file_manager_folder_descriptor->selected_entry].minute_of_modification>=10) {
+  print_var(folder[file_manager_folder_descriptor->selected_entry].minute_of_modification, program_element_layout_areas_info[FIRST_AREA].actual_element_x+14*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ }
+ else {
+  draw_char('0', program_element_layout_areas_info[FIRST_AREA].actual_element_x+14*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+  print_var(folder[file_manager_folder_descriptor->selected_entry].minute_of_modification, program_element_layout_areas_info[FIRST_AREA].actual_element_x+15*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ }
+ if(folder[file_manager_folder_descriptor->selected_entry].second_of_modification>=10) {
+  print_var(folder[file_manager_folder_descriptor->selected_entry].second_of_modification, program_element_layout_areas_info[FIRST_AREA].actual_element_x+17*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ }
+ else {
+  draw_char('0', program_element_layout_areas_info[FIRST_AREA].actual_element_x+17*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+  print_var(folder[file_manager_folder_descriptor->selected_entry].second_of_modification, program_element_layout_areas_info[FIRST_AREA].actual_element_x+18*8, program_element_layout_areas_info[FIRST_AREA].actual_element_y, BLACK);
+ }
+ program_element_move_horizontally(FIRST_AREA, 8);
+
+ redraw_screen();
+
+ while(1) {
+  wait_for_user_input();
+  move_mouse_cursor();
+
+  if(keyboard_code_of_pressed_key==KEY_ESC || mouse_click_button_state==MOUSE_CLICK) {
+   return;
+  }
+ }
 }
 
 void redraw_file_manager(void) {
@@ -1063,29 +1491,14 @@ void redraw_file_manager(void) {
 
   //draw other buttons if filesystem is read-write
   if(is_filesystem_read_write(connected_partitions[file_manager_folder_descriptor->partition_number].filesystem)==STATUS_TRUE) {
-   if(file_manager_folder_descriptor->selected_entry!=FOLDER_NO_ENTRY_SELECTED) {
-    //draw button for renaming files
-    add_button_to_bottom_line_from_left("[r] Rename", CLICK_ZONE_FILE_MANAGER_RENAME);
-
-    //draw button for deleting files
-    add_button_to_bottom_line_from_left("[del] Delete", CLICK_ZONE_FILE_MANAGER_DELETE);
-
-    //draw button for copying files
-    if(folder[file_manager_folder_descriptor->selected_entry].type==NORMAL_FILE) {
-     add_button_to_bottom_line_from_left("[ctrl+c] Copy", CLICK_ZONE_FILE_MANAGER_COPY);
-    }
-   }
-
-   //draw button for pasting files
-   if((dword_t)file_manager_copied_file_memory!=STATUS_ERROR) {
-    add_button_to_bottom_line_from_left("[ctrl+v] Paste", CLICK_ZONE_FILE_MANAGER_PASTE);
-   }
-
-   //draw button for creating folders
-   add_button_to_bottom_line_from_left("[c] Create folder", CLICK_ZONE_FILE_MANAGER_CREATE_NEW_FOLDER);
+   //draw button for opening list of all other buttons
+   add_button_to_bottom_line_from_left("More", CLICK_ZONE_FILE_MANAGER_MORE);
   }
   else {
    if(file_manager_folder_descriptor->selected_entry!=FOLDER_NO_ENTRY_SELECTED) {
+    //draw button for showing file properties
+    add_button_to_bottom_line_from_left("[F5] Properties", CLICK_ZONE_FILE_MANAGER_PROPERTIES);
+
     //draw button for copying files
     if(folder[file_manager_folder_descriptor->selected_entry].type==NORMAL_FILE) {
      add_button_to_bottom_line_from_left("[ctrl+c] Copy", CLICK_ZONE_FILE_MANAGER_COPY);
@@ -1093,7 +1506,7 @@ void redraw_file_manager(void) {
    }
 
    //print to right bottom corner that this is read-only filesystem
-   print("Read-only filesystem", screen_width-8-20*8, screen_height-13, BLACK);
+   print("Read-only", screen_width-8-9*8, screen_height-13, BLACK);
   }
  }
 
@@ -1330,7 +1743,7 @@ void redraw_file_manager(void) {
      program_element_layout_calculate_floating_element_position(SECOND_AREA, FILE_MANAGER_NUMBER_OF_PIXELS_IN_ICON_DIMENSION, FILE_MANAGER_NUMBER_OF_PIXELS_IN_ICON_DIMENSION, ELEMENT_MIDDLE_ALIGNMENT, ELEMENT_CENTER_ALIGNMENT, 6*8, 8);
      print("folder", element_x, element_y, BLACK);
     }
-    else {
+    else if(get_number_of_chars_in_unicode_string(folder[i].extension)<=8) { //do not print extension longer than 8 characters
      program_element_layout_calculate_floating_element_position(SECOND_AREA, FILE_MANAGER_NUMBER_OF_PIXELS_IN_ICON_DIMENSION, FILE_MANAGER_NUMBER_OF_PIXELS_IN_ICON_DIMENSION, ELEMENT_MIDDLE_ALIGNMENT, ELEMENT_CENTER_ALIGNMENT, get_number_of_chars_in_unicode_string(folder[i].extension)*8, 8);
      print_unicode(folder[i].extension, element_x, element_y, BLACK);
     }

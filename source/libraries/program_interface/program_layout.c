@@ -222,7 +222,10 @@ void add_button(byte_t area_number, byte_t alignment, byte_t width, byte_t *stri
 
 void add_list_entry(byte_t area_number, byte_t alignment, byte_t width, byte_t *string, dword_t click_zone, dword_t entry_number) {
  program_element_layout_calculate_element_position(area_number, alignment, width, 20);
- if((entry_number & 0x1)==0) {
+ if(entry_number==SELECTED_LIST_ENTRY) {
+  draw_full_square(element_x, element_y, width, 20, RED);
+ }
+ else if((entry_number & 0x1)==0) {
   draw_full_square(element_x, element_y, width, 20, 0xAAAAAA);
  }
  else {
