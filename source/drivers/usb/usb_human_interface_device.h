@@ -56,17 +56,12 @@ dword_t usb_keyboard_data_memory = 0, usb_keyboard_packet_received = 0;
 dword_t usb_keyboard_count = 0, usb_keyboard_code_of_pressed_key = 0;
 byte_t usb_keyboard_code = 0;
 
-dword_t usb_mouse_buttons_data_offset_byte = 0;
-dword_t usb_mouse_buttons_data_offset_shift = 0;
-dword_t usb_mouse_movement_x_data_offset_byte = 0;
-dword_t usb_mouse_movement_x_data_offset_shift = 0;
-dword_t usb_mouse_movement_x_data_length = 0;
-dword_t usb_mouse_movement_y_data_offset_byte = 0;
-dword_t usb_mouse_movement_y_data_offset_shift = 0;
-dword_t usb_mouse_movement_y_data_length = 0;
-dword_t usb_mouse_movement_wheel_data_offset_byte = 0;
-dword_t usb_mouse_movement_wheel_data_offset_shift = 0;
-dword_t usb_mouse_movement_wheel_data_length = 0;
+dword_t usb_mouse_button_1_data_offset_byte, usb_mouse_button_1_data_offset_shift, usb_mouse_button_1_data_length;
+dword_t usb_mouse_button_2_data_offset_byte, usb_mouse_button_2_data_offset_shift, usb_mouse_button_2_data_length;
+dword_t usb_mouse_button_3_data_offset_byte, usb_mouse_button_3_data_offset_shift, usb_mouse_button_3_data_length;
+dword_t usb_mouse_movement_x_data_offset_byte, usb_mouse_movement_x_data_offset_shift, usb_mouse_movement_x_data_length;
+dword_t usb_mouse_movement_y_data_offset_byte, usb_mouse_movement_y_data_offset_shift, usb_mouse_movement_y_data_length;
+dword_t usb_mouse_movement_wheel_data_offset_byte, usb_mouse_movement_wheel_data_offset_shift, usb_mouse_movement_wheel_data_length;
 
 void usb_mouse_read_hid_descriptor(byte_t controller_number, byte_t device_address, byte_t device_speed, byte_t interface, word_t length);
 void usb_hid_device_set_protocol(byte_t controller_number, byte_t device_address, byte_t device_speed, byte_t interface, byte_t protocol);

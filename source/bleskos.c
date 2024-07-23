@@ -104,7 +104,7 @@ void bleskos(dword_t bootloader_passed_value) {
  bleskos_boot_debug_top_screen_color(0x00FF00); //green top of screen
  initalize_logging();
  bleskos_boot_debug_top_screen_color(0x0000FF); //blue top of screen
- log("BleskOS 2024 update 34\n\nPress F2 to save System log as TXT file");
+ log("BleskOS 2024 update 35\n\nPress F2 to save System log as TXT file");
  log_starting_memory();
 
  bleskos_boot_debug_top_screen_color(0xFFFF00); //yellow top of screen
@@ -120,7 +120,7 @@ void bleskos(dword_t bootloader_passed_value) {
  clear_screen(0x00C000);
  set_scalable_char_size(64);
  scalable_font_print("BleskOS", screen_x_center-(64*7/2), screen_y_center-92, BLACK);
- print_to_message_window("Version 2024 update 34", screen_y_center);
+ print_to_message_window("Version 2024 update 35", screen_y_center);
  draw_empty_square(screen_x_center-161, screen_y_center+30, 322, 15, BLACK);
  number_of_start_screen_messages = 0;
  (*redraw_framebuffer)();

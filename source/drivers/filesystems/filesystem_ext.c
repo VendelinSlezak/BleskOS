@@ -345,11 +345,17 @@ byte_t *read_ext_folder(dword_t folder_location) {
   vfs_folder[i].year_of_creation = math_year;
   vfs_folder[i].month_of_creation = math_month;
   vfs_folder[i].day_of_creation = math_day;
+  vfs_folder[i].hour_of_creation = math_hour;
+  vfs_folder[i].minute_of_creation = math_minute;
+  vfs_folder[i].second_of_creation = math_second;
 
   convert_unix_time(ext_info->inode.modification_time);
   vfs_folder[i].year_of_modification = math_year;
   vfs_folder[i].month_of_modification = math_month;
   vfs_folder[i].day_of_modification = math_day;
+  vfs_folder[i].hour_of_modification = math_hour;
+  vfs_folder[i].minute_of_modification = math_minute;
+  vfs_folder[i].second_of_modification = math_second;
 
   //if size of name is bigger than 256 characters
   if((ext_info->required_features & EXT_REQUIRED_FEATURE_DIR_TYPE_FIELD)==0 && ext_folder_entry->type_indicator!=0) {

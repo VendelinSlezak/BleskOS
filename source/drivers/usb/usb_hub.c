@@ -14,14 +14,14 @@ byte_t usb_read_hub_number_of_port(byte_t controller_number, byte_t device_addre
   return 0xFF;
  }
  else {
-  byte_t *number_of_ports = (byte_t *) (usb_setup_packet_data_mem+2);
+  byte_t *number_of_ports = (byte_t *) ((dword_t)usb_setup_packet_data+2);
   return *number_of_ports;
  }
 }
 
 dword_t usb_hub_read_port_status(byte_t controller_number, byte_t device_address, byte_t device_speed, byte_t port) {
  usb_control_transfer_with_fixed_data_length(controller_number, device_address, device_speed, 0xA3, 0x00, 0x0000, (port+1), 4);
- dword_t *data = (dword_t *) (usb_setup_packet_data_mem);
+ dword_t *data = (dword_t *) (usb_setup_packet_data);
  return *data;
 }
 

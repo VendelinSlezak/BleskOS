@@ -41,7 +41,8 @@ struct usb_mass_storage_device {
  dword_t size_in_sectors;
  dword_t size_of_sector;
 }__attribute__((packed));
-struct usb_mass_storage_device usb_mass_storage_devices[10];
+#define MAX_NUMBER_OF_USB_MSD_DEVICES 10
+struct usb_mass_storage_device usb_mass_storage_devices[MAX_NUMBER_OF_USB_MSD_DEVICES];
 
 dword_t usb_mass_storage_cbw_memory = 0, usb_mass_storage_response_memory = 0, usb_mass_storage_csw_memory = 0;
 

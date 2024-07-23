@@ -10,6 +10,11 @@
 
 #define USB_DEVICE_HUB 0x090000
 
+#define USB_HUB_IS_NOT_RESPONDING 0xFF
+
+//first 32 addresses are for devices on root ports, and every hub can have max 8 ports
+#define CALCULATE_ADDRESS_OF_DEVICE_ON_USB_HUB(hub, port) (33+(hub*8)+port)
+
 struct usb_hub {
  byte_t controller_type;
  byte_t controller_number;
@@ -22,7 +27,8 @@ struct usb_hub {
  byte_t ports_state[8];
  byte_t ports_device_speed[8];
 }__attribute__((packed));
-struct usb_hub usb_hubs[10];
+#define MAX_NUMBER_OF_USB_HUBS 10
+struct usb_hub usb_hubs[MAX_NUMBER_OF_USB_HUBS];
 
 dword_t usb_hub_transfer_setup_packets_mem = 0, usb_hub_transfer_data_mem = 0;
 

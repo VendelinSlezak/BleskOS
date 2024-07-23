@@ -317,50 +317,63 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  //Universal Host Controller Interface
  if(type_of_device==0x0C0300) {
   log("\nUHCI");
-  if(usb_controllers_pointer>=20) {
+
+  if(usb_controllers_pointer>=MAX_NUMBER_OF_USB_CONTROLLERS) {
    return;
   }
-  pci_write(bus, device, function, 0xC0, 0x8F00); //disable BIOS legacy support
+
   usb_controllers[usb_controllers_pointer].type=USB_CONTROLLER_UHCI;
   usb_controllers[usb_controllers_pointer].base=pci_read_io_bar(bus, device, function, PCI_BAR4);
   usb_controllers_pointer++;
+
+  //disable BIOS legacy support
+  pci_write(bus, device, function, 0xC0, 0x8F00);
+
   return;
  }
  
  //Open Host Controller Interface
  if(type_of_device==0x0C0310) {
   log("\nOHCI");
-  if(usb_controllers_pointer>=20) {
+
+  if(usb_controllers_pointer>=MAX_NUMBER_OF_USB_CONTROLLERS) {
    return;
   }
+
   usb_controllers[usb_controllers_pointer].type=USB_CONTROLLER_OHCI;
   usb_controllers[usb_controllers_pointer].base=pci_read_mmio_bar(bus, device, function, PCI_BAR0);
-  //disable legacy support
+  usb_controllers_pointer++;
+
+  //disable BIOS legacy support
   if(mmio_ind(usb_controllers[usb_controllers_pointer].base+0x0)==0x110) {
    mmio_outd(usb_controllers[usb_controllers_pointer].base+0x100, 0x00);
   }
-  usb_controllers_pointer++;
+
   return;
  }
  
  //Enhanced Host Controller Interface
  if(type_of_device==0x0C0320) {
   log("\nEHCI");
-  if(usb_controllers_pointer>=20) {
+
+  if(usb_controllers_pointer>=MAX_NUMBER_OF_USB_CONTROLLERS) {
    return;
   }
+
   usb_controllers[usb_controllers_pointer].bus=bus;
   usb_controllers[usb_controllers_pointer].device=device;
   usb_controllers[usb_controllers_pointer].function=function;
   usb_controllers[usb_controllers_pointer].type=USB_CONTROLLER_EHCI;
   usb_controllers[usb_controllers_pointer].base=pci_read_mmio_bar(bus, device, function, PCI_BAR0);
   usb_controllers_pointer++;
+
   return;
  }
  
  //eXtensible Host Controller Interface
  if(type_of_device==0x0C0330) {
   log("\nxHCI");
+  
   return;
  }
  
