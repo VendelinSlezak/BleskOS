@@ -62,6 +62,9 @@ void filesystem_fat_read_specific_info(struct connected_partition_info_t *connec
  //read number of FAT tables
  fat_info->number_of_fat_tables = fat16_bpb.fat_tables;
 
+ //this variable saves first free cluster for faster creating of files
+ fat_info->first_free_cluster = 2;
+
  //load first sector from FAT table
  if(read_storage_medium(fat_info->fat_table_first_sector, 1, (dword_t)(&fat_info->fat_table_sector))==STATUS_ERROR) {
   log("\nFAT: can not read first FAT table sector");
@@ -145,7 +148,9 @@ void filesystem_fat_read_specific_info(struct connected_partition_info_t *connec
  log("\ntotal number of clusters: "); log_var(fat_info->number_of_clusters);
  log("\ncluster size in bytes: "); log_var(fat_info->cluster_size_in_sectors*512);
  log("\nroot directory location: "); log_var(fat_info->root_directory_location);
- log("\nroot directory size in sectors: "); log_var(fat_info->root_directory_size_in_sectors);
+ if(fat_info->type!=FAT32) {
+  log("\nroot directory size in sectors: "); log_var(fat_info->root_directory_size_in_sectors);
+ }
  log("\npartition label: "); log(connected_partition_info->partition_label);
 }
 
@@ -329,6 +334,11 @@ byte_t write_fat_table_entry(dword_t entry, dword_t value) {
   }
  }
 
+ //update first free cluster
+ if(value==0x00000000 && fat_info->first_free_cluster>entry) {
+  fat_info->first_free_cluster = entry;
+ }
+
  return STATUS_GOOD;
 }
 
@@ -403,7 +413,7 @@ dword_t create_fat_file(dword_t first_cluster, byte_t *file_memory, dword_t file
   number_of_finded_free_clusters = 1;
  }
 
- for(dword_t cluster=3; cluster<fat_info->number_of_clusters; cluster++) {
+ for(dword_t cluster=fat_info->first_free_cluster; cluster<fat_info->number_of_clusters; cluster++) {
   //did we find enough free clusters?
   if(number_of_finded_free_clusters==number_of_clusters_in_file) {
    break;
@@ -419,6 +429,19 @@ dword_t create_fat_file(dword_t first_cluster, byte_t *file_memory, dword_t file
    
    //update variable
    number_of_finded_free_clusters++;
+  }
+ }
+
+ //update first free cluster
+ dword_t *clusters_of_file_pointer = (dword_t *) (clusters_of_file->start_of_allocated_memory);
+ if(first_cluster==FAT_FIND_FREE_CLUSTER) {
+  if(fat_info->first_free_cluster<clusters_of_file_pointer[0]) {
+   fat_info->first_free_cluster = clusters_of_file_pointer[0];
+  }
+ }
+ else if(number_of_clusters_in_file>1) {
+  if(fat_info->first_free_cluster<clusters_of_file_pointer[1]) {
+   fat_info->first_free_cluster = clusters_of_file_pointer[1];
   }
  }
 
@@ -442,7 +465,6 @@ dword_t create_fat_file(dword_t first_cluster, byte_t *file_memory, dword_t file
  destroy_byte_stream(descriptor_of_file_sectors);
 
  //update entries in FAT table
- dword_t *clusters_of_file_pointer = (dword_t *) (clusters_of_file->start_of_allocated_memory);
  first_cluster = clusters_of_file_pointer[0];
  for(dword_t i=0; i<(number_of_clusters_in_file-1); i++) {
   if(write_fat_table_entry(clusters_of_file_pointer[i], clusters_of_file_pointer[i+1])==STATUS_ERROR) { //link to next cluster
@@ -894,8 +916,13 @@ dword_t create_fat_folder(dword_t previous_folder_location) {
  struct fat_specific_info_t *fat_info = (struct fat_specific_info_t *) (connected_partitions[selected_partition].filesystem_specific_info_pointer);
 
  //find free cluster
- for(dword_t cluster=3; cluster<fat_info->number_of_clusters; cluster++) {
+ for(dword_t cluster=fat_info->first_free_cluster; cluster<fat_info->number_of_clusters; cluster++) {
   if(read_fat_table_entry(cluster)==0x00000000) {
+   //update first free cluster
+   if(fat_info->first_free_cluster<cluster) {
+    fat_info->first_free_cluster = cluster;
+   }
+
    //allocate memory for new folder
    struct fat_folder_entry_t *fat_folder = (struct fat_folder_entry_t *) (calloc(fat_info->cluster_size_in_bytes));
 

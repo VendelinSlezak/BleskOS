@@ -248,7 +248,10 @@ void convert_number_to_word_string(dword_t number, dword_t mem) {
 }
 
 void convert_unix_time(dword_t unix_time) {
- math_day = unix_time/86400;
+ math_second = (unix_time%60);
+ math_minute = (unix_time%3600/60);
+ math_hour = (unix_time%86400/3600);
+ math_day = (unix_time/86400);
  math_month = 0;
  math_year = 1970;
 

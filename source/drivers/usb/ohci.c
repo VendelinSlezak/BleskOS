@@ -242,7 +242,7 @@ byte_t ohci_bulk_transfer(byte_t controller_number, dword_t last_td, dword_t tim
 
 byte_t ohci_control_transfer_without_data_stage(byte_t controller_number, byte_t device_address, byte_t device_speed) {
  ohci_set_ed(controller_number, device_speed, 0, device_address, ENDPOINT_0, 0, 2);
- ohci_set_td(controller_number, 0, 1, OHCI_SETUP, TOGGLE_0, usb_setup_packet_mem, 8);
+ ohci_set_td(controller_number, 0, 1, OHCI_SETUP, TOGGLE_0, (dword_t)usb_setup_packet, 8);
  ohci_set_td(controller_number, 1, 0, OHCI_IN, TOGGLE_1, 0, 0);
  return ohci_control_transfer(controller_number, 1, 200);
 }
@@ -255,8 +255,8 @@ byte_t ohci_control_transfer_with_data_stage(byte_t controller_number, byte_t de
  }
  
  //create transfer descriptors
- ohci_set_td(controller_number, 0, 1, OHCI_SETUP, TOGGLE_0, usb_setup_packet_mem, 8);
- dword_t transfer_descriptor_number = 1, toggle = TOGGLE_1, memory = usb_setup_packet_data_mem;
+ ohci_set_td(controller_number, 0, 1, OHCI_SETUP, TOGGLE_0, (dword_t)usb_setup_packet, 8);
+ dword_t transfer_descriptor_number = 1, toggle = TOGGLE_1, memory = (dword_t)usb_setup_packet_data;
  while(1) {
   if(length>usb_control_endpoint_size) {
    ohci_set_td(controller_number, transfer_descriptor_number, (transfer_descriptor_number+1), OHCI_IN, toggle, memory, usb_control_endpoint_size);
@@ -417,7 +417,7 @@ byte_t ohci_hub_is_there_some_port_connection_status_change(byte_t hub_number) {
  //transfer
  ohci_set_ed(usb_hubs[hub_number].controller_number, usb_hubs[hub_number].device_speed, 0, usb_hubs[hub_number].address, ENDPOINT_0, 0, (number_of_packets+1));
  if(ohci_control_transfer(usb_hubs[hub_number].controller_number, number_of_packets, 20)==STATUS_ERROR) {
-  return 0xFF;
+  return USB_HUB_IS_NOT_RESPONDING;
  }
 
  //return port state

@@ -31,6 +31,8 @@ struct fat_specific_info_t {
  dword_t root_directory_size_in_sectors; //only FAT12/16
 
  dword_t file_ending_entry_value;
+
+ dword_t first_free_cluster;
 }__attribute__((packed));
 
 struct fat16_bpb_t {

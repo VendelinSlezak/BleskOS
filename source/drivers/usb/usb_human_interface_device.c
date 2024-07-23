@@ -10,7 +10,7 @@
 
 void usb_mouse_read_hid_descriptor(byte_t controller_number, byte_t device_address, byte_t device_speed, byte_t interface, word_t length) {
  usb_control_transfer_with_fixed_data_length(controller_number, device_address, device_speed, 0x81, 0x06, 0x2200, interface, length);
- parse_hid_descriptor(usb_setup_packet_data_mem);
+ parse_hid_descriptor((dword_t)usb_setup_packet_data);
 }
 
 void usb_hid_device_set_protocol(byte_t controller_number, byte_t device_address, byte_t device_speed, byte_t interface, byte_t protocol) {
@@ -65,8 +65,13 @@ void usb_mouse_process_received_data(void) {
  dword_t *mouse_data_mem = (dword_t *) (usb_mouse_data_memory);
 
  //buttons
- mouse_data_mem = (dword_t *) (usb_mouse_data_memory+usb_mouse_buttons_data_offset_byte);
- mouse_buttons = ((*mouse_data_mem >> usb_mouse_buttons_data_offset_shift) & 0x1F);
+ mouse_buttons = 0;
+ mouse_data_mem = (dword_t *) (usb_mouse_data_memory+usb_mouse_button_1_data_offset_byte);
+ mouse_buttons |= (((*mouse_data_mem >> usb_mouse_button_1_data_offset_shift) & usb_mouse_button_1_data_length)<<0);
+ mouse_data_mem = (dword_t *) (usb_mouse_data_memory+usb_mouse_button_2_data_offset_byte);
+ mouse_buttons |= (((*mouse_data_mem >> usb_mouse_button_2_data_offset_shift) & usb_mouse_button_2_data_length)<<1);
+ mouse_data_mem = (dword_t *) (usb_mouse_data_memory+usb_mouse_button_3_data_offset_byte);
+ mouse_buttons |= (((*mouse_data_mem >> usb_mouse_button_3_data_offset_shift) & usb_mouse_button_3_data_length)<<2);
  
  //X movement
  mouse_data_mem = (dword_t *) (usb_mouse_data_memory+usb_mouse_movement_x_data_offset_byte);

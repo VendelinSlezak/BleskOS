@@ -169,6 +169,13 @@ byte_t *read_iso9660_folder(dword_t folder_location, dword_t folder_size_in_byte
   vfs_folder[i].minute_of_creation = iso9660_folder_pointer->minute_of_creation;
   vfs_folder[i].second_of_creation = iso9660_folder_pointer->second_of_creation;
 
+  vfs_folder[i].year_of_modification = vfs_folder[i].year_of_creation;
+  vfs_folder[i].month_of_modification = vfs_folder[i].month_of_creation;
+  vfs_folder[i].day_of_modification = vfs_folder[i].day_of_creation;
+  vfs_folder[i].hour_of_modification = vfs_folder[i].hour_of_creation;
+  vfs_folder[i].minute_of_modification = vfs_folder[i].minute_of_creation;
+  vfs_folder[i].second_of_modification = vfs_folder[i].second_of_creation;
+
   for(dword_t j=0; j<iso9660_folder_pointer->length_of_file_identifier; j++) {
    if(iso9660_folder_pointer->file_identifier[j]==';' || iso9660_folder_pointer->file_identifier[j]==0) {
     break;

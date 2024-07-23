@@ -654,6 +654,28 @@ byte_t vfs_delete_folder(struct folder_descriptor_t *folder_path_structure, dwor
     destroy_byte_stream(list_of_files_in_folder);
     return STATUS_ERROR;
    }
+
+   //unallocate all structures with this folder opened
+   for(dword_t j=0; j<number_of_folder_structures; j++) {
+    struct folder_descriptor_t *folder_structure = (struct folder_descriptor_t *) (array_of_folder_structures[j]);
+
+    //do not check structure called for this method
+    if((dword_t)folder_structure==(dword_t)folder_path_structure) {
+     continue;
+    }
+
+    //this structure has opened same partition
+    if(folder_structure->partition_number==folder_path_structure->partition_number) {
+     //go through all opened folders
+     for(dword_t k=0; k<(folder_structure->pointer_to_path+1); k++) {
+      //deleted folder is opened in this structure
+      if(folder_structure->path_folder_locations[k]==list_of_files_in_folder_pointer[j].file_location) {
+       folder_structure->partition_number = NO_PARTITION_SELECTED; //close this folder structure
+      }
+     }
+    }
+   }
+
   }
  }
  destroy_byte_stream(list_of_files_in_folder);
@@ -662,6 +684,27 @@ byte_t vfs_delete_folder(struct folder_descriptor_t *folder_path_structure, dwor
  if(delete_folder(folder_path_structure->partition_number, folder[number_of_entry].file_location)==STATUS_ERROR) {
   log("\nVFS: can not delete folder itself");
   return STATUS_ERROR;
+ }
+
+ //unallocate all structures with this folder opened
+ for(dword_t j=0; j<number_of_folder_structures; j++) {
+  struct folder_descriptor_t *folder_structure = (struct folder_descriptor_t *) (array_of_folder_structures[j]);
+
+  //do not check structure called for this method
+  if((dword_t)folder_structure==(dword_t)folder_path_structure) {
+   continue;
+  }
+
+  //this structure has opened same partition
+  if(folder_structure->partition_number==folder_path_structure->partition_number) {
+   //go through all opened folders
+   for(dword_t k=0; k<(folder_structure->pointer_to_path+1); k++) {
+    //deleted folder is opened in this structure
+    if(folder_structure->path_folder_locations[k]==folder[number_of_entry].file_location) {
+     folder_structure->partition_number = NO_PARTITION_SELECTED; //close this folder structure
+    }
+   }
+  }
  }
 
  //delete file entry

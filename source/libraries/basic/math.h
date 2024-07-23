@@ -10,7 +10,7 @@
 
 #define MATH_LENGTH_OF_NUMBER_STRING_ARRAY 20
 
-dword_t math_year = 0, math_month = 0, math_day = 0;
+dword_t math_year = 0, math_month = 0, math_day = 0, math_hour = 0, math_minute = 0, math_second = 0;
 
 byte_t number_string[MATH_LENGTH_OF_NUMBER_STRING_ARRAY];
 
