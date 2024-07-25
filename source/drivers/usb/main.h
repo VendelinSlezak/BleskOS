@@ -158,7 +158,7 @@ struct usb_hid_descriptor_t {
  struct {
   byte_t bDescriptorType;
   byte_t bDescriptorLength;
- } descriptors[];
+ }__attribute__((packed)) descriptors[];
 }__attribute__((packed));
 
 #define HID_LONG_ENTRY_SIGNATURE 0xFE
@@ -173,13 +173,13 @@ struct hid_entry_t {
    byte_t type: 2;
    byte_t tag: 4;
    byte_t data[];
-  } short_item;
+  }__attribute__((packed)) short_item;
   struct {
    byte_t signature;
    byte_t size_in_bytes;
    byte_t tag;
    byte_t data[];
-  } long_item;
+  }__attribute__((packed)) long_item;
  };
 }__attribute__((packed));
 
@@ -195,6 +195,12 @@ struct hid_parsed_entry_t {
  dword_t usage_value;
 }__attribute__((packed));
 
+struct usb_unidentified_connected_device_t {
+ byte_t controller_number;
+ byte_t port_number;
+ byte_t address;
+}__attribute__((packed));
+struct usb_unidentified_connected_device_t usb_unidentified_connected_devices[127];
 byte_t usb_addresses[32];
 
 dword_t usb_controllers_pointer = 0, usb_control_endpoint_size = 0, usb_device_address = 0, usb_new_device_detected = 0;
