@@ -27,7 +27,7 @@ void initalize_usb_controllers(void) {
  usb_keyboard[0].controller_type = USB_NO_DEVICE_ATTACHED;
 
  for(int i=0; i<MAX_NUMBER_OF_USB_MSD_DEVICES; i++) {
-  usb_mass_storage_devices[i].type = USB_NO_DEVICE_ATTACHED;
+  usb_mass_storage_devices[i].entry = USB_MSD_ENTRY_NOTHING_ATTACHED;
   usb_mass_storage_devices[i].controller_type = 0;
  }
 
@@ -39,6 +39,10 @@ void initalize_usb_controllers(void) {
   }
  }
  
+ for(dword_t i=0; i<127; i++) {
+  usb_unidentified_connected_devices[i].controller_number = 0xFF;
+ }
+
  //return if there are no USB controllers
  if(usb_controllers_pointer==0) {
   log("\nNo USB controllers");
@@ -48,13 +52,17 @@ void initalize_usb_controllers(void) {
  //allocate memory for USB devices
  usb_setup_packet = (struct usb_setup_packet_t *) (malloc(16));
  usb_setup_packet_data = (byte_t *) (malloc(USB_SETUP_PACKET_MAX_SIZE_OF_DATA));
+
  usb_mouse_data_memory = malloc(8);
+
  usb_keyboard_data_memory = calloc(8);
+
  usb_hub_transfer_setup_packets_mem = malloc(8*8);
  usb_hub_transfer_data_mem = malloc(4*8);
- usb_mass_storage_cbw_memory = malloc(32);
- usb_mass_storage_response_memory = calloc(128);
- usb_mass_storage_csw_memory = malloc(16);
+
+ usb_command_block_wrapper = (struct usb_command_block_wrapper_t *) (malloc(sizeof(struct usb_command_block_wrapper_t)));
+ usb_command_status_wrapper = (struct usb_command_status_wrapper_t *) (malloc(sizeof(struct usb_command_status_wrapper_t)));
+
  hid_parsed_entries = (struct hid_parsed_entry_t *) (calloc(sizeof(struct hid_parsed_entry_t)*MAX_NUMBER_OF_HID_PARSED_ENTRIES));
  
  //initalize EHCI USB controllers
@@ -281,8 +289,8 @@ void usb_remove_device(byte_t controller_number, byte_t port_number) {
 
  //remove USB mass storage device
  for(int i=0; i<MAX_NUMBER_OF_USB_MSD_DEVICES; i++) {
-  if(usb_mass_storage_devices[i].type!=USB_NO_DEVICE_ATTACHED && usb_mass_storage_devices[i].controller_number==controller_number && usb_mass_storage_devices[i].port==port_number) {
-   usb_mass_storage_devices[i].type=USB_NO_DEVICE_ATTACHED;
+  if(usb_mass_storage_devices[i].entry!=USB_MSD_ENTRY_NOTHING_ATTACHED && usb_mass_storage_devices[i].controller_number==controller_number && usb_mass_storage_devices[i].port==port_number) {
+   usb_mass_storage_devices[i].entry = USB_MSD_ENTRY_NOTHING_ATTACHED;
    usb_mass_storage_devices[i].controller_type = 0;
    usb_mass_storage_devices[i].controller_number = 0;
    usb_mass_storage_devices[i].port = 0;
@@ -305,6 +313,14 @@ void usb_remove_device(byte_t controller_number, byte_t port_number) {
    usb_hubs[i].controller_number = 0;
    usb_hubs[i].port = 0;
    release_usb_address(usb_hubs[i].address);
+  }
+ }
+
+ //remove unidentified device
+ for(dword_t i=0; i<127; i++) {
+  if(usb_unidentified_connected_devices[i].controller_number==controller_number && usb_unidentified_connected_devices[i].port_number==port_number) {
+   usb_unidentified_connected_devices[i].controller_number = 0xFF;
+   release_usb_address(usb_unidentified_connected_devices[i].address);
   }
  }
 }
@@ -724,27 +740,27 @@ void usb_configure_device_with_zero_address(byte_t controller_number, byte_t dev
    usb_keyboard[0].transfer_descriptor_check = usb_interrupt_transfer(controller_number, 1, usb_device_address, device_speed, usb_device_interfaces[interface_number].endpoint_interrupt, usb_device_interfaces[interface_number].endpoint_interrupt_size, usb_device_interfaces[interface_number].endpoint_interrupt_time, usb_keyboard_data_memory);
    usb_keyboard[0].controller_type = usb_controllers[controller_number].type;
   }
-  else if(usb_device_interfaces[0].type==USB_DEVICE_MASS_STORAGE) {
+  else if(usb_device_interfaces[interface_number].type==USB_DEVICE_MASS_STORAGE) {
    log("USB: USB mass storage device");
    
    //find free entry for new USB mass storage device
    for(int i=0; i<MAX_NUMBER_OF_USB_MSD_DEVICES; i++) {
     //free entry
-    if(usb_mass_storage_devices[i].type==USB_MSD_NOT_ATTACHED) {
+    if(usb_mass_storage_devices[i].entry==USB_MSD_ENTRY_NOTHING_ATTACHED) {
      //configure USB mass storage device
      usb_set_configuration_and_interface(controller_number, usb_device_address, device_speed, usb_device_interfaces[interface_number].configuration, usb_device_interfaces[interface_number].interface, usb_device_interfaces[interface_number].alternative_interface);
     
      //save USB mass storage device variables
-     usb_mass_storage_devices[i].type = USB_MSD_ATTACHED;
+     usb_mass_storage_devices[i].entry = USB_MSD_ENTRY_DEVICE_ATTACHED;
      usb_mass_storage_devices[i].controller_type = usb_controllers[controller_number].type;
      usb_mass_storage_devices[i].controller_number = controller_number;
      usb_mass_storage_devices[i].interface = usb_device_interfaces[interface_number].interface;
      usb_mass_storage_devices[i].port = device_port;
      usb_mass_storage_devices[i].device_speed = device_speed;
      usb_mass_storage_devices[i].address = usb_device_address;
-     usb_mass_storage_devices[i].endpoint_in = usb_device_interfaces[0].endpoint_bulk_in;
+     usb_mass_storage_devices[i].endpoint_in = usb_device_interfaces[interface_number].endpoint_bulk_in;
      usb_mass_storage_devices[i].toggle_in = 0;
-     usb_mass_storage_devices[i].endpoint_out = usb_device_interfaces[0].endpoint_bulk_out;
+     usb_mass_storage_devices[i].endpoint_out = usb_device_interfaces[interface_number].endpoint_bulk_out;
      usb_mass_storage_devices[i].toggle_out = 0;
      usb_mass_storage_devices[i].ehci_hub_address = ehci_hub_address;
      usb_mass_storage_devices[i].ehci_hub_port_number = ehci_hub_port_number;
@@ -753,7 +769,9 @@ void usb_configure_device_with_zero_address(byte_t controller_number, byte_t dev
      usb_mass_storage_initalize(i);
      
      //connect all partitions of USB mass storage device
-     connect_partitions_of_medium(MEDIUM_USB_MSD, i);
+     if(usb_mass_storage_devices[i].entry==USB_MSD_ENTRY_DEVICE_INITALIZED) {
+      connect_partitions_of_medium(MEDIUM_USB_MSD, i);
+     }
 
      break;
     }
@@ -811,6 +829,16 @@ void usb_configure_device_with_zero_address(byte_t controller_number, byte_t dev
   else {
    log("USB: device ");
    log_hex_specific_size(usb_device_interfaces[interface_number].type, 6);
+
+   //save device to array
+   for(dword_t i=0; i<127; i++) {
+    if(usb_unidentified_connected_devices[i].controller_number==0xFF) {
+     usb_unidentified_connected_devices[i].controller_number = controller_number;
+     usb_unidentified_connected_devices[i].port_number = device_port;
+     usb_unidentified_connected_devices[i].address = usb_device_address;
+     break;
+    }
+   }
   }
  }
 }

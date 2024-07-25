@@ -14,6 +14,8 @@ dword_t math_year = 0, math_month = 0, math_day = 0, math_hour = 0, math_minute 
 
 byte_t number_string[MATH_LENGTH_OF_NUMBER_STRING_ARRAY];
 
+word_t reverse_endian_in_word(word_t value);
+dword_t reverse_endian_in_dword(dword_t value);
 int abs(int i);
 float fabs(float i);
 int floor(double i);

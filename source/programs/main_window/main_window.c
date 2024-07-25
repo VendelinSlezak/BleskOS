@@ -213,10 +213,7 @@ void bleskos_main_window_redraw(void) {
    bleskos_main_window_draw_item("USB keyboard", 0x00B5FF, 0);
   }
   for(int i=0; i<10; i++) {
-   if(usb_mass_storage_devices[i].type==USB_MSD_INITALIZED) {
-    bleskos_main_window_draw_item("USB mass storage device", 0x00B5FF, 0);
-   }
-   else if(usb_mass_storage_devices[i].type==USB_MSD_ATTACHED) {
+   if(usb_mass_storage_devices[i].entry!=USB_MSD_ENTRY_NOTHING_ATTACHED) {
     bleskos_main_window_draw_item("USB mass storage device", 0x00B5FF, 0);
    }
   }
