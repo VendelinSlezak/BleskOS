@@ -139,7 +139,7 @@ void task_refill_sound_buffer(void) {
   }
  }
  else {
-  if(sound_get_actual_stream_position()>sound_buffer_refilling_info->buffer_size) {
+  if(sound_get_actual_stream_position()>=sound_buffer_refilling_info->buffer_size) {
    sound_buffer_refilling_info->played_bytes = (sound_buffer_refilling_info->played_bytes_by_finished_buffers+sound_get_actual_stream_position()-sound_buffer_refilling_info->buffer_size);
   }
   else {
