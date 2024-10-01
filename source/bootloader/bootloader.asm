@@ -180,10 +180,59 @@ extended_bootloader_redraw:
  mov si, boot_down_str
  call print
  
- .halt:
+	; preserve original registers
+	push	cx
+	push	dx
+
+	; get current uptime
+	xor	ah,	ah
+	int	0x1A
+
+	; wait no more than 8 seconds
+	add	dx,	146	; 18.2 * 8 = 145.6 ~= 146
+	jnc	.no_overflow
+
+	; register overflow
+	inc	cx
+
+.no_overflow:
+	; store in local variable
+	mov	word [.uptime],	cx
+	mov	word [.uptime + 0x02],		dx
+
+ .wait_for_key:
+	; get current uptime
+	xor	ah,	ah
+	int	0x1A
+
+	; choose selected option?
+	cmp	dx,	word [.uptime + 0x02]
+	jb	.no
+	cmp	cx,	word [.uptime]
+	jb	.no
+
+	; restore original registers
+	pop	dx
+	pop	cx
+
+	; choose selected option
+	jmp	.enter
+
+.no:
+	; check if there is key to retrieve
+	mov	ah,	0x01
+	int	0x16
+
+	; nothing on keyboard cache
+	jz	.wait_for_key
+
   mov ah, 0
   int 16h
   
+	; restore original registers
+	pop	dx
+	pop	cx
+
   cmp ah, 0x1C
   je .enter
   
@@ -198,7 +247,11 @@ extended_bootloader_redraw:
   
   cmp al, 'A'
   je options
- jmp .halt
+ jmp .wait_for_key
+ 
+.uptime:
+	dw	0x0000
+	dw	0x0000
  
  .key_up:
   cmp word [selected_entry], 0
