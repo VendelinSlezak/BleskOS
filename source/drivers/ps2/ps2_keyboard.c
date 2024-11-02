@@ -102,3 +102,32 @@ void ps2_keyboard_check_led_change(void) {
   ps2_keyboard_set_leds();
  }
 }
+
+void ps2_keyboard_save_key_value(dword_t key_value) {
+ if(key_value > 0xFFFF) {
+  return;
+ }
+ 
+ //key was pressed
+ if((key_value & 0xFF)<0x80) {
+  for(dword_t i=0; i<number_of_keys_pressed_on_ps2_keyboard; i++) {
+   if(ps2_keyboard_pressed_keys[i]==key_value) { //key was already pressed and is saved
+    return;
+   }
+  }
+
+  if(number_of_keys_pressed_on_ps2_keyboard<10) {
+   ps2_keyboard_pressed_keys[number_of_keys_pressed_on_ps2_keyboard]=key_value;
+   number_of_keys_pressed_on_ps2_keyboard++;
+  }
+ }
+ else { //key was released
+  for(dword_t i=0; i<number_of_keys_pressed_on_ps2_keyboard; i++) {
+   if(ps2_keyboard_pressed_keys[i]==(key_value-0x80)) {
+    remove_space_from_memory_area((dword_t)&ps2_keyboard_pressed_keys, 10*4, (dword_t)&ps2_keyboard_pressed_keys[i], 4);
+    number_of_keys_pressed_on_ps2_keyboard--;
+    return;
+   }
+  }
+ }
+}

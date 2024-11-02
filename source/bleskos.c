@@ -38,6 +38,7 @@
 #include "libraries/archive_formats/include.h"
 #include "libraries/program_interface/include.h"
 #include "libraries/file_dialog/include.h"
+#include "libraries/binary_programs_interface/include.h"
 
 #ifndef NO_PROGRAMS
 #include "programs/main_window/main_window.h"
@@ -80,6 +81,7 @@
 #include "libraries/archive_formats/include.c"
 #include "libraries/program_interface/include.c"
 #include "libraries/file_dialog/include.c"
+#include "libraries/binary_programs_interface/include.c"
 
 #ifndef NO_PROGRAMS
 #include "programs/main_window/main_window.c"
@@ -104,7 +106,7 @@ void bleskos(dword_t bootloader_passed_value) {
  bleskos_boot_debug_top_screen_color(0x00FF00); //green top of screen
  initalize_logging();
  bleskos_boot_debug_top_screen_color(0x0000FF); //blue top of screen
- log("BleskOS 2024 update 36\n\nPress F2 to save System log as TXT file");
+ log("BleskOS 2024 update 37\n\nPress F2 to save System log as TXT file");
  log_starting_memory();
 
  bleskos_boot_debug_top_screen_color(0xFFFF00); //yellow top of screen
@@ -120,7 +122,7 @@ void bleskos(dword_t bootloader_passed_value) {
  clear_screen(0x00C000);
  set_scalable_char_size(64);
  scalable_font_print("BleskOS", screen_x_center-(64*7/2), screen_y_center-92, BLACK);
- print_to_message_window("Version 2024 update 36", screen_y_center);
+ print_to_message_window("Version 2024 update 37", screen_y_center);
  draw_empty_square(screen_x_center-161, screen_y_center+30, 322, 15, BLACK);
  number_of_start_screen_messages = 0;
  (*redraw_framebuffer)();
@@ -175,6 +177,7 @@ void bleskos(dword_t bootloader_passed_value) {
  initalize_lzw();
  initalize_deflate();
  initalize_mp3_decoder();
+ initalize_binary_programs_interface();
 
  #ifndef NO_PROGRAMS
  bleskos_show_message_on_starting_screen("Initalizing programs...");

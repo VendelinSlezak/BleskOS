@@ -42,6 +42,7 @@ struct ata_identify_command_device_info {
  dword_t lba28_total_number_of_sectors;
  byte_t padding_2[76];
  qword_t lba48_total_number_of_sectors;
+ byte_t padding_3[304];
 }__attribute__((packed));
 struct ata_identify_command_device_info *device_info;
 

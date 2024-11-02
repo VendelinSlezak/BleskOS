@@ -13,3 +13,4 @@ byte_t ps2_keyboard_wait = 0;
 void initalize_ps2_keyboard(void);
 void ps2_keyboard_set_leds(void);
 void ps2_keyboard_check_led_change(void);
+void ps2_keyboard_save_key_value(dword_t key_value);

@@ -14,9 +14,10 @@
 #define MW_MEDIA_VIEWER 4
 #define MW_INTERNET_BROWSER 5
 #define MW_FILE_MANAGER 6
+#define MW_RUN_BINARY_PROGRAMS 7
 
-#define MW_CALCULATOR 7
-#define MW_SCREENSHOOTER 8
+#define MW_CALCULATOR 8
+#define MW_SCREENSHOOTER 9
 
 #define MW_SYSTEM_BOARD 10
 #define MW_CHANGE_KEYBOARD_LAYOUT 11
@@ -29,6 +30,9 @@
 
 #define MW_KEYBOARD_LAYOUT_ENGLISH 1
 #define MW_KEYBOARD_LAYOUT_SLOVAK 2
+
+#define MW_RUN_BINARY_PROGRAMS_OPEN_FILE 1
+#define MW_RUN_BINARY_PROGRAMS_GO_BACK 2
 
 struct main_window_click_zone {
  byte_t type;
@@ -53,3 +57,4 @@ void bleskos_main_window(void);
 void bleskos_main_window_change_keyboard_layout(void);
 void bleskos_main_window_shutdown(void);
 void bleskos_main_window_enable_disable_touchpad(void);
+void bleskos_main_window_run_binary_programs(void);
