@@ -117,11 +117,12 @@ void bleskos_main_window_redraw(void) {
  bleskos_main_window_draw_item("[m] Media viewer", 0xFFE800, MW_MEDIA_VIEWER);
  bleskos_main_window_draw_item("[i] Internet browser", 0xFFE800, MW_INTERNET_BROWSER);
  bleskos_main_window_draw_item("[f] File manager", 0xFFE800, MW_FILE_MANAGER);
+ bleskos_main_window_draw_item("[r] Run binary programs", 0xFFE800, MW_RUN_BINARY_PROGRAMS);
 
  bleskos_main_window_drawing_line += 25;
  bleskos_main_window_print_item("Tools");
  bleskos_main_window_draw_item("[c] Calculator", 0xFFE800, MW_CALCULATOR);
- bleskos_main_window_draw_item("[r] Screenshooter", 0xFFE800, MW_SCREENSHOOTER);
+ bleskos_main_window_draw_item("[s] Screenshooter", 0xFFE800, MW_SCREENSHOOTER);
 
  bleskos_main_window_drawing_line += 25;
  bleskos_main_window_print_item("System");
@@ -281,12 +282,17 @@ void bleskos_main_window(void) {
    file_manager();
    goto redraw;
   }
+  else if(keyboard_code_of_pressed_key==KEY_R) {
+   bleskos_main_window_time_redraw = 0;
+   bleskos_main_window_run_binary_programs();
+   goto redraw;
+  }
   else if(keyboard_code_of_pressed_key==KEY_C) {
    bleskos_main_window_time_redraw = 0;
    calculator();
    goto redraw;
   }
-  else if(keyboard_code_of_pressed_key==KEY_R) {
+  else if(keyboard_code_of_pressed_key==KEY_S) {
    bleskos_main_window_time_redraw = 0;
    screenshooter();
    goto redraw;
@@ -364,6 +370,10 @@ void bleskos_main_window(void) {
    else if(click_value==MW_FILE_MANAGER) {
     bleskos_main_window_time_redraw = 0;
     file_manager();
+   }
+   else if(click_value==MW_RUN_BINARY_PROGRAMS) {
+    bleskos_main_window_time_redraw = 0;
+    bleskos_main_window_run_binary_programs();
    }
    else if(click_value==MW_CALCULATOR) {
     bleskos_main_window_time_redraw = 0;
@@ -513,5 +523,70 @@ void bleskos_main_window_enable_disable_touchpad(void) {
  }
  else {
   enable_ps2_mouse();
+ }
+}
+
+void bleskos_main_window_run_binary_programs(void) {
+ bleskos_main_window_time_redraw = 0;
+
+ redraw:
+ clear_click_board();
+ bleskos_main_window_draw_background();
+
+ print("RUN BINARY PROGRAMS", 20, 20, BLACK);
+ print("You can run .bin files smaller than 256 KB that were compiled for BleskOS.", 20, 40, BLACK);
+ print("Running program can be killed at any time by Ctrl+Alt+K", 20, 60, BLACK);
+ print("WARNING: .bin file will get full control over your computer. Run only .bin files that you know are harmless.", 20, 80, BLACK);
+
+ draw_button_with_specific_color_and_click_zone("[F2] Open .bin file", 20, 100, 200, 20, 0x63FF37, MW_RUN_BINARY_PROGRAMS_OPEN_FILE);
+ draw_button_with_specific_color_and_click_zone("[esc] Go back", 20+200+20, 100, 200, 20, 0x63FF37, MW_RUN_BINARY_PROGRAMS_GO_BACK);
+ 
+ redraw_screen();
+
+ while(1) {
+  wait_for_user_input();
+  move_mouse_cursor();
+
+  if(keyboard_code_of_pressed_key==KEY_ESC || (mouse_click_button_state==MOUSE_CLICK && get_mouse_cursor_click_board_value()==MW_RUN_BINARY_PROGRAMS_GO_BACK)) {
+   return;
+  }
+  else if(keyboard_code_of_pressed_key==KEY_F2 || (mouse_click_button_state==MOUSE_CLICK && get_mouse_cursor_click_board_value()==MW_RUN_BINARY_PROGRAMS_OPEN_FILE)) {
+   if(file_dialog_open("bin")==FILE_DIALOG_EVENT_EXIT_FILE_SUCCESSFULLY_LOADED) {
+    //draw background for program
+    clear_screen(0x888888);
+    redraw_screen();
+
+    //check if this file has proper size
+    if(file_dialog_file_descriptor->file_size_in_bytes<256*1024) {
+     //check if program has signature
+     if(does_program_have_signature(file_dialog_open_file_memory, file_dialog_file_descriptor->file_size_in_bytes)==STATUS_TRUE) {
+      //this task is for watching if Ctrl+Alt+K is not pressed
+      create_task(should_be_program_killed, TASK_TYPE_PERIODIC_INTERRUPT, 1);
+
+      //all programs have org 0x10000
+      copy_memory((dword_t)file_dialog_open_file_memory, 0x10000, file_dialog_file_descriptor->file_size_in_bytes);
+      
+      //this method saves stack, so it is possible to kill program, and calls 0x10000
+      extern void call_binary_program(dword_t system_call_method_memory);
+      call_binary_program((dword_t)(&system_call));
+
+      //program successfully ended, so we can remove this task
+      destroy_task(should_be_program_killed);
+     }
+     else {
+      error_window("This binary file do not have signature");
+     }
+    }
+    else {
+     error_window("You can not run programs bigger than 256 KB");
+    }
+
+    //free memory
+    free((dword_t)file_dialog_open_file_memory);
+   }
+
+   //go back to Run binary programs screen
+   goto redraw;
+  }
  }
 }

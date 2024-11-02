@@ -12,6 +12,7 @@ bits 32
 
 global start
 global call
+global call_bleskos_binary_program
 extern bleskos
 
 start:
@@ -32,3 +33,4 @@ call:
 %include "source/assembly/binary_font.asm"
 %include "source/assembly/scalable_font.asm"
 %include "source/assembly/strings.asm"
+%include "source/assembly/binary_programs.asm"

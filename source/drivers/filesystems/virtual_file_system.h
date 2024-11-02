@@ -31,7 +31,7 @@ struct folder_descriptor_t {
  dword_t path_folder_locations[MAX_NUMBER_OF_FOLDERS_IN_PATH];
  dword_t path_folder_sizes[MAX_NUMBER_OF_FOLDERS_IN_PATH];
  word_t folder_number_in_array_of_loaded_folders;
-}__attribute__((packed));
+}__attribute__((packed, aligned(4)));
 
 #define NORMAL_FILE 0
 #define FILE_FOLDER 1
@@ -57,7 +57,7 @@ struct file_descriptor_t {
 
  word_t name[256];
  word_t extension[10];
-}__attribute__((packed));
+}__attribute__((packed, aligned(4)));
 struct file_descriptor_t last_loaded_file_descriptor;
 
 void vfs_entry_parse_extension_from_name(struct file_descriptor_t *file_descriptor);

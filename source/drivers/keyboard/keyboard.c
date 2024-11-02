@@ -17,6 +17,9 @@ void initalize_keyboard(void) {
  keyboard_diacritic_char_for_next_key = 0;
  keyboard_led_state = 0;
  keyboard_change_in_led_state = STATUS_FALSE;
+
+ clear_memory((dword_t)&ps2_keyboard_pressed_keys, sizeof(ps2_keyboard_pressed_keys));
+ clear_memory((dword_t)&usb_keyboard_pressed_keys, sizeof(usb_keyboard_pressed_keys));
 }
 
 void keyboard_process_code(dword_t code) {
@@ -90,5 +93,19 @@ void keyboard_process_code(dword_t code) {
  else {
   keyboard_unicode_value_of_pressed_key = get_unicode_char_with_diacritic(keyboard_unicode_value_of_pressed_key, keyboard_diacritic_char_for_next_key);
   keyboard_diacritic_char_for_next_key = 0;
+ }
+}
+
+byte_t keyboard_is_key_pressed(dword_t key_value) {
+ for(dword_t i=0; i<number_of_keys_pressed_on_ps2_keyboard; i++) {
+  if(ps2_keyboard_pressed_keys[i]==key_value) {
+   return STATUS_TRUE;
+  }
+ }
+
+ for(dword_t i=0; i<6; i++) {
+  if(usb_keyboard_pressed_keys[i]==key_value) {
+   return STATUS_TRUE;
+  }
  }
 }

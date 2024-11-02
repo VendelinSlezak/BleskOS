@@ -12,6 +12,9 @@ global load_idt
 global irq_handlers
 extern isr_handler
 
+global stack_of_interrupt
+stack_of_interrupt dd 0
+
 %define EMPTY_IDT_ENTRY dq 0
 
 %macro IDT_ENTRY 1
@@ -255,6 +258,8 @@ irq_basic_handler:
  ret
 
 irq0_handler:
+ mov dword [stack_of_interrupt], esp
+
  pusha
  mov eax, dword [irq_handlers+(4*0)]
  call eax

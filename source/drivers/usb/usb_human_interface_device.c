@@ -47,6 +47,9 @@ void usb_keyboard_process_new_packet(void) {
 
   usb_keyboard_code = usb_keyboard_mem[2];
   usb_keyboard_code_of_pressed_key = usb_keyboard_layout[usb_keyboard_code];
+  for(dword_t i=0; i<6; i++) { //save all keys that are pressed
+   usb_keyboard_pressed_keys[i] = usb_keyboard_layout[usb_keyboard_mem[2+i]];
+  }
   usb_keyboard_count = 0;
   usb_keyboard_packet_received = STATUS_TRUE;
  }

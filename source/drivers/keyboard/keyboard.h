@@ -179,8 +179,13 @@ word_t keyboard_unicode_value_of_pressed_key;
 #define KEYBOARD_LED_SCROLLOCK 0x4
 byte_t keyboard_led_state, keyboard_change_in_led_state;
 
+dword_t ps2_keyboard_pressed_keys[10];
+dword_t number_of_keys_pressed_on_ps2_keyboard;
+dword_t usb_keyboard_pressed_keys[6];
+
 word_t *keyboard_layout_ptr;
 word_t *keyboard_shift_layout_ptr;
 
 void initalize_keyboard(void);
 void keyboard_process_code(dword_t code);
+byte_t keyboard_is_key_pressed(dword_t key_value);

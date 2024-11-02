@@ -285,6 +285,10 @@ void usb_remove_device(byte_t controller_number, byte_t port_number) {
   usb_keyboard[0].controller_number = 0;
   usb_keyboard[0].port = 0;
   release_usb_address(usb_keyboard[0].address);
+
+  for(dword_t i=0; i<6; i++) { //release information about all pressed keys
+   usb_keyboard_pressed_keys[i] = 0;
+  }
  }
 
  //remove USB mass storage device

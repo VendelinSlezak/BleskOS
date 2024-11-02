@@ -255,20 +255,20 @@ extended_bootloader_redraw:
  
  .key_up:
   cmp word [selected_entry], 0
-  je .halt
+  je .wait_for_key
   dec word [selected_entry]
  jmp extended_bootloader_redraw
  
  .key_down:
   cmp word [selected_entry], 1
-  je .halt
+  je .wait_for_key
   inc word [selected_entry]
  jmp extended_bootloader_redraw
  
  .enter:
   cmp word [selected_entry], 1
   je .special_boot
-  mov byte [boot_options], 0 ;classis boot without any boot options
+  mov byte [boot_options], 0 ;classic boot without any boot options
   .find_highest_graphic_mode_and_load_bleskos:
   call highest_graphic_mode
   jmp load_bleskos

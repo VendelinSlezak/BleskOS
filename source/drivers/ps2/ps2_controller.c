@@ -354,6 +354,7 @@ void ps2_first_channel_irq_handler(void) {
   if(ps2_first_channel_buffer[0]==0xE1) {
    if(ps2_first_channel_buffer_pointer>=3) { //if data starts with 0xE1, it means that keyboard will send two more bytes
     keyboard_process_code((ps2_first_channel_buffer[0] | ps2_first_channel_buffer[1]<<8 | 0xE1<<16));
+    ps2_keyboard_save_key_value((ps2_first_channel_buffer[0] | ps2_first_channel_buffer[1]<<8 | 0xE1<<16));
     ps2_keyboard_wait = 0;
     ps2_first_channel_buffer_pointer = 0;
    }
@@ -361,12 +362,14 @@ void ps2_first_channel_irq_handler(void) {
   else if(ps2_first_channel_buffer[0]==0xE0) {
    if(ps2_first_channel_buffer_pointer>=2) { //if data starts with 0xE0, it means that keyboard will send one more byte
     keyboard_process_code((ps2_first_channel_buffer[1] | 0xE0<<8));
+    ps2_keyboard_save_key_value((ps2_first_channel_buffer[1] | 0xE0<<8));
     ps2_keyboard_wait = 0;
     ps2_first_channel_buffer_pointer = 0;
    }
   }
   else {
    keyboard_process_code(ps2_first_channel_buffer[0]);
+   ps2_keyboard_save_key_value(ps2_first_channel_buffer[0]);
    ps2_keyboard_wait = 0;
    ps2_first_channel_buffer_pointer = 0;
   }
@@ -403,6 +406,7 @@ void ps2_second_channel_irq_handler(void) {
   if(ps2_second_channel_buffer[0]==0xE1) {
    if(ps2_second_channel_buffer_pointer>=3) { //if data starts with 0xE1, it means that keyboard will send two more bytes
     keyboard_process_code((ps2_second_channel_buffer[0] | ps2_second_channel_buffer[1]<<8 | 0xE1<<16));
+    ps2_keyboard_save_key_value((ps2_second_channel_buffer[0] | ps2_second_channel_buffer[1]<<8 | 0xE1<<16));
     ps2_keyboard_wait = 0;
     ps2_second_channel_buffer_pointer = 0;
    }
@@ -410,12 +414,14 @@ void ps2_second_channel_irq_handler(void) {
   else if(ps2_second_channel_buffer[0]==0xE0) {
    if(ps2_second_channel_buffer_pointer>=2) { //if data starts with 0xE0, it means that keyboard will send one more byte
     keyboard_process_code((ps2_second_channel_buffer[1] | 0xE0<<8));
+    ps2_keyboard_save_key_value((ps2_second_channel_buffer[1] | 0xE0<<8));
     ps2_keyboard_wait = 0;
     ps2_second_channel_buffer_pointer = 0;
    }
   }
   else {
    keyboard_process_code(ps2_second_channel_buffer[0]);
+   ps2_keyboard_save_key_value(ps2_second_channel_buffer[0]);
    ps2_keyboard_wait = 0;
    ps2_second_channel_buffer_pointer = 0;
   }
