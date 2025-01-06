@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2024 Vendelín Slezák
+* Copyright (c) 2023-2025 Vendelín Slezák
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -165,17 +165,17 @@ void bleskos_main_window_redraw(void) {
  bleskos_main_window_drawing_line += 25;
 
  //network state
- if(ethernet_selected_card!=0xFF) {
+ if(number_of_ethernet_cards!=0xFF) {
   bleskos_main_window_drawing_line += 10;
   bleskos_main_window_print_item("Network");
-  if(is_ethernet_cable_connected==STATUS_FALSE) {
-   bleskos_main_window_draw_item("Ethernet cable is not connected", 0x00C000, 0);
+  if(internet.status==INTERNET_STATUS_DISCONNECTED) {
+   bleskos_main_window_draw_item("Not connected", 0x00C000, 0);
   }
-  else if(connected_to_network==NETWORK_CONNECTION_FALIED) {
-   bleskos_main_window_draw_item("Connection to network failed", 0x00C000, 0);
+  else if(internet.status==INTERNET_STATUS_CONNECTING) {
+   bleskos_main_window_draw_item("Connecting...", 0x00C000, 0);
   }
-  else if(connected_to_network==NETWORK_CONNECTED) {
-   bleskos_main_window_draw_item("You are connected to network", 0x00C000, 0);
+  else if(internet.status==INTERNET_STATUS_CONNECTED && internet.connection_type==INTERNET_CONNECTION_ETHERNET) {
+   bleskos_main_window_draw_item("Connected through ethernet cable", 0x00C000, 0);
   }
  }
 
@@ -244,11 +244,11 @@ void bleskos_main_window(void) {
   wait_for_user_input();
   move_mouse_cursor();
 
-  if(ethernet_link_state_change==1) {
+  if(internet_status_change==STATUS_TRUE) {
    goto redraw;
   }
   
-  if(usb_new_device_detected==1) {
+  if(usb_new_device_detected==STATUS_TRUE) {
    goto redraw;
   }
   

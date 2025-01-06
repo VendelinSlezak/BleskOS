@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2024 Vendelín Slezák
+* Copyright (c) 2023-2025 Vendelín Slezák
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -49,11 +49,11 @@ void scan_pci(void) {
  //initalize values that are used to determine presence of devices
  ide_0x1F0_controller_present = STATUS_FALSE;
  ide_0x170_controller_present = STATUS_FALSE;
- ethernet_cards_pointer = 0;
  usb_controllers_pointer = 0;
  number_of_graphic_cards = 0;
  number_of_sound_cards = 0;
  number_of_storage_controllers = 0;
+ number_of_ethernet_cards = 0;
 
  //this array is used in System board
  pci_devices_array_mem = calloc(12*1000);
@@ -76,7 +76,7 @@ void scan_pci(void) {
 }
 
 void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
- dword_t full_device_id, vendor_id, device_id, type_of_device, class, subclass, progif, mmio_port_base;
+ dword_t full_device_id, vendor_id, device_id, type_of_device, class, subclass, progif, device_irq, mmio_port_base;
  word_t io_port_base;
 
  //read base informations about device
@@ -90,6 +90,7 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  class = (type_of_device >> 16);
  subclass = ((type_of_device >> 8) & 0xFF);
  progif = (type_of_device & 0xFF);
+ device_irq = (pci_read(bus, device, function, 0x3C) & 0xFF);
 
  //save device to array
  if(pci_num_of_devices<1000) {
@@ -103,6 +104,10 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  //Graphic card
  if(type_of_device==0x030000 && number_of_graphic_cards<MAX_NUMBER_OF_GRAPHIC_CARDS) {
   log("\nGraphic card");
+
+  if(number_of_graphic_cards>=MAX_NUMBER_OF_GRAPHIC_CARDS) {
+   return;
+  }
 
   graphic_cards_info[number_of_graphic_cards].vendor_id = vendor_id;
   graphic_cards_info[number_of_graphic_cards].device_id = device_id;
@@ -191,101 +196,91 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
   log("\nEthernet card ");
   log_hex_with_space(full_device_id);
   
-  if(ethernet_cards_pointer>=10) {
+  if(number_of_ethernet_cards>=MAX_NUMBER_OF_ETHERNET_CARDS) {
    return;
   }
   
-  //read base values
-  ethernet_cards[ethernet_cards_pointer].present = DEVICE_PRESENT;
-  ethernet_cards[ethernet_cards_pointer].id = full_device_id;
-  ethernet_cards[ethernet_cards_pointer].irq = (pci_read(bus, device, function, 0x3C) & 0xFF);
-  ethernet_cards[ethernet_cards_pointer].driver = NETWORK_NO_DRIVER;
-  ethernet_cards[ethernet_cards_pointer].bus = bus;
-  ethernet_cards[ethernet_cards_pointer].dev = device;
-  ethernet_cards[ethernet_cards_pointer].func = function;
+  //read basic values
+  ethernet_cards[number_of_ethernet_cards].id = full_device_id;
+  ethernet_cards[number_of_ethernet_cards].irq = (pci_read(bus, device, function, 0x3C) & 0xFF);
+  ethernet_cards[number_of_ethernet_cards].bus = bus;
+  ethernet_cards[number_of_ethernet_cards].dev = device;
+  ethernet_cards[number_of_ethernet_cards].func = function;
+  ethernet_cards[number_of_ethernet_cards].initalize = 0; //by default card has no driver
   
   //Intel E1000
-  if((full_device_id & 0xFFFF)==VENDOR_INTEL) {
-   ethernet_cards[ethernet_cards_pointer].driver = NETWORK_DRIVER_ETHERNET_INTEL_E1000;
-   ethernet_cards[ethernet_cards_pointer].bar_type = pci_read_bar_type(bus, device, function, PCI_BAR0);
-   if(ethernet_cards[ethernet_cards_pointer].bar_type==PCI_MMIO_BAR) {
-    ethernet_cards[ethernet_cards_pointer].base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
+  if(vendor_id==VENDOR_INTEL) {
+   //connect to driver for Intel e1000
+   ethernet_cards[number_of_ethernet_cards].initalize = ec_intel_e1000_initalize;
+
+   ethernet_cards[number_of_ethernet_cards].bar_type = pci_read_bar_type(bus, device, function, PCI_BAR0);
+   if(ethernet_cards[number_of_ethernet_cards].bar_type==PCI_MMIO_BAR) {
+    ethernet_cards[number_of_ethernet_cards].base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
     pci_enable_mmio_busmastering(bus, device, function);
    }
    else {
-    ethernet_cards[ethernet_cards_pointer].base = pci_read_io_bar(bus, device, function, PCI_BAR0);
+    ethernet_cards[number_of_ethernet_cards].base = pci_read_io_bar(bus, device, function, PCI_BAR0);
     pci_enable_io_busmastering(bus, device, function);
    }
-   
-   ethernet_cards_pointer++;
-   log("Intel E1000");
-   return;
   }
   
   //AMD PC-net
-  if(((full_device_id & 0xFFFF)==VENDOR_AMD_1 || (full_device_id & 0xFFFF)==VENDOR_AMD_2)) {
-   ethernet_cards[ethernet_cards_pointer].driver = NETWORK_DRIVER_ETHERNET_AMD_PCNET;
+  else if(vendor_id==VENDOR_AMD_1 || vendor_id==VENDOR_AMD_2) {
+   //connect to driver for Amd PCNET
+   ethernet_cards[number_of_ethernet_cards].initalize = ec_amd_pcnet_initalize;
+
    pci_enable_io_busmastering(bus, device, function);
-   ethernet_cards[ethernet_cards_pointer].bar_type = PCI_IO_BAR;
-   ethernet_cards[ethernet_cards_pointer].base = pci_read_io_bar(bus, device, function, PCI_BAR0);
-   
-   ethernet_cards_pointer++;
-   log("AMD PC-net");
-   return;
+   ethernet_cards[number_of_ethernet_cards].bar_type = PCI_IO_BAR;
+   ethernet_cards[number_of_ethernet_cards].base = pci_read_io_bar(bus, device, function, PCI_BAR0);
   }
   
   //Broadcom NetXtreme
-  if((full_device_id & 0xFFFF)==VENDOR_BROADCOM) {
-   ethernet_cards[ethernet_cards_pointer].driver = NETWORK_DRIVER_ETHERNET_BROADCOM_NETXTREME;
+  else if(vendor_id==VENDOR_BROADCOM) {
+   //connect to driver for Broadcom NetXtreme
+   ethernet_cards[number_of_ethernet_cards].initalize = ec_broadcom_netxtreme_initalize;
+
    pci_enable_mmio_busmastering(bus, device, function);
-   ethernet_cards[ethernet_cards_pointer].bar_type = PCI_MMIO_BAR;
-   ethernet_cards[ethernet_cards_pointer].base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
-   
-   ethernet_cards_pointer++;
-   log("Broadcom NetXtreme");
-   return;
+   ethernet_cards[number_of_ethernet_cards].bar_type = PCI_MMIO_BAR;
+   ethernet_cards[number_of_ethernet_cards].base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
   }
   
-  //Realtek 8139/8169
-  if((full_device_id & 0xFFFF)==VENDOR_REALTEK) {
-   full_device_id >>= 16;
-   
-   if(full_device_id==0x8139) {
-    ethernet_cards[ethernet_cards_pointer].driver = NETWORK_DRIVER_ETHERNET_REALTEK_8139;
+  //Realtek
+  else if(vendor_id==VENDOR_REALTEK) {
+   if(device_id==0x8139) {
+    //connect to driver for Realtek 8139
+    ethernet_cards[number_of_ethernet_cards].initalize = ec_realtek_8139_initalize;
+
     pci_enable_io_busmastering(bus, device, function);
-    ethernet_cards[ethernet_cards_pointer].bar_type = PCI_IO_BAR;
-    ethernet_cards[ethernet_cards_pointer].base = pci_read_io_bar(bus, device, function, PCI_BAR0);
-   
-    ethernet_cards_pointer++;
-    log("Realtek 8139");
-    return;
+    ethernet_cards[number_of_ethernet_cards].bar_type = PCI_IO_BAR;
+    ethernet_cards[number_of_ethernet_cards].base = pci_read_io_bar(bus, device, function, PCI_BAR0);
    }
-   
-   if(full_device_id==0x8136 || full_device_id==0x8161 || full_device_id==0x8168 || full_device_id==0x8169) {
-    ethernet_cards[ethernet_cards_pointer].driver = NETWORK_DRIVER_ETHERNET_REALTEK_8169;
-    ethernet_cards[ethernet_cards_pointer].bar_type = pci_read_bar_type(bus, device, function, PCI_BAR0);
-    if(ethernet_cards[ethernet_cards_pointer].bar_type==PCI_MMIO_BAR) {
-     ethernet_cards[ethernet_cards_pointer].base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
+   else if(device_id==0x8136 || device_id==0x8161 || device_id==0x8168 || device_id==0x8169) {
+    //connect to driver for Realtek 8169
+    ethernet_cards[number_of_ethernet_cards].initalize = ec_realtek_8169_initalize;
+
+    ethernet_cards[number_of_ethernet_cards].bar_type = pci_read_bar_type(bus, device, function, PCI_BAR0);
+    if(ethernet_cards[number_of_ethernet_cards].bar_type==PCI_MMIO_BAR) {
+     ethernet_cards[number_of_ethernet_cards].base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
      pci_enable_mmio_busmastering(bus, device, function);
     }
     else {
-     ethernet_cards[ethernet_cards_pointer].base = pci_read_io_bar(bus, device, function, PCI_BAR0);
+     ethernet_cards[number_of_ethernet_cards].base = pci_read_io_bar(bus, device, function, PCI_BAR0);
      pci_enable_io_busmastering(bus, device, function);
     }
-   
-    ethernet_cards_pointer++;
-    log("Realtek 8169");
-    return;
    }
   }
   
-  ethernet_cards_pointer++;
+  number_of_ethernet_cards++;
   return;
  }
  
  //AC97 sound card
  if(type_of_device==0x040100 && number_of_sound_cards<MAX_NUMBER_OF_SOUND_CARDS) {
   log("\nsound card AC97");
+
+  if(number_of_sound_cards>=MAX_NUMBER_OF_SOUND_CARDS) {
+   return;
+  }
 
   pci_enable_io_busmastering(bus, device, function);
 
@@ -302,6 +297,10 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  //HD Audio sound card
  if(type_of_device==0x040300 && number_of_sound_cards<MAX_NUMBER_OF_SOUND_CARDS) {
   log("\nsound card HDA");
+
+  if(number_of_sound_cards>=MAX_NUMBER_OF_SOUND_CARDS) {
+   return;
+  }
 
   pci_enable_mmio_busmastering(bus, device, function);
 

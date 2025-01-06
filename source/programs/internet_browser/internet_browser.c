@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2024 Vendelín Slezák
+* Copyright (c) 2023-2025 Vendelín Slezák
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -139,7 +139,7 @@ void draw_internet_browser(void) {
   if(file_status==INTERNET_BROWSER_FILE_STATUS_NOTHING) {
    return;
   }
-  else if(file_status==FILE_TRANSFER_NO_ERROR) {
+  else if(file_status==INTERNET_BROWSER_FILE_STATUS_GOOD) {
    //draw webpage
    internet_browser_first_show_line = get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_FIRST_SHOW_LINE);
    internet_browser_last_show_line = (internet_browser_first_show_line+internet_browser_webpage_height);
@@ -165,23 +165,11 @@ void draw_internet_browser(void) {
     draw_bottom_line_button("[p] Previous page", INTERNET_BROWSER_CLICK_ZONE_PREVIOUS_PAGE_BUTTON);
    }
   }
-  else if(file_status==FILE_TRANSFER_ERROR_NO_NETWORK_CONNECTION) {
+  else if(file_status==INTERNET_BROWSER_FILE_STATUS_ERROR_NO_INTERNET) {
    print("No connection to internet", 10, INTERNET_BROWSER_WEBPAGE_START_LINE+8, BLACK);
   }
-  else if(file_status==FILE_TRANSFER_ERROR_NETWORK_NOT_REACHABLE) {
-   print("Network unreachable", 10, INTERNET_BROWSER_WEBPAGE_START_LINE+8, BLACK);
-  }
-  else if(file_status==FILE_TRANSFER_ERROR_DNS_DO_NOT_EXIST) {
-   print("Error: IP address of webpage not founded", 10, INTERNET_BROWSER_WEBPAGE_START_LINE+8, BLACK);
-  }
-  else if(file_status==FILE_TRANSFER_ERROR_CONNECTION_NOT_ESTABILISHED) {
-   print("Error: Connection with server was not estabilished", 10, INTERNET_BROWSER_WEBPAGE_START_LINE+8, BLACK);
-  }
-  else if(file_status==FILE_TRANSFER_ERROR_SERVER_NOT_RESPONDING) {
-   print("Error: Server is not responding", 10, INTERNET_BROWSER_WEBPAGE_START_LINE+8, BLACK);
-  }
-  else if(file_status==FILE_TRANSFER_ERROR_TOO_MANY_REDIRECTIONS) {
-   print("Error: This site was redirected too many times", 10, INTERNET_BROWSER_WEBPAGE_START_LINE+8, BLACK);
+  else if(file_status==INTERNET_BROWSER_FILE_STATUS_ERROR) {
+   print("Error during transfer, check log for detailed informations", 10, INTERNET_BROWSER_WEBPAGE_START_LINE+8, BLACK);
   }
  }
 }
@@ -202,7 +190,7 @@ void internet_browser_open_file(void) {
  add_file(file_dialog_file_descriptor->name, 0, 0, 0, 0, 0);
 
  //convert file and set file variables
- set_file_value(INTERNET_BROWSER_FILE_STATUS, FILE_TRANSFER_NO_ERROR);
+ set_file_value(INTERNET_BROWSER_FILE_STATUS, INTERNET_BROWSER_FILE_STATUS_GOOD);
  set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_MEMORY, convert_html_to_bleskos_webpage((dword_t)file_dialog_open_file_memory, file_dialog_file_descriptor->file_size_in_bytes));
  set_file_value(INTERNET_BROWSER_FILE_HTML_MEMORY, (dword_t)file_dialog_open_file_memory);
  set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_LENGTH, html_page_height);
@@ -363,7 +351,7 @@ void internet_browser_vertical_scrollbar_event(void) {
 }
 
 void internet_browser_load_webpage_from_url_in_text_area(void) {
- if(connected_to_network==STATUS_TRUE) {
+ if(internet.status==INTERNET_STATUS_CONNECTED) {
   //close actual opened file
   if(get_file_value(INTERNET_BROWSER_FILE_HTML_MEMORY)!=0) {
    free(get_file_value(INTERNET_BROWSER_FILE_HTML_MEMORY));
@@ -400,13 +388,40 @@ void internet_browser_load_webpage_from_url_in_text_area(void) {
   redraw_screen();
 
   //download page file from network
-  dword_t html_memory = network_transfer_file((byte_t *)internet_browser_url_mem);
+  byte_t file_full_url[MAX_LENGTH_OF_URL];
+  dword_t html_memory = STATUS_ERROR, html_size = 0;
+  dword_t transfer_number = download_file_from_url((byte_t *)internet_browser_url_mem);
+  dword_t timeout = (time_of_system_running+10000);
+  while(get_status_of_network_transfer(transfer_number)==NETWORK_TRANSFER_TRANSFERRING_DATA) {
+   asm("hlt");
+
+   if(time_of_system_running >= timeout) {
+    log("\nInternet browser transfer timeout");
+    kill_network_transfer(transfer_number);
+    set_file_value(INTERNET_BROWSER_FILE_STATUS, INTERNET_BROWSER_FILE_STATUS_ERROR);
+    return;
+   }
+  }
+  if(get_status_of_network_transfer(transfer_number)==NETWORK_TRANSFER_DONE) {
+   html_memory = calloc(get_file_size_of_network_transfer(transfer_number)+2);
+   html_size = get_file_size_of_network_transfer(transfer_number);
+   copy_memory((dword_t)get_file_memory_of_network_transfer(transfer_number), html_memory, html_size);
+   copy_memory((dword_t)&network_transfers[transfer_number].url, (dword_t)&file_full_url, MAX_LENGTH_OF_URL);
+  }
+  //else NETWORK_TRANSFER_ERROR
+  close_network_transfer(transfer_number);
+
   if(html_memory==STATUS_ERROR) {
-   set_file_value(INTERNET_BROWSER_FILE_STATUS, file_transfer_error_type);
+   if(internet.status==INTERNET_STATUS_DISCONNECTED) {
+    set_file_value(INTERNET_BROWSER_FILE_STATUS, INTERNET_BROWSER_FILE_STATUS_ERROR_NO_INTERNET);
+   }
+   else {
+    set_file_value(INTERNET_BROWSER_FILE_STATUS, INTERNET_BROWSER_FILE_STATUS_ERROR);
+   }
    return;
   }
   else {
-   set_file_value(INTERNET_BROWSER_FILE_STATUS, FILE_TRANSFER_NO_ERROR);
+   set_file_value(INTERNET_BROWSER_FILE_STATUS, INTERNET_BROWSER_FILE_STATUS_GOOD);
   }
 
   //copy resulting URL to text area and history
@@ -424,7 +439,7 @@ void internet_browser_load_webpage_from_url_in_text_area(void) {
 
   //convert HTML to BleskOS webpage
   internet_browser_print_message("Processing HTML webpage...");
-  set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_MEMORY, convert_html_to_bleskos_webpage(html_memory, 1024*1024));
+  set_file_value(INTERNET_BROWSER_FILE_WEBPAGE_MEMORY, convert_html_to_bleskos_webpage(html_memory, html_size));
   
   //set tab name
   word_t *html_title = (word_t *) (html_title_memory);
@@ -464,6 +479,6 @@ void internet_browser_load_webpage_from_url_in_text_area(void) {
   }
  }
  else {
-  set_file_value(INTERNET_BROWSER_FILE_STATUS, FILE_TRANSFER_ERROR_NO_NETWORK_CONNECTION);
+  set_file_value(INTERNET_BROWSER_FILE_STATUS, INTERNET_BROWSER_FILE_STATUS_ERROR_NO_INTERNET);
  }
 }
