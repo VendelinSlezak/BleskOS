@@ -31,8 +31,6 @@ byte_t dhcp_offer_received(byte_t number_of_packet_entry, byte_t *packet_memory,
   return PWRM_END_TRANSFER;
  }
 
- pstr("offer");
-
  //save MAC address of router
  struct network_packet_ethernet_layer_t *ethernet_layer = (struct network_packet_ethernet_layer_t *) memory_of_full_processed_packet;
  for(dword_t i=0; i<6; i++) {
@@ -70,7 +68,6 @@ byte_t dhcp_acknowledge_received(byte_t number_of_packet_entry, byte_t *packet_m
   internet.dns_server_ip[i] = dhcp_info.dns_server_ip_address[i];
  }
  internet.status = INTERNET_STATUS_CONNECTED;
- pstr("connected");
 
  //log connection
  log("\n\nNetwork: Connection to router was succesfull");
