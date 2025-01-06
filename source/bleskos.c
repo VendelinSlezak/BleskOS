@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2024 Vendelín Slezák
+* Copyright (c) 2023-2025 Vendelín Slezák
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -22,7 +22,6 @@
 #include "drivers/storage/include.h"
 #include "drivers/filesystems/include.h"
 #include "drivers/sound/include.h"
-#include "drivers/ethernet/include.h"
 #include "drivers/network/include.h"
 #include "drivers/usb/include.h"
 
@@ -65,7 +64,6 @@
 #include "drivers/storage/include.c"
 #include "drivers/filesystems/include.c"
 #include "drivers/sound/include.c"
-#include "drivers/ethernet/include.c"
 #include "drivers/network/include.c"
 #include "drivers/usb/include.c"
 
@@ -106,7 +104,7 @@ void bleskos(dword_t bootloader_passed_value) {
  bleskos_boot_debug_top_screen_color(0x00FF00); //green top of screen
  initalize_logging();
  bleskos_boot_debug_top_screen_color(0x0000FF); //blue top of screen
- log("BleskOS 2024 update 37\n\nPress F2 to save System log as TXT file");
+ log("BleskOS 2025 update 1\n\nPress F2 to save System log as TXT file");
  log_starting_memory();
 
  bleskos_boot_debug_top_screen_color(0xFFFF00); //yellow top of screen
@@ -122,7 +120,7 @@ void bleskos(dword_t bootloader_passed_value) {
  clear_screen(0x00C000);
  set_scalable_char_size(64);
  scalable_font_print("BleskOS", screen_x_center-(64*7/2), screen_y_center-92, BLACK);
- print_to_message_window("Version 2024 update 37", screen_y_center);
+ print_to_message_window("Version 2025 update 1", screen_y_center);
  draw_empty_square(screen_x_center-161, screen_y_center+30, 322, 15, BLACK);
  number_of_start_screen_messages = 0;
  (*redraw_framebuffer)();
@@ -154,16 +152,8 @@ void bleskos(dword_t bootloader_passed_value) {
  initalize_sound_card();
  bleskos_boot_debug_log_message();
  
- bleskos_show_message_on_starting_screen("Initalizing ethernet card...");
- initalize_network_cards();
- bleskos_boot_debug_log_message();
- initalize_network_stack();
- read_ethernet_cable_status();
- if(is_ethernet_cable_connected==STATUS_TRUE) {
-  bleskos_show_message_on_starting_screen("Connecting to network...");
-  connect_to_network();
-  bleskos_boot_debug_log_message();
- }
+ bleskos_show_message_on_starting_screen("Initalizing network...");
+ initalize_network_connection();
 
  bleskos_show_message_on_starting_screen("Initalizing USB controllers...");
  initalize_usb_controllers();
@@ -190,7 +180,7 @@ void bleskos(dword_t bootloader_passed_value) {
  initalize_calculator();
  initalize_screenshooter();
  initalize_performance_rating();
- 
+
  bleskos_show_message_on_starting_screen("Starting Graphic User Interface...");
  log("\n\nEND OF BOOTING\n");
 
@@ -198,9 +188,6 @@ void bleskos(dword_t bootloader_passed_value) {
  mouse_cursor_y = screen_y_center;
  bleskos_main_window();
  #endif
-
- developer_program_log();
- shutdown();
 }
 
 void bleskos_show_message_on_starting_screen(char *string) {

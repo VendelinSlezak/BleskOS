@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2024 Vendelín Slezák
+* Copyright (c) 2023-2025 Vendelín Slezák
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -110,13 +110,13 @@ byte_t patapi_read_capabilities(word_t base_port, word_t alt_base_port) {
  
  //read response
  response = inw(base_port + 0);
- optical_disk_size = (BIG_ENDIAN(response)<<16);
+ optical_disk_size = (BIG_ENDIAN_WORD(response)<<16);
  response = inw(base_port + 0);
- optical_disk_size |= BIG_ENDIAN(response);
+ optical_disk_size |= BIG_ENDIAN_WORD(response);
  response = inw(base_port + 0);
- optical_disk_sector_size = (BIG_ENDIAN(response)<<16);
+ optical_disk_sector_size = (BIG_ENDIAN_WORD(response)<<16);
  response = inw(base_port + 0);
- optical_disk_sector_size |= BIG_ENDIAN(response);
+ optical_disk_sector_size |= BIG_ENDIAN_WORD(response);
 
  //if this command leave drive in busy state, wait until it leaves it
  ide_wait_drive_not_busy(base_port, 50);
@@ -213,9 +213,9 @@ byte_t patapi_read(word_t base_port, word_t alt_base_port, dword_t sector, byte_
  //send packet
  outw(base_port + 0, 0xA8); //read command
  value = (word_t)(sector>>16);
- outw(base_port + 0, BIG_ENDIAN(value));
+ outw(base_port + 0, BIG_ENDIAN_WORD(value));
  value = (word_t)sector;
- outw(base_port + 0, BIG_ENDIAN(value));
+ outw(base_port + 0, BIG_ENDIAN_WORD(value));
  outw(base_port + 0, 0);
  outw(base_port + 0, (number_of_sectors<<8)); //number of sectors
  outw(base_port + 0, 0);
@@ -259,9 +259,9 @@ byte_t patapi_read_audio_cd(word_t base_port, word_t alt_base_port, dword_t sect
  //send packet
  outw(base_port + 0, 0xBE); //read CD command
  value = (word_t)(sector>>16);
- outw(base_port + 0, BIG_ENDIAN(value));
+ outw(base_port + 0, BIG_ENDIAN_WORD(value));
  value = (word_t)sector;
- outw(base_port + 0, BIG_ENDIAN(value));
+ outw(base_port + 0, BIG_ENDIAN_WORD(value));
  outw(base_port + 0, 0);
  outw(base_port + 0, (0x1000 | number_of_sectors)); //number of sectors and we are reading User Data - 0x10
  outw(base_port + 0, 0);

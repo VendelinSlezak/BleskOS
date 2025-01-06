@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2024 Vendelín Slezák
+* Copyright (c) 2023-2025 Vendelín Slezák
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -30,6 +30,9 @@
 #define INTERNET_BROWSER_CLICK_ZONE_PREVIOUS_PAGE_BUTTON 102
 
 #define INTERNET_BROWSER_FILE_STATUS_NOTHING 0xFFFFFFFF
+#define INTERNET_BROWSER_FILE_STATUS_GOOD 0
+#define INTERNET_BROWSER_FILE_STATUS_ERROR_NO_INTERNET 1
+#define INTERNET_BROWSER_FILE_STATUS_ERROR 100
 
 dword_t internet_browser_program_interface_memory = 0;
 dword_t internet_browser_webpage_height = 0, internet_browser_webpage_width = 0, internet_browser_first_show_line = 0, internet_browser_last_show_line = 0, internet_browser_first_show_column = 0, internet_browser_last_show_column = 0;
