@@ -15,7 +15,7 @@ void initalize_http_protocol(void) {
 
 byte_t get_number_of_hft_entry_from_pwrm_entry(byte_t pwrm_entry) {
  //find which HTTP file transfer entry is connected with this PWRM entry
- for(dword_t i=0; i<MAX_NUMBER_OF_SIMULTANOUS_NETWORK_FILE_TRANSFERS; i++) {
+ for(dword_t i=0; i<MAX_NUMBER_OF_SIMULTANOUS_HTTP_TRANSFERS; i++) {
   if(http_file_transfers[i].pwrm_entry == pwrm_entry) {
    return i;
   }
@@ -27,7 +27,7 @@ byte_t get_number_of_hft_entry_from_pwrm_entry(byte_t pwrm_entry) {
 
 byte_t http_download_file_from_url(byte_t *url) {
  //find free entry
- for(dword_t i=0; i<MAX_NUMBER_OF_SIMULTANOUS_NETWORK_FILE_TRANSFERS; i++) {
+ for(dword_t i=0; i<MAX_NUMBER_OF_SIMULTANOUS_HTTP_TRANSFERS; i++) {
   if(http_file_transfers[i].status == HFT_STATUS_FREE_ENTRY) {
    //clear entry
    clear_memory((dword_t)&http_file_transfers[i], sizeof(struct http_file_transfer_t));
@@ -74,6 +74,8 @@ byte_t http_download_file_from_url(byte_t *url) {
    http_file_transfers[i].starting_time = time_of_system_running;
    http_file_transfers[i].status = HFT_STATUS_DNS_REQUEST;
    http_file_transfers[i].data = create_byte_stream(BYTE_STREAM_1_MB_BLOCK);
+   http_file_transfers[i].http_header_received = STATUS_FALSE;
+   //other variables are zeroes
 
    //return number of file transfer in list
    return i;
@@ -135,7 +137,7 @@ byte_t dns_reply_received(byte_t number_of_packet_entry, byte_t *packet_memory, 
  
  //save variables
  http_file_transfers[hft_entry].status = HFT_STATUS_TCP_TRANSFER;
- http_file_transfers[hft_entry].ouc_tcp_port = free_tcp_port_for_http_transfer;
+ http_file_transfers[hft_entry].our_tcp_port = free_tcp_port_for_http_transfer;
  free_tcp_port_for_http_transfer++;
  if(free_tcp_port_for_http_transfer >= 50000) {
   free_tcp_port_for_http_transfer = 40000;
@@ -175,7 +177,7 @@ byte_t tcp_server_handshake_received(byte_t number_of_packet_entry, byte_t *pack
  start_building_network_packet();
  network_packet_add_ethernet_layer(internet.router_mac);
  network_packet_add_ipv4_layer(internet.our_ip, http_file_transfers[hft_entry].domain_ip);
- network_packet_add_tcp_layer(http_file_transfers[hft_entry].ouc_tcp_port, 80, http_file_transfers[hft_entry].sequence_number, http_file_transfers[hft_entry].acknowledgment_number, TCP_LAYER_ACK_FLAG);
+ network_packet_add_tcp_layer(http_file_transfers[hft_entry].our_tcp_port, 80, http_file_transfers[hft_entry].sequence_number, http_file_transfers[hft_entry].acknowledgment_number, TCP_LAYER_ACK_FLAG);
  finalize_builded_network_packet();
 
  //send TCP handshake ACK packet
@@ -185,12 +187,12 @@ byte_t tcp_server_handshake_received(byte_t number_of_packet_entry, byte_t *pack
  start_building_network_packet();
  network_packet_add_ethernet_layer(internet.router_mac);
  network_packet_add_ipv4_layer(internet.our_ip, http_file_transfers[hft_entry].domain_ip);
- network_packet_add_tcp_layer(http_file_transfers[hft_entry].ouc_tcp_port, 80, http_file_transfers[hft_entry].sequence_number, http_file_transfers[hft_entry].acknowledgment_number, TCP_LAYER_PUSH_FLAG | TCP_LAYER_ACK_FLAG);
+ network_packet_add_tcp_layer(http_file_transfers[hft_entry].our_tcp_port, 80, http_file_transfers[hft_entry].sequence_number, http_file_transfers[hft_entry].acknowledgment_number, TCP_LAYER_PUSH_FLAG | TCP_LAYER_ACK_FLAG);
  network_packet_add_http_layer(http_file_transfers[hft_entry].url);
  finalize_builded_network_packet();
 
  //send HTTP request packet and tcp_http_data_received() or tcp_http_error() will be called based on response
- update_packet_entry(number_of_packet_entry, 2000, 4, PWRM_PACKET_TYPE_IPV4_TCP, 80, http_file_transfers[hft_entry].ouc_tcp_port, tcp_http_data_received, tcp_http_error);
+ update_packet_entry(number_of_packet_entry, 4000, 3, PWRM_PACKET_TYPE_IPV4_TCP, 80, http_file_transfers[hft_entry].our_tcp_port, tcp_http_data_received, tcp_http_error);
 
  return PWRM_CONTINUE_TRANSFER;
 }
@@ -225,6 +227,18 @@ byte_t tcp_http_data_received(byte_t number_of_packet_entry, byte_t *packet_memo
  //copy data in this packet
  add_bytes_to_byte_stream(http_file_transfers[hft_entry].data, packet_memory, packet_length);
 
+ //check if we did not received full HTTP header, and if yes, parse it
+ if(http_file_transfers[hft_entry].http_header_received == STATUS_FALSE && parse_http_layer((byte_t *)http_file_transfers[hft_entry].data->start_of_allocated_memory, http_file_transfers[hft_entry].data->size_of_stream) == STATUS_GOOD) {
+  //log
+  log("\nHFT entry "); log_var_with_space(hft_entry); log("HTTP header received");
+  
+  //update status
+  http_file_transfers[hft_entry].http_header_received = STATUS_TRUE;
+
+  //save useful info
+  http_file_transfers[hft_entry].expected_file_size = http_info.content_length;
+ }
+
  //update sequence and acknowledge number
  http_file_transfers[hft_entry].sequence_number = BIG_ENDIAN_DWORD(full_packet_tcp_layer->acknowledgment_number);
  http_file_transfers[hft_entry].acknowledgment_number = BIG_ENDIAN_DWORD(full_packet_tcp_layer->sequence_number)+packet_length;
@@ -235,19 +249,19 @@ byte_t tcp_http_data_received(byte_t number_of_packet_entry, byte_t *packet_memo
  network_packet_add_ipv4_layer(internet.our_ip, http_file_transfers[hft_entry].domain_ip);
  if((full_packet_tcp_layer->control & TCP_LAYER_FIN_FLAG) == TCP_LAYER_FIN_FLAG) {
   http_file_transfers[hft_entry].acknowledgment_number++;
-  network_packet_add_tcp_layer(http_file_transfers[hft_entry].ouc_tcp_port, 80, http_file_transfers[hft_entry].sequence_number, http_file_transfers[hft_entry].acknowledgment_number, TCP_LAYER_ACK_FLAG | TCP_LAYER_FIN_FLAG);
+  network_packet_add_tcp_layer(http_file_transfers[hft_entry].our_tcp_port, 80, http_file_transfers[hft_entry].sequence_number, http_file_transfers[hft_entry].acknowledgment_number, TCP_LAYER_ACK_FLAG | TCP_LAYER_FIN_FLAG);
  }
  else {
-  network_packet_add_tcp_layer(http_file_transfers[hft_entry].ouc_tcp_port, 80, http_file_transfers[hft_entry].sequence_number, http_file_transfers[hft_entry].acknowledgment_number, TCP_LAYER_ACK_FLAG);
+  network_packet_add_tcp_layer(http_file_transfers[hft_entry].our_tcp_port, 80, http_file_transfers[hft_entry].sequence_number, http_file_transfers[hft_entry].acknowledgment_number, TCP_LAYER_ACK_FLAG);
  }
  finalize_builded_network_packet();
 
  //send TCP packet
  if((full_packet_tcp_layer->control & TCP_LAYER_FIN_FLAG) == TCP_LAYER_FIN_FLAG) {
-  update_packet_entry(number_of_packet_entry, 2000, 4, PWRM_PACKET_TYPE_IPV4_TCP, 80, http_file_transfers[hft_entry].ouc_tcp_port, tcp_fin_received, tcp_fin_error);
+  update_packet_entry(number_of_packet_entry, 2000, 4, PWRM_PACKET_TYPE_IPV4_TCP, 80, http_file_transfers[hft_entry].our_tcp_port, tcp_fin_received, tcp_fin_error);
  }
  else {
-  update_packet_entry(number_of_packet_entry, 2000, 4, PWRM_PACKET_TYPE_IPV4_TCP, 80, http_file_transfers[hft_entry].ouc_tcp_port, tcp_http_data_received, tcp_http_error);
+  update_packet_entry(number_of_packet_entry, 2000, 4, PWRM_PACKET_TYPE_IPV4_TCP, 80, http_file_transfers[hft_entry].our_tcp_port, tcp_http_data_received, tcp_http_error);
  }
 
  return PWRM_CONTINUE_TRANSFER;
@@ -454,65 +468,41 @@ byte_t tcp_fin_received(byte_t number_of_packet_entry, byte_t *packet_memory, dw
  return PWRM_END_TRANSFER;
 }
 
-byte_t dns_request_error(byte_t number_of_packet_entry, byte_t error) {
+/* processing of transfer errors */
+
+void http_any_transfer_error(byte_t number_of_packet_entry, byte_t *error_description) {
  //get number of HTTP file transfer entry associated with this packet
  byte_t hft_entry = get_number_of_hft_entry_from_pwrm_entry(number_of_packet_entry);
  if(hft_entry==HFT_ENTRY_NOT_FOUND) {
-  return PWRM_END_TRANSFER;
+  return;
  }
 
  //log
- log("\nERROR: DNS reply was not received");
+ log("\nERROR: ");
+ log(error_description);
 
  //update status
  hft_close_entry(hft_entry);
  http_file_transfers[hft_entry].status = HFT_STATUS_ERROR;
 }
 
-byte_t tcp_handshake_error(byte_t number_of_packet_entry, byte_t error) {
- //get number of HTTP file transfer entry associated with this packet
- byte_t hft_entry = get_number_of_hft_entry_from_pwrm_entry(number_of_packet_entry);
- if(hft_entry==HFT_ENTRY_NOT_FOUND) {
-  return PWRM_END_TRANSFER;
- }
-
- //log
- log("\nERROR: TCP handshake was not received");
-
- //update status
- hft_close_entry(hft_entry);
- http_file_transfers[hft_entry].status = HFT_STATUS_ERROR;
+void dns_request_error(byte_t number_of_packet_entry, byte_t error) {
+ http_any_transfer_error(number_of_packet_entry, "DNS reply was not received");
 }
 
-byte_t tcp_http_error(byte_t number_of_packet_entry, byte_t error) {
- //get number of HTTP file transfer entry associated with this packet
- byte_t hft_entry = get_number_of_hft_entry_from_pwrm_entry(number_of_packet_entry);
- if(hft_entry==HFT_ENTRY_NOT_FOUND) {
-  return PWRM_END_TRANSFER;
- }
-
- //log
- log("\nERROR: HTTP data were not received");
-
- //update status
- hft_close_entry(hft_entry);
- http_file_transfers[hft_entry].status = HFT_STATUS_ERROR;
+void tcp_handshake_error(byte_t number_of_packet_entry, byte_t error) {
+ http_any_transfer_error(number_of_packet_entry, "TCP handshake was not received");
 }
 
-byte_t tcp_fin_error(byte_t number_of_packet_entry, byte_t error) {
- //get number of HTTP file transfer entry associated with this packet
- byte_t hft_entry = get_number_of_hft_entry_from_pwrm_entry(number_of_packet_entry);
- if(hft_entry==HFT_ENTRY_NOT_FOUND) {
-  return PWRM_END_TRANSFER;
- }
-
- //log
- log("\nERROR: HTTP data were not received");
-
- //update status
- hft_close_entry(hft_entry);
- http_file_transfers[hft_entry].status = HFT_STATUS_ERROR;
+void tcp_http_error(byte_t number_of_packet_entry, byte_t error) {
+ http_any_transfer_error(number_of_packet_entry, "HTTP data were not received");
 }
+
+void tcp_fin_error(byte_t number_of_packet_entry, byte_t error) {
+ http_any_transfer_error(number_of_packet_entry, "TCP FIN acknowledge was not received");
+}
+
+/* methods for interacting with HFT entry */
 
 byte_t get_hft_status(dword_t hft_entry) {
  return http_file_transfers[hft_entry].status;
@@ -523,7 +513,7 @@ byte_t *get_hft_file_memory(dword_t hft_entry) {
   return http_file_transfers[hft_entry].file_memory;
  }
  else {
-  return HFT_STATUS_FREE_ENTRY;
+  return HFT_ERROR_INVALID_ENTRY;
  }
 }
 
@@ -531,8 +521,23 @@ dword_t get_hft_file_size(dword_t hft_entry) {
  if(http_file_transfers[hft_entry].status==HFT_STATUS_DONE) {
   return http_file_transfers[hft_entry].file_size;
  }
+ else if(http_file_transfers[hft_entry].status==HFT_STATUS_TCP_TRANSFER) {
+  return http_file_transfers[hft_entry].expected_file_size;
+ }
  else {
-  return HFT_STATUS_FREE_ENTRY;
+  return HFT_ERROR_INVALID_ENTRY;
+ }
+}
+
+dword_t get_hft_transferred_file_size(dword_t hft_entry) {
+ if(http_file_transfers[hft_entry].status==HFT_STATUS_TCP_TRANSFER) {
+  return http_file_transfers[hft_entry].data->size_of_stream;
+ }
+ else if(http_file_transfers[hft_entry].status==HFT_STATUS_DONE) {
+  return http_file_transfers[hft_entry].file_size;
+ }
+ else {
+  return HFT_ERROR_INVALID_ENTRY;
  }
 }
 
@@ -570,7 +575,7 @@ void hft_kill_entry_transfer(dword_t hft_entry) {
   start_building_network_packet();
   network_packet_add_ethernet_layer(internet.router_mac);
   network_packet_add_ipv4_layer(internet.our_ip, http_file_transfers[hft_entry].domain_ip);
-  network_packet_add_tcp_layer(http_file_transfers[hft_entry].ouc_tcp_port, 80, http_file_transfers[hft_entry].sequence_number, 0, TCP_LAYER_RST_FLAG);
+  network_packet_add_tcp_layer(http_file_transfers[hft_entry].our_tcp_port, 80, http_file_transfers[hft_entry].sequence_number, 0, TCP_LAYER_RST_FLAG);
   finalize_builded_network_packet();
   send_builded_packet_to_internet();
  }

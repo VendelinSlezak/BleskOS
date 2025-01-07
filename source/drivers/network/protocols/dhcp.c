@@ -79,10 +79,14 @@ byte_t dhcp_acknowledge_received(byte_t number_of_packet_entry, byte_t *packet_m
  return PWRM_END_TRANSFER;
 }
 
-byte_t dhcp_discover_error(byte_t number_of_packet_entry, byte_t error) {
+void dhcp_discover_error(byte_t number_of_packet_entry, byte_t error) {
  log("\nERROR: DHCP offer was not received");
+
+ internet.status = INTERNET_STATUS_CONNECTION_ERROR;
 }
 
-byte_t dhcp_response_error(byte_t number_of_packet_entry, byte_t error) {
+void dhcp_response_error(byte_t number_of_packet_entry, byte_t error) {
  log("\nERROR: DHCP acknowledgement was not received");
+
+ internet.status = INTERNET_STATUS_CONNECTION_ERROR;
 }

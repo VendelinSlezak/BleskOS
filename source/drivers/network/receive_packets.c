@@ -100,7 +100,9 @@ void process_packet(byte_t *packet_memory, dword_t packet_size) {
   struct network_packet_arp_layer_t *packet_arp_layer = (struct network_packet_arp_layer_t *) ((dword_t)packet_ethernet_layer+sizeof(struct network_packet_ethernet_layer_t));
 
   //if this is ARP request from internet, respond immediately
-  if(packet_arp_layer->opcode == BIG_ENDIAN_WORD(NETWORK_PACKET_ARP_TYPE_REQUEST) && internet.status == INTERNET_STATUS_CONNECTED) {
+  if(packet_arp_layer->opcode == BIG_ENDIAN_WORD(NETWORK_PACKET_ARP_TYPE_REQUEST)
+     && internet.status == INTERNET_STATUS_CONNECTED
+     && (is_memory_equal_with_memory(packet_arp_layer->target_mac, internet.our_mac, 6) == STATUS_TRUE || is_memory_equal_with_memory(packet_arp_layer->target_ip, internet.our_ip, 4) == STATUS_TRUE)) {
    //create ARP reply packet
    start_building_network_packet();
    network_packet_add_ethernet_layer(internet.router_mac);

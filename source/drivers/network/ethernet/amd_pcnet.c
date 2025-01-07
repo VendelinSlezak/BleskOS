@@ -196,6 +196,9 @@ byte_t ec_amd_pcnet_send_packet(dword_t number_of_card, byte_t *packet_memory, d
 void ec_amd_pcnet_process_irq(dword_t number_of_card) {
  //read irq status to know what caused interrupt
  dword_t irq_status = ec_amd_pcnet_read_csr(number_of_card, 0);
+ if(irq_status == 0x00000000) {
+  return;
+ }
 
  //packet was received
  if((irq_status & (1 << 10))==(1 << 10)) {

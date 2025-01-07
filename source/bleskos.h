@@ -10,14 +10,16 @@
 
 #define STATUS_GOOD 1
 #define STATUS_ERROR 0
+
 #define STATUS_TRUE 1
 #define STATUS_FALSE 0
+
 #define BIG_ENDIAN_WORD(x) (((x & 0xFF)<<8) | ((x>>8) & 0xFF))
 #define BIG_ENDIAN_DWORD(x) (((x & 0x000000FF)<<24) | ((x & 0x0000FF00)<<8) | ((x & 0x00FF0000)>>8) | ((x & 0xFF000000)>>24))
 
 #define BOOT_OPTION_DEBUG_MESSAGES 0x1
 
-#define BLESKOS_NUMBER_OF_START_SCREEN_MESSAGES 13
+#define BLESKOS_NUMBER_OF_START_SCREEN_MESSAGES 12
 
 typedef unsigned int size_t;
 typedef unsigned char byte_t;
@@ -26,7 +28,6 @@ typedef unsigned int dword_t;
 typedef unsigned long long qword_t;
 
 byte_t value8;
-word_t value16;
 dword_t value32, boot_options;
 dword_t converted_file_memory, converted_file_size;
 byte_t number_of_start_screen_messages;

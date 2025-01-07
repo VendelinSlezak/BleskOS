@@ -16,8 +16,57 @@ void initalize_network_transfers(void) {
 
 byte_t download_file_from_url(byte_t *url) {
  //check if URL is not too long
- if(get_number_of_chars_in_ascii_string(url)>=(MAX_LENGTH_OF_URL-1)) {
-  return NETWORK_TRANSFER_INVALID_URL;
+ dword_t url_length = get_number_of_chars_in_ascii_string(url);
+ if(url_length>=(MAX_LENGTH_OF_URL-1)) {
+  log("\nInvalid URL requested: Too long "); log_var(url_length);
+  return NETWORK_TRANSFER_ERROR_INVALID_URL;
+ }
+
+ //check if URL is without unallowed characters
+ for(dword_t i=0; i<url_length; i++) {
+  //check if char is in allowed characters A-Z a-z 0-9
+  if(is_char(url[i]) == STATUS_FALSE) {
+   //check other allowed characters
+   byte_t *url_allowed_characters = "/?&=-_.~:#\x25+@"; //\x25 is %
+   byte_t valid = STATUS_FALSE;
+   for(dword_t j=0; j<13; j++) {
+    if(url[i] == url_allowed_characters[j]) {
+     valid = STATUS_TRUE;
+     break;
+    }
+   }
+
+   //if this is unallowed character, return error immediately
+   if(valid == STATUS_FALSE) {
+    log("\nInvalid URL requested: Unallowed character "); log_hex_specific_size(url[i], 2);
+    return NETWORK_TRANSFER_ERROR_INVALID_URL;
+   }
+  }
+ }
+
+ //check if URL has domain
+ dword_t domain_detected = STATUS_FALSE;
+ dword_t pointer = 0;
+ if(is_memory_equal_with_memory(url, "https://", 8)==STATUS_TRUE) {
+  pointer += 8;
+ }
+ else if(is_memory_equal_with_memory(url, "http://", 7)==STATUS_TRUE) {
+  pointer += 7;
+ }
+ while(url[pointer]!=0) {
+  if(url[pointer]=='/') { //this ends domain name
+   break;
+  }
+  else if(url[pointer]=='.') { //domain is characterized by at least one dot
+   domain_detected = STATUS_TRUE;
+  }
+
+  //move to next char
+  pointer++;
+ }
+ if(domain_detected == STATUS_FALSE) {
+  log("\nInvalid URL requested: No domain name");
+  return NETWORK_TRANSFER_ERROR_INVALID_URL;
  }
 
  //check if there is free entry
@@ -42,6 +91,7 @@ byte_t download_file_from_url(byte_t *url) {
 
    //log
    log("\nFile transfer from URL: ");
+   log_var_with_space(network_transfers[i].number_of_transfer_entry);
    log(url);
 
    //return number of this entry
@@ -66,7 +116,7 @@ byte_t download_file_from_url_by_http_s_protocols(byte_t *url) {
 }
 
 byte_t get_number_of_network_transfer_from_type_of_transfer(byte_t type_of_transfer, byte_t number_of_transfer_entry) {
- for(dword_t i=0; i<MAX_NUMBER_OF_SIMULTANOUS_NETWORK_FILE_TRANSFERS; i++) {
+ for(dword_t i=0; i<MAX_NUMBER_OF_SIMULTANOUS_HTTP_TRANSFERS; i++) {
   if(network_transfers[i].type_of_transfer == type_of_transfer && network_transfers[i].number_of_transfer_entry == number_of_transfer_entry) {
    return i;
   }
@@ -76,7 +126,7 @@ byte_t get_number_of_network_transfer_from_type_of_transfer(byte_t type_of_trans
 }
 
 byte_t get_status_of_network_transfer(byte_t transfer_number) {
- if(transfer_number>=MAX_NUMBER_OF_SIMULTANOUS_NETWORK_FILE_TRANSFERS) {
+ if(transfer_number>=MAX_NUMBER_OF_SIMULTANOUS_HTTP_TRANSFERS) {
   return NETWORK_TRANSFER_INVALID_TRANSFER_NUMBER;
  }
 
@@ -98,39 +148,55 @@ byte_t get_status_of_network_transfer(byte_t transfer_number) {
 }
 
 byte_t *get_file_memory_of_network_transfer(byte_t transfer_number) {
- if(transfer_number>=MAX_NUMBER_OF_SIMULTANOUS_NETWORK_FILE_TRANSFERS) {
-  return NETWORK_TRANSFER_INVALID_TRANSFER_NUMBER;
+ if(transfer_number>=MAX_NUMBER_OF_SIMULTANOUS_HTTP_TRANSFERS) {
+  return STATUS_ERROR;
  }
 
  //HTTP transfer
  if(network_transfers[transfer_number].type_of_transfer==NETWORK_TRANSFER_TYPE_HTTP) {
   byte_t *status = get_hft_file_memory(network_transfers[transfer_number].number_of_transfer_entry);
-  if(status != HFT_STATUS_FREE_ENTRY) {
+  if(status != HFT_ERROR_INVALID_ENTRY) {
    return status;
   }
  }
  
- return NETWORK_TRANSFER_INVALID_TRANSFER_NUMBER;
+ return STATUS_ERROR;
 }
 
 dword_t get_file_size_of_network_transfer(byte_t transfer_number) {
- if(transfer_number>=MAX_NUMBER_OF_SIMULTANOUS_NETWORK_FILE_TRANSFERS) {
-  return NETWORK_TRANSFER_INVALID_TRANSFER_NUMBER;
+ if(transfer_number>=MAX_NUMBER_OF_SIMULTANOUS_HTTP_TRANSFERS) {
+  return STATUS_ERROR;
  }
 
  //HTTP transfer
  if(network_transfers[transfer_number].type_of_transfer==NETWORK_TRANSFER_TYPE_HTTP) {
   dword_t status = get_hft_file_size(network_transfers[transfer_number].number_of_transfer_entry);
-  if(status != HFT_STATUS_FREE_ENTRY) {
+  if(status != HFT_ERROR_INVALID_ENTRY) {
    return status;
   }
  }
  
- return NETWORK_TRANSFER_INVALID_TRANSFER_NUMBER;
+ return STATUS_ERROR;
+}
+
+dword_t get_transferred_file_size_of_network_transfer(byte_t transfer_number) {
+ if(transfer_number>=MAX_NUMBER_OF_SIMULTANOUS_HTTP_TRANSFERS) {
+  return STATUS_ERROR;
+ }
+
+ //HTTP transfer
+ if(network_transfers[transfer_number].type_of_transfer==NETWORK_TRANSFER_TYPE_HTTP) {
+  dword_t status = get_hft_transferred_file_size(network_transfers[transfer_number].number_of_transfer_entry);
+  if(status != HFT_ERROR_INVALID_ENTRY) {
+   return status;
+  }
+ }
+ 
+ return STATUS_ERROR;
 }
 
 void close_network_transfer(byte_t transfer_number) {
- if(transfer_number>=MAX_NUMBER_OF_SIMULTANOUS_NETWORK_FILE_TRANSFERS) {
+ if(transfer_number>=MAX_NUMBER_OF_SIMULTANOUS_HTTP_TRANSFERS) {
   return;
  }
 
@@ -142,7 +208,7 @@ void close_network_transfer(byte_t transfer_number) {
 }
 
 void kill_network_transfer(byte_t transfer_number) {
- if(transfer_number>=MAX_NUMBER_OF_SIMULTANOUS_NETWORK_FILE_TRANSFERS) {
+ if(transfer_number>=MAX_NUMBER_OF_SIMULTANOUS_HTTP_TRANSFERS) {
   return;
  }
 

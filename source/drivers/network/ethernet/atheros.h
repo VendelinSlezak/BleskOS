@@ -8,4 +8,10 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "time.c"
+word_t ec_atheros_read_phy(dword_t number_of_card, dword_t reg);
+void ec_atheros_write_phy(dword_t number_of_card, dword_t reg, word_t value);
+
+void ec_atheros_initalize(dword_t number_of_card);
+byte_t ec_atheros_get_cable_status(dword_t number_of_card);
+byte_t ec_atheros_send_packet(dword_t number_of_card, byte_t *packet_memory, dword_t packet_size);
+void ec_atheros_process_irq(dword_t number_of_card);

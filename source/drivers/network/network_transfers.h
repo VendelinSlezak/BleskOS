@@ -11,7 +11,7 @@
 #define NETWORK_TRANSFER_FREE_ENTRY 0
 #define NETWORK_TRANSFER_USED_ENTRY 1
 
-#define NETWORK_TRANSFER_INVALID_URL 0xFF
+#define NETWORK_TRANSFER_ERROR_INVALID_URL 0xFF
 #define NETWORK_TRANSFER_INVALID_TRANSFER_NUMBER 0
 #define NETWORK_TRANSFER_TRANSFERRING_DATA 1
 #define NETWORK_TRANSFER_ERROR 2
@@ -19,7 +19,7 @@
 
 #define NETWORK_TRANSFER_TYPE_HTTP 1
 
-#define MAX_NUMBER_OF_NETWORK_TRANSFERS 5
+#define MAX_NUMBER_OF_NETWORK_TRANSFERS 10
 struct network_transfer_info_t {
  byte_t status;
  byte_t type_of_transfer;
@@ -39,5 +39,6 @@ byte_t get_number_of_network_transfer_from_type_of_transfer(byte_t type_of_trans
 byte_t get_status_of_network_transfer(byte_t transfer_number);
 byte_t *get_file_memory_of_network_transfer(byte_t transfer_number);
 dword_t get_file_size_of_network_transfer(byte_t transfer_number);
+dword_t get_transferred_file_size_of_network_transfer(byte_t transfer_number);
 void close_network_transfer(byte_t transfer_number);
 void kill_network_transfer(byte_t transfer_number);

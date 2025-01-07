@@ -43,6 +43,9 @@ struct ethernet_card_info_t ethernet_cards[MAX_NUMBER_OF_ETHERNET_CARDS];
 dword_t number_of_ethernet_cards;
 
 void initalize_ethernet_cards(void);
+byte_t ethernet_void_get_cable_status(dword_t number_of_card);
+byte_t ethernet_void_send_packet(dword_t number_of_card, byte_t *memory_of_packet, dword_t length_of_packet);
+void ethernet_void_process_irq(dword_t number_of_card);
 void ethernet_cards_update_cable_status(void);
 void select_ethernet_card_as_internet_connection_device(dword_t number_of_card);
 byte_t send_packet_to_internet_through_ethernet(byte_t *packet_memory, dword_t packet_size);

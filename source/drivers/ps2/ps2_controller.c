@@ -117,6 +117,7 @@ byte_t ps2_second_channel_wait_for_response(void) {
 void initalize_ps2_controller(void) {
  byte_t controller_configuration_byte = 0;
 
+ //check presence of PS/2 controller
  if(ps2_controller_present==DEVICE_NOT_PRESENT) {
   return;
  }
@@ -124,7 +125,7 @@ void initalize_ps2_controller(void) {
   log("\n\nPS/2 controller ");
  }
 
- //initaize variables
+ //initalize variables
  ps2_first_channel_present = DEVICE_PRESENCE_IS_NOT_KNOWN;
  ps2_first_channel_device = PS2_CHANNEL_NO_DEVICE_CONNECTED;
  ps2_first_channel_buffer_pointer = 0;
@@ -144,6 +145,10 @@ void initalize_ps2_controller(void) {
   else {
    break;
   }
+ }
+ if((inb(0x64) & 0x1)==0x1) { //error: data port was not cleared
+  log("has locked data port");
+  return;
  }
 
  //disable interrupts of both channels
@@ -346,6 +351,7 @@ void ps2_first_channel_irq_handler(void) {
  //move pointer
  ps2_first_channel_buffer_pointer++;
  if(ps2_first_channel_buffer_pointer>=10) {
+  log("\nERROR: PS/2 first channel buffer is full");
   ps2_first_channel_buffer_pointer = 0;
  }
 
@@ -398,6 +404,7 @@ void ps2_second_channel_irq_handler(void) {
  //move pointer
  ps2_second_channel_buffer_pointer++;
  if(ps2_second_channel_buffer_pointer>=10) {
+  log("\nERROR: PS/2 second channel buffer is full");
   ps2_second_channel_buffer_pointer = 0;
  }
 
