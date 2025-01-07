@@ -36,7 +36,7 @@ then
 	cp bleskos.img iso/bleskos.img
 	genisoimage -o bleskos.iso -b bleskos.img iso
 
-	RELEASE=$(grep -F 'print_to_message_window("Version' source/bleskos.c  | while IFS=' "' read A B C D E F; do echo bleskos_${C}u${E} ; done)
+	RELEASE=$(grep -F 'print_to_message_window("Version' source/bleskos.c  | while IFS=' "' read A B C D E F; do echo bleskos_v${C}u${E} ; done)
 	echo Release: $RELEASE
 	mv bleskos.img ${RELEASE}.img
    ln -s ${RELEASE}.img bleskos.img

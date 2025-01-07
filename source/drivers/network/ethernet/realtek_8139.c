@@ -144,6 +144,9 @@ byte_t ec_realtek_8139_send_packet(dword_t number_of_card, byte_t *packet_memory
 void ec_realtek_8139_process_irq(dword_t number_of_card) {
  //read irq status to know what caused interrupt
  word_t irq_status = inw(ethernet_cards[number_of_card].base+0x3E);
+ if(irq_status == 0x00000000) {
+  return;
+ }
 
  //acknowledge interrupt - we *must* do it here otherwise we can not read packets from buffer
  outw(ethernet_cards[number_of_card].base+0x3E, irq_status);

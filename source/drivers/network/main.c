@@ -32,7 +32,7 @@ void check_change_in_internet_connection(void) {
  ethernet_cards_update_cable_status();
 
  //if we are connected to internet, check if connection was not ended
- if(internet.status==INTERNET_STATUS_CONNECTED || internet.status==INTERNET_STATUS_CONNECTING) {
+ if(internet.status==INTERNET_STATUS_CONNECTED || internet.status==INTERNET_STATUS_CONNECTION_ERROR || internet.status==INTERNET_STATUS_CONNECTING) {
   if(internet.connection_type==INTERNET_CONNECTION_ETHERNET && ethernet_cards[internet.connection_device_number].cable_status==ETHERNET_CARD_CABLE_DISCONNECTED) {
    log("\n\nEthernet cable was removed");
    internet.status = INTERNET_STATUS_DISCONNECTED;

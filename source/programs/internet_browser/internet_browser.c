@@ -168,6 +168,9 @@ void draw_internet_browser(void) {
   else if(file_status==INTERNET_BROWSER_FILE_STATUS_ERROR_NO_INTERNET) {
    print("No connection to internet", 10, INTERNET_BROWSER_WEBPAGE_START_LINE+8, BLACK);
   }
+  else if(file_status==INTERNET_BROWSER_FILE_STATUS_ERROR_INVALID_URL) {
+   print("This URL address is invalid", 10, INTERNET_BROWSER_WEBPAGE_START_LINE+8, BLACK);
+  }
   else if(file_status==INTERNET_BROWSER_FILE_STATUS_ERROR) {
    print("Error during transfer, check log for detailed informations", 10, INTERNET_BROWSER_WEBPAGE_START_LINE+8, BLACK);
   }
@@ -391,6 +394,10 @@ void internet_browser_load_webpage_from_url_in_text_area(void) {
   byte_t file_full_url[MAX_LENGTH_OF_URL];
   dword_t html_memory = STATUS_ERROR, html_size = 0;
   dword_t transfer_number = download_file_from_url((byte_t *)internet_browser_url_mem);
+  if(transfer_number == NETWORK_TRANSFER_ERROR_INVALID_URL) {
+   set_file_value(INTERNET_BROWSER_FILE_STATUS, INTERNET_BROWSER_FILE_STATUS_ERROR_INVALID_URL);
+   return;
+  }
   dword_t timeout = (time_of_system_running+10000);
   while(get_status_of_network_transfer(transfer_number)==NETWORK_TRANSFER_TRANSFERRING_DATA) {
    asm("hlt");

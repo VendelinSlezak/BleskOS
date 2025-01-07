@@ -249,6 +249,9 @@ byte_t ec_intel_e1000_send_packet(dword_t number_of_card, byte_t *packet_memory,
 void ec_intel_e1000_process_irq(dword_t number_of_card) {
  //read irq status to know what caused interrupt, mask only possible bits
  dword_t irq_status = (ec_intel_e1000_read(number_of_card, 0xC0) & 0xFFFFF);
+ if(irq_status == 0x00000000) {
+  return;
+ }
 
  //packet was received
  if((irq_status & 0x80)==0x80) {

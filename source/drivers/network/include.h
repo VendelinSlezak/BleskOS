@@ -15,6 +15,7 @@
 
 #include "ethernet/main.h"
 #include "ethernet/amd_pcnet.h"
+#include "ethernet/atheros.h"
 #include "ethernet/broadcom_netxtreme.h"
 #include "ethernet/intel_e1000.h"
 #include "ethernet/realtek_8139.h"

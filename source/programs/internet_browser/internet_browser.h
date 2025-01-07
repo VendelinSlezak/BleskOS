@@ -32,7 +32,8 @@
 #define INTERNET_BROWSER_FILE_STATUS_NOTHING 0xFFFFFFFF
 #define INTERNET_BROWSER_FILE_STATUS_GOOD 0
 #define INTERNET_BROWSER_FILE_STATUS_ERROR_NO_INTERNET 1
-#define INTERNET_BROWSER_FILE_STATUS_ERROR 100
+#define INTERNET_BROWSER_FILE_STATUS_ERROR_INVALID_URL 2
+#define INTERNET_BROWSER_FILE_STATUS_ERROR 3
 
 dword_t internet_browser_program_interface_memory = 0;
 dword_t internet_browser_webpage_height = 0, internet_browser_webpage_width = 0, internet_browser_first_show_line = 0, internet_browser_last_show_line = 0, internet_browser_first_show_column = 0, internet_browser_last_show_column = 0;

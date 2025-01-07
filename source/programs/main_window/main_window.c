@@ -167,7 +167,7 @@ void bleskos_main_window_redraw(void) {
  //network state
  if(number_of_ethernet_cards!=0xFF) {
   bleskos_main_window_drawing_line += 10;
-  bleskos_main_window_print_item("Network");
+  bleskos_main_window_print_item("Internet");
   if(internet.status==INTERNET_STATUS_DISCONNECTED) {
    bleskos_main_window_draw_item("Not connected", 0x00C000, 0);
   }
@@ -176,6 +176,9 @@ void bleskos_main_window_redraw(void) {
   }
   else if(internet.status==INTERNET_STATUS_CONNECTED && internet.connection_type==INTERNET_CONNECTION_ETHERNET) {
    bleskos_main_window_draw_item("Connected through ethernet cable", 0x00C000, 0);
+  }
+  else if(internet.status==INTERNET_STATUS_CONNECTION_ERROR) {
+   bleskos_main_window_draw_item("Connection failed", 0x00C000, 0);
   }
  }
 

@@ -119,6 +119,7 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
   }
 
   number_of_graphic_cards++;
+  return;
  }
  
  //IDE controller
@@ -243,6 +244,17 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
    ethernet_cards[number_of_ethernet_cards].bar_type = PCI_MMIO_BAR;
    ethernet_cards[number_of_ethernet_cards].base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
   }
+
+  //Qualcomm Atheros
+  else if(vendor_id==VENDOR_QUALCOMM_ATHEROS_1 || vendor_id==VENDOR_QUALCOMM_ATHEROS_2) {
+   //connect to driver for Qualcomm Atheros
+   ethernet_cards[number_of_ethernet_cards].initalize = ec_atheros_initalize;
+
+   pci_enable_io_busmastering(bus, device, function);
+   pci_enable_mmio_busmastering(bus, device, function);
+   ethernet_cards[number_of_ethernet_cards].bar_type = PCI_MMIO_BAR;
+   ethernet_cards[number_of_ethernet_cards].base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
+  }
   
   //Realtek
   else if(vendor_id==VENDOR_REALTEK) {
@@ -271,6 +283,13 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
   }
   
   number_of_ethernet_cards++;
+  return;
+ }
+
+ //Ethernet card
+ if(type_of_device==0x028000) {
+  log("\nWireless card "); log_hex_with_space(full_device_id);
+
   return;
  }
  
@@ -372,6 +391,34 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  //eXtensible Host Controller Interface
  if(type_of_device==0x0C0330) {
   log("\nxHCI");
+  
+  return;
+ }
+
+ //Host bridge
+ if(type_of_device==0x060000) {
+  log("\nHost bridge");
+  
+  return;
+ }
+
+ //ISA bridge
+ if(type_of_device==0x060100) {
+  log("\nISA bridge");
+  
+  return;
+ }
+
+ //PCI bridge
+ if((type_of_device & 0xFFFF00)==0x060400) {
+  log("\nPCI bridge");
+  
+  return;
+ }
+
+ //Other bridge
+ if(type_of_device==0x068000) {
+  log("\nOther bridge");
   
   return;
  }

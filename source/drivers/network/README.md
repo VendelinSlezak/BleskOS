@@ -4,7 +4,7 @@ This folder contains all code that is connected to network.
 
 During boot process, method scan_pci() from source/drivers/system/pci.c founds all network cards and saves informations about them. Ethernet cards are saved to structure `ethernet_cards[]` from source/drivers/network/ethernet/main.h. Later during boot process is called method `initalize_network_connection()` from main.c. This method initalizes everything that is need to use network. After this method you can start use internet connection.
 
-From point of higher layers of code, you need to know about structure `internet` from main.h. If `internet.status` equals INTERNET_STATUS_DISCONNECTED. it means that BleskOS is not currently connected to internet, if `internet.status` equals INTERNET_STATUS_CONNECTING, it means that BleskOS is in process of connecting and if INTERNET_STATUS_CONNECTED, it means that BleskOS is connected to internet. BleskOS will automatically connect/disconnect to internet. And if you are connected to internet, you can download files from URL by method `download_file_from_url(byte_t *url)`. This method will return number of transfer, or NETWORK_TRANSFER_ERROR_NO_FREE_ENTRY. Transfer will immediately start on background. There can be maximum of 5 transfers at one time. It is on you to find out that transfer is completed and close it.
+From point of higher layers of code, you need to know about structure `internet` from main.h. If `internet.status` equals INTERNET_STATUS_DISCONNECTED. it means that BleskOS is not currently connected to internet, if `internet.status` equals INTERNET_STATUS_CONNECTING, it means that BleskOS is in process of connecting and if INTERNET_STATUS_CONNECTED, it means that BleskOS is connected to internet. BleskOS will automatically connect/disconnect to internet. And if you are connected to internet, you can download files from URL by method `download_file_from_url(byte_t *url)`. This method will return number of transfer, or NETWORK_TRANSFER_ERROR_NO_FREE_ENTRY. Transfer will immediately start on background. There can be maximum of 10 transfers at one time. It is on you to find out that transfer is completed and close it.
 
 To this you have following methods:
 
@@ -12,11 +12,12 @@ To this you have following methods:
 byte_t get_status_of_network_transfer(byte_t transfer_number)
 byte_t *get_file_memory_of_network_transfer(byte_t transfer_number)
 dword_t get_file_size_of_network_transfer(byte_t transfer_number)
+dword_t get_transferred_file_size_of_network_transfer(byte_t transfer_number)
 void close_network_transfer(byte_t transfer_number)
 void kill_network_transfer(byte_t transfer_number)
 ```
 
-Method `get_status_of_network_transfer()` returns actual status of transfer. It can be NETWORK_TRANSFER_TRANSFERRING_DATA, NETWORK_TRANSFER_ERROR or NETWORK_TRANSFER_DONE. If you want to stop transfer in status NETWORK_TRANSFER_TRANSFERRING_DATA, you have to use `kill_network_transfer()`. It will immediately close connection and remove entry. If is transfer in state  NETWORK_TRANSFER_DONE, methods `get_file_memory_of_network_transfer()` and `get_file_size_of_network_transfer()` will return informations about downloaded file from url. When you processed file, or transfer ended in NETWORK_TRANSFER_ERROR and you are done with this transfer, you should call method `close_network_transfer()` that unloads everything from memory. It also unloads file that is on `get_file_memory_of_network_transfer()`, so if you want to use it even after closing connection, you have to copy it before closing transfer.
+Method `get_status_of_network_transfer()` returns actual status of transfer. It can be NETWORK_TRANSFER_TRANSFERRING_DATA, NETWORK_TRANSFER_ERROR or NETWORK_TRANSFER_DONE. If you want to stop transfer in status NETWORK_TRANSFER_TRANSFERRING_DATA, you have to use `kill_network_transfer()`. It will immediately close connection and remove entry. During transfer, you can find out size of already transferred file by method `get_transferred_file_size_of_network_transfer()`. Size of full file can be found out through method `get_file_size_of_network_transfer()`. However if server did not provided size of full file, during NETWORK_TRANSFER_TRANSFERRING_DATA this method return 0, and file size will be returned only in state NETWORK_TRANSFER_DONE. If is transfer in state NETWORK_TRANSFER_DONE, method `get_file_memory_of_network_transfer()` will return start of memory of downloaded file. When you processed file, or transfer ended in NETWORK_TRANSFER_ERROR and you are done with this transfer, you should call method `close_network_transfer()` that unloads everything from memory. It also unloads file that is on `get_file_memory_of_network_transfer()`, so if you want to use it even after closing connection, you have to copy it before closing transfer.
 
 Example:
 
@@ -40,7 +41,7 @@ if(get_status_of_network_transfer(transfer_number) == NETWORK_TRANSFER_DONE) {
  byte_t *file_memory = get_file_memory_of_network_transfer(transfer_number);
  dword_t file_size = get_file_size_of_network_transfer(transfer_number);
 
- // processing file ...
+ // processing HTML file ...
 
 }
 else if(get_status_of_network_transfer(transfer_number) == NETWORK_TRANSFER_ERROR) {
@@ -85,7 +86,7 @@ This method initalized network transfers interface.
 
 ### byte_t download_file_from_url(byte_t *url)
 
-This method starts transfer from given url. It returns either NETWORK_TRANSFER_ERROR_NO_FREE_ENTRY or number of transfer. Informations about transfers are saved in struct `network_transfer_info_t network_transfers[]` from file network_transfers.h. There are more possible types of transfers, and they manages themselves in other structures. This structure therefore contains only type of transfer (network_transfers->type_of_transfer like NETWORK_TRANSFER_TYPE_HTTP) and number of this transfer in its structure (network_transfers->number_of_transfer_entry).
+This method starts transfer from given url. It returns NETWORK_TRANSFER_ERROR_INVALID_URL, NETWORK_TRANSFER_ERROR_NO_FREE_ENTRY or number of transfer. Informations about transfers are saved in struct `network_transfer_info_t network_transfers[]` from file network_transfers.h. There are more possible types of transfers, and they manages themselves in other structures. This structure therefore contains only type of transfer (network_transfers->type_of_transfer like NETWORK_TRANSFER_TYPE_HTTP) and number of this transfer in its structure (network_transfers->number_of_transfer_entry).
 
 For example, transfer_number can be 2, `network_transfers[transfer_number].type_of_transfer` is NETWORK_TRANSFER_TYPE_HTTP and `network_transfers[transfer_number].number_of_transfer_entry` is 4. In this case, this network transfer refers to entry `http_file_transfers[4]` from protocols/http.h.
 
@@ -99,15 +100,19 @@ This method return number of `network_transfers[]` entry based on type of transf
 
 ### byte_t get_status_of_network_transfer(byte_t transfer_number)
 
-This method returns status of given transfer number. Currently it can return NETWORK_TRANSFER_INVALID_TRANSFER_NUMBER, NETWORK_TRANSFER_TRANSFERRING_DATA, NETWORK_TRANSFER_ERROR or NETWORK_TRANSFER_DONE.
+This method returns status of given transfer number. It can return NETWORK_TRANSFER_INVALID_TRANSFER_NUMBER, NETWORK_TRANSFER_TRANSFERRING_DATA, NETWORK_TRANSFER_ERROR or NETWORK_TRANSFER_DONE.
 
 ### byte_t *get_file_memory_of_network_transfer(byte_t transfer_number)
 
-This method returns pointer to downloaded file from URL. If entry do not exist, or is not fully transfered, it returns NETWORK_TRANSFER_INVALID_TRANSFER_NUMBER.
+This method returns pointer to downloaded file from URL. If entry do not exist, or is not fully transfered, it returns STATUS_ERROR.
 
 ### dword_t get_file_size_of_network_transfer(byte_t transfer_number)
 
-This method returns size of downloaded file from URL. If entry do not exist, or is not fully transfered, it returns NETWORK_TRANSFER_INVALID_TRANSFER_NUMBER.
+This method returns size of file from URL. If entry do not exist, or transfer is not done and server did not provided size of full file, it returns STATUS_ERROR.
+
+### dword_t get_transferred_file_size_of_network_transfer(byte_t transfer_number)
+
+This method returns size of actually trasfered data from URL. If entry do not exist, it returns STATUS_ERROR.
 
 ### void close_network_transfer(byte_t transfer_number)
 

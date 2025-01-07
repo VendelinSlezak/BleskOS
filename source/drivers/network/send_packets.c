@@ -15,14 +15,14 @@ void initalize_send_packet_with_response_interface(void) {
  }
 
  //set task to check if there is not need to resend some packet
- create_task(send_packets_in_queue, TASK_TYPE_PERIODIC_INTERRUPT, 1);
+ create_task(send_packets_in_queue, TASK_TYPE_PERIODIC_INTERRUPT, 200);
 }
 
 void send_builded_packet_to_internet(void) {
  internet.send_packet(memory_for_building_network_packet, size_of_network_packet);
 }
 
-byte_t send_builded_packet_with_response_to_internet(word_t milliseconds_before_resending, byte_t max_attempts, byte_t response_packet_type, word_t response_packet_sender_port, word_t response_packet_reciever_port, byte_t process_response(byte_t number_of_packet_entry, byte_t *packet_memory, dword_t packet_length), byte_t process_error(byte_t number_of_packet_entry, byte_t error_type)) {
+byte_t send_builded_packet_with_response_to_internet(word_t milliseconds_before_resending, byte_t max_attempts, byte_t response_packet_type, word_t response_packet_sender_port, word_t response_packet_reciever_port, byte_t (*process_response)(byte_t number_of_packet_entry, byte_t *packet_memory, dword_t packet_length), void (*process_error)(byte_t number_of_packet_entry, byte_t error_type)) {
  for(dword_t i=0; i<MAX_NUMBER_OF_PACKETS_WITH_RESPONSE; i++) {
   //we find free entry
   if(packets_with_response_interface[i].milliseconds_count==0) {
@@ -58,7 +58,7 @@ void remove_packet_entry(byte_t number_of_packet_entry) {
  packets_with_response_interface[number_of_packet_entry].milliseconds_count = 0;
 }
 
-void update_packet_entry(byte_t number_of_packet_entry, word_t milliseconds_before_resending, byte_t max_attempts, byte_t response_packet_type, word_t response_packet_sender_port, word_t response_packet_reciever_port, byte_t process_response(byte_t number_of_packet_entry, byte_t *packet_memory, dword_t packet_length), byte_t process_error(byte_t number_of_packet_entry, byte_t error_type)) {
+void update_packet_entry(byte_t number_of_packet_entry, word_t milliseconds_before_resending, byte_t max_attempts, byte_t response_packet_type, word_t response_packet_sender_port, word_t response_packet_reciever_port, byte_t (*process_response)(byte_t number_of_packet_entry, byte_t *packet_memory, dword_t packet_length), void (*process_error)(byte_t number_of_packet_entry, byte_t error_type)) {
  copy_memory((dword_t)memory_for_building_network_packet, (dword_t)(&packets_with_response_interface[number_of_packet_entry].packet), size_of_network_packet);
  packets_with_response_interface[number_of_packet_entry].milliseconds_before_resending = milliseconds_before_resending;
  packets_with_response_interface[number_of_packet_entry].packet_length = size_of_network_packet;

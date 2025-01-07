@@ -11,10 +11,10 @@
 void initalize_ethernet_cards(void) {
  //initalize all founded ethernet cards
  for(dword_t i=0; i<number_of_ethernet_cards; i++) {
-  //clear
-  ethernet_cards[i].get_cable_status = 0;
-  ethernet_cards[i].send_packet = 0;
-  ethernet_cards[i].process_irq = 0;
+  //set default values
+  ethernet_cards[i].get_cable_status = ethernet_void_get_cable_status;
+  ethernet_cards[i].send_packet = ethernet_void_send_packet;
+  ethernet_cards[i].process_irq = ethernet_void_process_irq;
   ethernet_cards[i].cable_status = ETHERNET_CARD_CABLE_DISCONNECTED;
 
   //if we have driver for this card, PCI scan will set its initalization method
@@ -25,6 +25,18 @@ void initalize_ethernet_cards(void) {
 
  //get actual state of connection on cards
  ethernet_cards_update_cable_status();
+}
+
+byte_t ethernet_void_get_cable_status(dword_t number_of_card) {
+ return STATUS_FALSE;
+}
+
+byte_t ethernet_void_send_packet(dword_t number_of_card, byte_t *memory_of_packet, dword_t length_of_packet) {
+ return STATUS_ERROR;
+}
+
+void ethernet_void_process_irq(dword_t number_of_card) {
+ return;
 }
 
 void ethernet_cards_update_cable_status(void) {
@@ -55,7 +67,6 @@ byte_t send_packet_to_internet_through_ethernet(byte_t *packet_memory, dword_t p
 
 void ethernet_cards_process_irq(void) {
  //we do not know from which card interrupt came from, so check status of all cards
- //TODO: call only card that fired interrupt
  for(dword_t i=0; i<number_of_ethernet_cards; i++) {
   ethernet_cards[i].process_irq(i);
  }

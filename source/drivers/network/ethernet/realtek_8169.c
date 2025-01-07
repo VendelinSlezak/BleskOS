@@ -221,6 +221,9 @@ byte_t ec_realtek_8169_send_packet(dword_t number_of_card, byte_t *packet_memory
 void ec_realtek_8169_process_irq(dword_t number_of_card) {
  //read irq status to know what caused interrupt
  word_t irq_status = ec_realtek_8169_inw(number_of_card, 0x3E);
+ if(irq_status == 0x00000000) {
+  return;
+ }
 
  //packet received
  if((irq_status & 0x11)!=0x00) {

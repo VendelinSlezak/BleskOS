@@ -11,5 +11,6 @@
 void dhcp_connect_to_router(void);
 byte_t dhcp_offer_received(byte_t number_of_packet_entry, byte_t *packet_memory, dword_t packet_length);
 byte_t dhcp_acknowledge_received(byte_t number_of_packet_entry, byte_t *packet_memory, dword_t packet_length);
-byte_t dhcp_discover_error(byte_t number_of_packet_entry, byte_t error);
-byte_t dhcp_response_error(byte_t number_of_packet_entry, byte_t error);
+
+void dhcp_discover_error(byte_t number_of_packet_entry, byte_t error);
+void dhcp_response_error(byte_t number_of_packet_entry, byte_t error);

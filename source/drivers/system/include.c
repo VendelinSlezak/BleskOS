@@ -19,3 +19,4 @@
 #include "timer.c"
 #include "user_input.c"
 #include "scheduler.c"
+#include "time.c"

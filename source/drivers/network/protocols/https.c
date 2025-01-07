@@ -10,8 +10,8 @@
 
 byte_t https_download_file_from_url(byte_t *url) {
  //check if URL is not too long
- if((get_number_of_chars_in_ascii_string(url)+22)>MAX_LENGTH_OF_URL) {
-  return NETWORK_TRANSFER_INVALID_URL; //TODO:
+ if((get_number_of_chars_in_ascii_string(url)+22)>=(MAX_LENGTH_OF_URL-1)) {
+  return NETWORK_TRANSFER_ERROR_INVALID_URL;
  }
 
  //workaround: this site returns HTTPS pages through HTTP protocol
