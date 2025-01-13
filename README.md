@@ -59,6 +59,8 @@ Drivers
 
 [List of working hardware](https://github.com/VendelinSlezak/BleskOS/wiki/List-of-working-hardware) contain list of real hardware that was already tested and is working.
 
+[Changelog](https://github.com/VendelinSlezak/BleskOS/releases) are in the [Releases](https://github.com/VendelinSlezak/BleskOS/releases) pages.
+
 Programs
 
 - Document viewer
