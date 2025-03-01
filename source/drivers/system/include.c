@@ -20,3 +20,8 @@
 #include "user_input.c"
 #include "scheduler.c"
 #include "time.c"
+
+#include "cpu/commands.c"
+#include "cpu/mtrr.c"
+
+#include "deep_debugger/deep_debugger.c"

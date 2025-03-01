@@ -83,7 +83,7 @@ void ec_realtek_8169_initalize(dword_t number_of_card) {
 
  //reset card
  ec_realtek_8169_outb(number_of_card, 0x37, (1 << 4));
- dword_t timeout = (time_of_system_running+50);
+ volatile dword_t timeout = (time_of_system_running+50);
  while((ec_realtek_8169_inb(number_of_card, 0x37) & (1 << 4))==(1 << 4)) {
   asm("nop");
   if(time_of_system_running >= timeout) {

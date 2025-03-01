@@ -241,6 +241,11 @@ extended_bootloader_redraw:
   
   cmp ah, 0x50
   je .key_down
+
+  cmp al, 'd'
+  je .deep_debugger
+  cmp al, 'D'
+  je .deep_debugger
   
   cmp al, 'a'
   je options
@@ -282,6 +287,10 @@ extended_bootloader_redraw:
   .if_no_mode:
   jmp load_bleskos
  
+ .deep_debugger:
+  mov byte [boot_options], 0x2 ;boot do deep debugger
+  jmp load_bleskos
+
 options:
  ;clear screen
  mov ah, 0x2
@@ -760,7 +769,8 @@ print_hex:
 
  boot_up_str db 'Please choose system you want to boot:', 0
  boot_bleskos_str db 'BleskOS', 0
- boot_bleskos_boot_options_str db 'BleskOS special boot options', 0
+ boot_bleskos_boot_options_str db 'BleskOS Special Boot Options', 0
+ boot_bleskos_deep_debugger_str db '[d] BleskOS Deep Debugger', 0
  boot_options_str db '[a] Boot options', 0
  boot_down_str db 'BleskOS live bootloader', 0
  boot_loading_str db 'Loading BleskOS', 0
@@ -1059,6 +1069,10 @@ load_bleskos:
  int 10h ;load graphic mode info
  cmp ax, 0x004F
  jne error_graphic_info ;error during loading graphic mode informations
+
+ ;in Deep Debugger mode we use VGA, so skip setting graphic VBE mode
+ cmp dword [boot_options], 0x2
+ je .enter_to_protected_mode
  
  mov ax, 0x4F02
  mov bx, word [selected_graphic_mode]
@@ -1068,6 +1082,7 @@ load_bleskos:
  jne error_graphic_mode ;error during setting graphic mode
  
  ;enter to protected mode
+ .enter_to_protected_mode:
  cli
  lgdt [gdt_wrap]
  mov eax, cr0
@@ -1088,30 +1103,30 @@ load_bleskos:
  push eax ;push value of boot option to stack for bleskos() method
  jmp 0x100000 ;execute BleskOS
 
- unreal_mode_gdt:
-  dq 0 ;first item is null
-  ;code
-  dw 0xFFFF, 0
-  db 0, 10011010b, 00000000b, 0
-  ;data
-  dw 0xFFFF, 0
-  db 0, 10010010b, 11001111b, 0
- unreal_mode_gdt_end:
+unreal_mode_gdt:
+ dq 0 ;first item is null
+ ;code
+ dw 0xFFFF, 0
+ db 0, 10011010b, 00000000b, 0
+ ;data
+ dw 0xFFFF, 0
+ db 0, 10010010b, 11001111b, 0
+unreal_mode_gdt_end:
 
- unreal_mode_gdt_wrap:
-   dw unreal_mode_gdt_end - unreal_mode_gdt - 1
-   dd unreal_mode_gdt
+unreal_mode_gdt_wrap:
+ dw unreal_mode_gdt_end - unreal_mode_gdt - 1
+ dd unreal_mode_gdt
 
- gdt:
-  dq 0 ;first item is null
-  ;code
-  dw 0xFFFF, 0
-  db 0, 10011010b, 11001111b, 0
-  ;data
-  dw 0xFFFF, 0
-  db 0, 10010010b, 11001111b, 0
- gdt_end:
+gdt:
+ dq 0 ;first item is null
+ ;code
+ dw 0xFFFF, 0
+ db 0, 10011010b, 11001111b, 0
+ ;data
+ dw 0xFFFF, 0
+ db 0, 10010010b, 11001111b, 0
+gdt_end:
 
- gdt_wrap:
-  dw gdt_end - gdt - 1
-  dd gdt
+gdt_wrap:
+ dw gdt_end - gdt - 1
+ dd gdt

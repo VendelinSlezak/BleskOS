@@ -27,9 +27,7 @@ byte_t patapi_send_packet_command(word_t base_port, word_t alt_base_port, word_t
  
  //wait
  if(ide_wait_for_data(base_port, 50)==STATUS_ERROR) {
-  log("\nIDE ATAPI: can not send packet ");
-  log_hex_specific_size_with_space(inb(base_port+7), 2);
-  log_hex_specific_size_with_space(inb(base_port+1), 2);
+  logf("\nIDE ATAPI: can not send packet %02x %02x", inb(base_port+7), inb(base_port+1));
   return STATUS_ERROR;
  }
 
@@ -174,9 +172,7 @@ byte_t patapi_read_cd_toc(word_t base_port, word_t alt_base_port, dword_t memory
  
  //wait max 2 seconds
  if(ide_wait_for_data(base_port, 1000)==STATUS_ERROR) {
-  log("\nIDE ATAPI: error with reading TABLE OF CONTENT ");
-  log_hex_specific_size_with_space(inb(base_port+7), 2);
-  log_hex_specific_size(inb(base_port+1), 2);
+  logf("\nIDE ATAPI: error with reading TABLE OF CONTENT %02x %02x", inb(base_port+7), inb(base_port+1));
   return STATUS_ERROR;
  }
  
@@ -224,11 +220,7 @@ byte_t patapi_read(word_t base_port, word_t alt_base_port, dword_t sector, byte_
  for(int i=0; i<(number_of_sectors*1024); i++) {
   //wait for drive to be ready
   if(ide_wait_for_data(base_port, 3000)==STATUS_ERROR) { //max 6 seconds
-   log("\nIDE ATAPI: error with reading sector ");
-   log_var_with_space(sector+(i/1024));
-   log_var_with_space(i);
-   log_hex_specific_size_with_space(inb(base_port+7), 2);
-   log_hex_specific_size(inb(base_port+1), 2);
+   logf("\nIDE ATAPI: error with reading sector %d %d %02x %02x", sector+(i/1024), i, inb(base_port+7), inb(base_port+1));
    return STATUS_ERROR;
   }
 
@@ -270,11 +262,7 @@ byte_t patapi_read_audio_cd(word_t base_port, word_t alt_base_port, dword_t sect
  for(int i=0; i<(number_of_sectors*1176); i++) {
   //wait for drive to be ready
   if(ide_wait_for_data(base_port, 3000)==STATUS_ERROR) { //max 6 seconds
-   log("\nIDE ATAPI: error with reading audio sector ");
-   log_var_with_space(sector+(i/1176));
-   log_var_with_space(i);
-   log_hex_specific_size_with_space(inb(base_port+7), 2);
-   log_hex_specific_size(inb(base_port+1), 2);
+   logf("\nIDE ATAPI: error with reading audio sector %d %d %02x %02x", sector+(i/1176), i, inb(base_port+7), inb(base_port+1));
    return STATUS_ERROR;
   }
 

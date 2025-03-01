@@ -13,75 +13,51 @@ void initalize_keyboard(void) {
  keyboard_layout_ptr = (word_t *) (english_keyboard_layout);
  keyboard_shift_layout_ptr = (word_t *) (english_shift_keyboard_layout);
 
- keyboard_pressed_control_keys = 0;
+ //clear variables
  keyboard_diacritic_char_for_next_key = 0;
- keyboard_led_state = 0;
- keyboard_change_in_led_state = STATUS_FALSE;
+ keyboard_event = STATUS_FALSE;
+ keyboard_led_state.capslock = STATUS_FALSE;
+ keyboard_led_state.scrollock = STATUS_FALSE;
+ keyboard_led_state.numlock = STATUS_FALSE;
+}
 
- clear_memory((dword_t)&ps2_keyboard_pressed_keys, sizeof(ps2_keyboard_pressed_keys));
- clear_memory((dword_t)&usb_keyboard_pressed_keys, sizeof(usb_keyboard_pressed_keys));
+void keyboard_prepare_for_next_event(void) {
+ keyboard_event = STATUS_FALSE;
+ keyboard_code_of_pressed_key = 0;
+ keyboard_unicode_value_of_pressed_key = 0;
+}
+
+void keyboard_update_keys_state(void) {
+ keyboard_keys_state.shift = 0;
+ keyboard_keys_state.ctrl = 0;
+ keyboard_keys_state.alt = 0;
+
+ keyboard_keys_state.shift |= ps2_keyboard_keys.shift;
+ keyboard_keys_state.ctrl |= ps2_keyboard_keys.ctrl;
+ keyboard_keys_state.alt |= ps2_keyboard_keys.alt;
+
+ for(dword_t i=1; i<MAX_NUMBER_OF_USB_DEVICES; i++) {
+  if(usb_devices[i].is_used == STATUS_TRUE && usb_devices[i].keyboard.is_present == STATUS_TRUE) {
+   keyboard_keys_state.shift |= usb_devices[i].keyboard.keys.shift;
+   keyboard_keys_state.ctrl |= usb_devices[i].keyboard.keys.ctrl;
+   keyboard_keys_state.alt |= usb_devices[i].keyboard.keys.alt;
+  }
+ }
 }
 
 void keyboard_process_code(dword_t code) {
  //save code of pressed key
  keyboard_code_of_pressed_key = code;
-
- //shift
- if(keyboard_code_of_pressed_key==KEY_LEFT_SHIFT || keyboard_code_of_pressed_key==KEY_RIGHT_SHIFT) {
-  keyboard_pressed_control_keys |= KEYBOARD_SHIFT;
-  return;
- }
- if(keyboard_code_of_pressed_key==RELEASED_KEY_CODE(KEY_LEFT_SHIFT) || keyboard_code_of_pressed_key==RELEASED_KEY_CODE(KEY_RIGHT_SHIFT)) {
-  keyboard_pressed_control_keys &= ~KEYBOARD_SHIFT;
-  return;
- }
- 
- //ctrl
- if(keyboard_code_of_pressed_key==KEY_LEFT_CTRL || keyboard_code_of_pressed_key==KEY_RIGHT_CTRL) {
-  keyboard_pressed_control_keys |= KEYBOARD_CTRL;
-  return;
- }
- if((keyboard_code_of_pressed_key==RELEASED_KEY_CODE(KEY_LEFT_CTRL) || keyboard_code_of_pressed_key==RELEASED_KEY_CODE(KEY_RIGHT_CTRL))) {
-  keyboard_pressed_control_keys &= ~KEYBOARD_CTRL;
-  return;
- }
-
- //alt
- if(keyboard_code_of_pressed_key==KEY_LEFT_ALT || keyboard_code_of_pressed_key==KEY_RIGHT_ALT) {
-  keyboard_pressed_control_keys |= KEYBOARD_ALT;
-  return;
- }
- if(keyboard_code_of_pressed_key==RELEASED_KEY_CODE(KEY_LEFT_ALT) || keyboard_code_of_pressed_key==RELEASED_KEY_CODE(KEY_RIGHT_ALT)) {
-  keyboard_pressed_control_keys &= ~KEYBOARD_ALT;
-  return;
- }
- 
- //capslock
- if(keyboard_code_of_pressed_key==KEY_CAPSLOCK) {
-  keyboard_change_in_led_state = STATUS_TRUE;
-
-  //reverse shift
-  if((keyboard_pressed_control_keys & KEYBOARD_CAPSLOCK)==0) {
-   keyboard_pressed_control_keys |= KEYBOARD_CAPSLOCK;
-   keyboard_led_state |= KEYBOARD_LED_CAPSLOCK;
-   return;
-  }
-  else {
-   keyboard_led_state &= ~KEYBOARD_LED_CAPSLOCK;
-   keyboard_pressed_control_keys &= ~KEYBOARD_CAPSLOCK;
-   return;
-  }
- }
  
  //get unicode value
  if((keyboard_code_of_pressed_key & 0xFF)>0x80) {
   keyboard_unicode_value_of_pressed_key = 0; //released keys do not have unicode value
   return;
  }
- if((keyboard_pressed_control_keys & (KEYBOARD_SHIFT | KEYBOARD_CAPSLOCK))==0 || (keyboard_pressed_control_keys & (KEYBOARD_SHIFT | KEYBOARD_CAPSLOCK))==(KEYBOARD_SHIFT | KEYBOARD_CAPSLOCK)) {
+ if(keyboard_keys_state.shift == keyboard_led_state.capslock) {
   keyboard_unicode_value_of_pressed_key = keyboard_layout_ptr[code];
  }
- else if((keyboard_pressed_control_keys & (KEYBOARD_SHIFT | KEYBOARD_CAPSLOCK))==KEYBOARD_SHIFT || (keyboard_pressed_control_keys & (KEYBOARD_SHIFT | KEYBOARD_CAPSLOCK))==KEYBOARD_CAPSLOCK) {
+ else {
   keyboard_unicode_value_of_pressed_key = keyboard_shift_layout_ptr[code];
  }
 
@@ -94,18 +70,29 @@ void keyboard_process_code(dword_t code) {
   keyboard_unicode_value_of_pressed_key = get_unicode_char_with_diacritic(keyboard_unicode_value_of_pressed_key, keyboard_diacritic_char_for_next_key);
   keyboard_diacritic_char_for_next_key = 0;
  }
+
+ //inform wait_for_user() from source/drivers/system/user_input.c that there were key pressed on keyboard
+ keyboard_event = STATUS_TRUE;
 }
 
 byte_t keyboard_is_key_pressed(dword_t key_value) {
- for(dword_t i=0; i<number_of_keys_pressed_on_ps2_keyboard; i++) {
-  if(ps2_keyboard_pressed_keys[i]==key_value) {
+ //check PS/2 keyboard
+ for(dword_t i=0; i<6; i++) {
+  if(ps2_keyboard_keys.pressed_keys[i]==key_value) {
    return STATUS_TRUE;
   }
  }
 
- for(dword_t i=0; i<6; i++) {
-  if(usb_keyboard_pressed_keys[i]==key_value) {
-   return STATUS_TRUE;
+ //check USB keyboards
+ for(dword_t i=1; i<MAX_NUMBER_OF_USB_DEVICES; i++) {
+  if(usb_devices[i].keyboard.is_present == STATUS_TRUE) {
+   //check USB keyboard
+   for(dword_t i=0; i<6; i++) {
+    if(usb_devices[i].keyboard.keys.pressed_keys[i]==key_value) {
+     return STATUS_TRUE;
+    }
+   }
   }
  }
+
 }

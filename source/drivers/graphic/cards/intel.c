@@ -9,9 +9,6 @@
 */
 
 void initalize_intel_graphic_card(byte_t graphic_card_number) {
- selected_graphic_card = graphic_card_number;
- is_driver_for_graphic_card = STATUS_TRUE;
-
  //find if this driver can change backlight
  word_t max_backlight_value = (mmio_ind(graphic_cards_info[graphic_card_number].mmio_base+GRAPHIC_CARD_INTEL_MMIO_BACKLIGHT_PWM_CONTROL) >> 16);
  if(max_backlight_value==0 || max_backlight_value==0xFFFF) {
@@ -44,16 +41,15 @@ void graphic_card_intel_change_backlight(byte_t value) {
 }
 
 void intel_try_read_edid(void) {
- dword_t *edid_memory_pointer = (dword_t *)calloc(128);
+ dword_t *edid_memory_pointer = (dword_t *) calloc(128);
 
- //type of device
+ //set type of device
  mmio_outd(graphic_cards_info[selected_graphic_card].mmio_base+GRAPHIC_CARD_INTEL_MMIO_GMBUS0, 0b011);
 
  //read 128 bytes from offset 0x50
  mmio_outd(graphic_cards_info[selected_graphic_card].mmio_base+GRAPHIC_CARD_INTEL_MMIO_GMBUS1, ((1 << 30) | (0b011 << 25) | (128 << 16) | (0x50 << 1) | 0x1));
- 
  for(dword_t i=0; i<32; i++) {
-  //wait
+  //wait for response
   ticks = 0;
   while(ticks<10) {
    asm("nop");
@@ -73,6 +69,8 @@ void intel_try_read_edid(void) {
  //stop transfer
  mmio_outd(graphic_cards_info[selected_graphic_card].mmio_base+GRAPHIC_CARD_INTEL_MMIO_GMBUS1, ((1 << 30) | (0b100 << 27)));
 
+ //parse received EDID data
  parse_edid_data((dword_t)edid_memory_pointer);
+ 
  free((dword_t)edid_memory_pointer);
 }

@@ -358,11 +358,11 @@ void system_board(void) {
 
   //hardware specific things
   if(system_board_items_list[system_board_selected_item]==SYSTEM_BOARD_MEMORY) {
-   if((keyboard_code_of_pressed_key==KEY_LEFT || (mouse_wheel!=0 && mouse_wheel<0x80000000)) && system_item_variable>0) {
+   if((keyboard_code_of_pressed_key==KEY_LEFT || (mouse_wheel_movement!=0 && mouse_wheel_movement<0x80000000)) && system_item_variable>0) {
     system_item_variable--;
     goto redraw;
    }
-   else if((keyboard_code_of_pressed_key==KEY_RIGHT || (mouse_wheel!=0 && mouse_wheel>0x80000000)) && system_item_variable<0xFFFF) {
+   else if((keyboard_code_of_pressed_key==KEY_RIGHT || (mouse_wheel_movement!=0 && mouse_wheel_movement>0x80000000)) && system_item_variable<0xFFFF) {
     system_item_variable++;
     goto redraw;
    }
@@ -425,11 +425,11 @@ void system_board(void) {
     }
    }
 
-   if(((mouse_wheel!=0 && mouse_wheel<0x80000000) || keyboard_code_of_pressed_key==KEY_LEFT) && system_item_variable>0) {
+   if(((mouse_wheel_movement!=0 && mouse_wheel_movement<0x80000000) || keyboard_code_of_pressed_key==KEY_LEFT) && system_item_variable>0) {
     system_item_variable--;
     goto redraw;
    }
-   else if(((mouse_wheel!=0 && mouse_wheel>0x80000000) || keyboard_code_of_pressed_key==KEY_RIGHT) && system_item_variable<(pci_num_of_devices-1)) {
+   else if(((mouse_wheel_movement!=0 && mouse_wheel_movement>0x80000000) || keyboard_code_of_pressed_key==KEY_RIGHT) && system_item_variable<(pci_num_of_devices-1)) {
     system_item_variable++;
     goto redraw;
    }

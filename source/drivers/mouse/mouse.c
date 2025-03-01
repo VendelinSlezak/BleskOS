@@ -13,7 +13,7 @@ void initalize_mouse(void) {
  mouse_buttons = 0;
  mouse_movement_x = 0;
  mouse_movement_y = 0;
- mouse_wheel = 0;
+ mouse_wheel_movement = 0;
 }
 
 void mouse_update_click_button_state(void) {

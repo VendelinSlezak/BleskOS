@@ -30,7 +30,7 @@ dword_t wait_for_one_event(dword_t *event_interface) {
  move_mouse_cursor();
 
  //find out how to react to this event
- if(usb_new_device_detected==STATUS_TRUE) {
+ if(usb_device_change_event==STATUS_TRUE) {
   return EVENT_USB_DEVICE_CHANGE;
  }
 
@@ -71,7 +71,8 @@ dword_t wait_for_one_event(dword_t *event_interface) {
 
   //pressed key with control key event
   if(event_interface[0]==KEYBOARD_EVENT_PRESSED_KEY_WITH_CONTROL_KEY) {
-   if((keyboard_pressed_control_keys & event_interface[1])==event_interface[1] && keyboard_code_of_pressed_key==event_interface[2]) {
+   //TODO: this works now only for CTRL
+   if(keyboard_keys_state.ctrl == 1 && keyboard_code_of_pressed_key==event_interface[2]) {
     //call method
     if(event_interface[3]!=0) {
      if(event_interface[4]==RETURN_EVENT_FROM_METHOD) {
@@ -139,8 +140,8 @@ dword_t wait_for_one_event(dword_t *event_interface) {
   }
 
   //mouse wheel event
-  if(event_interface[0]==MOUSE_WHEEL_EVENT) {
-   if(mouse_wheel!=0) {
+  if(event_interface[0]==mouse_wheel_movement_EVENT) {
+   if(mouse_wheel_movement!=0) {
     //call method
     if(event_interface[1]!=0) {
      if(event_interface[2]==RETURN_EVENT_FROM_METHOD) {

@@ -21,6 +21,7 @@ void create_task(void (*task)(), byte_t type, dword_t number_of_ms_to_be_execute
  is_task_table_changing = STATUS_TRUE;
 
  scheduler_tasks[actual_number_of_tasks].task = task;
+ scheduler_tasks[actual_number_of_tasks].task_with_parameter = 0;
  scheduler_tasks[actual_number_of_tasks].type = type;
  scheduler_tasks[actual_number_of_tasks].counter_of_ms = 0;
  scheduler_tasks[actual_number_of_tasks].number_of_ms_to_be_executed = number_of_ms_to_be_executed;
@@ -30,9 +31,28 @@ void create_task(void (*task)(), byte_t type, dword_t number_of_ms_to_be_execute
  is_task_table_changing = STATUS_FALSE;
 }
 
-void destroy_task(void (*task)()) {
+void create_task_with_parameter(void (*task_with_parameter)(dword_t parameter), dword_t parameter, dword_t number_of_ms_to_be_executed) {
+ if(actual_number_of_tasks>=SCHEDULER_MAX_NUMBER_OF_TASKS) {
+  return;
+ }
+
+ is_task_table_changing = STATUS_TRUE;
+
+ scheduler_tasks[actual_number_of_tasks].task = 0;
+ scheduler_tasks[actual_number_of_tasks].task_with_parameter = task_with_parameter;
+ scheduler_tasks[actual_number_of_tasks].parameter = parameter;
+ scheduler_tasks[actual_number_of_tasks].type = TASK_TYPE_PERIODIC_INTERRUPT_WITH_PARAMETER;
+ scheduler_tasks[actual_number_of_tasks].counter_of_ms = 0;
+ scheduler_tasks[actual_number_of_tasks].number_of_ms_to_be_executed = number_of_ms_to_be_executed;
+
+ actual_number_of_tasks++;
+
+ is_task_table_changing = STATUS_FALSE;
+}
+
+void destroy_task(void *task) {
  for(dword_t i=0; i<actual_number_of_tasks; i++) {
-  if(scheduler_tasks[i].task==task) {
+  if(scheduler_tasks[i].task==task || scheduler_tasks[i].task_with_parameter==task) {
    is_task_table_changing = STATUS_TRUE;
    remove_space_from_memory_area((dword_t)(&scheduler_tasks), sizeof(struct scheduler_task_info)*SCHEDULER_MAX_NUMBER_OF_TASKS,( (dword_t)(&scheduler_tasks))+(sizeof(struct scheduler_task_info)*i), sizeof(struct scheduler_task_info));
    actual_number_of_tasks--;
@@ -53,9 +73,14 @@ void scheduler_periodic_interrupt(void) {
  for(dword_t i=0; i<actual_number_of_tasks; i++) {
   scheduler_tasks[i].counter_of_ms+=2;
 
-  if(scheduler_tasks[i].type==TASK_TYPE_PERIODIC_INTERRUPT && scheduler_tasks[i].counter_of_ms>=scheduler_tasks[i].number_of_ms_to_be_executed) {
+  if((scheduler_tasks[i].type==TASK_TYPE_PERIODIC_INTERRUPT || scheduler_tasks[i].type==TASK_TYPE_PERIODIC_INTERRUPT_WITH_PARAMETER) && scheduler_tasks[i].counter_of_ms>=scheduler_tasks[i].number_of_ms_to_be_executed) {
    scheduler_tasks[i].counter_of_ms = 0;
-   scheduler_tasks[i].task();
+   if(scheduler_tasks[i].type==TASK_TYPE_PERIODIC_INTERRUPT) {
+    scheduler_tasks[i].task();
+   }
+   else {
+    scheduler_tasks[i].task_with_parameter(scheduler_tasks[i].parameter);
+   }
   }
  }
 }

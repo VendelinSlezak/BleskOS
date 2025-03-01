@@ -8,11 +8,7 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#define USB_DEVICE_KEYBOARD 0x030101
-#define USB_DEVICE_MOUSE 0x030102
-
 #define USB_KEYBOARD_ZERO_10 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-
 dword_t usb_keyboard_layout[256] = {
 0, 0, 0, 0,
 KEY_A,  KEY_B,  KEY_C,  KEY_D,  KEY_E,  KEY_F,  KEY_G,  KEY_H,  KEY_I,  KEY_J,  KEY_K,  KEY_L,  KEY_M,  KEY_N,  KEY_O,  KEY_P,  KEY_Q,  KEY_R,  KEY_S,  KEY_T,  KEY_U,  KEY_V,  KEY_W,  KEY_X,  KEY_Y,  KEY_Z,
@@ -25,47 +21,37 @@ USB_KEYBOARD_ZERO_10, USB_KEYBOARD_ZERO_10, USB_KEYBOARD_ZERO_10, USB_KEYBOARD_Z
 KEY_LEFT_SHIFT, 0, 0, 0, KEY_RIGHT_SHIFT, 0, 0
 };
 
-struct usb_mouse_informations {
- byte_t controller_type;
- byte_t controller_number;
- byte_t port;
- byte_t address;
- byte_t device_speed;
- byte_t endpoint;
- byte_t endpoint_size;
- byte_t interrupt_time;
- dword_t transfer_descriptor_check;
+struct usb_keyboard_buffer_t {
+ word_t left_ctrl: 1;
+ word_t left_shift: 1;
+ word_t left_alt: 1;
+ word_t left_logo: 1;
+ word_t right_ctrl: 1;
+ word_t right_shift: 1;
+ word_t right_alt: 1;
+ word_t reserved: 9;
+ byte_t keys[6];
 }__attribute__((packed));
-struct usb_mouse_informations usb_mouse[1];
 
-struct usb_keyboard_informations {
- byte_t controller_type;
- byte_t controller_number;
- byte_t port;
- byte_t address;
- byte_t device_speed;
- byte_t endpoint;
- byte_t endpoint_size;
- byte_t interrupt_time;
- dword_t transfer_descriptor_check;
-}__attribute__((packed));
-struct usb_keyboard_informations usb_keyboard[1];
+dword_t usb_keyboard_packet_received;
 
-dword_t usb_mouse_data_memory = 0, usb_mouse_packet_received = 0;
-dword_t usb_keyboard_data_memory = 0, usb_keyboard_packet_received = 0;
-dword_t usb_keyboard_count = 0, usb_keyboard_code_of_pressed_key = 0;
-byte_t usb_keyboard_code = 0;
+byte_t num_of_keyboards = 0;
 
-dword_t usb_mouse_button_1_data_offset_byte, usb_mouse_button_1_data_offset_shift, usb_mouse_button_1_data_length;
-dword_t usb_mouse_button_2_data_offset_byte, usb_mouse_button_2_data_offset_shift, usb_mouse_button_2_data_length;
-dword_t usb_mouse_button_3_data_offset_byte, usb_mouse_button_3_data_offset_shift, usb_mouse_button_3_data_length;
-dword_t usb_mouse_movement_x_data_offset_byte, usb_mouse_movement_x_data_offset_shift, usb_mouse_movement_x_data_length;
-dword_t usb_mouse_movement_y_data_offset_byte, usb_mouse_movement_y_data_offset_shift, usb_mouse_movement_y_data_length;
-dword_t usb_mouse_movement_wheel_data_offset_byte, usb_mouse_movement_wheel_data_offset_shift, usb_mouse_movement_wheel_data_length;
+void usb_keyboard_save_informations(byte_t device_address, struct usb_full_interface_info_t interface);
 
-void usb_mouse_read_hid_descriptor(byte_t controller_number, byte_t device_address, byte_t device_speed, byte_t interface, word_t length);
-void usb_hid_device_set_protocol(byte_t controller_number, byte_t device_address, byte_t device_speed, byte_t interface, byte_t protocol);
-void usb_hid_device_set_idle(byte_t controller_number, byte_t device_address, byte_t device_speed, byte_t interface);
-void usb_keyboard_process_new_packet(void);
-void usb_keyboard_process_no_new_packet(void);
-void usb_mouse_process_received_data(void);
+void usb_keyboard_initalize(byte_t device_address);
+
+void usb_keyboard_set_boot_protocol_success(byte_t device_address);
+void usb_keyboard_set_idle_success(byte_t device_address);
+void usb_keyboard_initalization_success(byte_t device_address);
+void usb_keyboard_interrupt_transfer_successfull(byte_t device_address);
+
+void usb_keyboards_check_pressed_keys(void);
+void usb_keyboard_update_led_status_with_transfer_data(byte_t device_address);
+void usb_keyboard_set_led_success(byte_t device_address);
+void usb_keyboard_led_interrupt_transfer_successfull(byte_t device_address);
+
+void usb_keyboard_stop_initalization(byte_t device_address, byte_t *err_string);
+void usb_keyboard_set_boot_protocol_error(byte_t device_address);
+void usb_keyboard_set_idle_error(byte_t device_address);
+void usb_keyboard_set_led_error(byte_t device_address);

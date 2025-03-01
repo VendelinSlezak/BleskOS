@@ -9,12 +9,15 @@
 */
 
 #define TASK_TYPE_PERIODIC_INTERRUPT 1
-#define TASK_TYPE_USER_INPUT 2
+#define TASK_TYPE_PERIODIC_INTERRUPT_WITH_PARAMETER 2
+#define TASK_TYPE_USER_INPUT 3
 
 #define SCHEDULER_MAX_NUMBER_OF_TASKS 20
 struct scheduler_task_info {
  void (*task)(void);
+ void (*task_with_parameter)(dword_t parameter);
  byte_t type;
+ dword_t parameter;
  dword_t counter_of_ms;
  dword_t number_of_ms_to_be_executed;
 }__attribute__((packed));
@@ -24,6 +27,7 @@ byte_t actual_number_of_tasks, is_task_table_changing;
 
 void initalize_scheduler(void);
 void create_task(void (*task)(void), byte_t type, dword_t number_of_ms_to_be_executed);
-void destroy_task(void (*task)(void));
+void create_task_with_parameter(void (*task_with_parameter)(dword_t parameter), dword_t parameter, dword_t number_of_ms_to_be_executed);
+void destroy_task(void *task);
 void scheduler_periodic_interrupt(void);
 void scheduler_user_input(void);

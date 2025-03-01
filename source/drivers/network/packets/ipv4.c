@@ -41,7 +41,8 @@ void network_packet_finalize_ipv4_layer(dword_t type_of_next_layer, dword_t size
  network_packet_ipv4_layer->total_length = BIG_ENDIAN_WORD(size_of_layer);
 
  //calculate checksum
- word_t *packet_layer_pointer = (word_t *) ((dword_t)network_packet_ipv4_layer);
+ dword_t memory = (dword_t)network_packet_ipv4_layer;
+ word_t *packet_layer_pointer = (word_t *) memory;
  dword_t checksum = 0;
  for(int i=0; i<10; i++) {
   checksum += *packet_layer_pointer;

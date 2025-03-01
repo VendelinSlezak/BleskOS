@@ -10,6 +10,8 @@
 
 global load_idt
 global irq_handlers
+global irq_handlers_number_of_methods
+extern interrupt_handler_running
 extern isr_handler
 
 global stack_of_interrupt
@@ -252,65 +254,75 @@ idt_wrap:
  dd idt ;address
  
 irq_handlers:
- times 16 dd irq_basic_handler
+ times 16*8 dd irq_basic_handler
+irq_handlers_number_of_methods:
+ times 16 dd 0
  
 irq_basic_handler:
  ret
+
+%macro IRQ_HANDLER_CODE 1
+ mov byte [interrupt_handler_running], 1
+ mov ebx, irq_handlers
+ add ebx, (8*4*%1)
+ mov ecx, dword [irq_handlers_number_of_methods+(4*%1)]
+ .call_method:
+ push ecx
+  mov eax, dword [ebx]
+  call eax
+  add ebx, 4
+ pop ecx
+ loop .call_method
+ mov byte [interrupt_handler_running], 0
+%endmacro
 
 irq0_handler:
  mov dword [stack_of_interrupt], esp
 
  pusha
- mov eax, dword [irq_handlers+(4*0)]
- call eax
+ IRQ_HANDLER_CODE 0
  EOI_MASTER_PIC
  popa
  iret
  
 irq1_handler:
  pusha
- mov eax, dword [irq_handlers+(4*1)]
- call eax
+ IRQ_HANDLER_CODE 1
  EOI_MASTER_PIC
  popa
  iret
  
 irq2_handler:
  pusha
- mov eax, dword [irq_handlers+(4*2)]
- call eax
+ IRQ_HANDLER_CODE 2
  EOI_MASTER_PIC
  popa
  iret
  
 irq3_handler:
  pusha
- mov eax, dword [irq_handlers+(4*3)]
- call eax
+ IRQ_HANDLER_CODE 3
  EOI_MASTER_PIC
  popa
  iret
  
 irq4_handler:
  pusha
- mov eax, dword [irq_handlers+(4*4)]
- call eax
+ IRQ_HANDLER_CODE 4
  EOI_MASTER_PIC
  popa
  iret
  
 irq5_handler:
  pusha
- mov eax, dword [irq_handlers+(4*5)]
- call eax
+ IRQ_HANDLER_CODE 5
  EOI_MASTER_PIC
  popa
  iret
  
 irq6_handler:
  pusha
- mov eax, dword [irq_handlers+(4*6)]
- call eax
+ IRQ_HANDLER_CODE 6
  EOI_MASTER_PIC
  popa
  iret
@@ -331,64 +343,56 @@ irq7_handler:
  iret
 
  .irq7_not_spurious_interrupt:
- mov eax, dword [irq_handlers+(4*7)]
- call eax
+ IRQ_HANDLER_CODE 7
  EOI_MASTER_PIC
  popa
  iret
  
 irq8_handler:
  pusha
- mov eax, dword [irq_handlers+(4*8)]
- call eax
+ IRQ_HANDLER_CODE 8
  EOI_SLAVE_PIC
  popa
  iret
  
 irq9_handler:
  pusha
- mov eax, dword [irq_handlers+(4*9)]
- call eax
+ IRQ_HANDLER_CODE 9
  EOI_SLAVE_PIC
  popa
  iret
  
 irq10_handler:
  pusha
- mov eax, dword [irq_handlers+(4*10)]
- call eax
+ IRQ_HANDLER_CODE 10
  EOI_SLAVE_PIC
  popa
  iret
  
 irq11_handler:
  pusha
- mov eax, dword [irq_handlers+(4*11)]
- call eax
+ IRQ_HANDLER_CODE 11
  EOI_SLAVE_PIC
  popa
  iret
  
 irq12_handler:
  pusha
- mov eax, dword [irq_handlers+(4*12)]
- call eax
+ IRQ_HANDLER_CODE 12
  EOI_SLAVE_PIC
  popa
  iret
  
 irq13_handler:
  pusha
- mov eax, dword [irq_handlers+(4*13)]
- call eax
+ IRQ_HANDLER_CODE 13
  EOI_SLAVE_PIC
  popa
  iret
  
 irq14_handler:
  pusha
- mov eax, dword [irq_handlers+(4*14)]
- call eax
+ IRQ_HANDLER_CODE 14
  EOI_SLAVE_PIC
  popa
  iret
@@ -410,8 +414,7 @@ irq15_handler:
  iret
 
  .irq15_not_spurious_interrupt:
- mov eax, dword [irq_handlers+(4*15)]
- call eax
+ IRQ_HANDLER_CODE 15
  EOI_SLAVE_PIC
  popa
  iret

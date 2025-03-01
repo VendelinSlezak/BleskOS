@@ -54,7 +54,7 @@ byte_t does_program_have_signature(byte_t *program_memory, dword_t program_size)
 void should_be_program_killed(void) {
  extern dword_t stack_before_calling_binary_program;
  
- if(stack_before_calling_binary_program!=0 && (keyboard_pressed_control_keys & (KEYBOARD_CTRL | KEYBOARD_ALT))==(KEYBOARD_CTRL | KEYBOARD_ALT) && keyboard_code_of_pressed_key==KEY_K) {
+ if(stack_before_calling_binary_program!=0 && keyboard_keys_state.ctrl == 1 && keyboard_keys_state.alt == 1 && keyboard_code_of_pressed_key==KEY_K) {
   destroy_task(should_be_program_killed);
 
   extern dword_t *stack_of_interrupt;

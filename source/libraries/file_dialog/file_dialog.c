@@ -107,7 +107,7 @@ void file_dialog_event_click_on_connected_partitions(void) {
 void file_dialog_event_key_page_up(void) {
  //no partition is selected
  dword_t partition_to_select = NO_PARTITION_SELECTED;
- if((dword_t)file_dialog_folder_descriptor==0) {
+ if((dword_t)file_dialog_folder_descriptor==0 || file_dialog_folder_descriptor->partition_number==NO_PARTITION_SELECTED) {
   //select last connected partition
   for(dword_t i=MAX_NUMBER_OF_CONNECTED_PARTITIONS; i>0; i--) {
    if(connected_partitions[(i-1)].medium_type!=NO_MEDIUM) {
@@ -170,7 +170,7 @@ void file_dialog_event_key_page_down(void) {
 
  //no partition is selected
  dword_t partition_to_select = NO_PARTITION_SELECTED;
- if((dword_t)file_dialog_folder_descriptor==0) {
+ if((dword_t)file_dialog_folder_descriptor==0 || file_dialog_folder_descriptor->partition_number==NO_PARTITION_SELECTED) {
   //select first connected partition
   for(dword_t i=0; i<MAX_NUMBER_OF_CONNECTED_PARTITIONS; i++) {
    if(connected_partitions[i].medium_type!=NO_MEDIUM) {
@@ -1033,13 +1033,13 @@ dword_t file_dialog_save_file_to_folder(void) {
  }
 }
 
-dword_t file_dialog_mouse_wheel_event(void) {
+dword_t file_dialog_mouse_wheel_movement_event(void) {
  //this works only if some folder is opened
  if((dword_t)file_dialog_folder_descriptor==0 || file_dialog_folder_descriptor->partition_number==NO_PARTITION_SELECTED) {
   return NO_EVENT;
  }
 
- if(mouse_wheel<0x80000000) { //up
+ if(mouse_wheel_movement<0x80000000) { //up
   if(file_dialog_folder_descriptor->view_type==VIEW_FOLDER_LIST) {
    //move first showed entry
    file_dialog_folder_descriptor->first_showed_entry -= 10;

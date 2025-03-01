@@ -88,6 +88,11 @@ byte_t is_partition_connected(byte_t medium_type, byte_t medium_number, byte_t f
 }
 
 byte_t select_partition(byte_t partition_number) {
+ if(partition_number >= MAX_NUMBER_OF_CONNECTED_PARTITIONS) {
+  logf("\nERROR: trying to set invalid partition number %d", partition_number);
+  return STATUS_ERROR;
+ }
+
  if(selected_partition==partition_number) {
   return STATUS_GOOD; //this partition is already selected
  }

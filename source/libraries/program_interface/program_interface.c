@@ -440,7 +440,7 @@ void program_interface_process_mouse_event(void) {
   }
  }
 
- if(mouse_wheel!=0) {
+ if(mouse_wheel_movement!=0) {
   if(program_interface_element_with_focus!=0xFFFFFFFF) {
    dword_t *element = (dword_t *) (program_interface_elements_list_mem+program_interface_element_with_focus*32);
 

@@ -164,28 +164,36 @@ word_t slovak_shift_keyboard_layout[256] = {
  0 //other keys
 };
 
-#define KEYBOARD_SHIFT 0x1
-#define KEYBOARD_CTRL 0x2
-#define KEYBOARD_ALT 0x4
-#define KEYBOARD_CAPSLOCK 0x8
-byte_t keyboard_pressed_control_keys;
+struct keyboard_keys_t {
+ byte_t shift: 1;
+ byte_t ctrl: 1;
+ byte_t alt: 1;
+ byte_t reserved: 5;
+ dword_t pressed_keys[6];
+}__attribute__((packed));
 
+struct keyboard_leds_t {
+ byte_t capslock: 1;
+ byte_t numlock: 1;
+ byte_t scrollock: 1;
+ byte_t reserved: 5;
+}__attribute__((packed));
+
+#define KEYBOARD_CTRL 0
 dword_t keyboard_code_of_pressed_key;
 word_t keyboard_diacritic_char_for_next_key;
 word_t keyboard_unicode_value_of_pressed_key;
 
-#define KEYBOARD_LED_CAPSLOCK 0x1
-#define KEYBOARD_LED_NUMBERLOCK 0x2
-#define KEYBOARD_LED_SCROLLOCK 0x4
-byte_t keyboard_led_state, keyboard_change_in_led_state;
-
-dword_t ps2_keyboard_pressed_keys[10];
-dword_t number_of_keys_pressed_on_ps2_keyboard;
-dword_t usb_keyboard_pressed_keys[6];
+struct keyboard_keys_t keyboard_keys_state;
+struct keyboard_leds_t keyboard_led_state;
 
 word_t *keyboard_layout_ptr;
 word_t *keyboard_shift_layout_ptr;
 
+byte_t keyboard_event;
+
 void initalize_keyboard(void);
+void keyboard_prepare_for_next_event(void);
+void keyboard_update_keys_state(void);
 void keyboard_process_code(dword_t code);
 byte_t keyboard_is_key_pressed(dword_t key_value);

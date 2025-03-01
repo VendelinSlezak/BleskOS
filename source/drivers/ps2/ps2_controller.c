@@ -284,9 +284,6 @@ void initalize_ps2_controller(void) {
     if(ps2_first_channel_buffer[1]==0xAB || ps2_first_channel_buffer[1]==0xAC) {
      ps2_first_channel_device = PS2_CHANNEL_KEYBOARD_CONNECTED;
     }
-    else if(ps2_first_channel_buffer[1]==0x00 || ps2_first_channel_buffer[1]==0x03 || ps2_first_channel_buffer[1]==0x04) {
-     ps2_first_channel_device = PS2_CHANNEL_MOUSE_CONNECTED;
-    }
     else {
      ps2_first_channel_device = ps2_first_channel_buffer[1]; //unknown device
     }
@@ -319,10 +316,7 @@ void initalize_ps2_controller(void) {
   log("\n");
   if(ps2_second_channel_wait_for_ack()==STATUS_GOOD) {
    if(ps2_second_channel_wait_for_response()==STATUS_GOOD) {
-    if(ps2_second_channel_buffer[1]==0xAB || ps2_second_channel_buffer[1]==0xAC) {
-     ps2_second_channel_device = PS2_CHANNEL_KEYBOARD_CONNECTED;
-    }
-    else if(ps2_second_channel_buffer[1]==0x00 || ps2_second_channel_buffer[1]==0x03 || ps2_second_channel_buffer[1]==0x04) {
+    if(ps2_second_channel_buffer[1]==0x00 || ps2_second_channel_buffer[1]==0x03 || ps2_second_channel_buffer[1]==0x04) {
      ps2_second_channel_device = PS2_CHANNEL_MOUSE_CONNECTED;
     }
     else {
@@ -355,45 +349,43 @@ void ps2_first_channel_irq_handler(void) {
   ps2_first_channel_buffer_pointer = 0;
  }
 
- //process data according to device
+ //process data
  if(ps2_first_channel_device==PS2_CHANNEL_KEYBOARD_INITALIZED) {
-  if(ps2_first_channel_buffer[0]==0xE1) {
-   if(ps2_first_channel_buffer_pointer>=3) { //if data starts with 0xE1, it means that keyboard will send two more bytes
-    keyboard_process_code((ps2_first_channel_buffer[0] | ps2_first_channel_buffer[1]<<8 | 0xE1<<16));
-    ps2_keyboard_save_key_value((ps2_first_channel_buffer[0] | ps2_first_channel_buffer[1]<<8 | 0xE1<<16));
-    ps2_keyboard_wait = 0;
-    ps2_first_channel_buffer_pointer = 0;
-   }
-  }
-  else if(ps2_first_channel_buffer[0]==0xE0) {
-   if(ps2_first_channel_buffer_pointer>=2) { //if data starts with 0xE0, it means that keyboard will send one more byte
-    keyboard_process_code((ps2_first_channel_buffer[1] | 0xE0<<8));
-    ps2_keyboard_save_key_value((ps2_first_channel_buffer[1] | 0xE0<<8));
-    ps2_keyboard_wait = 0;
-    ps2_first_channel_buffer_pointer = 0;
-   }
-  }
-  else {
-   keyboard_process_code(ps2_first_channel_buffer[0]);
-   ps2_keyboard_save_key_value(ps2_first_channel_buffer[0]);
-   ps2_keyboard_wait = 0;
-   ps2_first_channel_buffer_pointer = 0;
-  }
-  return;
- }
- else if(ps2_first_channel_device==PS2_CHANNEL_MOUSE_INITALIZED && ps2_mouse_enable==STATUS_TRUE) {
-  if(ps2_first_channel_buffer_pointer>=ps2_first_channel_mouse_data_bytes) {
-   //if program waits for data from mouse, copy them
-   if(ps2_mouse_wait==1) {
-    for(dword_t i=0; i<ps2_first_channel_mouse_data_bytes; i++) {
-     ps2_mouse_data[i] = ps2_first_channel_buffer[i];
-    }
-   }
+  dword_t key_value = 0;
 
-   //set variables
-   ps2_first_channel_buffer_pointer = 0;
-   ps2_mouse_wait = 0;
+  //if data starts with 0xE1, it means that keyboard will send two more bytes
+  if(ps2_first_channel_buffer[0]==0xE1) {
+   if(ps2_first_channel_buffer_pointer>=3) {
+    key_value = (ps2_first_channel_buffer[0] | ps2_first_channel_buffer[1]<<8 | 0xE1<<16);
+   }
+   else {
+    return; //wait for rest of data
+   }
   }
+  //if data starts with 0xE0, it means that keyboard will send one more byte
+  else if(ps2_first_channel_buffer[0]==0xE0) {
+   if(ps2_first_channel_buffer_pointer>=2) {
+    key_value = (ps2_first_channel_buffer[1] | 0xE0<<8);
+   }
+   else {
+    return; //wait for rest of data
+   }
+  }
+  //normal data in one byte
+  else {
+   key_value = ps2_first_channel_buffer[0];
+  }
+
+  //process pressed key
+  keyboard_process_code(key_value);
+
+  //save key to list
+  ps2_keyboard_process_key_value(key_value);
+
+  //clear variables
+  ps2_first_channel_buffer_pointer = 0;
+
+  return;
  }
 }
 
@@ -408,35 +400,10 @@ void ps2_second_channel_irq_handler(void) {
   ps2_second_channel_buffer_pointer = 0;
  }
 
- //process data according to device
- if(ps2_second_channel_device==PS2_CHANNEL_KEYBOARD_INITALIZED) {
-  if(ps2_second_channel_buffer[0]==0xE1) {
-   if(ps2_second_channel_buffer_pointer>=3) { //if data starts with 0xE1, it means that keyboard will send two more bytes
-    keyboard_process_code((ps2_second_channel_buffer[0] | ps2_second_channel_buffer[1]<<8 | 0xE1<<16));
-    ps2_keyboard_save_key_value((ps2_second_channel_buffer[0] | ps2_second_channel_buffer[1]<<8 | 0xE1<<16));
-    ps2_keyboard_wait = 0;
-    ps2_second_channel_buffer_pointer = 0;
-   }
-  }
-  else if(ps2_second_channel_buffer[0]==0xE0) {
-   if(ps2_second_channel_buffer_pointer>=2) { //if data starts with 0xE0, it means that keyboard will send one more byte
-    keyboard_process_code((ps2_second_channel_buffer[1] | 0xE0<<8));
-    ps2_keyboard_save_key_value((ps2_second_channel_buffer[1] | 0xE0<<8));
-    ps2_keyboard_wait = 0;
-    ps2_second_channel_buffer_pointer = 0;
-   }
-  }
-  else {
-   keyboard_process_code(ps2_second_channel_buffer[0]);
-   ps2_keyboard_save_key_value(ps2_second_channel_buffer[0]);
-   ps2_keyboard_wait = 0;
-   ps2_second_channel_buffer_pointer = 0;
-  }
-  return;
- }
- else if(ps2_second_channel_device==PS2_CHANNEL_MOUSE_INITALIZED && ps2_mouse_enable==STATUS_TRUE) {
-  if(ps2_second_channel_buffer_pointer>=ps2_second_channel_mouse_data_bytes) {
-   //if program waits for data from mouse, copy them
+ //process data
+ if(ps2_second_channel_device==PS2_CHANNEL_MOUSE_INITALIZED && ps2_mouse_enable==STATUS_TRUE) {
+  if(ps2_second_channel_buffer_pointer >= ps2_second_channel_mouse_data_bytes) {
+   //if code waits for data from mouse, copy them
    if(ps2_mouse_wait==1) {
     for(dword_t i=0; i<ps2_second_channel_mouse_data_bytes; i++) {
      ps2_mouse_data[i] = ps2_second_channel_buffer[i];

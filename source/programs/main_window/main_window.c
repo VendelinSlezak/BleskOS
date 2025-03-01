@@ -202,23 +202,23 @@ void bleskos_main_window_redraw(void) {
  }
 
  //info about connected USB devices
- if(usb_controllers_pointer!=0) {
+ if(number_of_usb_devices != 0) {
   bleskos_main_window_drawing_line += 10;
   bleskos_main_window_print_item("Connected USB devices");
-  for(int i=0; i<10; i++) {
-   if(usb_hubs[i].controller_type!=USB_NO_DEVICE_ATTACHED) {
-    bleskos_main_window_draw_item("USB hub", 0x00B5FF, 0);
-   }
-  }
-  if(usb_mouse[0].controller_type!=USB_NO_DEVICE_ATTACHED) {
-   bleskos_main_window_draw_item("USB mouse", 0x00B5FF, 0);
-  }
-  if(usb_keyboard[0].controller_type!=USB_NO_DEVICE_ATTACHED) {
-   bleskos_main_window_draw_item("USB keyboard", 0x00B5FF, 0);
-  }
-  for(int i=0; i<10; i++) {
-   if(usb_mass_storage_devices[i].entry!=USB_MSD_ENTRY_NOTHING_ATTACHED) {
-    bleskos_main_window_draw_item("USB mass storage device", 0x00B5FF, 0);
+  for(dword_t i=1; i<MAX_NUMBER_OF_USB_DEVICES; i++) {
+   if(usb_devices[i].is_used == STATUS_TRUE) {
+    if(usb_devices[i].hub.is_present == STATUS_TRUE) {
+     bleskos_main_window_draw_item("USB Hub", 0x00B5FF, 0);
+    }
+    if(usb_devices[i].mouse.is_present == STATUS_TRUE) {
+     bleskos_main_window_draw_item("USB Mouse", 0x00B5FF, 0);
+    }
+    if(usb_devices[i].keyboard.is_present == STATUS_TRUE) {
+     bleskos_main_window_draw_item("USB Keyboard", 0x00B5FF, 0);
+    }
+    if(usb_devices[i].msd.is_present == STATUS_TRUE) {
+     bleskos_main_window_draw_item("USB Mass Storage Device", 0x00B5FF, 0);
+    }
    }
   }
  }
@@ -251,7 +251,7 @@ void bleskos_main_window(void) {
    goto redraw;
   }
   
-  if(usb_new_device_detected==STATUS_TRUE) {
+  if(usb_device_change_event==STATUS_TRUE) {
    goto redraw;
   }
   

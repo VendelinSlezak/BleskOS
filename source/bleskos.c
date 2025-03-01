@@ -48,9 +48,9 @@
 #include "programs/file_manager/file_manager.h"
 #include "programs/document_editor/document_editor.h"
 #include "programs/screenshooter/screenshooter.h"
-#include "programs/performance_rating/performance_rating.h"
 #include "programs/calculator/calculator.h"
 #endif
+#include "programs/performance_rating/performance_rating.h"
 
 #include "drivers/system/include.c"
 #include "drivers/graphic/include.c"
@@ -89,9 +89,9 @@
 #include "programs/file_manager/file_manager.c"
 #include "programs/document_editor/document_editor.c"
 #include "programs/screenshooter/screenshooter.c"
-#include "programs/performance_rating/performance_rating.c"
 #include "programs/calculator/calculator.c"
 #endif
+#include "programs/performance_rating/performance_rating.c"
 
 void bleskos(dword_t bootloader_passed_value) {
  boot_options = bootloader_passed_value;
@@ -102,26 +102,31 @@ void bleskos(dword_t bootloader_passed_value) {
  bleskos_boot_debug_top_screen_color(0x00FF00); //green top of screen
  initalize_logging();
  bleskos_boot_debug_top_screen_color(0x0000FF); //blue top of screen
- log("BleskOS 2025 update 2\n\nPress F2 to save System log as TXT file");
+ log("BleskOS 2025 update 3\n\nPress F2 to save System log as TXT file");
  log_starting_memory();
 
  bleskos_boot_debug_top_screen_color(0xFFFF00); //yellow top of screen
+ initalize_mtrr();
  initalize_scheduler();
  scan_pci();
  set_interrupts();
  set_pit();
  bleskos_boot_debug_top_screen_color(0xFF00FF); //pink top of screen
 
- initalize_graphic();
- mouse_cursor_x = 0;
- mouse_cursor_y = 0;
- clear_screen(0x00C000);
- set_scalable_char_size(64);
- scalable_font_print("BleskOS", screen_x_center-(64*7/2), screen_y_center-92, BLACK);
- print_to_message_window("Version 2025 update 2", screen_y_center);
- draw_empty_square(screen_x_center-161, screen_y_center+30, 322, 15, BLACK);
- number_of_start_screen_messages = 0;
- (*redraw_framebuffer)();
+ if((boot_options & BOOT_OPTION_DEEP_DEBUGGER) != BOOT_OPTION_DEEP_DEBUGGER) {
+  initalize_graphic();
+  mouse_cursor_x = 0;
+  mouse_cursor_y = 0;
+  clear_screen(0x00C000);
+  set_scalable_char_size(64);
+  scalable_font_print("BleskOS", screen_x_center-(64*7/2), screen_y_center-92, BLACK);
+  print_to_message_window("Version 2025 update 3", screen_y_center);
+  draw_empty_square(screen_x_center-161, screen_y_center+30, 322, 15, BLACK);
+  number_of_start_screen_messages = 0;
+  (*redraw_framebuffer)();
+ }
+
+ wait(200); //wait for any changes made during PCI initalization to take place
 
  bleskos_show_message_on_starting_screen("Reading time format...");
  read_time_format();
@@ -129,15 +134,16 @@ void bleskos(dword_t bootloader_passed_value) {
  read_acpi_tables();
  initalize_hpet();
  bleskos_boot_debug_log_message();
+
+ bleskos_show_message_on_starting_screen("Initalizing keyboard...");
+ initalize_keyboard();
+ bleskos_show_message_on_starting_screen("Initalizing mouse...");
+ initalize_mouse();
  
  bleskos_show_message_on_starting_screen("Initalizing PS/2 controller...");
  initalize_ps2_controller();
  initalize_ps2_keyboard();
  initalize_ps2_mouse();
- bleskos_show_message_on_starting_screen("Initalizing keyboard...");
- initalize_keyboard();
- bleskos_show_message_on_starting_screen("Initalizing mouse...");
- initalize_mouse();
  bleskos_boot_debug_log_message();
 
  bleskos_show_message_on_starting_screen("Initalizing storage controllers...");
@@ -167,6 +173,10 @@ void bleskos(dword_t bootloader_passed_value) {
  initalize_mp3_decoder();
  initalize_binary_programs_interface();
 
+ if((boot_options & BOOT_OPTION_DEEP_DEBUGGER) == BOOT_OPTION_DEEP_DEBUGGER) {
+  deep_debugger();
+ }
+
  #ifndef NO_PROGRAMS
  bleskos_show_message_on_starting_screen("Initalizing programs...");
  initalize_document_editor();
@@ -189,7 +199,13 @@ void bleskos(dword_t bootloader_passed_value) {
 }
 
 void bleskos_show_message_on_starting_screen(char *string) {
- if((boot_options & BOOT_OPTION_DEBUG_MESSAGES)==BOOT_OPTION_DEBUG_MESSAGES) {
+ if((boot_options & BOOT_OPTION_DEEP_DEBUGGER) == BOOT_OPTION_DEEP_DEBUGGER) {
+  vga_text_mode_clear_screen(0x20);
+  vga_text_mode_print(1, 1, string);
+  return;
+ }
+
+ if((boot_options & BOOT_OPTION_DEBUG_MESSAGES) != 0) {
   return;
  }
 

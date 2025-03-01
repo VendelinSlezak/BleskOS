@@ -8,10 +8,21 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include "parsers/device_descriptor.c"
+#include "parsers/configuration_descriptor.c"
+#include "parsers/hid_descriptor.c"
+
 #include "main.c"
-#include "uhci.c"
-#include "ohci.c"
-#include "ehci.c"
-#include "usb_human_interface_device.c"
-#include "usb_mass_storage.c"
-#include "usb_hub.c"
+#include "new_device_setup.c"
+
+#include "controllers/uhci.c"
+#include "controllers/ohci.c"
+#include "controllers/ehci.c"
+#include "controllers/xhci.c"
+
+#include "protocols/bbb.c"
+
+#include "devices/usb_hub.c"
+#include "devices/usb_mouse.c"
+#include "devices/usb_keyboard.c"
+#include "devices/usb_mass_storage.c"

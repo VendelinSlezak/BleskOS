@@ -18,7 +18,7 @@ byte_t download_file_from_url(byte_t *url) {
  //check if URL is not too long
  dword_t url_length = get_number_of_chars_in_ascii_string(url);
  if(url_length>=(MAX_LENGTH_OF_URL-1)) {
-  log("\nInvalid URL requested: Too long "); log_var(url_length);
+  logf("\nInvalid URL requested: Too long %d", url_length);
   return NETWORK_TRANSFER_ERROR_INVALID_URL;
  }
 
@@ -38,7 +38,7 @@ byte_t download_file_from_url(byte_t *url) {
 
    //if this is unallowed character, return error immediately
    if(valid == STATUS_FALSE) {
-    log("\nInvalid URL requested: Unallowed character "); log_hex_specific_size(url[i], 2);
+    logf("\nInvalid URL requested: Unallowed character %02x", url[i]);
     return NETWORK_TRANSFER_ERROR_INVALID_URL;
    }
   }
@@ -90,9 +90,7 @@ byte_t download_file_from_url(byte_t *url) {
    network_transfers[i].status = NETWORK_TRANSFER_USED_ENTRY;
 
    //log
-   log("\nFile transfer from URL: ");
-   log_var_with_space(network_transfers[i].number_of_transfer_entry);
-   log(url);
+   logf("\nFile transfer from URL: %d %s", network_transfers[i].number_of_transfer_entry, url);
 
    //return number of this entry
    return i;

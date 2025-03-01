@@ -133,7 +133,7 @@ void ec_amd_pcnet_initalize(dword_t number_of_card) {
  ec_amd_pcnet_write_csr(number_of_card, 1, ((dword_t)initalization_block & 0xFFFF));
  ec_amd_pcnet_write_csr(number_of_card, 2, ((dword_t)initalization_block >> 16));
  ec_amd_pcnet_write_csr(number_of_card, 0, (1 << 0));
- dword_t timeout = (time_of_system_running+50); //wait max 50ms
+ volatile dword_t timeout = (time_of_system_running+50); //wait max 50ms
  while((ec_amd_pcnet_read_csr(number_of_card, 0) & (1 << 8))!=(1 << 8)) {
   asm("nop");
   if(time_of_system_running >= timeout) {
