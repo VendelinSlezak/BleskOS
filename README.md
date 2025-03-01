@@ -46,9 +46,11 @@ If you have installed QEMU, you can then use `./testing.sh` script. It will run 
 
 ## BleskOS development state
 
+List of updates in last release can be found in https://github.com/VendelinSlezak/BleskOS/releases.
+
 Drivers
 
-- Graphic: VBE
+- Graphic: VBE, BGA
 - Sound: AC97, Intel HD Audio
 - Inbuilt hardware: PS/2 keyboard, PS/2 mouse, PATA hard disk, PATAPI optical disk drive, AHCI hard disk, AHCI optical disk drive
 - Filesystems: FAT12/16/32, ext2 (read-only), ISO9660 (read-only), CDDA (read-only)
