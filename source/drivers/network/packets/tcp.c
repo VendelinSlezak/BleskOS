@@ -30,7 +30,8 @@ void network_packet_add_tcp_layer(word_t source_port, word_t destination_port, d
 
 void network_packet_finalize_tcp_layer(dword_t type_of_next_layer, dword_t size_of_layer) {
  //calculate checksum
- word_t *packet_layer_pointer = (word_t *)((dword_t)network_packet_tcp_layer);
+ dword_t memory = (dword_t)network_packet_tcp_layer;
+ word_t *packet_layer_pointer = (word_t *) memory;
  dword_t checksum = 0;
  for (int i = 0; i < (size_of_layer / 2); i++) {
   checksum += *packet_layer_pointer;

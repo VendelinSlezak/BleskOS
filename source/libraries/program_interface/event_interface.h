@@ -14,7 +14,7 @@ enum {
  KEYBOARD_EVENT_PRESSED_KEY_WITH_CONTROL_KEY, //control key, number of pressed key, method to be called, return value
  MOUSE_EVENT_CLICK_ON_ZONE, //number of click zone, method to be called, return value
  MOUSE_EVENT_CLICK_ON_ZONES, //number of first click zone in range, number of last click zone in range, method to be called, return value
- MOUSE_WHEEL_EVENT, //method to be called, return value
+ mouse_wheel_movement_EVENT, //method to be called, return value
  VERTICAL_SCROLLBAR_EVENT, //click zone of scrollbar, pointer to scrollbar info, method to be called if there is change on scrollbar
  HORIZONTAL_SCROLLBAR_EVENT, //click zone of scrollbar, pointer to scrollbar info, method to be called if there is change on scrollbar
  TEXT_AREA_WITH_PERMANENT_FOCUS_EVENT, //pointer to text area info

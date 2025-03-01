@@ -40,6 +40,7 @@ dword_t pci_devices_array_mem = 0, pci_num_of_devices = 0;
 
 dword_t pci_read(dword_t bus, dword_t device, dword_t function, dword_t offset);
 void pci_write(dword_t bus, dword_t device, dword_t function, dword_t offset, dword_t value);
+void pci_writeb(dword_t bus, dword_t device, dword_t function, dword_t offset, dword_t value);
 dword_t pci_read_bar_type(dword_t bus, dword_t device, dword_t function, dword_t bar);
 word_t pci_read_io_bar(dword_t bus, dword_t device, dword_t function, dword_t bar);
 dword_t pci_read_mmio_bar(dword_t bus, dword_t device, dword_t function, dword_t bar);

@@ -114,8 +114,8 @@ void internet_browser(void) {
   }
 
   //process mouse wheel event
-  if(mouse_wheel!=0) {
-   if(mouse_wheel<0x80000000) {
+  if(mouse_wheel_movement!=0) {
+   if(mouse_wheel_movement<0x80000000) {
     internet_browser_key_up_event();
    }
    else {
@@ -398,7 +398,7 @@ void internet_browser_load_webpage_from_url_in_text_area(void) {
    set_file_value(INTERNET_BROWSER_FILE_STATUS, INTERNET_BROWSER_FILE_STATUS_ERROR_INVALID_URL);
    return;
   }
-  dword_t timeout = (time_of_system_running+10000);
+  volatile dword_t timeout = (time_of_system_running+10000);
   while(get_status_of_network_transfer(transfer_number)==NETWORK_TRANSFER_TRANSFERRING_DATA) {
    asm("hlt");
 

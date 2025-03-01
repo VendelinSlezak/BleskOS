@@ -85,7 +85,7 @@ byte_t does_storage_medium_exist(byte_t medium_type, byte_t medium_number) {
   }
  }
  else if(medium_type==MEDIUM_USB_MSD) { //USB mass storage device
-  if(usb_mass_storage_devices[medium_number].entry==USB_MSD_ENTRY_DEVICE_INITALIZED) {
+  if(usb_devices[medium_number].is_used == STATUS_TRUE && usb_devices[medium_number].msd.is_present == STATUS_TRUE) {
    return STATUS_TRUE;
   }
  }
@@ -136,15 +136,10 @@ byte_t read_storage_medium(dword_t sector, byte_t num_of_sectors, dword_t memory
   }
  }
  else if(storage_medium==MEDIUM_USB_MSD) { //USB mass storage device
-  if(usb_mass_storage_devices[storage_medium_number].entry!=USB_MSD_ENTRY_DEVICE_INITALIZED) {
+  if(usb_devices[storage_medium_number].is_used == STATUS_FALSE || usb_devices[storage_medium_number].msd.is_present == STATUS_FALSE) {
    return STATUS_ERROR; //there is no USB mass storage device connected
   }
-  else if(usb_mass_storage_devices[storage_medium_number].size_of_sector==512) {
-   return usb_msd_read(storage_medium_number, sector, num_of_sectors, memory);
-  }
-  else {
-   return STATUS_ERROR; //TODO: support more sector sizes than 512
-  }
+  return usb_msd_read(storage_medium_number, sector, num_of_sectors, (byte_t *)memory);
  }
  
  return STATUS_ERROR;
@@ -162,16 +157,11 @@ byte_t write_storage_medium(dword_t sector, byte_t num_of_sectors, dword_t memor
  else if(storage_medium==MEDIUM_OPTICAL_DRIVE) {
   return STATUS_ERROR; //we do not support writing to optical disks
  }
- else if(storage_medium==MEDIUM_USB_MSD) {
-  if(usb_mass_storage_devices[storage_medium_number].entry!=USB_MSD_ENTRY_DEVICE_INITALIZED) {
-   return STATUS_ERROR; //there is no USB MSD connected
+ else if(storage_medium==MEDIUM_USB_MSD) { //USB mass storage device
+  if(usb_devices[storage_medium_number].is_used == STATUS_FALSE || usb_devices[storage_medium_number].msd.is_present == STATUS_FALSE) {
+   return STATUS_ERROR; //there is no USB mass storage device connected
   }
-  else if(usb_mass_storage_devices[storage_medium_number].size_of_sector==512) {
-   return usb_msd_write(storage_medium_number, sector, num_of_sectors, memory);
-  }
-  else {
-   return STATUS_ERROR; //TODO: support more sector sizes than 512
-  }
+  return usb_msd_write(storage_medium_number, sector, num_of_sectors, (byte_t *)memory);
  }
  
  return STATUS_ERROR;

@@ -93,7 +93,7 @@ dword_t file_dialog_event_key_enter(void);
 void file_dialog_event_go_to_previous_folder(void);
 dword_t file_dialog_event_click_on_files(void);
 void file_dialog_event_scrollbar_change(dword_t value);
-dword_t file_dialog_mouse_wheel_event(void);
+dword_t file_dialog_mouse_wheel_movement_event(void);
 
 dword_t file_dialog_change_view_window(void);
 dword_t file_dialog_preview_window(void);
@@ -127,7 +127,7 @@ dword_t file_dialog_event_interface[] = { 0,
  KEYBOARD_EVENT_PRESSED_KEY, KEY_ENTER, (dword_t)(&file_dialog_event_key_enter), RETURN_EVENT_FROM_METHOD,
  MOUSE_EVENT_CLICK_ON_ZONES, CLICK_ZONE_FILE_DIALOG_FIRST_ITEM, 0xFFFFFFFF, (dword_t)(&file_dialog_event_click_on_files), RETURN_EVENT_FROM_METHOD,
  VERTICAL_SCROLLBAR_EVENT, CLICK_ZONE_FILE_DIALOG_SCROLLBAR, (dword_t)(&file_dialog_scrollbar_info), (dword_t)(&file_dialog_event_scrollbar_change),
- MOUSE_WHEEL_EVENT, (dword_t)(&file_dialog_mouse_wheel_event), RETURN_EVENT_FROM_METHOD,
+ mouse_wheel_movement_EVENT, (dword_t)(&file_dialog_mouse_wheel_movement_event), RETURN_EVENT_FROM_METHOD,
 
  //go to previous folder
  KEYBOARD_EVENT_PRESSED_KEY, KEY_B, (dword_t)(&file_dialog_event_go_to_previous_folder), NO_EVENT,

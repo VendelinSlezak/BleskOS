@@ -48,16 +48,14 @@ void initalize_ide_controller_drive(byte_t number_of_controller, byte_t number_o
  }
 
  //log
- log("\nIDE controller ");
- log_hex_specific_size_with_space(storage_controllers[number_of_controller].base_1, 4);
+ logf("\nIDE controller 0x%04x ", storage_controllers[number_of_controller].base_1);
  if(number_of_drive==PATA_MASTER) {
   log("MASTER ");
  }
  else {
   log("SLAVE ");
  }
- log_hex_specific_size_with_space(ide_drive_type, 4);
- log_var(ide_drive_size);
+ logf("0x%04x %d",ide_drive_type, ide_drive_size);
 }
 
 byte_t ide_send_identify_drive(word_t base_port) {

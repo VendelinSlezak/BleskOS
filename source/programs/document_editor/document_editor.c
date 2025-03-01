@@ -58,7 +58,7 @@ void document_editor(void) {
   //process events of opened document
   if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0) {
    //process CTRL events
-   if((keyboard_pressed_control_keys & KEYBOARD_CTRL)==KEYBOARD_CTRL && get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0) {
+   if(keyboard_keys_state.ctrl == 1 && get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)!=0) {
     //process CTRL+C
     if(keyboard_code_of_pressed_key==KEY_C && get_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA)!=0) {
      //release previous copied text
@@ -185,8 +185,8 @@ void document_editor(void) {
    }
 
    //process mouse wheel event
-   if(mouse_wheel!=0) {
-    if(mouse_wheel<0x80000000) {
+   if(mouse_wheel_movement!=0) {
+    if(mouse_wheel_movement<0x80000000) {
      document_editor_key_up_event();
     }
     else {

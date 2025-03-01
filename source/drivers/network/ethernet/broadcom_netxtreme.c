@@ -52,7 +52,10 @@ void ec_broadcom_netxtreme_initalize(dword_t number_of_card) {
  ethernet_cards[number_of_card].process_irq = ec_broadcom_netxtreme_process_irq;
 
  //initalize interrupts
- set_irq_handler(ethernet_cards[number_of_card].irq, (dword_t)network_irq);
+ // set_irq_handler(ethernet_cards[number_of_card].irq, (dword_t)network_irq);
+ // ec_broadcom_netxtreme_set_bits(number_of_card, 0x6808, (1 << 2));
+ // wait(100);
+
  //PCI 0x68
  // ec_broadcom_netxtreme_set_bits(number_of_card, 0x6808, (1 << 3));
  // ec_broadcom_netxtreme_set_bits(number_of_card, 0x5000, (1 << 7));
@@ -63,20 +66,20 @@ void ec_broadcom_netxtreme_initalize(dword_t number_of_card) {
  // ec_broadcom_netxtreme_set_bits(number_of_card, 0x6800, (1 << 26));
  // ec_broadcom_netxtreme_write_phy(number_of_card, 0x1B, 0x0000);
 
- // Clear existing interrupt bits for link changes
-ec_broadcom_netxtreme_clear_bits(number_of_card, 0x5008, (1 << 12));
+//  // Clear existing interrupt bits for link changes
+// ec_broadcom_netxtreme_clear_bits(number_of_card, 0x5008, (1 << 12));
 
-// Enable link change interrupt
-ec_broadcom_netxtreme_set_bits(number_of_card, 0x5000, (1 << 7));
+// // Enable link change interrupt
+// ec_broadcom_netxtreme_set_bits(number_of_card, 0x5000, (1 << 7));
 
-// Enable status check for link state changes
-ec_broadcom_netxtreme_set_bits(number_of_card, 0x408, (1 << 12));
+// // Enable status check for link state changes
+// ec_broadcom_netxtreme_set_bits(number_of_card, 0x408, (1 << 12));
 
-// Enable global interrupt enabling
-ec_broadcom_netxtreme_set_bits(number_of_card, 0x6800, (1 << 26));
+// // Enable global interrupt enabling
+// ec_broadcom_netxtreme_set_bits(number_of_card, 0x6800, (1 << 26));
 
-// Optionally configure PHY if necessary
-ec_broadcom_netxtreme_write_phy(number_of_card, 0x1B, 0x0000);
+// // Optionally configure PHY if necessary
+// ec_broadcom_netxtreme_write_phy(number_of_card, 0x1B, 0x0000);
 
  //generate interrupt
  // ec_broadcom_netxtreme_set_bits(number_of_card, 0x6808, (1 << 2));
@@ -119,6 +122,18 @@ byte_t ec_broadcom_netxtreme_send_packet(dword_t number_of_card, byte_t *packet_
 }
 
 void ec_broadcom_netxtreme_process_irq(dword_t number_of_card) {
- pstr("irq");
+ l("Broadcom NetXtreme irq");
+
+ l("\nCard: ");
+ lhw(pci_read(0x02, 0x0E, 0x00, 0x4));
+ l("\nBridge 1: ");
+ lhw(pci_read(0x00, 0x1C, 0x00, 0x4));
+ l("\nBridge 2: ");
+ lhw(pci_read(0x00, 0x1E, 0x00, 0x4));
+ l("\nISA Bridge: ");
+ lhw(pci_read(0x00, 0x1F, 0x00, 0x4));
+ l("\nHost Bridge: ");
+ lhw(pci_read(0x00, 0x02, 0x00, 0x4));
+
  ec_broadcom_netxtreme_set_bits(number_of_card, 0x6808, (1 << 1));
 }

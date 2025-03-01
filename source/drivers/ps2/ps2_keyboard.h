@@ -8,9 +8,10 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-byte_t ps2_keyboard_wait = 0;
+struct keyboard_keys_t ps2_keyboard_keys;
+struct keyboard_leds_t ps2_keyboard_leds;
 
 void initalize_ps2_keyboard(void);
 void ps2_keyboard_set_leds(void);
 void ps2_keyboard_check_led_change(void);
-void ps2_keyboard_save_key_value(dword_t key_value);
+void ps2_keyboard_process_key_value(dword_t key_value);

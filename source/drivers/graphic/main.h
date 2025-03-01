@@ -18,9 +18,13 @@
 struct graphic_card_info {
  word_t vendor_id;
  word_t device_id;
+
  dword_t mmio_base;
  word_t io_base;
+
  byte_t *linear_frame_buffer;
+ 
+ void (*initalize)(byte_t graphic_card_number);
 }__attribute__((packed));
 struct graphic_card_info graphic_cards_info[MAX_NUMBER_OF_GRAPHIC_CARDS];
 dword_t number_of_graphic_cards;

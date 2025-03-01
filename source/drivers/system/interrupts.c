@@ -40,26 +40,49 @@ void set_interrupts(void) {
  ticks_of_processes = 0;
  hda_playing_state = 0;
  ac97_playing_state = 0;
- usb_mouse[0].controller_type = USB_NO_DEVICE_ATTACHED;
  #ifndef NO_PROGRAMS
  bleskos_main_window_time_redraw = 0;
  media_viewer_sound_state = MEDIA_VIEWER_SOUND_NO_FILE;
  #endif
- 
-  //load IDT and enable interrupts
+
+ //clear variables
+ extern dword_t irq_handlers[16][8];
+ clear_memory((dword_t)&irq_handlers, sizeof(irq_handlers));
+ cli_level = 0;
+ interrupt_handler_running = 0;
+
+ //load IDT and enable interrupts
  load_idt();
 }
 
 void set_irq_handler(dword_t irq, dword_t handler) {
- extern dword_t irq_handlers[16];
+ extern dword_t irq_handlers[16][8];
+ extern dword_t irq_handlers_number_of_methods[16];
+
+ l("\nRequest to connect handler to IRQ "); lvw(irq); lhw(handler);
 
  //refuse invalid irq number
  if(irq>15) {
   return;
  }
 
+ //there can be max 8 methods on one IRQ
+ if(irq_handlers_number_of_methods[irq] >= 8) {
+  l("\nERROR: IRQ handler methods are full");
+  return;
+ }
+
+ //check if this method is not already connected
+ for(dword_t i=0; i<irq_handlers_number_of_methods[irq]; i++) {
+  if(irq_handlers[irq][i] == handler) {
+   l("\nAlready connected handler");
+   return;
+  }
+ }
+
  //set pointer to method
- irq_handlers[irq] = handler;
+ irq_handlers[irq][irq_handlers_number_of_methods[irq]] = handler;
+ irq_handlers_number_of_methods[irq]++;
 
  //unmask interrupt
  if(irq<8) {
@@ -86,5 +109,29 @@ void isr_handler(dword_t isr_number) {
 
  while(1) { 
   asm("hlt"); //halt forever
+ }
+}
+
+void cli(void) {
+ if(interrupt_handler_running == 1) {
+  return;
+ }
+
+ if(cli_level == 0) {
+  asm("cli");
+ }
+
+ cli_level++;
+}
+
+void sti(void) {
+ if(interrupt_handler_running == 1) {
+  return;
+ }
+ 
+ cli_level--;
+
+ if(cli_level == 0) {
+  asm("sti");
  }
 }

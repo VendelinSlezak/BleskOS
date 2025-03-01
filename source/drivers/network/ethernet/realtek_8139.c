@@ -25,7 +25,7 @@ void ec_realtek_8139_initalize(dword_t number_of_card) {
  
  //reset card
  outb(ethernet_cards[number_of_card].base+0x37, 0x10);
- dword_t timeout = (time_of_system_running+50);
+ volatile dword_t timeout = (time_of_system_running+50);
  while((ec_realtek_8169_inb(number_of_card, 0x37) & (1 << 4))==(1 << 4)) {
   asm("nop");
   if(time_of_system_running >= timeout) {

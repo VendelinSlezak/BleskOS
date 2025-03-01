@@ -10,10 +10,19 @@
 
 dword_t logging_mem, logging_mem_end, logging_mem_draw_pointer, logging_mem_pointer;
 
+#define l(x) logf(x)
+#define lv(x) log_var(x)
+#define lvw(x) log_var_with_space(x)
+#define lh(x) log_hex(x)
+#define lhw(x) log_hex_with_space(x)
+#define lhs(x, y) log_hex_specific_size(x, y)
+#define lhsw(x, y) log_hex_specific_size_with_space(x, y)
+
 void initalize_logging(void);
 void developer_program_log(void);
 void skip_logs(void);
 void show_log(void);
+void log_char(word_t character);
 void log(char *string);
 void log_unicode(word_t *string);
 void log_var(dword_t value);
@@ -22,3 +31,4 @@ void log_hex(dword_t value);
 void log_hex_with_space(dword_t value);
 void log_hex_specific_size(dword_t value, dword_t chars);
 void log_hex_specific_size_with_space(dword_t value, dword_t chars);
+void logf(byte_t *string, ...);

@@ -18,6 +18,11 @@ void pci_write(dword_t bus, dword_t device, dword_t function, dword_t offset, dw
  outd(0xCFC, value);
 }
 
+void pci_writeb(dword_t bus, dword_t device, dword_t function, dword_t offset, dword_t value) {
+ outd(0xCF8, (0x80000000 | (bus << 16) | (device << 11) | (function << 8) | (offset & 0xFC)));
+ outb(0xCFF, value);
+}
+
 dword_t pci_read_bar_type(dword_t bus, dword_t device, dword_t function, dword_t bar) {
  outd(0xCF8, (0x80000000 | (bus << 16) | (device << 11) | (function << 8) | (bar)));
  return (word_t) (ind(0xCFC) & 0x1);
@@ -49,11 +54,12 @@ void scan_pci(void) {
  //initalize values that are used to determine presence of devices
  ide_0x1F0_controller_present = STATUS_FALSE;
  ide_0x170_controller_present = STATUS_FALSE;
- usb_controllers_pointer = 0;
  number_of_graphic_cards = 0;
  number_of_sound_cards = 0;
  number_of_storage_controllers = 0;
  number_of_ethernet_cards = 0;
+ number_of_uhci_controllers = 0;
+ number_of_ehci_controllers = 0;
 
  //this array is used in System board
  pci_devices_array_mem = calloc(12*1000);
@@ -61,13 +67,13 @@ void scan_pci(void) {
  
  log("\n\nPCI devices:");
 
- for(int bus=0; bus<256; bus++) {
-  for(int device=0; device<32; device++) {
+ for(dword_t bus=0; bus<256; bus++) {
+  for(dword_t device=0; device<32; device++) {
    scan_pci_device(bus, device, 0);
    
    //multifunctional device
-   if( (pci_read(bus, device, 0, 0x0C) & 0x00800000)==0x00800000) {
-    for(int function=1; function<8; function++) {
+   if((pci_read(bus, device, 0, 0x0C) & 0x00800000)==0x00800000) {
+    for(dword_t function=1; function<8; function++) {
      scan_pci_device(bus, device, function);
     }
    }
@@ -105,17 +111,26 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  if(type_of_device==0x030000 && number_of_graphic_cards<MAX_NUMBER_OF_GRAPHIC_CARDS) {
   log("\nGraphic card");
 
-  if(number_of_graphic_cards>=MAX_NUMBER_OF_GRAPHIC_CARDS) {
+  if(number_of_graphic_cards >= MAX_NUMBER_OF_GRAPHIC_CARDS) {
    return;
   }
 
   graphic_cards_info[number_of_graphic_cards].vendor_id = vendor_id;
   graphic_cards_info[number_of_graphic_cards].device_id = device_id;
+  graphic_cards_info[number_of_graphic_cards].initalize = 0;
 
-  if(vendor_id==VENDOR_INTEL) {
+  if(vendor_id == VENDOR_INTEL) {
    pci_enable_io_busmastering(bus, device, function);
+   pci_enable_mmio_busmastering(bus, device, function);
    graphic_cards_info[number_of_graphic_cards].mmio_base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
    graphic_cards_info[number_of_graphic_cards].linear_frame_buffer = (byte_t *) (pci_read_mmio_bar(bus, device, function, PCI_BAR2));
+   graphic_cards_info[number_of_graphic_cards].initalize = initalize_intel_graphic_card;
+  }
+  else if(vendor_id == 0x15AD && device_id == 0x0405) {
+   pci_enable_io_busmastering(bus, device, function);
+   pci_enable_mmio_busmastering(bus, device, function);
+   graphic_cards_info[number_of_graphic_cards].io_base = pci_read_io_bar(bus, device, function, PCI_BAR0);
+   graphic_cards_info[number_of_graphic_cards].initalize = initalize_vmware_graphic_card;
   }
 
   number_of_graphic_cards++;
@@ -124,10 +139,15 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  
  //IDE controller
  if((type_of_device & 0xFFFF00)==0x010100 && number_of_storage_controllers<MAX_NUMBER_OF_STORAGE_CONTROLLERS) { 
-  pci_device_ide_controller:
   log("\nIDE controller");
+
+  pci_device_ide_controller:
   pci_enable_io_busmastering(bus, device, function);
   pci_disable_interrupts(bus, device, function);
+
+  storage_controllers[number_of_storage_controllers].bus = bus;
+  storage_controllers[number_of_storage_controllers].device = device;
+  storage_controllers[number_of_storage_controllers].function = function;
 
   //first controller
   storage_controllers[number_of_storage_controllers].controller_type = IDE_CONTROLLER;
@@ -334,18 +354,25 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  
  //Universal Host Controller Interface
  if(type_of_device==0x0C0300) {
-  log("\nUHCI");
+  log("\nUHCI ");
 
-  if(usb_controllers_pointer>=MAX_NUMBER_OF_USB_CONTROLLERS) {
+  if(number_of_uhci_controllers >= MAX_NUMBER_OF_UHCI_CONTROLLERS) {
    return;
   }
 
-  usb_controllers[usb_controllers_pointer].type=USB_CONTROLLER_UHCI;
-  usb_controllers[usb_controllers_pointer].base=pci_read_io_bar(bus, device, function, PCI_BAR4);
-  usb_controllers_pointer++;
+  pci_enable_io_busmastering(bus, device, function);
 
-  //disable BIOS legacy support
-  pci_write(bus, device, function, 0xC0, 0x8F00);
+  //save UHCI controller info
+  uhci_controllers[number_of_uhci_controllers].bus = bus;
+  uhci_controllers[number_of_uhci_controllers].device = device;
+  uhci_controllers[number_of_uhci_controllers].function = function;
+  uhci_controllers[number_of_uhci_controllers].irq = device_irq;
+  uhci_controllers[number_of_uhci_controllers].base = pci_read_io_bar(bus, device, function, PCI_BAR4);
+
+  //disable BIOS legacy support and enable normal IRQ to be called
+  pci_write(bus, device, function, 0xC0, (1 << 13));
+
+  number_of_uhci_controllers++;
 
   return;
  }
@@ -354,36 +381,50 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  if(type_of_device==0x0C0310) {
   log("\nOHCI");
 
-  if(usb_controllers_pointer>=MAX_NUMBER_OF_USB_CONTROLLERS) {
+  if(number_of_ohci_controllers >= MAX_NUMBER_OF_UHCI_CONTROLLERS) {
    return;
   }
 
-  usb_controllers[usb_controllers_pointer].type=USB_CONTROLLER_OHCI;
-  usb_controllers[usb_controllers_pointer].base=pci_read_mmio_bar(bus, device, function, PCI_BAR0);
-  usb_controllers_pointer++;
+  pci_enable_mmio_busmastering(bus, device, function);
+
+  //save OHCI controller info
+  ohci_controllers[number_of_ohci_controllers].bus = bus;
+  ohci_controllers[number_of_ohci_controllers].device = device;
+  ohci_controllers[number_of_ohci_controllers].function = function;
+  ohci_controllers[number_of_ohci_controllers].irq = device_irq;
+  ohci_controllers[number_of_ohci_controllers].base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
 
   //disable BIOS legacy support
-  if(mmio_ind(usb_controllers[usb_controllers_pointer].base+0x0)==0x110) {
-   mmio_outd(usb_controllers[usb_controllers_pointer].base+0x100, 0x00);
+  if((mmio_ind(ohci_controllers[number_of_ohci_controllers].base+0x0) & (1 << 8)) == (1 << 8)) {
+   mmio_outd(ohci_controllers[number_of_ohci_controllers].base+0x100, 0x00);
   }
+
+  number_of_ohci_controllers++;
 
   return;
  }
  
  //Enhanced Host Controller Interface
  if(type_of_device==0x0C0320) {
-  log("\nEHCI");
+  log("\nEHCI ");
 
-  if(usb_controllers_pointer>=MAX_NUMBER_OF_USB_CONTROLLERS) {
-   return;
+  pci_enable_mmio_busmastering(bus, device, function);
+
+  //save EHCI controller info
+  ehci_controllers[number_of_ehci_controllers].bus = bus;
+  ehci_controllers[number_of_ehci_controllers].device = device;
+  ehci_controllers[number_of_ehci_controllers].function = function;
+  ehci_controllers[number_of_ehci_controllers].irq = device_irq;
+  ehci_controllers[number_of_ehci_controllers].base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
+
+  //disable BIOS ownership
+  dword_t pci_ehci_bios_register_offset = ((mmio_ind(ehci_controllers[number_of_ehci_controllers].base+0x08)>>8) & 0xFF);
+  if(pci_ehci_bios_register_offset >= 0x40 && (pci_read(bus, device, function, pci_ehci_bios_register_offset) & 0xFF)==0x01) {
+   l("(releasing BIOS ownership)");
+   pci_write(bus, device, function, pci_ehci_bios_register_offset, (1 << 24)); //set OS ownership
   }
 
-  usb_controllers[usb_controllers_pointer].bus=bus;
-  usb_controllers[usb_controllers_pointer].device=device;
-  usb_controllers[usb_controllers_pointer].function=function;
-  usb_controllers[usb_controllers_pointer].type=USB_CONTROLLER_EHCI;
-  usb_controllers[usb_controllers_pointer].base=pci_read_mmio_bar(bus, device, function, PCI_BAR0);
-  usb_controllers_pointer++;
+  number_of_ehci_controllers++;
 
   return;
  }
@@ -391,6 +432,26 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  //eXtensible Host Controller Interface
  if(type_of_device==0x0C0330) {
   log("\nxHCI");
+
+  pci_enable_mmio_busmastering(bus, device, function);
+
+  //save xHCI controller
+  xhci_controllers[number_of_xhci_controllers].bus = bus;
+  xhci_controllers[number_of_xhci_controllers].device = device;
+  xhci_controllers[number_of_xhci_controllers].function = function;
+  xhci_controllers[number_of_xhci_controllers].irq = device_irq;
+  xhci_controllers[number_of_xhci_controllers].base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
+
+  //disable BIOS ownership
+  dword_t xhci_bios_register_offset = ((mmio_ind(xhci_controllers[number_of_xhci_controllers].base+0x10)>>16)*4);
+  lhw(xhci_bios_register_offset);
+  lhw(mmio_ind(xhci_controllers[number_of_xhci_controllers].base+xhci_bios_register_offset));
+  if(xhci_bios_register_offset != 0 && (mmio_ind(xhci_controllers[number_of_xhci_controllers].base+xhci_bios_register_offset) & 0xFF)==0x01) {
+   l("(releasing BIOS ownership)");
+   mmio_outd(xhci_controllers[number_of_xhci_controllers].base+xhci_bios_register_offset, (mmio_ind(xhci_controllers[number_of_xhci_controllers].base+xhci_bios_register_offset) & ~(1 << 16)) | (1 << 24)); //set OS ownership
+  }
+
+  number_of_xhci_controllers++;
   
   return;
  }
@@ -404,14 +465,21 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
 
  //ISA bridge
  if(type_of_device==0x060100) {
-  log("\nISA bridge");
+  log("\nISA bridge ");
   
   return;
  }
 
- //PCI bridge
+ //PCI-to-PCI bridge
  if((type_of_device & 0xFFFF00)==0x060400) {
-  log("\nPCI bridge");
+  log("\nPCI-to-PCI bridge 0x04");
+  
+  return;
+ }
+
+ //PCI-to-PCI bridge
+ if((type_of_device & 0xFFFF00)==0x060900) {
+  log("\nPCI-to-PCI bridge 0x09");
   
   return;
  }
@@ -425,7 +493,7 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  
  log("\nunknown device ");
  log_hex(type_of_device);
- pci_disable_interrupts(bus, device, function); //disable interrupts from every device that we do not know
+ // pci_disable_interrupts(bus, device, function); //disable interrupts from every device that we do not know
 }
 
 byte_t *get_pci_vendor_string(dword_t vendor_id) {

@@ -13,16 +13,12 @@ void initalize_ahci_controller(byte_t number_of_controller) {
  mmio_outd(storage_controllers[number_of_controller].base_1 + 0x04, 0x80000000);
 
  //log version
- log("\n\nAHCI controller ");
- log_var(mmio_ind(storage_controllers[number_of_controller].base_1 + 0x10)>>16);
- log(".");
+ logf("\n\nAHCI controller %d.", mmio_ind(storage_controllers[number_of_controller].base_1 + 0x10)>>16);
  if((mmio_ind(storage_controllers[number_of_controller].base_1 + 0x10) & 0xFFFF)==0x0905) {
-  log("95");
+  logf("95");
  }
  else {
-  log_var((mmio_ind(storage_controllers[number_of_controller].base_1 + 0x10)>>8) & 0xFF);
-  log(".");
-  log_var(mmio_ind(storage_controllers[number_of_controller].base_1 + 0x10) & 0xFF);
+  logf("%d.%d", (mmio_ind(storage_controllers[number_of_controller].base_1 + 0x10)>>8) & 0xFF, mmio_ind(storage_controllers[number_of_controller].base_1 + 0x10) & 0xFF);
  }
 
  //disable BIOS ownership
@@ -231,10 +227,7 @@ byte_t *ahci_enable_port(dword_t port_base_address) {
 byte_t ahci_send_command(dword_t port_base_address, dword_t command_list_memory, byte_t command_type, byte_t command_direction, byte_t atapi_command[0x10], byte_t command, word_t sector_count, dword_t lba, dword_t memory, dword_t byte_count) {
  //wait for possibility to send command
  if(ahci_wait(port_base_address + 0x20, 0x88, 0x0, 200)==STATUS_ERROR) {
-  log("\nAHCI ERROR: BSY and DRQ are not clear ");
-  log_hex_with_space(mmio_ind(port_base_address + 0x10));
-  log_hex_with_space(mmio_ind(port_base_address + 0x20));
-  log_hex(mmio_ind(port_base_address + 0x30));
+  logf("\nAHCI ERROR: BSY and DRQ are not clear %x %x %x", mmio_ind(port_base_address + 0x10), mmio_ind(port_base_address + 0x20), mmio_ind(port_base_address + 0x30));
   return STATUS_ERROR;
  }
 

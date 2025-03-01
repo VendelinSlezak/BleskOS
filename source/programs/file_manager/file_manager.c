@@ -1163,7 +1163,7 @@ dword_t file_manager_paste_file(void) {
  return EVENT_REDRAW;
 }
 
-dword_t file_manager_mouse_wheel_event(void) {
+dword_t file_manager_mouse_wheel_movement_event(void) {
  struct folder_descriptor_t *file_manager_folder_descriptor = (struct folder_descriptor_t *) (get_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY));
 
  //this works only if some folder is opened
@@ -1171,7 +1171,7 @@ dword_t file_manager_mouse_wheel_event(void) {
   return NO_EVENT;
  }
 
- if(mouse_wheel<0x80000000) { //up
+ if(mouse_wheel_movement<0x80000000) { //up
   if(file_manager_folder_descriptor->view_type==VIEW_FOLDER_LIST) {
    //move first showed entry
    file_manager_folder_descriptor->first_showed_entry -= 10;

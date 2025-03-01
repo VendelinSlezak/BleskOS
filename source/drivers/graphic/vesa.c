@@ -15,7 +15,7 @@ void vesa_read_graphic_mode_info(void) {
 
  //check signature
  if(vesa_info_block_data->signature!=VESA_SIGNATURE) {
-  log("\n\nInvalid VESA info block");
+  logf("\n\nInvalid VESA info block");
   return;
  }
 
@@ -32,6 +32,6 @@ void vesa_read_graphic_mode_info(void) {
  screen_bpp = vesa_mode_info_block_data->bits_per_pixel;
 
  //log
- log("\n\nVBE "); log_var(vesa_info_block_data->major_version); log("."); log_var(vesa_info_block_data->minor_version);
- log("\nOEM string: "); log((byte_t *)(vesa_info_block_data->oem_string_segment*0x10 + vesa_info_block_data->oem_string_offset));
+ logf("\n\nVBE %d.%d", vesa_info_block_data->major_version, vesa_info_block_data->minor_version);
+ logf("\nOEM string: %s", (vesa_info_block_data->oem_string_segment*0x10 + vesa_info_block_data->oem_string_offset));
 }

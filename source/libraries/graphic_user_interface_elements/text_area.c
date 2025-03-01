@@ -386,7 +386,7 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
  text_area_change_type = TEXT_AREA_NO_CHANGE;
  text_area_info[TEXT_AREA_INFO_REDRAW_X] = 0xFFFFFFFF; //redraw whole text area
  
- if((keyboard_pressed_control_keys & KEYBOARD_CTRL)==KEYBOARD_CTRL) {
+ if(keyboard_keys_state.ctrl == 1) {
   if(keyboard_code_of_pressed_key==KEY_C) { //copy text
    if(text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]!=0xFFFFFFFF && text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]!=text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]) { //only if some text is selected
     //release previous copied text
@@ -896,10 +896,10 @@ void text_area_mouse_event(dword_t text_area_info_mem) {
  }
 
  //mouse wheel
- if(mouse_wheel!=0) {
+ if(mouse_wheel_movement!=0) {
   text_area_info[TEXT_AREA_INFO_REDRAW_X] = 0xFFFFFFFF; //redraw whole text area
 
-  if(mouse_wheel<0x80000000) {
+  if(mouse_wheel_movement<0x80000000) {
    text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE] -= 30;
    if(text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE]>0x80000000) {
     text_area_info[TEXT_AREA_INFO_FIRST_SHOW_LINE] = 0;

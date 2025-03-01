@@ -9,33 +9,28 @@
 */
 
 void wait_for_user_input(void) {
- byte_t *keyboard_data_mem = (byte_t *) (usb_keyboard_data_memory);
- 
+ cli();
  for(int i=0; i<4; i++) {
   ps2_mouse_data[i]=0;
  }
- for(int i=0; i<8; i++) {
-  keyboard_data_mem[i]=0;
- }
-
  usb_mouse_packet_received = STATUS_FALSE;
- usb_keyboard_packet_received = STATUS_FALSE;
  ps2_mouse_wait = 1;
- ps2_keyboard_wait = 1;
- usb_new_device_detected = STATUS_FALSE;
- keyboard_code_of_pressed_key = 0;
- keyboard_unicode_value_of_pressed_key = 0;
  mouse_movement_x = 0;
  mouse_movement_y = 0;
- mouse_wheel = 0;
+ mouse_wheel_movement = 0;
+
+ keyboard_prepare_for_next_event();
+
+ usb_device_change_event = STATUS_FALSE;
+
  internet_status_change = STATUS_FALSE;
+ sti();
  
- while(usb_mouse_packet_received==STATUS_FALSE
-       && usb_keyboard_packet_received==STATUS_FALSE
-       && ps2_mouse_wait==1
-       && ps2_keyboard_wait==1
-       && usb_new_device_detected==STATUS_FALSE
-       && internet_last_status == internet.status) {
+ while(ps2_mouse_wait==1
+       && usb_mouse_packet_received==STATUS_FALSE
+       && keyboard_event==STATUS_FALSE
+       && internet_last_status == internet.status
+       && usb_device_change_event == STATUS_FALSE) {
   //wait
   asm("hlt");
 
@@ -48,25 +43,10 @@ void wait_for_user_input(void) {
   internet_last_status = internet.status;
   internet_status_change = STATUS_TRUE;
  }
-
- //detect changes in USB devices
- if(usb_new_device_detected==STATUS_TRUE) {
-  detect_usb_devices();
- }
  
  //process PS/2 mouse (touchpad) event
  if(ps2_mouse_wait==0) {
   ps2_mouse_convert_received_data();
- }
- 
- //process USB mouse event
- if(usb_mouse_packet_received==STATUS_TRUE) {
-  usb_mouse_process_received_data();
- }
- 
- //process USB keyboard event
- if(usb_keyboard_packet_received==STATUS_TRUE) {
-  keyboard_process_code(usb_keyboard_code_of_pressed_key);
  }
 
  //make screenshot

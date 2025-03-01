@@ -37,7 +37,7 @@ void ec_intel_e1000_write(dword_t number_of_card, dword_t port, dword_t value) {
 }
 
 byte_t ec_intel_e1000_read_timeout(dword_t number_of_card, dword_t port, dword_t bits, dword_t value, dword_t wait_in_milliseconds) {
- dword_t timeout = (time_of_system_running+wait_in_milliseconds);
+ volatile dword_t timeout = (time_of_system_running+wait_in_milliseconds);
  while((ec_intel_e1000_read(number_of_card, port) & bits)!=value) {
   asm("nop");
   if(time_of_system_running>=timeout) {

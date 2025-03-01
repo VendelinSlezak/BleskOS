@@ -11,47 +11,7 @@
 void initalize_ps2_mouse(void) {
  ps2_mouse_enable = STATUS_TRUE;
 
- //initalize device on first channel
- if(ps2_first_channel_device==PS2_CHANNEL_MOUSE_CONNECTED) {
-  //send request to enable wheel
-  write_to_first_ps2_channel(0xF3);
-  ps2_first_channel_wait_for_ack();
-  write_to_first_ps2_channel(200);
-  ps2_first_channel_wait_for_ack();
-  write_to_first_ps2_channel(0xF3);
-  ps2_first_channel_wait_for_ack();
-  write_to_first_ps2_channel(100);
-  ps2_first_channel_wait_for_ack();
-  write_to_first_ps2_channel(0xF3);
-  ps2_first_channel_wait_for_ack();
-  write_to_first_ps2_channel(80);
-  ps2_first_channel_wait_for_ack();
-
-  //read device ID to see if device accepted wheel request
-  write_to_first_ps2_channel(0xF2);
-  if(ps2_first_channel_wait_for_ack()==STATUS_GOOD) {
-   if(ps2_first_channel_wait_for_response()==STATUS_GOOD) {
-    if(ps2_first_channel_buffer[1]==3 || ps2_first_channel_buffer[1]==4) { //mouse sends 4 bytes
-     ps2_first_channel_mouse_data_bytes = 4;
-    }
-    else if(ps2_first_channel_buffer[1]==0) { //mouse sends 3 bytes
-     ps2_first_channel_mouse_data_bytes = 3;
-    }
-    else { //unknown device ID
-     return;
-    }
-
-    //enable streaming
-    write_to_first_ps2_channel(0xF4);
-    if(ps2_first_channel_wait_for_ack()==STATUS_GOOD) {
-     ps2_first_channel_buffer_pointer = 0;
-     ps2_first_channel_device = PS2_CHANNEL_MOUSE_INITALIZED; //mouse was successfully initalized
-    }
-   }
-  }
- }
-
- //initalize device on second channel
+ //initalize device
  if(ps2_second_channel_device==PS2_CHANNEL_MOUSE_CONNECTED) {
   //send request to enable wheel
   write_to_second_ps2_channel(0xF3);
@@ -93,9 +53,6 @@ void initalize_ps2_mouse(void) {
 }
 
 void enable_ps2_mouse(void) {
- if(ps2_first_channel_device==PS2_CHANNEL_MOUSE_INITALIZED) {
-  ps2_first_channel_buffer_pointer = 0;
- }
  if(ps2_second_channel_device==PS2_CHANNEL_MOUSE_INITALIZED) {
   ps2_second_channel_buffer_pointer = 0;
  }
@@ -129,10 +86,10 @@ void ps2_mouse_convert_received_data(void) {
  //wheel
  if(ps2_mouse_data[3]!=0) {
   if(ps2_mouse_data[3]<0x80) {
-   mouse_wheel = (0xFFFFFFFF - ps2_mouse_data[3]);
+   mouse_wheel_movement = (0xFFFFFFFF - ps2_mouse_data[3]);
   }
   else {
-   mouse_wheel = (0xFF-ps2_mouse_data[3]+1);
+   mouse_wheel_movement = (0xFF-ps2_mouse_data[3]+1);
   }
  }
 

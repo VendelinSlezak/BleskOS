@@ -9,6 +9,10 @@
 */
 
 #include "edid.c"
+#include "vga.c"
 #include "vesa.c"
 #include "main.c"
-#include "intel.c"
+
+#include "cards/bga.c"
+#include "cards/vmware.c"
+#include "cards/intel.c"

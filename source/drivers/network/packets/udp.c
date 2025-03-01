@@ -27,7 +27,8 @@ void network_packet_finalize_udp_layer(dword_t type_of_next_layer, dword_t size_
  network_packet_udp_layer->length = BIG_ENDIAN_WORD(size_of_layer);
 
  //calculate checksum
- word_t *packet_layer_pointer = (word_t *)((dword_t)network_packet_udp_layer);
+ dword_t memory = (dword_t)network_packet_udp_layer;
+ word_t *packet_layer_pointer = (word_t *) memory;
  dword_t checksum = 0;
  for(int i=0; i<(size_of_layer/2); i++) {
   checksum += *packet_layer_pointer;

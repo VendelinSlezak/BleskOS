@@ -96,7 +96,7 @@ dword_t file_manager_create_folder_in_folder(void);
 dword_t file_manager_copy_file(void);
 dword_t file_manager_paste_file(void);
 
-dword_t file_manager_mouse_wheel_event(void);
+dword_t file_manager_mouse_wheel_movement_event(void);
 dword_t file_manager_more_buttons(void);
 void file_manager_properties(void);
 
@@ -122,7 +122,7 @@ dword_t file_manager_event_interface[] = { 0,
  KEYBOARD_EVENT_PRESSED_KEY, KEY_ENTER, (dword_t)(&file_manager_event_key_enter), RETURN_EVENT_FROM_METHOD,
  MOUSE_EVENT_CLICK_ON_ZONES, CLICK_ZONE_FILE_MANAGER_FIRST_ITEM, 0xFFFFFFFF, (dword_t)(&file_manager_event_click_on_files), RETURN_EVENT_FROM_METHOD,
  VERTICAL_SCROLLBAR_EVENT, CLICK_ZONE_FILE_MANAGER_SCROLLBAR, (dword_t)(&file_manager_scrollbar_info), (dword_t)(&file_manager_event_scrollbar_change),
- MOUSE_WHEEL_EVENT, (dword_t)(&file_manager_mouse_wheel_event), RETURN_EVENT_FROM_METHOD,
+ mouse_wheel_movement_EVENT, (dword_t)(&file_manager_mouse_wheel_movement_event), RETURN_EVENT_FROM_METHOD,
 
  //more
  MOUSE_EVENT_CLICK_ON_ZONE, CLICK_ZONE_FILE_MANAGER_MORE, (dword_t)(&file_manager_more_buttons), RETURN_EVENT_FROM_METHOD,

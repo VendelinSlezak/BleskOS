@@ -40,21 +40,6 @@ byte_t parse_edid_data(dword_t edid_data_memory) {
 }
 
 void log_edid_data(void) {
- log("\nHORIZONTAL active: ");
- log_var_with_space(edid_horizontal_active);
- log("blank: ");
- log_var_with_space(edid_horizontal_blank);
- log("sync offset: ");
- log_var_with_space(edid_horizontal_sync_offset);
- log("sync pulse: ");
- log_var(edid_horizontal_sync_pulse);
-
- log("\nVERTICAL active: ");
- log_var_with_space(edid_vertical_active);
- log("blank: ");
- log_var_with_space(edid_vertical_blank);
- log("sync offset: ");
- log_var_with_space(edid_vertical_sync_offset);
- log("sync pulse: ");
- log_var(edid_vertical_sync_pulse);
+ logf("\nHORIZONTAL active: %d blank: %d sync offset: %d sync pulse: %d", edid_horizontal_active, edid_horizontal_blank, edid_horizontal_sync_offset, edid_horizontal_sync_pulse);
+ logf("\nVERTICAL active: %d blank: %d sync offset: %d sync pulse: %d", edid_vertical_active, edid_vertical_blank, edid_vertical_sync_offset, edid_vertical_sync_pulse);
 }

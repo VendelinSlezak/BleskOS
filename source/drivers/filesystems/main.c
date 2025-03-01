@@ -73,7 +73,7 @@ word_t read_folder(dword_t partition_number, dword_t folder_location, dword_t fo
     number_of_entries = number_of_files_in_cdda_folder;
    }
    else {
-    log("\nAOLF: not readable filesystem");
+    logf("\nAOLF: not readable filesystem %d on partition %d", connected_partitions[partition_number].filesystem, partition_number);
     return STATUS_ERROR;
    }
 

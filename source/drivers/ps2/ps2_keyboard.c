@@ -9,7 +9,13 @@
 */
 
 void initalize_ps2_keyboard(void) {
- //initalize device on first channel
+ //clear variables
+ clear_memory((dword_t)&ps2_keyboard_keys, sizeof(struct keyboard_keys_t));
+ ps2_keyboard_leds.capslock = STATUS_FALSE;
+ ps2_keyboard_leds.numlock = STATUS_FALSE;
+ ps2_keyboard_leds.scrollock = STATUS_FALSE;
+
+ //initalize device
  if(ps2_first_channel_device==PS2_CHANNEL_KEYBOARD_CONNECTED) {
   //translation for first channel is already enabled, so keyboard will send keys according to scan code set 1
 
@@ -21,42 +27,35 @@ void initalize_ps2_keyboard(void) {
   }
  }
 
- //initalize device on second channel
- if(ps2_second_channel_device==PS2_CHANNEL_KEYBOARD_CONNECTED) {
-  //try to set scan code set 1 because second channel do not have translation to scan code set 1
-  write_to_second_ps2_channel(0xF0);
-  if(ps2_second_channel_wait_for_ack()==STATUS_GOOD) {
-   write_to_second_ps2_channel(1);
-   if(ps2_second_channel_wait_for_ack()==STATUS_GOOD) {
-    //enable streaming
-    write_to_second_ps2_channel(0xF4);
-    if(ps2_second_channel_wait_for_ack()==STATUS_GOOD) {
-     ps2_second_channel_buffer_pointer = 0;
-     ps2_second_channel_device = PS2_CHANNEL_KEYBOARD_INITALIZED; //keyboard was successfully initalized
-    }
-   }
-  }
- }
-
  //add task for changing PS/2 keyboard LEDs
  if(ps2_first_channel_device==PS2_CHANNEL_KEYBOARD_INITALIZED || ps2_second_channel_device==PS2_CHANNEL_KEYBOARD_INITALIZED) {
   create_task(ps2_keyboard_check_led_change, TASK_TYPE_USER_INPUT, 16);
  }
 }
 
+void ps2_keyboard_check_led_change(void) {
+ //check if LEDs state is same as state of system keyboard
+ if(ps2_keyboard_leds.capslock != keyboard_led_state.capslock
+    || ps2_keyboard_leds.numlock != keyboard_led_state.numlock
+    || ps2_keyboard_leds.scrollock != keyboard_led_state.scrollock) {
+  ps2_keyboard_set_leds();
+ }
+}
+
 void ps2_keyboard_set_leds(void) {
+ //create data that will be sended to keyboard
  byte_t data = 0;
- if((keyboard_led_state & KEYBOARD_LED_SCROLLOCK)==KEYBOARD_LED_SCROLLOCK) {
-  data |= 0x1;
+ if(keyboard_led_state.scrollock == STATUS_TRUE) {
+  data |= (1 << 0);
  }
- if((keyboard_led_state & KEYBOARD_LED_NUMBERLOCK)==KEYBOARD_LED_NUMBERLOCK) {
-  data |= 0x2;
+ if(keyboard_led_state.numlock == STATUS_TRUE) {
+  data |= (1 << 1);
  }
- if((keyboard_led_state & KEYBOARD_LED_CAPSLOCK)==KEYBOARD_LED_CAPSLOCK) {
-  data |= 0x4;
+ if(keyboard_led_state.capslock == STATUS_TRUE) {
+  data |= (1 << 2);
  }
 
- //set LED state for keyboard on first channel
+ //set LED state for keyboard
  if(ps2_first_channel_device==PS2_CHANNEL_KEYBOARD_INITALIZED) {
   ps2_first_channel_device = PS2_CHANNEL_KEYBOARD_CONNECTED; //ACK will not be recognized as pressed key
 
@@ -75,59 +74,80 @@ void ps2_keyboard_set_leds(void) {
   ps2_first_channel_device = PS2_CHANNEL_KEYBOARD_INITALIZED; //keyboard can function normally
  }
 
- //set LED state for keyboard on second channel
- if(ps2_second_channel_device==PS2_CHANNEL_KEYBOARD_INITALIZED) {
-  ps2_second_channel_device = PS2_CHANNEL_KEYBOARD_CONNECTED; //ACK will not be recognized as pressed key
-
-  write_to_second_ps2_channel(0xED);
-  if(ps2_second_channel_wait_for_ack()==STATUS_GOOD) {
-   write_to_second_ps2_channel(data);
-   if(ps2_second_channel_wait_for_ack()==STATUS_ERROR) {
-    log("\nPS/2: LED change data not ACKed");
-   }
-  }
-  else {
-   log("\nPS/2: 0xED not ACKed");
-  }
-
-  ps2_second_channel_buffer_pointer = 0;
-  ps2_second_channel_device = PS2_CHANNEL_KEYBOARD_INITALIZED; //keyboard can function normally
- }
-
- keyboard_change_in_led_state = STATUS_FALSE;
+ //update variables
+ ps2_keyboard_leds.capslock = keyboard_led_state.capslock;
+ ps2_keyboard_leds.numlock = keyboard_led_state.numlock;
+ ps2_keyboard_leds.scrollock = keyboard_led_state.scrollock;
 }
 
-void ps2_keyboard_check_led_change(void) {
- if(keyboard_change_in_led_state==STATUS_TRUE) {
-  ps2_keyboard_set_leds();
- }
-}
-
-void ps2_keyboard_save_key_value(dword_t key_value) {
+void ps2_keyboard_process_key_value(dword_t key_value) {
+ //PAUSE key do not signalize release
  if(key_value > 0xFFFF) {
   return;
  }
  
  //key was pressed
  if((key_value & 0xFF)<0x80) {
-  for(dword_t i=0; i<number_of_keys_pressed_on_ps2_keyboard; i++) {
-   if(ps2_keyboard_pressed_keys[i]==key_value) { //key was already pressed and is saved
+  //check if this is not control key
+  if(key_value==KEY_LEFT_SHIFT || key_value==KEY_RIGHT_SHIFT) {
+   ps2_keyboard_keys.shift = STATUS_TRUE;
+   keyboard_update_keys_state();
+   return;
+  }
+  else if(key_value==KEY_LEFT_CTRL || key_value==KEY_RIGHT_CTRL) {
+   ps2_keyboard_keys.ctrl = STATUS_TRUE;
+   keyboard_update_keys_state();
+   return;
+  }
+  else if(key_value==KEY_LEFT_ALT || key_value==KEY_RIGHT_ALT) {
+   ps2_keyboard_keys.alt = STATUS_TRUE;
+   keyboard_update_keys_state();
+   return;
+  }
+  else if(key_value==KEY_CAPSLOCK) {
+   keyboard_led_state.capslock = ~keyboard_led_state.capslock; //reverse state
+   return;
+  }
+
+  //check if key is not already pressed
+  for(dword_t i=0; i<6; i++) {
+   if(ps2_keyboard_keys.pressed_keys[i] == key_value) {
     return;
    }
   }
 
-  if(number_of_keys_pressed_on_ps2_keyboard<10) {
-   ps2_keyboard_pressed_keys[number_of_keys_pressed_on_ps2_keyboard]=key_value;
-   number_of_keys_pressed_on_ps2_keyboard++;
+  //add key to list
+  for(dword_t i=0; i<5; i++) {
+   ps2_keyboard_keys.pressed_keys[i+1] = ps2_keyboard_keys.pressed_keys[i];
   }
+  ps2_keyboard_keys.pressed_keys[0] = key_value;
  }
- else { //key was released
-  for(dword_t i=0; i<number_of_keys_pressed_on_ps2_keyboard; i++) {
-   if(ps2_keyboard_pressed_keys[i]==(key_value-0x80)) {
-    remove_space_from_memory_area((dword_t)&ps2_keyboard_pressed_keys, 10*4, (dword_t)&ps2_keyboard_pressed_keys[i], 4);
-    number_of_keys_pressed_on_ps2_keyboard--;
+ //key was released
+ else {
+  //recalculate key value to pressed key value
+  key_value = (key_value-0x80);
+
+  //check if this is not control key
+  if(key_value==KEY_LEFT_SHIFT || key_value==KEY_RIGHT_SHIFT) {
+   ps2_keyboard_keys.shift = STATUS_FALSE;
+   return;
+  }
+  else if(key_value==KEY_LEFT_CTRL || key_value==KEY_RIGHT_CTRL) {
+   ps2_keyboard_keys.ctrl = STATUS_FALSE;
+   return;
+  }
+  else if(key_value==KEY_LEFT_ALT || key_value==KEY_RIGHT_ALT) {
+   ps2_keyboard_keys.alt = STATUS_FALSE;
+   return;
+  }
+
+  //check where do we have this key in list and remove it
+  for(dword_t i=0; i<6; i++) {
+   if(ps2_keyboard_keys.pressed_keys[i] == key_value) {
+    ps2_keyboard_keys.pressed_keys[i] = 0;
     return;
    }
   }
+
  }
 }

@@ -102,13 +102,15 @@ void read_acpi_tables(void) {
  if(acpi_version>=3) {
   ps2_controller_present = ((mmio_inw(facp_mem + 109)>>1) & 0x1); //0 = not present 1 = present
  }
+
+ l("\nACPI SCI: "); lv(mmio_inw(facp_mem + 40 + 6));
  
- //turn ACPI on
- if(acpi_command_register!=0) {
-  if((inw(acpi_command_register) & 0x1)==0x0) {
-   outb(acpi_command_register, acpi_turn_on_command);
-  }
- }
+ // //turn ACPI on
+ // if(acpi_command_register!=0) {
+ //  if((inw(acpi_command_register) & 0x1)==0x0) {
+ //   outb(acpi_command_register, acpi_turn_on_command);
+ //  }
+ // }
  
  //read values for shutdown
  shutdown_value_pm1 = 0x2000;
@@ -126,7 +128,7 @@ void read_acpi_tables(void) {
  }
  
  //LOG
- log("ACPI pm1 control port: ");
+ log("\nACPI pm1 control port: ");
  log_hex_with_space(acpi_pm1_control_register);
  log("shutdown value for pm1: ");
  log_hex(shutdown_value_pm1);

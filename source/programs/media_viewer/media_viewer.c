@@ -94,8 +94,8 @@ void media_viewer(void) {
    }
 
    //change zoom of image
-   if(mouse_wheel!=0) {
-    if(mouse_wheel<0x80000000 && get_file_value(MEDIA_VIEWER_FILE_IMAGE_ZOOM)<800) {
+   if(mouse_wheel_movement!=0) {
+    if(mouse_wheel_movement<0x80000000 && get_file_value(MEDIA_VIEWER_FILE_IMAGE_ZOOM)<800) {
      set_file_value(MEDIA_VIEWER_FILE_IMAGE_ZOOM, get_file_value(MEDIA_VIEWER_FILE_IMAGE_ZOOM)+10);
      media_viewer_image_recalculate_zoom();
      program_interface_redraw();
