@@ -102,58 +102,29 @@ word_t get_big_char_value(word_t value) {
 
 word_t get_unicode_char_with_diacritic(word_t value, word_t diacritic) {
  if(diacritic==UNICODE_COMBINING_ACUTE) {
-  if(value=='a') {
-   return 0x00E1;
-  }
-  else if(value=='e') {
-   return 0x00E9;
-  }
-  else if(value=='i') {
-   return 0x00ED;
-  }
-  else if(value=='l') {
-   return 0x013A;
-  }
-  else if(value=='o') {
-   return 0x00F3;
-  }
-  else if(value=='r') {
-   return 0x0155;
-  }
-  else if(value=='u') {
-   return 0x00FA;
-  }
-  else if(value=='y') {
-   return 0x00FD;
+  switch(value) {
+   case 'a': return 0x00E1;
+   case 'e': return 0x00E9;
+   case 'i': return 0x00ED;
+   case 'l': return 0x013A;
+   case 'o': return 0x00F3;
+   case 'r': return 0x0155;
+   case 'u': return 0x00FA;
+   case 'y': return 0x00FD;
   }
  }
+
  else if(diacritic==UNICODE_COMBINING_CARON) {
-  if(value=='c') {
-   return 0x010D;
-  }
-  else if(value=='d') {
-   return 0x010F;
-  }
-  else if(value=='e') {
-   return 0x011B;
-  }
-  else if(value=='l') {
-   return 0x013E;
-  }
-  else if(value=='n') {
-   return 0x0148;
-  }
-  else if(value=='r') {
-   return 0x0159;
-  }
-  else if(value=='s') {
-   return 0x0161;
-  }
-  else if(value=='t') {
-   return 0x0165;
-  }
-  else if(value=='z') {
-   return 0x017E;
+  switch(value) {
+   case 'c': return 0x010D;
+   case 'd': return 0x010F;
+   case 'e': return 0x011B;
+   case 'l': return 0x013E;
+   case 'n': return 0x0148;
+   case 'r': return 0x0159;
+   case 's': return 0x0161;
+   case 't': return 0x0165;
+   case 'z': return 0x017E;
   }
  }
 
