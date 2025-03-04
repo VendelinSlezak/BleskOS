@@ -2,91 +2,131 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-int strcmp(const char* str1, const char* str2) {
- while(*str1==*str2) {
-  if(*str1==0) {
-   return 0; //equal
-  }
-  str1++;
-  str2++;
- }
+void cmem(void *mem, size_t size) {
+    if(size < 7) {
+        byte_t *byte_memory_pointer = (byte_t *) mem;
+        for(dword_t i = 0; i < size; i++) {
+            *byte_memory_pointer = 0;
+            byte_memory_pointer++;
+        }
+    }
+    else {
+        dword_t bytes_to_align = (0x4 - ((dword_t)mem & 0x3));
+        if(bytes_to_align != 0x4) {
+            size -= bytes_to_align;
+        }
+        else {
+            bytes_to_align = 0;
+        }
+        dword_t dwords = (size/4);
+        size %= 4;
 
- return 1; //non equal
+        byte_t *byte_memory_pointer = (byte_t *) mem;
+        for(dword_t i = 0; i < bytes_to_align; i++) {
+            *byte_memory_pointer = 0;
+            byte_memory_pointer++;
+        }
+        dword_t *dword_memory_pointer = (dword_t *) byte_memory_pointer;
+        for(dword_t i = 0; i < dwords; i++) {
+            *dword_memory_pointer = 0;
+            dword_memory_pointer++;
+        }
+        byte_memory_pointer = (byte_t *) dword_memory_pointer;
+        for(dword_t i = 0; i < size; i++) {
+            *byte_memory_pointer = 0;
+            byte_memory_pointer++;
+        }
+    }
 }
 
-int strncmp(const char *str1, const char *str2, size_t n) {
- for(dword_t i=0; i<n; i++) {
-  if(*str1==0 && *str2!=0) {
-   return -1; //first is less
-  }
-  else if(*str1==0 && *str2==0) {
-   return 0; //equal
-  }
-  else if(*str1!=0 && *str2==0) {
-   return 1; //first is less
-  }
-  str1++;
-  str2++;
+void clear_memory(dword_t memory, dword_t length) {
+ dword_t *mem32 = (dword_t *) (memory);
+
+ for(dword_t i=0; i<(length/4); i++) {
+  *mem32 = 0;
+  mem32++;
  }
 
- return 0; //equal
+ byte_t *mem8 = (byte_t *) (mem32);
+ 
+ for(dword_t i=0; i<(length%4); i++) {
+  *mem8 = 0;
+  mem8++;
+ }
 }
 
-long int strtol(const char *str, char **endptr, int base) {
-    if (base < 2 || base > 36) {
-        // Invalid base
-        if (endptr) *endptr = (char *)str;
-        return 0;
-    }
+void copy_memory(dword_t source_memory, dword_t destination_memory, dword_t size) {
+ dword_t *source32 = (dword_t *) (source_memory);
+ dword_t *destination32 = (dword_t *) (destination_memory);
+ 
+ for(dword_t i=0; i<(size/4); i++) {
+  *destination32=*source32;
+  destination32++;
+  source32++;
+ }
 
-    // Skip leading whitespace
-    while (*str==' ') {
-        str++;
-    }
+ byte_t *source8 = (byte_t *) (source32);
+ byte_t *destination8 = (byte_t *) (destination32);
 
-    // Handle optional sign
-    int sign = 1;
-    if (*str == '-') {
-        sign = -1;
-        str++;
-    }
-    else if (*str == '+') {
-        str++;
-    }
+ for(dword_t i=0; i<(size%4); i++) {
+  *destination8=*source8;
+  destination8++;
+  source8++;
+ }
+}
 
-    long int result = 0;
-    int any = 0;
-    
-    while (*str) {
-        int digit;
-        if (*str >= '0' && *str <= '9') {
-            digit = *str - '0';
-        } else if (*str >= 'a' && *str <= 'z') {
-            digit = *str - 'a' + 10;
-        } else if (*str >= 'A' && *str <= 'Z') {
-            digit = *str - 'A' + 10;
-        } else {
-            break;
-        }
+void copy_memory_back(dword_t source_memory, dword_t destination_memory, dword_t size) {
+ byte_t *source8 = (byte_t *) (source_memory);
+ byte_t *destination8 = (byte_t *) (destination_memory);
 
-        if (digit >= base) {
-            break;
-        }
+ for(dword_t i=0; i<size; i++) {
+  *destination8=*source8;
+  destination8--;
+  source8--;
+ }
+}
 
-        any = 1;
-        result = result * base + digit;
-        str++;
-    }
+void *memcpy(void *destination, const void *source, dword_t num) {
+ char *dest = (char *) destination;
+ const char *src = (const char *) source;
 
-    if (endptr) {
-        *endptr = any ? (char *)str : (char *)str - 1;
-    }
+ for(dword_t i=0; i<num; i++) {
+  dest[i] = src[i];
+ }
 
-    return sign * result;
+ return destination;
+}
+
+void *memset(void *ptr, int value, dword_t num) {
+ char *p = (char *) ptr;
+
+ for(dword_t i=0; i<num; i++) {
+  p[i] = (char) value;
+ }
+
+ return ptr;
+}
+
+void *memmove(void *destination, const void *source, dword_t num) {
+ char *dest = (char *) destination;
+ const char *src = (const char *) source;
+
+ if ((dword_t)dest > (dword_t)src && (dword_t)dest < ((dword_t)src + num)) {
+  for (dword_t i = num; i > 0; i--) {
+   dest[i - 1] = src[i - 1];
+  }
+ }
+ else {
+  for (dword_t i = 0; i < num; i++) {
+   dest[i] = src[i];
+  }
+ }
+
+ return destination;
 }

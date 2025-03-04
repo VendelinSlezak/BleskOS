@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -104,14 +104,14 @@ dword_t zip_extract_file(dword_t zip_file_memory, dword_t zip_file_size, dword_t
  dword_t file_data_compressed_data_mem = (((dword_t)zip_local_file_header)+30+file_name_length+extra_field_length);
 
  //extract file
- dword_t file_memory = malloc(file_data_uncompressed_data_length);
+ dword_t file_memory = (dword_t) malloc(file_data_uncompressed_data_length);
  if(compression_method==ZIP_NO_COMPRESSION) {
   copy_memory(file_data_compressed_data_mem, file_memory, file_data_uncompressed_data_length);
  }
  else if(compression_method==ZIP_COMPRESSION_DEFLATE) {
   if(decode_deflate(file_data_compressed_data_mem, file_data_compressed_data_length, file_memory, file_data_uncompressed_data_length)==STATUS_ERROR) {
    log("\nZIP: DEFLATE error");
-   free(file_memory);
+   free((void *)file_memory);
    return STATUS_ERROR;
   }
  }
@@ -121,7 +121,7 @@ dword_t zip_extract_file(dword_t zip_file_memory, dword_t zip_file_size, dword_t
 }
 
 dword_t create_zip_file(dword_t number_of_files_inside, dword_t size_of_all_files) {
- new_zip_file_pointer = calloc((number_of_files_inside*sizeof(struct zip_local_file_header))+(number_of_files_inside*256)+(number_of_files_inside*sizeof(struct zip_central_directory_file_header))+(number_of_files_inside*256)+size_of_all_files+(sizeof(struct zip_end_of_central_directory)));
+ new_zip_file_pointer = (dword_t) calloc((number_of_files_inside*sizeof(struct zip_local_file_header))+(number_of_files_inside*256)+(number_of_files_inside*sizeof(struct zip_central_directory_file_header))+(number_of_files_inside*256)+size_of_all_files+(sizeof(struct zip_end_of_central_directory)));
  new_zip_file_size = 0;
  new_zip_file_list_of_relative_offsets = (dword_t *) (calloc((number_of_files_inside+1)*4));
  new_zip_actual_processed_file_number = 0;
@@ -211,6 +211,6 @@ void zip_add_central_directory_file_header(byte_t *name, dword_t memory, dword_t
   new_zip_file_size += sizeof(struct zip_end_of_central_directory);
 
   //free allocated memory
-  free((dword_t)new_zip_file_list_of_relative_offsets);
+  free((void *)new_zip_file_list_of_relative_offsets);
  }
 }

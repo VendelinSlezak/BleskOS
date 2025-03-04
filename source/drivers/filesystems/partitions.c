@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -87,9 +87,9 @@ void read_partitions_of_medium(void) {
     }
    }
    else if(mbr_sector.partition_entry[i].type==0xEE) { //Global Partition Table
-    dword_t gpt = malloc(512*32); //allocate memory for whole Global Partition Table
+    dword_t gpt = (dword_t) malloc(512*32); //allocate memory for whole Global Partition Table
     if(read_storage_medium(mbr_sector.partition_entry[i].first_sector, 32, gpt)==STATUS_ERROR) { //read Global Partition Table
-     free(gpt);
+     free((void *)gpt);
      continue;
     }
 
@@ -121,7 +121,7 @@ void read_partitions_of_medium(void) {
     }
 
     //release allocated memory
-    free(gpt);
+    free((void *)gpt);
    }
    else if(mbr_sector.partition_entry[i].number_of_sectors>0) { //normal partition
     add_partition(PARTITION_UNKNOWN_FILESYSTEM, mbr_sector.partition_entry[i].first_sector, mbr_sector.partition_entry[i].number_of_sectors);

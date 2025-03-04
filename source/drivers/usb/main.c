@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -422,12 +422,12 @@ void usb_close_control_transfer(byte_t device_address) {
  usb_devices[device_address].close_control_transfer(device_address);
 
  //free memory of structures that described transfer
- free((dword_t)usb_devices[device_address].control_transfer.tms_pointer);
+ free((void *)usb_devices[device_address].control_transfer.tms_pointer);
  usb_devices[device_address].control_transfer.tms_pointer = 0;
 
  //free buffer of transfer
  if(usb_devices[device_address].control_transfer.transfer_buffer != 0) {
-  free((dword_t)usb_devices[device_address].control_transfer.transfer_buffer);
+  free((void *)usb_devices[device_address].control_transfer.transfer_buffer);
  }
  usb_devices[device_address].control_transfer.transfer_buffer = 0;
 
@@ -459,11 +459,11 @@ void usb_close_interrupt_transfer(byte_t device_address, struct usb_interrupt_tr
  usb_devices[device_address].close_interrupt_transfer(device_address, interrupt_transfer);
 
  //free memory of structures that described transfer
- free((dword_t)interrupt_transfer->tms_pointer);
+ free((void *)interrupt_transfer->tms_pointer);
  interrupt_transfer->tms_pointer = 0;
 
  //free buffer of transfer
- free((dword_t)interrupt_transfer->transfer_buffer);
+ free((void *)interrupt_transfer->transfer_buffer);
  interrupt_transfer->transfer_buffer = 0;
 
  //interrupt transfer is now closed
@@ -503,7 +503,7 @@ void usb_close_bulk_transfer(byte_t device_address, struct usb_bulk_transfer_inf
  usb_devices[device_address].close_bulk_transfer(device_address, bulk_transfer);
 
  //free memory of structures that described transfer
- free((dword_t)bulk_transfer->tms_pointer);
+ free((void *)bulk_transfer->tms_pointer);
  bulk_transfer->tms_pointer = 0;
 
  //bulk transfer is now closed

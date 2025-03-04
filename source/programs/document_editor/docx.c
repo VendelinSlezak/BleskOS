@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -24,7 +24,7 @@ dword_t convert_docx_to_dmf(dword_t docx_memory, dword_t docx_size) {
   return STATUS_ERROR;
  }
  dword_t document_xml_file_memory = prepare_xml_file(document_raw_xml_file_memory, zip_extracted_file_size, XML_NO_SPECIAL_ATTRIBUTES);
- free(document_raw_xml_file_memory);
+ free((void *)document_raw_xml_file_memory);
 
  //count how many memory we will need for DMF
  word_t *document_xml = (word_t *) (document_xml_file_memory);
@@ -54,13 +54,13 @@ dword_t convert_docx_to_dmf(dword_t docx_memory, dword_t docx_size) {
  }
  if(((dword_t)docx_body_tag)==0) {
   log("\nDOCX: no <w:body>");
-  free(document_xml_file_memory);
+  free((void *)document_xml_file_memory);
   return STATUS_ERROR;
  }
 
  //allocate memory for DMF
  dmf_size+=2;
- dword_t dmf_memory = calloc(dmf_size);
+ dword_t dmf_memory = (dword_t) calloc(dmf_size);
 
  //default page layout - A4 with 2 cm margins
  dmf_page_width = 794;
@@ -106,7 +106,7 @@ dword_t convert_docx_to_dmf(dword_t docx_memory, dword_t docx_size) {
   dword_t numbering_raw_xml_file_memory = zip_extract_file(docx_memory, docx_size, numbering_xml_file_number);
   if(numbering_raw_xml_file_memory!=STATUS_ERROR) {
    dword_t numbering_xml_file_memory = prepare_xml_file(numbering_raw_xml_file_memory, zip_extracted_file_size, XML_NO_SPECIAL_ATTRIBUTES);
-   free(numbering_raw_xml_file_memory);
+   free((void *)numbering_raw_xml_file_memory);
 
    //scan numbering.xml
    word_t *numbering_xml = (word_t *) (numbering_xml_file_memory);
@@ -144,7 +144,7 @@ dword_t convert_docx_to_dmf(dword_t docx_memory, dword_t docx_size) {
      numbering_xml++;
     }
    }
-   free(numbering_xml_file_memory);
+   free((void *)numbering_xml_file_memory);
   }
   else {
    log("\nDOCX: error with extracting word/numbering.xml");
@@ -450,7 +450,7 @@ dword_t convert_docx_to_dmf(dword_t docx_memory, dword_t docx_size) {
   }
  }
 
- free((dword_t)docx_list_of_list_types);
- free(document_xml_file_memory);
+ free((void *)docx_list_of_list_types);
+ free((void *)document_xml_file_memory);
  return dmf_memory;
 }

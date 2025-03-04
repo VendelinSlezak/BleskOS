@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -51,7 +51,7 @@ dword_t convert_wav_to_sound_data(dword_t wav_memory, dword_t wav_length) {
    else {
     sound_memory = create_sound(2, 16, converted_pcm_data_sample_rate, converted_pcm_data_length);
     copy_memory(converted_pcm_data_memory, (get_sound_data_memory(sound_memory)), converted_pcm_data_length);
-    free(converted_pcm_data_memory);
+    free((void *)converted_pcm_data_memory);
    }
    
    return sound_memory;
@@ -208,7 +208,7 @@ void wav_refill_buffer(byte_t *buffer) {
 }
 
 void convert_sound_data_to_wav(byte_t *pcm_data_pointer, dword_t size_of_pcm_data_in_bytes, byte_t bits_per_sample, byte_t number_of_channels, word_t sample_rate) {
- dword_t wav_memory = malloc(size_of_pcm_data_in_bytes+44);
+ dword_t wav_memory = (dword_t) malloc(size_of_pcm_data_in_bytes+44);
  dword_t *wav32 = (dword_t *) (wav_memory);
 
  //create info

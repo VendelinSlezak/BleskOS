@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -63,7 +63,7 @@ void document_editor(void) {
     if(keyboard_code_of_pressed_key==KEY_C && get_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA)!=0) {
      //release previous copied text
      if(text_area_copy_memory!=0) {
-      free(text_area_copy_memory);
+      free((void *)text_area_copy_memory);
      }
 
      //calculate variables TODO: copy text to Document editor copy memory
@@ -93,7 +93,7 @@ void document_editor(void) {
      }
 
      text_area_copy_memory_length = (number_of_characters*2);
-     text_area_copy_memory = calloc(text_area_copy_memory_length);
+     text_area_copy_memory = (dword_t) calloc(text_area_copy_memory_length);
      dllmf = (dword_t *) (first_character_memory);
      word_t *text_area_copy_memory_pointer = (word_t *) (text_area_copy_memory);
      while(((dword_t)dllmf)<last_character_memory) {
@@ -270,12 +270,12 @@ void document_editor_open_file(void) {
  }
  if(dmf_memory==STATUS_ERROR) { //error during converting file
   error_window("Error during opening file, more info in System log");
-  free((dword_t)file_dialog_open_file_memory);
+  free((void *)file_dialog_open_file_memory);
   return;
  }
 
  //convert DMF to DLLMF
- dword_t dllmf_memory = calloc((DLLMF_NUM_OF_PAGE_ENTRIES*(DLLMF_PAGE_ENTRY_SIZE+4))+((dmf_number_of_chars_in_document*2+1)*DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES));
+ dword_t dllmf_memory = (dword_t) calloc((DLLMF_NUM_OF_PAGE_ENTRIES*(DLLMF_PAGE_ENTRY_SIZE+4))+((dmf_number_of_chars_in_document*2+1)*DLLMF_CHAR_ENTRY_LENGTH_IN_BYTES));
  convert_dmf_to_dllmf(dmf_memory, dllmf_memory);
 
  //add file
@@ -288,7 +288,7 @@ void document_editor_open_file(void) {
  set_file_value(DOCUMENT_EDITOR_FILE_FIRST_SHOW_COLUMN, 0);
  set_file_value(DOCUMENT_EDITOR_FILE_CURSOR, (dllmf_memory+DLLMF_NUM_OF_PAGE_ENTRIES*DLLMF_PAGE_ENTRY_SIZE));
  set_file_value(DOCUMENT_EDITOR_FILE_SELECTED_AREA, 0);
- free((dword_t)file_dialog_open_file_memory);
+ free((void *)file_dialog_open_file_memory);
  document_editor_recalculate_scrollbars();
 }
 
@@ -303,12 +303,12 @@ void document_editor_save_file(void) {
   set_file_value(PROGRAM_INTERFACE_FILE_FLAGS, (get_file_value(PROGRAM_INTERFACE_FILE_FLAGS) | PROGRAM_INTERFACE_FILE_FLAG_SAVED));
   set_file_name_from_file_dialog();
  }
- free(new_odt_file_memory);
+ free((void *)new_odt_file_memory);
 }
 
 void document_editor_close_file(void) {
- free(get_file_value(DOCUMENT_EDITOR_FILE_DMF_MEMORY));
- free(get_file_value(DOCUMENT_EDITOR_FILE_DLLMF_MEMORY));
+ free((void *)get_file_value(DOCUMENT_EDITOR_FILE_DMF_MEMORY));
+ free((void *)get_file_value(DOCUMENT_EDITOR_FILE_DLLMF_MEMORY));
 }
 
 void document_editor_key_up_event(void) {

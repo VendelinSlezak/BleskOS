@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -389,12 +389,12 @@ byte_t tcp_fin_received(byte_t number_of_packet_entry, byte_t *packet_memory, dw
    }
 
    //reallocate used memory and add zero ending
-   http_file_transfers[hft_entry].file_memory = (byte_t *) realloc((dword_t)http_file_transfers[hft_entry].file_memory, http_file_transfers[hft_entry].file_size+1);
+   http_file_transfers[hft_entry].file_memory = (byte_t *) realloc((void *)http_file_transfers[hft_entry].file_memory, http_file_transfers[hft_entry].file_size+1);
    http_file_transfers[hft_entry].file_memory[http_file_transfers[hft_entry].file_size] = 0;
   }
   else {
    //free allocated data
-   free((dword_t)http_file_transfers[hft_entry].file_memory);
+   free((void *)http_file_transfers[hft_entry].file_memory);
    http_file_transfers[hft_entry].file_memory = 0;
    http_file_transfers[hft_entry].file_size = 0;
   }
@@ -548,12 +548,12 @@ void hft_close_entry(dword_t hft_entry) {
  
  //release memory of byte stream
  if(http_file_transfers[hft_entry].data!=0) {
-  free((dword_t)close_byte_stream(http_file_transfers[hft_entry].data));
+  free((void *)close_byte_stream(http_file_transfers[hft_entry].data));
  }
 
  //release memory of file in memory
  if(http_file_transfers[hft_entry].file_memory!=0) {
-  free((dword_t)http_file_transfers[hft_entry].file_memory);
+  free((void *)http_file_transfers[hft_entry].file_memory);
  }
 
  //clear whole entry, it will set status to HFT_STATUS_FREE_ENTRY

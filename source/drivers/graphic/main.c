@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -114,11 +114,15 @@ void initalize_graphic(void) {
 
  //initalize variables of drawing
  set_pen_width(1, BLACK);
- fill_first_stack = malloc((screen_width*2+screen_height*2)*32+8);
- fill_second_stack = malloc((screen_width*2+screen_height*2)*32+8);
+ fill_first_stack = (dword_t) malloc((screen_width*2+screen_height*2)*32+8);
+ fill_second_stack = (dword_t) malloc((screen_width*2+screen_height*2)*32+8);
 
  //allocate memory for mouse cursor background
- mouse_cursor_background = malloc(MOUSE_CURSOR_WIDTH*MOUSE_CURSOR_HEIGHT*4);
+ mouse_cursor_background = (dword_t) malloc(MOUSE_CURSOR_WIDTH*MOUSE_CURSOR_HEIGHT*4);
+
+ //set initial position of mouse cursor
+ mouse_cursor_x = 0;
+ mouse_cursor_y = 0;
 
  //log
  logf("\n\nGRAPHIC MODE INFO\nLinear frame buffer: %x\nScreen x: %d\nScreen y: %d\nScreen bpp: %d",

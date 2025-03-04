@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -100,7 +100,7 @@ byte_t *read_whole_descriptor_of_file_sector(struct byte_stream_descriptor_t *de
  for(dword_t run=0; run<descriptor_of_file_sectors->number_of_runs; run++) {
   //check if user cancelled this request
   if(dofs_can_user_cancel_action==USER_CAN_CANCEL_THIS_DOFS_ACTION && keyboard_code_of_pressed_key==KEY_ESC) {
-   free((dword_t)file_memory);
+   free((void *)file_memory);
    return STATUS_ERROR;
   }
 
@@ -108,7 +108,7 @@ byte_t *read_whole_descriptor_of_file_sector(struct byte_stream_descriptor_t *de
   if(descriptor_of_file_sectors->runs[run].number_of_sectors_in_run<=number_of_sectors_per_one_read) {
    //read data
    if(descriptor_of_file_sector_read_sectors(descriptor_of_file_sectors, descriptor_of_file_sectors->runs[run].first_sector_of_run, descriptor_of_file_sectors->runs[run].number_of_sectors_in_run, file_memory_pointer)==STATUS_ERROR) {
-    free((dword_t)file_memory);
+    free((void *)file_memory);
     return STATUS_ERROR;
    }
 
@@ -125,14 +125,14 @@ byte_t *read_whole_descriptor_of_file_sector(struct byte_stream_descriptor_t *de
    while(sectors_of_run>0) {
     //check if user cancelled this request
     if(dofs_can_user_cancel_action==USER_CAN_CANCEL_THIS_DOFS_ACTION && keyboard_code_of_pressed_key==KEY_ESC) {
-     free((dword_t)file_memory);
+     free((void *)file_memory);
      return STATUS_ERROR;
     }
 
     if(sectors_of_run>number_of_sectors_per_one_read) {
      //read data
      if(descriptor_of_file_sector_read_sectors(descriptor_of_file_sectors, first_sector_of_run, number_of_sectors_per_one_read, file_memory_pointer)==STATUS_ERROR) {
-      free((dword_t)file_memory);
+      free((void *)file_memory);
       return STATUS_ERROR;
      }
      
@@ -145,13 +145,13 @@ byte_t *read_whole_descriptor_of_file_sector(struct byte_stream_descriptor_t *de
     else {
      //check if user cancelled this request
      if(dofs_can_user_cancel_action==USER_CAN_CANCEL_THIS_DOFS_ACTION && keyboard_code_of_pressed_key==KEY_ESC) {
-      free((dword_t)file_memory);
+      free((void *)file_memory);
       return STATUS_ERROR;
      }
 
      //read last data of this run
      if(descriptor_of_file_sector_read_sectors(descriptor_of_file_sectors, first_sector_of_run, sectors_of_run, file_memory_pointer)==STATUS_ERROR) {
-      free((dword_t)file_memory);
+      free((void *)file_memory);
       return STATUS_ERROR;
      }
 

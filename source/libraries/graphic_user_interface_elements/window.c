@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -56,7 +56,7 @@ void show_message_window(byte_t *message) {
 }
 
 void show_system_message(byte_t *string) {
- system_message_background_mem = malloc(300*30*4);
+ system_message_background_mem = (dword_t) malloc(300*30*4);
 
  copy_raw_image_data((dword_t)screen_double_buffer_memory_pointer, screen_width, 10, 10, 300, 30, system_message_background_mem, 300, 0, 0);
  draw_full_square(10, 10, 300, 30, WHITE);
@@ -69,5 +69,5 @@ void remove_system_message(void) {
  copy_raw_image_data(system_message_background_mem, 300, 0, 0, 300, 30, (dword_t)screen_double_buffer_memory_pointer, screen_width, 10, 10);
  redraw_part_of_screen(10, 10, 300, 30);
 
- free(system_message_background_mem);
+ free((void *)system_message_background_mem);
 }

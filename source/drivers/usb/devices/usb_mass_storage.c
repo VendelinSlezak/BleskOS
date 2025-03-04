@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -94,7 +94,7 @@ void usb_msd_inquiry_success(byte_t device_address) {
  l(string);
 
  //free memory of INQUIRY
- free((dword_t)usb_devices[device_address].msd.bulk_only.buffer);
+ free((void *)usb_devices[device_address].msd.bulk_only.buffer);
 
  //initalization is successfully done
  usb_devices[device_address].msd.is_initalized = STATUS_TRUE;
@@ -190,7 +190,7 @@ void usb_msd_read_capacity_success(byte_t device_address) {
  log_var((usb_devices[device_address].msd.number_of_sectors/2000));
 
  //free memory of READ_CAPACITY(10)
- free((dword_t)usb_devices[device_address].msd.bulk_only.buffer);
+ free((void *)usb_devices[device_address].msd.bulk_only.buffer);
 
  //update unit status
  usb_devices[device_address].msd.unit_state = USB_MSD_WITH_UNIT;
@@ -418,7 +418,7 @@ void usb_msd_inquiry_error(byte_t device_address) {
  l("\nUSB MSD: INQUIRY was not transferred");
 
  //free memory of INQUIRY buffer for data
- free((dword_t)usb_devices[device_address].msd.bulk_only.buffer);
+ free((void *)usb_devices[device_address].msd.bulk_only.buffer);
 
  //initalization was not successfull
  usb_devices[device_address].msd.is_present = STATUS_FALSE;
@@ -434,7 +434,7 @@ void usb_msd_read_capacity_error(byte_t device_address) {
  l("\nUSB MSD: READ_CAPACITY(10) error");
 
  //free memory of READ_CAPACITY(10) buffer for data
- free((dword_t)usb_devices[device_address].msd.bulk_only.buffer);
+ free((void *)usb_devices[device_address].msd.bulk_only.buffer);
 
  //send REQUEST_SENSE
  usb_msd_send_request_sense(device_address);
@@ -458,7 +458,7 @@ void usb_msd_request_sense_error(byte_t device_address) {
  l("\nUSB MSD: REQUEST_SENSE error");
 
  //free memory of REQUEST_SENSE buffer for data
- free((dword_t)usb_devices[device_address].msd.bulk_only.buffer);
+ free((void *)usb_devices[device_address].msd.bulk_only.buffer);
 
  //reset MSD
  usb_msd_call_reset_sequence(device_address);
