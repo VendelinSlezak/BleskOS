@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -782,7 +782,7 @@ dword_t file_dialog_preview_window(void) {
    image = (dword_t *) convert_bmp_to_image_data((dword_t)image_file);
   }
 
-  free((dword_t)image_file);
+  free((void *)image_file);
 
   if((dword_t)image==STATUS_ERROR) {
    error_window("Error during decoding image");
@@ -865,28 +865,28 @@ dword_t file_dialog_preview_window(void) {
   //exit
   if(event==CLICK_ZONE_FILE_DIALOG_PREVIEW_WINDOW_BACK) {
    if((dword_t)image!=STATUS_ERROR) {
-    free((dword_t)image);
+    free((void *)image);
    }
    return EVENT_REDRAW;
   }
 
   //open
   if(event==CLICK_ZONE_FILE_DIALOG_PREVIEW_WINDOW_ENTER && (dword_t)image!=STATUS_ERROR) {
-   free((dword_t)image);
+   free((void *)image);
    return file_dialog_event_key_enter();
   }
 
   //move to other file
   if(event==CLICK_ZONE_FILE_DIALOG_PREVIEW_WINDOW_LEFT && previous_image_file!=0xFFFFFFFF) {
    if((dword_t)image!=STATUS_ERROR) {
-    free((dword_t)image);
+    free((void *)image);
    }
    file_dialog_folder_descriptor->selected_entry = previous_image_file;
    goto reload_preview_window;
   }
   if(event==CLICK_ZONE_FILE_DIALOG_PREVIEW_WINDOW_RIGHT && next_image_file!=0xFFFFFFFF) {
    if((dword_t)image!=STATUS_ERROR) {
-    free((dword_t)image);
+    free((void *)image);
    }
    file_dialog_folder_descriptor->selected_entry = next_image_file;
    goto reload_preview_window;

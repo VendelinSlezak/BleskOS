@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -10,7 +10,7 @@
 
 /* delete later */
 dword_t create_sound(dword_t channels, dword_t bits_per_sample, dword_t sample_rate, dword_t length_of_data) {
- dword_t sound_info_mem = aligned_calloc(SOUND_SIZE_OF_INFO_IN_BYTES+length_of_data, 0x7F);
+ dword_t sound_info_mem = (dword_t) aligned_calloc(SOUND_SIZE_OF_INFO_IN_BYTES+length_of_data, 0x7F);
  dword_t *sound_info = (dword_t *) sound_info_mem;
 
  sound_info[SOUND_INFO_NUMBER_OF_CHANNELS] = channels;
@@ -26,7 +26,7 @@ dword_t create_sound(dword_t channels, dword_t bits_per_sample, dword_t sample_r
 }
 
 void delete_sound(dword_t sound_info_mem) {
- free(sound_info_mem);
+ free((void *)sound_info_mem);
 }
 
 dword_t get_sound_data_memory(dword_t sound_info_mem) {
@@ -89,7 +89,7 @@ dword_t convert_pcm_to_2_channels_16_bit_samples_48000_44100_sample_rate(dword_t
  if(how_many_times_to_multiply_sample==0xFFFFFFFF) {
   return STATUS_ERROR;
  }
- dword_t converted_pcm_sound_memory = calloc(4*number_of_samples*how_many_times_to_multiply_sample);
+ dword_t converted_pcm_sound_memory = (dword_t) calloc(4*number_of_samples*how_many_times_to_multiply_sample);
 
  //convert PCM data
  byte_t *pcm_memory_input = (byte_t *) (pcm_sound_memory);
@@ -145,7 +145,7 @@ struct audio_file_t *process_audio_file(byte_t audio_file_type, byte_t *audio_fi
   audio_file_info->file_info = read_wav_info(audio_file_memory, audio_file_length);
 
   if(audio_file_info->file_info==STATUS_ERROR) {
-   free((dword_t)audio_file_info);
+   free((void *)audio_file_info);
    return STATUS_ERROR;
   }
 
@@ -161,7 +161,7 @@ struct audio_file_t *process_audio_file(byte_t audio_file_type, byte_t *audio_fi
   audio_file_info->file_info = read_mp3_info(audio_file_memory, audio_file_length);
 
   if(audio_file_info->file_info==STATUS_ERROR) {
-   free((dword_t)audio_file_info);
+   free((void *)audio_file_info);
    return STATUS_ERROR;
   }
 
@@ -223,11 +223,11 @@ void audio_calculate_time_of_sound_data_offset(struct audio_file_t *audio_file_i
 }
 
 void destroy_audio_file(struct audio_file_t *audio_file_info) {
- free((dword_t)audio_file_info->file_pointer);
+ free((void *)audio_file_info->file_pointer);
  if(audio_file_info->type==AUDIO_FILE_TYPE_MP3) {
   struct mp3_info_t *mp3_info = (struct mp3_info_t *) (audio_file_info->file_info);
-  free((dword_t)mp3_info->mp3_index);
+  free((void *)mp3_info->mp3_index);
  }
- free((dword_t)audio_file_info->file_info);
- free((dword_t)audio_file_info);
+ free((void *)audio_file_info->file_info);
+ free((void *)audio_file_info);
 }

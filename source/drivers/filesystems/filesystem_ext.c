@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -196,7 +196,7 @@ byte_t ext_add_single_indirect_pointer_blocks(struct byte_stream_descriptor_t *d
  //load block
  dword_t *block_data = (dword_t *) malloc(ext_info->block_size_in_bytes);
  if(read_storage_medium(ext_info->first_partition_sector+(block*ext_info->block_size_in_sectors), ext_info->block_size_in_sectors, (dword_t)block_data)==STATUS_ERROR) {
-  free((dword_t)block_data);
+  free((void *)block_data);
   return STATUS_ERROR;
  }
 
@@ -211,7 +211,7 @@ byte_t ext_add_single_indirect_pointer_blocks(struct byte_stream_descriptor_t *d
   }
  }
 
- free((dword_t)block_data);
+ free((void *)block_data);
  return STATUS_GOOD;
 }
 
@@ -225,7 +225,7 @@ byte_t ext_add_double_indirect_pointer_blocks(struct byte_stream_descriptor_t *d
  //load block
  dword_t *block_data = (dword_t *) malloc(ext_info->block_size_in_bytes);
  if(read_storage_medium(ext_info->first_partition_sector+(block*ext_info->block_size_in_sectors), ext_info->block_size_in_sectors, (dword_t)block_data)==STATUS_ERROR) {
-  free((dword_t)block_data);
+  free((void *)block_data);
   return STATUS_ERROR;
  }
 
@@ -236,13 +236,13 @@ byte_t ext_add_double_indirect_pointer_blocks(struct byte_stream_descriptor_t *d
   }
   else {
    if(ext_add_single_indirect_pointer_blocks(descriptor_of_file_sectors, block_data[i])==STATUS_ERROR) {
-    free((dword_t)block_data);
+    free((void *)block_data);
     return STATUS_ERROR;
    }
   }
  }
 
- free((dword_t)block_data);
+ free((void *)block_data);
  return STATUS_GOOD;
 }
 
@@ -256,7 +256,7 @@ byte_t ext_add_triple_indirect_pointer_blocks(struct byte_stream_descriptor_t *d
  //load block
  dword_t *block_data = (dword_t *) malloc(ext_info->block_size_in_bytes);
  if(read_storage_medium(ext_info->first_partition_sector+(block*ext_info->block_size_in_sectors), ext_info->block_size_in_sectors, (dword_t)block_data)==STATUS_ERROR) {
-  free((dword_t)block_data);
+  free((void *)block_data);
   return STATUS_ERROR;
  }
 
@@ -267,13 +267,13 @@ byte_t ext_add_triple_indirect_pointer_blocks(struct byte_stream_descriptor_t *d
   }
   else {
    if(ext_add_double_indirect_pointer_blocks(descriptor_of_file_sectors, block_data[i])==STATUS_ERROR) {
-    free((dword_t)block_data);
+    free((void *)block_data);
     return STATUS_ERROR;
    }
   }
  }
 
- free((dword_t)block_data);
+ free((void *)block_data);
  return STATUS_GOOD;
 }
 
@@ -328,7 +328,7 @@ byte_t *read_ext_folder(dword_t folder_location) {
   //read inode of file
   if(read_ext_inode(ext_folder_entry->inode)==STATUS_ERROR) {
    log("\nExt: can not read inode of folder entry");
-   free((dword_t)ext_folder);
+   free((void *)ext_folder);
    return STATUS_ERROR;
   }
 
@@ -371,7 +371,7 @@ byte_t *read_ext_folder(dword_t folder_location) {
  }
 
  //free allocated memory
- free((dword_t)ext_folder);
+ free((void *)ext_folder);
 
  //return virtual file system folder
  return ((byte_t *)vfs_folder);

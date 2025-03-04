@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -110,7 +110,7 @@ dword_t convert_gif_to_image_data(dword_t gif_memory, dword_t gif_file_length) {
    }
    
    //copy image data from chunks
-   dword_t gif_image_data = malloc(length_of_image_data);
+   dword_t gif_image_data = (dword_t) malloc(length_of_image_data);
    dword_t gif_data_copy_memory = gif_image_data;
    gif8 = (byte_t *) gif_data_memory;
    while(*gif8!=0 && (dword_t)gif8<(gif_memory+gif_file_length)) {
@@ -121,12 +121,12 @@ dword_t convert_gif_to_image_data(dword_t gif_memory, dword_t gif_file_length) {
    }
    
    //decode image data from LZW
-   dword_t gif_image_decoded_data = malloc(width*height);
+   dword_t gif_image_decoded_data = (dword_t) malloc(width*height);
    if(decode_lzw(num_of_colors, gif_image_data, length_of_image_data, gif_image_decoded_data, (width*height))==STATUS_ERROR) {
     log("GIF: LZW error\n");
     delete_image(image_memory);
-    free(gif_image_data);
-    free(gif_image_decoded_data);
+    free((void *)gif_image_data);
+    free((void *)gif_image_decoded_data);
     return STATUS_ERROR;
    }
    
@@ -139,8 +139,8 @@ dword_t convert_gif_to_image_data(dword_t gif_memory, dword_t gif_file_length) {
     image_decoded_data++;
    }
    
-   free(gif_image_data);
-   free(gif_image_decoded_data);
+   free((void *)gif_image_data);
+   free((void *)gif_image_decoded_data);
    
    break;
   }
@@ -174,7 +174,7 @@ void convert_image_data_to_gif(dword_t image_info_memory) {
  jo_gif_end(gif);
  converted_file_size = gif->fp->size_of_stream;
  converted_file_memory = (dword_t) close_byte_stream(gif->fp);
- free((dword_t)gif);
+ free((void *)gif);
 
  //reverse 0xABGR to 0xARGB
  image_data = (byte_t *) (get_image_data_memory(image_info_memory));

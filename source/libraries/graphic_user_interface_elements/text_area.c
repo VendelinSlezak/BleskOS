@@ -2,18 +2,18 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 dword_t create_text_area(dword_t type, dword_t length_in_chars, dword_t x, dword_t y, dword_t width, dword_t height) {
- dword_t text_area_memory = malloc(28*4);
+ dword_t text_area_memory = (dword_t) malloc(28*4);
  dword_t *text_area_info = (dword_t *) text_area_memory;
 
  text_area_info[TEXT_AREA_INFO_TYPE] = type;
- text_area_info[TEXT_AREA_INFO_MEMORY] = calloc((length_in_chars+1)*2); //allocate memory for text
+ text_area_info[TEXT_AREA_INFO_MEMORY] = (dword_t) calloc((length_in_chars+1)*2); //allocate memory for text
  text_area_info[TEXT_AREA_INFO_NUM_OF_CHARS] = length_in_chars; //maximum number of chars in this text area
  text_area_info[TEXT_AREA_INFO_MEMORY_LAST_BYTE] = (text_area_info[TEXT_AREA_INFO_MEMORY] + length_in_chars*2); //last byte in text area memory
  text_area_info[TEXT_AREA_INFO_WIDTH] = width;
@@ -37,7 +37,7 @@ dword_t create_text_area(dword_t type, dword_t length_in_chars, dword_t x, dword
  text_area_info[TEXT_AREA_INFO_REDRAW_Y] = 0;
  text_area_info[TEXT_AREA_INFO_REDRAW_WIDTH] = 0;
  text_area_info[TEXT_AREA_INFO_REDRAW_HEIGHT] = 0;
- text_area_info[TEXT_AREA_INFO_CHANGES_LIST] = malloc(TEXT_AREA_MAX_NUMBER_OF_CHANGES_IN_LIST*8);
+ text_area_info[TEXT_AREA_INFO_CHANGES_LIST] = (dword_t) malloc(TEXT_AREA_MAX_NUMBER_OF_CHANGES_IN_LIST*8);
  text_area_info[TEXT_AREA_INFO_CHANGES_LIST_POINTER] = 0;
  text_area_info[TEXT_AREA_INFO_CHANGES_LIST_LAST_ENTRY_POINTER] = 0;
  
@@ -46,9 +46,9 @@ dword_t create_text_area(dword_t type, dword_t length_in_chars, dword_t x, dword
 
 void delete_text_area(dword_t text_area_info_mem) {
  dword_t *text_area_info = (dword_t *) text_area_info_mem;
- free(text_area_info[TEXT_AREA_INFO_MEMORY]);
- free(text_area_info[TEXT_AREA_INFO_CHANGES_LIST]);
- free(text_area_info_mem);
+ free((void *)text_area_info[TEXT_AREA_INFO_MEMORY]);
+ free((void *)text_area_info[TEXT_AREA_INFO_CHANGES_LIST]);
+ free((void *)text_area_info_mem);
 }
 
 void draw_text_area(dword_t text_area_info_mem) {
@@ -391,18 +391,18 @@ void text_area_keyboard_event(dword_t text_area_info_mem) {
    if(text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]!=0xFFFFFFFF && text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]!=text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]) { //only if some text is selected
     //release previous copied text
     if(text_area_copy_memory!=0) {
-     free(text_area_copy_memory);
+     free((void *)text_area_copy_memory);
     }
 
     //copy text
     if(text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]>text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]) {
      text_area_copy_memory_length = (text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]-text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]);
-     text_area_copy_memory = malloc(text_area_copy_memory_length);
+     text_area_copy_memory = (dword_t) malloc(text_area_copy_memory_length);
      copy_memory((text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]), (text_area_copy_memory), text_area_copy_memory_length);
     }
     else {
      text_area_copy_memory_length = (text_area_info[TEXT_AREA_INFO_CURSOR_POSITION]-text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]);
-     text_area_copy_memory = malloc(text_area_copy_memory_length);
+     text_area_copy_memory = (dword_t) malloc(text_area_copy_memory_length);
      copy_memory((text_area_info[TEXT_AREA_INFO_SELECTED_AREA_POINTER]), (text_area_copy_memory), text_area_copy_memory_length);
     }
 

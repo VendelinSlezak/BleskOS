@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -11,11 +11,11 @@
 dword_t prepare_xml_file(dword_t raw_xml_memory, dword_t raw_xml_size, dword_t special_attributes) {
  //convert file to unicode
  //TODO: support for more encodings than only UTF-8
- dword_t unicode_xml_memory = calloc(raw_xml_size*2+2);
+ dword_t unicode_xml_memory = (dword_t) calloc(raw_xml_size*2+2);
  convert_utf_8_to_unicode(raw_xml_memory, unicode_xml_memory, raw_xml_size);
 
  //allocate memory for result file
- dword_t xml_memory = calloc(raw_xml_size*2+2);
+ dword_t xml_memory = (dword_t) calloc(raw_xml_size*2+2);
 
  //convert file
  word_t *unicode_xml = (word_t *) (unicode_xml_memory);
@@ -46,7 +46,7 @@ dword_t prepare_xml_file(dword_t raw_xml_memory, dword_t raw_xml_size, dword_t s
     //copy rest of tag
     while(unicode_xml[-1]!='>') {
      if(*unicode_xml==0) {
-      free(unicode_xml_memory);
+      free((void *)unicode_xml_memory);
       return xml_memory;
      }
      *xml = *unicode_xml;
@@ -76,7 +76,7 @@ dword_t prepare_xml_file(dword_t raw_xml_memory, dword_t raw_xml_size, dword_t s
   }
  }
 
- free(unicode_xml_memory);
+ free((void *)unicode_xml_memory);
  return xml_memory;
 }
 

@@ -2,24 +2,31 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "ports.c"
-#include "memory.c"
-#include "interrupts.c"
-#include "pit.c"
-#include "pci.c"
-#include "acpi.c"
-#include "hpet.c"
-#include "processes_on_background.c"
-#include "timer.c"
+#include "memory/ram.c"
+#include "memory/detect.c"
+#include "memory/allocator.c"
+#include "memory/physical_memory.c"
+
+#include "interrupts/interrupts.c"
+
+#include "acpi/acpi.c"
+
+#include "buses/pci.c"
+
+#include "bios/cmos.c"
+
 #include "user_input.c"
 #include "scheduler.c"
-#include "time.c"
+
+#include "timers/pit.c"
+#include "timers/hpet.c"
+#include "timers/timer.c"
 
 #include "cpu/commands.c"
 #include "cpu/mtrr.c"

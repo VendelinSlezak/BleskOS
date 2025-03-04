@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -396,7 +396,7 @@ void graphic_editor_open_file(void) {
  else if(is_loaded_file_extension("gif")==STATUS_TRUE) {
   set_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY, convert_gif_to_image_data((dword_t)file_dialog_open_file_memory, file_dialog_file_descriptor->file_size_in_bytes));
  }
- free((dword_t)file_dialog_open_file_memory);
+ free((void *)file_dialog_open_file_memory);
  if(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY)==STATUS_ERROR) {
   remove_file(get_program_value(PROGRAM_INTERFACE_SELECTED_FILE));
   set_program_value(PROGRAM_INTERFACE_SELECTED_FILE, get_program_value(PROGRAM_INTERFACE_SELECTED_FILE_SAVE_VALUE));
@@ -407,7 +407,7 @@ void graphic_editor_open_file(void) {
  //set variables
  dword_t *image_info = (dword_t *) (get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
  set_file_value(GRAPHIC_EDITOR_FILE_IMAGE_ZOOM, 100);
- set_file_value(GRAPHIC_EDITOR_FILE_IMAGE_PREVIEW_MEMORY, malloc(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGHT]*4));
+ set_file_value(GRAPHIC_EDITOR_FILE_IMAGE_PREVIEW_MEMORY, (dword_t) malloc(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGHT]*4));
  graphic_editor_copy_image_to_preview();
  graphic_editor_image_saved_to_preview = STATUS_TRUE;
  set_program_value(PROGRAM_INTERFACE_SELECTED_CLICK_ZONE, 0);
@@ -443,7 +443,7 @@ void graphic_editor_save_file(void) {
   set_file_value(PROGRAM_INTERFACE_FILE_FLAGS, (get_file_value(PROGRAM_INTERFACE_FILE_FLAGS) | PROGRAM_INTERFACE_FILE_FLAG_SAVED));
   set_file_name_from_file_dialog();
  }
- free(converted_file_memory);
+ free((void *)converted_file_memory);
 }
 
 void graphic_editor_new_file(void) {
@@ -509,7 +509,7 @@ void graphic_editor_new_file(void) {
    add_file((word_t *)"N\0e\0w\0 \0i\0m\0a\0g\0e\0\0\0", 0, 0, 0, 0, 0);
    set_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY, create_image(width, height));
    set_file_value(GRAPHIC_EDITOR_FILE_IMAGE_ZOOM, 100);
-   set_file_value(GRAPHIC_EDITOR_FILE_IMAGE_PREVIEW_MEMORY, malloc(width*height*4));
+   set_file_value(GRAPHIC_EDITOR_FILE_IMAGE_PREVIEW_MEMORY, (dword_t) malloc(width*height*4));
    set_program_value(PROGRAM_INTERFACE_SELECTED_CLICK_ZONE, 0);
 
    //white image
@@ -531,7 +531,7 @@ void graphic_editor_new_file(void) {
 
 void graphic_editor_close_file(void) {
  delete_image(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_INFO_MEMORY));
- free(get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_PREVIEW_MEMORY));
+ free((void *)get_file_value(GRAPHIC_EDITOR_FILE_IMAGE_PREVIEW_MEMORY));
 }
 
 void graphic_editor_key_f7_event(void) {

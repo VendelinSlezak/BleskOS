@@ -2,101 +2,110 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 void bleskos_main_window_print_item(byte_t *string) {
- print(string, bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, BLACK);
- bleskos_main_window_drawing_line += 15;
+    print(string, bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, BLACK);
+    bleskos_main_window_drawing_line += 15;
 }
 
 void bleskos_main_window_draw_item(byte_t *string, dword_t color, byte_t type) {
- add_zone_to_click_board(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20, type);
- 
- draw_full_square(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20, color);
- draw_empty_square(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20, BLACK);
- print(string, bleskos_main_window_drawing_column+8, bleskos_main_window_drawing_line+6, BLACK);
- bleskos_main_window_drawing_line += 25;
+    add_zone_to_click_board(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20, type);
+    
+    draw_full_square(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20, color);
+    draw_empty_square(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20, BLACK);
+    print(string, bleskos_main_window_drawing_column+8, bleskos_main_window_drawing_line+6, BLACK);
+    bleskos_main_window_drawing_line += 25;
 }
 
 void bleskos_main_window_redraw_time(void) {
- if(time_hour<10) {
-  print("0", screen_width-20-152, screen_height-30, BLACK);
-  print_var(time_hour, screen_width-20-144, screen_height-30, BLACK);
- }
- else {
-  print_var(time_hour, screen_width-20-152, screen_height-30, BLACK);
- }
- if(time_minute<10) {
-  print("0", screen_width-20-128, screen_height-30, BLACK);
-  print_var(time_minute, screen_width-20-120, screen_height-30, BLACK);
- }
- else {
-  print_var(time_minute, screen_width-20-128, screen_height-30, BLACK);
- }
- if(time_second<10) {
-  print("0", screen_width-20-104, screen_height-30, BLACK);
-  print_var(time_second, screen_width-20-96, screen_height-30, BLACK);
- }
- else {
-  print_var(time_second, screen_width-20-104, screen_height-30, BLACK);
- }
- 
- print(":  :     /  /", screen_width-20-136, screen_height-30, BLACK);
- if(time_day<10) {
-  print("0", screen_width-20-80, screen_height-30, BLACK);
-  print_var(time_day, screen_width-20-72, screen_height-30, BLACK);
- }
- else {
-  print_var(time_day, screen_width-20-80, screen_height-30, BLACK);
- }
- if(time_month<10) {
-  print("0", screen_width-20-56, screen_height-30, BLACK);
-  print_var(time_month, screen_width-20-48, screen_height-30, BLACK);
- }
- else {
-  print_var(time_month, screen_width-20-56, screen_height-30, BLACK);
- }
- print_var(time_year, screen_width-20-32, screen_height-30, BLACK);
+    read_time();
+
+    //clear previous time
+    draw_full_square(screen_width-20-152, screen_height-30, 152, 10, 0x00C000);
+
+    //draw actual time
+    if(time_hour<10) {
+        print("0", screen_width-20-152, screen_height-30, BLACK);
+        print_var(time_hour, screen_width-20-144, screen_height-30, BLACK);
+    }
+    else {
+        print_var(time_hour, screen_width-20-152, screen_height-30, BLACK);
+    }
+    if(time_minute<10) {
+        print("0", screen_width-20-128, screen_height-30, BLACK);
+        print_var(time_minute, screen_width-20-120, screen_height-30, BLACK);
+    }
+    else {
+        print_var(time_minute, screen_width-20-128, screen_height-30, BLACK);
+    }
+    if(time_second<10) {
+        print("0", screen_width-20-104, screen_height-30, BLACK);
+        print_var(time_second, screen_width-20-96, screen_height-30, BLACK);
+    }
+    else {
+        print_var(time_second, screen_width-20-104, screen_height-30, BLACK);
+    }
+    
+    print(":  :     /  /", screen_width-20-136, screen_height-30, BLACK);
+    if(time_day<10) {
+        print("0", screen_width-20-80, screen_height-30, BLACK);
+        print_var(time_day, screen_width-20-72, screen_height-30, BLACK);
+    }
+    else {
+        print_var(time_day, screen_width-20-80, screen_height-30, BLACK);
+    }
+    if(time_month<10) {
+        print("0", screen_width-20-56, screen_height-30, BLACK);
+        print_var(time_month, screen_width-20-48, screen_height-30, BLACK);
+    }
+    else {
+        print_var(time_month, screen_width-20-56, screen_height-30, BLACK);
+    }
+    print_var(time_year, screen_width-20-32, screen_height-30, BLACK);
+
+    //show changes
+    redraw_part_of_screen(screen_width-20-152, screen_height-30, 152, 10);
 }
 
 void bleskos_main_window_redraw_sound_volume(void) {
- if(is_driver_for_graphic_card==STATUS_TRUE && can_graphic_card_driver_change_backlight==STATUS_TRUE) {
-  bleskos_main_window_drawing_line = 40+15+35;
- }
- else {
-  bleskos_main_window_drawing_line = 40;
- }
- bleskos_main_window_drawing_column = screen_x_center;
- bleskos_main_window_print_item("Sound volume");
- add_zone_to_click_board(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20, MW_SOUND_VOLUME);
- draw_full_square(bleskos_main_window_drawing_column+5, bleskos_main_window_drawing_line, 295, 20, 0x00C000);
- draw_full_square(bleskos_main_window_drawing_column+5, bleskos_main_window_drawing_line, 285*sound_volume/100, 20, WHITE);
- draw_full_square(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 5, 20, BLACK);
- draw_full_square(bleskos_main_window_drawing_column+290, bleskos_main_window_drawing_line, 5, 20, BLACK);
- draw_empty_square(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20, BLACK);
- if(sound_volume<10) {
-  print_var(sound_volume, bleskos_main_window_drawing_column+295/2-4, bleskos_main_window_drawing_line+6, BLACK);
- }
- else if(sound_volume<100) {
-  print_var(sound_volume, bleskos_main_window_drawing_column+295/2-8, bleskos_main_window_drawing_line+6, BLACK);
- }
- else {
-  print("100", bleskos_main_window_drawing_column+295/2-12, bleskos_main_window_drawing_line+6, BLACK);
- }
+    if(is_driver_for_graphic_card==STATUS_TRUE && can_graphic_card_driver_change_backlight==STATUS_TRUE) {
+        bleskos_main_window_drawing_line = 40+15+35;
+    }
+    else {
+        bleskos_main_window_drawing_line = 40;
+    }
+    bleskos_main_window_drawing_column = screen_x_center;
+    bleskos_main_window_print_item("Sound volume");
+    add_zone_to_click_board(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20, MW_SOUND_VOLUME);
+    draw_full_square(bleskos_main_window_drawing_column+5, bleskos_main_window_drawing_line, 295, 20, 0x00C000);
+    draw_full_square(bleskos_main_window_drawing_column+5, bleskos_main_window_drawing_line, 285*sound_volume/100, 20, WHITE);
+    draw_full_square(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 5, 20, BLACK);
+    draw_full_square(bleskos_main_window_drawing_column+290, bleskos_main_window_drawing_line, 5, 20, BLACK);
+    draw_empty_square(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20, BLACK);
+    if(sound_volume<10) {
+        print_var(sound_volume, bleskos_main_window_drawing_column+295/2-4, bleskos_main_window_drawing_line+6, BLACK);
+    }
+    else if(sound_volume<100) {
+        print_var(sound_volume, bleskos_main_window_drawing_column+295/2-8, bleskos_main_window_drawing_line+6, BLACK);
+    }
+    else {
+        print("100", bleskos_main_window_drawing_column+295/2-12, bleskos_main_window_drawing_line+6, BLACK);
+    }
 
- redraw_part_of_screen(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20);
+    redraw_part_of_screen(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20);
 }
 
 void bleskos_main_window_draw_background(void) {
- clear_screen(0x00C000);
- draw_full_square(0, 0, screen_width, 10, BLACK);
- draw_full_square(0, 0, 10, screen_height, BLACK);
- draw_full_square(0, screen_height-10, screen_width, 10, BLACK);
- draw_full_square(screen_width-10, 0, 10, screen_height, BLACK);
+    clear_screen(0x00C000);
+    draw_full_square(0, 0, screen_width, 10, BLACK);
+    draw_full_square(0, 0, 10, screen_height, BLACK);
+    draw_full_square(0, screen_height-10, screen_width, 10, BLACK);
+    draw_full_square(screen_width-10, 0, 10, screen_height, BLACK);
 }
 
 void bleskos_main_window_redraw(void) {
@@ -235,216 +244,209 @@ void bleskos_main_window_redraw(void) {
 }
 
 void bleskos_main_window(void) {
- read_time();
-
- redraw:
- bleskos_main_window_time_redraw = 0;
- bleskos_main_window_redraw();
- redraw_screen();
- bleskos_main_window_time_redraw = 1;
- 
- while(1) {
-  wait_for_user_input();
-  move_mouse_cursor();
-
-  if(internet_status_change==STATUS_TRUE) {
-   goto redraw;
-  }
-  
-  if(usb_device_change_event==STATUS_TRUE) {
-   goto redraw;
-  }
-  
-  if(keyboard_code_of_pressed_key==KEY_D) {
-   bleskos_main_window_time_redraw = 0;
-   document_editor();
-   goto redraw;
-  }
-  else if(keyboard_code_of_pressed_key==KEY_T) {
-   bleskos_main_window_time_redraw = 0;
-   text_editor();
-   goto redraw;
-  }
-  else if(keyboard_code_of_pressed_key==KEY_G) {
-   bleskos_main_window_time_redraw = 0;
-   graphic_editor();
-   goto redraw;
-  }
-  else if(keyboard_code_of_pressed_key==KEY_M) {
-   bleskos_main_window_time_redraw = 0;
-   media_viewer();
-   goto redraw;
-  }
-  else if(keyboard_code_of_pressed_key==KEY_I) {
-   bleskos_main_window_time_redraw = 0;
-   internet_browser();
-   goto redraw;
-  }
-  else if(keyboard_code_of_pressed_key==KEY_F) {
-   bleskos_main_window_time_redraw = 0;
-   file_manager();
-   goto redraw;
-  }
-  else if(keyboard_code_of_pressed_key==KEY_R) {
-   bleskos_main_window_time_redraw = 0;
-   bleskos_main_window_run_binary_programs();
-   goto redraw;
-  }
-  else if(keyboard_code_of_pressed_key==KEY_C) {
-   bleskos_main_window_time_redraw = 0;
-   calculator();
-   goto redraw;
-  }
-  else if(keyboard_code_of_pressed_key==KEY_S) {
-   bleskos_main_window_time_redraw = 0;
-   screenshooter();
-   goto redraw;
-  }
-  else if(keyboard_code_of_pressed_key==KEY_F1) {
-   bleskos_main_window_time_redraw = 0;
-   system_board();
-   goto redraw;
-  }
-  else if(keyboard_code_of_pressed_key==KEY_F2) {
-   bleskos_main_window_change_keyboard_layout();
-   goto redraw;
-  }
-  else if(keyboard_code_of_pressed_key==KEY_F10) {
-   bleskos_main_window_enable_disable_touchpad();
-   goto redraw;
-  }
-  else if(keyboard_code_of_pressed_key==KEY_F11 && optical_drive_info.controller_type!=NO_CONTROLLER) {
-   eject_optical_disk();
-   continue;
-  }
-  else if(keyboard_code_of_pressed_key==KEY_F12) {
-   bleskos_main_window_shutdown();
-   goto redraw;
-  }
-  else if(keyboard_code_of_pressed_key==KEY_RIGHT) {
-   if(sound_volume>90) {
-    sound_volume = 100;
-   }
-   else {
-    sound_volume += 10;
-   }
-   sound_set_volume(sound_volume);
-   bleskos_main_window_redraw_sound_volume();
-  }
-  else if(keyboard_code_of_pressed_key==KEY_LEFT) {
-   if(sound_volume<10) {
-    sound_volume = 0;
-   }
-   else {
-    sound_volume -= 10;
-   }
-   sound_set_volume(sound_volume);
-   bleskos_main_window_redraw_sound_volume();
-  }
-  
-  //click
-  if(mouse_click_button_state==MOUSE_CLICK) {   
-   dword_t click_value = get_mouse_cursor_click_board_value();
-   if(click_value==NO_CLICK) {
-    continue;
-   }
+    redraw:
+    bleskos_main_window_redraw();
+    redraw_screen();
+    create_task(bleskos_main_window_redraw_time, TASK_TYPE_PERIODIC_INTERRUPT, 1000);
     
-   mouse_click_button_state = MOUSE_DRAG;
-   if(click_value==MW_DOCUMENT_EDITOR) {
-    bleskos_main_window_time_redraw = 0;
-    document_editor();
-   }
-   else if(click_value==MW_TEXT_EDITOR) {
-    bleskos_main_window_time_redraw = 0;
-    text_editor();
-   }
-   else if(click_value==MW_GRAPHIC_EDITOR) {
-    bleskos_main_window_time_redraw = 0;
-    graphic_editor();
-   }
-   else if(click_value==MW_MEDIA_VIEWER) {
-    bleskos_main_window_time_redraw = 0;
-    media_viewer();
-   }
-   else if(click_value==MW_INTERNET_BROWSER) {
-    bleskos_main_window_time_redraw = 0;
-    internet_browser();
-   }
-   else if(click_value==MW_FILE_MANAGER) {
-    bleskos_main_window_time_redraw = 0;
-    file_manager();
-   }
-   else if(click_value==MW_RUN_BINARY_PROGRAMS) {
-    bleskos_main_window_time_redraw = 0;
-    bleskos_main_window_run_binary_programs();
-   }
-   else if(click_value==MW_CALCULATOR) {
-    bleskos_main_window_time_redraw = 0;
-    calculator();
-   }
-   else if(click_value==MW_SCREENSHOOTER) {
-    bleskos_main_window_time_redraw = 0;
-    screenshooter();
-   }
-   else if(click_value==MW_SYSTEM_BOARD) {
-    bleskos_main_window_time_redraw = 0;
-    system_board();
-   }
-   else if(click_value==MW_CHANGE_KEYBOARD_LAYOUT) {
-    bleskos_main_window_change_keyboard_layout();
-   }
-   else if(click_value==MW_SHUTDOWN) {
-    bleskos_main_window_shutdown();
-   }
-   else if(click_value==MW_MONITOR_BACKLIGHT) {
-    monitor_change_backlight((100*(mouse_cursor_x-screen_x_center)/295)/10*10+10);
-   }
-   else if(click_value==MW_SOUND_VOLUME) {
-    if(mouse_cursor_x<=screen_x_center+5) {
-     sound_set_volume(0);
-    }
-    else if(mouse_cursor_x>=screen_x_center+290) {
-     sound_set_volume(100);
-    }
-    else {
-     sound_set_volume((100*(mouse_cursor_x-screen_x_center-5)/285));
-    }
-   }
-   else if(click_value==MW_ENABLE_DISABLE_TOUCHPAD) {
-    bleskos_main_window_enable_disable_touchpad();
-   }
-   else if(click_value==MW_EJECT_OPTICAL_DISK_DRIVE) {
-    eject_optical_disk();
-   }
-   
-   goto redraw;
-  }
+    while(1) {
+        wait_for_user_input();
+        move_mouse_cursor();
 
-  //drag
-  if(mouse_click_button_state==MOUSE_DRAG) {
-   dword_t click_value = get_mouse_cursor_click_board_value();
-   if(click_value==NO_CLICK) {
-    continue;
-   }
-   else if(click_value==MW_SOUND_VOLUME) {
-    if(mouse_cursor_x<=screen_x_center+5) {
-     sound_set_volume(0);
+        if(internet_status_change==STATUS_TRUE || usb_device_change_event==STATUS_TRUE) {
+            goto redraw;
+        }
+        
+        if(keyboard_code_of_pressed_key==KEY_D) {
+            destroy_task(bleskos_main_window_redraw_time);
+            document_editor();
+            goto redraw;
+        }
+        else if(keyboard_code_of_pressed_key==KEY_T) {
+            destroy_task(bleskos_main_window_redraw_time);
+            text_editor();
+            goto redraw;
+        }
+        else if(keyboard_code_of_pressed_key==KEY_G) {
+            destroy_task(bleskos_main_window_redraw_time);
+            graphic_editor();
+            goto redraw;
+        }
+        else if(keyboard_code_of_pressed_key==KEY_M) {
+            destroy_task(bleskos_main_window_redraw_time);
+            media_viewer();
+            goto redraw;
+        }
+        else if(keyboard_code_of_pressed_key==KEY_I) {
+            destroy_task(bleskos_main_window_redraw_time);
+            internet_browser();
+            goto redraw;
+        }
+        else if(keyboard_code_of_pressed_key==KEY_F) {
+            destroy_task(bleskos_main_window_redraw_time);
+            file_manager();
+            goto redraw;
+        }
+        else if(keyboard_code_of_pressed_key==KEY_R) {
+            destroy_task(bleskos_main_window_redraw_time);
+            bleskos_main_window_run_binary_programs();
+            goto redraw;
+        }
+        else if(keyboard_code_of_pressed_key==KEY_C) {
+            destroy_task(bleskos_main_window_redraw_time);
+            calculator();
+            goto redraw;
+        }
+        else if(keyboard_code_of_pressed_key==KEY_S) {
+            destroy_task(bleskos_main_window_redraw_time);
+            screenshooter();
+            goto redraw;
+        }
+        else if(keyboard_code_of_pressed_key==KEY_F1) {
+            destroy_task(bleskos_main_window_redraw_time);
+            system_board();
+            goto redraw;
+        }
+        else if(keyboard_code_of_pressed_key==KEY_F2) {
+            bleskos_main_window_change_keyboard_layout();
+            goto redraw;
+        }
+        else if(keyboard_code_of_pressed_key==KEY_F10) {
+            bleskos_main_window_enable_disable_touchpad();
+            goto redraw;
+        }
+        else if(keyboard_code_of_pressed_key==KEY_F11 && optical_drive_info.controller_type!=NO_CONTROLLER) {
+            eject_optical_disk();
+            continue;
+        }
+        else if(keyboard_code_of_pressed_key==KEY_F12) {
+            destroy_task(bleskos_main_window_redraw_time);
+            bleskos_main_window_shutdown();
+            goto redraw;
+        }
+        else if(keyboard_code_of_pressed_key==KEY_RIGHT) {
+            if(sound_volume>90) {
+                sound_volume = 100;
+            }
+            else {
+                sound_volume += 10;
+            }
+            sound_set_volume(sound_volume);
+            bleskos_main_window_redraw_sound_volume();
+        }
+        else if(keyboard_code_of_pressed_key==KEY_LEFT) {
+            if(sound_volume<10) {
+                sound_volume = 0;
+            }
+            else {
+                sound_volume -= 10;
+            }
+            sound_set_volume(sound_volume);
+            bleskos_main_window_redraw_sound_volume();
+        }
+        
+        //click
+        if(mouse_click_button_state==MOUSE_CLICK) {   
+            dword_t click_value = get_mouse_cursor_click_board_value();
+            if(click_value==NO_CLICK) {
+                continue;
+            }
+                
+            mouse_click_button_state = MOUSE_DRAG;
+            if(click_value==MW_DOCUMENT_EDITOR) {
+                destroy_task(bleskos_main_window_redraw_time);
+                document_editor();
+            }
+            else if(click_value==MW_TEXT_EDITOR) {
+                destroy_task(bleskos_main_window_redraw_time);
+                text_editor();
+            }
+            else if(click_value==MW_GRAPHIC_EDITOR) {
+                destroy_task(bleskos_main_window_redraw_time);
+                graphic_editor();
+            }
+            else if(click_value==MW_MEDIA_VIEWER) {
+                destroy_task(bleskos_main_window_redraw_time);
+                media_viewer();
+            }
+            else if(click_value==MW_INTERNET_BROWSER) {
+                destroy_task(bleskos_main_window_redraw_time);
+                internet_browser();
+            }
+            else if(click_value==MW_FILE_MANAGER) {
+                destroy_task(bleskos_main_window_redraw_time);
+                file_manager();
+            }
+            else if(click_value==MW_RUN_BINARY_PROGRAMS) {
+                destroy_task(bleskos_main_window_redraw_time);
+                bleskos_main_window_run_binary_programs();
+            }
+            else if(click_value==MW_CALCULATOR) {
+                destroy_task(bleskos_main_window_redraw_time);
+                calculator();
+            }
+            else if(click_value==MW_SCREENSHOOTER) {
+                destroy_task(bleskos_main_window_redraw_time);
+                screenshooter();
+            }
+            else if(click_value==MW_SYSTEM_BOARD) {
+                destroy_task(bleskos_main_window_redraw_time);
+                system_board();
+            }
+            else if(click_value==MW_CHANGE_KEYBOARD_LAYOUT) {
+                bleskos_main_window_change_keyboard_layout();
+            }
+            else if(click_value==MW_SHUTDOWN) {
+                destroy_task(bleskos_main_window_redraw_time);
+                bleskos_main_window_shutdown();
+            }
+            else if(click_value==MW_MONITOR_BACKLIGHT) {
+                monitor_change_backlight((100*(mouse_cursor_x-screen_x_center)/295)/10*10+10);
+            }
+            else if(click_value==MW_SOUND_VOLUME) {
+                if(mouse_cursor_x<=screen_x_center+5) {
+                    sound_set_volume(0);
+                }
+                else if(mouse_cursor_x>=screen_x_center+290) {
+                    sound_set_volume(100);
+                }
+                else {
+                    sound_set_volume((100*(mouse_cursor_x-screen_x_center-5)/285));
+                }
+            }
+            else if(click_value==MW_ENABLE_DISABLE_TOUCHPAD) {
+                bleskos_main_window_enable_disable_touchpad();
+            }
+            else if(click_value==MW_EJECT_OPTICAL_DISK_DRIVE) {
+                eject_optical_disk();
+            }
+
+            goto redraw;
+        }
+
+        //drag
+        if(mouse_click_button_state==MOUSE_DRAG) {
+            dword_t click_value = get_mouse_cursor_click_board_value();
+            if(click_value==NO_CLICK) {
+                continue;
+            }
+            else if(click_value==MW_SOUND_VOLUME) {
+                if(mouse_cursor_x<=screen_x_center+5) {
+                    sound_set_volume(0);
+                }
+                else if(mouse_cursor_x>=screen_x_center+290) {
+                    sound_set_volume(100);
+                }
+                else {
+                    sound_set_volume((100*(mouse_cursor_x-screen_x_center-5)/285));
+                }
+                bleskos_main_window_redraw_sound_volume();
+            }
+        }
     }
-    else if(mouse_cursor_x>=screen_x_center+290) {
-     sound_set_volume(100);
-    }
-    else {
-     sound_set_volume((100*(mouse_cursor_x-screen_x_center-5)/285));
-    }
-    bleskos_main_window_redraw_sound_volume();
-   }
-  }
- }
 }
 
 void bleskos_main_window_change_keyboard_layout(void) {
- bleskos_main_window_time_redraw = 0;
-
  clear_click_board();
  bleskos_main_window_draw_background();
 
@@ -456,6 +458,8 @@ void bleskos_main_window_change_keyboard_layout(void) {
  bleskos_main_window_draw_item("[s] Slovak", 0x00FF00, MW_KEYBOARD_LAYOUT_SLOVAK);
 
  print("You can go back with ESC", 20, screen_height-30, BLACK);
+
+ bleskos_main_window_redraw_time();
 
  redraw_screen();
 
@@ -499,10 +503,9 @@ void bleskos_main_window_change_keyboard_layout(void) {
 }
 
 void bleskos_main_window_shutdown(void) {
- bleskos_main_window_time_redraw = 0;
+ destroy_task(bleskos_main_window_redraw_time);
 
  clear_screen(0x00C000);
- 
 
  if(dialog_yes_no("Do you really want to shut down computer?")==STATUS_TRUE) {
   clear_screen(0x00C000);
@@ -530,7 +533,7 @@ void bleskos_main_window_enable_disable_touchpad(void) {
 }
 
 void bleskos_main_window_run_binary_programs(void) {
- bleskos_main_window_time_redraw = 0;
+ destroy_task(bleskos_main_window_redraw_time);
 
  redraw:
  clear_click_board();
@@ -585,7 +588,7 @@ void bleskos_main_window_run_binary_programs(void) {
     }
 
     //free memory
-    free((dword_t)file_dialog_open_file_memory);
+    free((void *)file_dialog_open_file_memory);
    }
 
    //go back to Run binary programs screen

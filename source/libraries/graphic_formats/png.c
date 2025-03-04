@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -85,9 +85,9 @@ dword_t convert_png_to_image_data(dword_t png_memory, dword_t png_file_length) {
    //create image
    image_memory = create_image(width, height);
    image_data = (dword_t *) (get_image_data_memory(image_memory));
-   deflate_compressed_data_memory = (calloc(png_file_length));
+   deflate_compressed_data_memory = (dword_t) (calloc(png_file_length));
    deflate_compressed_data_memory_length = 0;
-   deflate_decompressed_data_memory = calloc((width*height*bpp+height));
+   deflate_decompressed_data_memory = (dword_t) calloc((width*height*bpp+height));
   }
   else if(png32[1]==0x45544C50) { //PLTE
    palette_memory = ((dword_t)png32+8);
@@ -107,16 +107,16 @@ dword_t convert_png_to_image_data(dword_t png_memory, dword_t png_file_length) {
     log("PNG: no palette\n");
     
     delete_image(image_memory);
-    free(deflate_compressed_data_memory);
-    free(deflate_decompressed_data_memory);
+    free((void *)deflate_compressed_data_memory);
+    free((void *)deflate_decompressed_data_memory);
     return STATUS_ERROR;
    }
    else if(bpp==PNG_BPP_PALETTE_8_BITS && bits_per_channel==16) {
     log("PNG: palette with 16 bit channel\n");
     
     delete_image(image_memory);
-    free(deflate_compressed_data_memory);
-    free(deflate_decompressed_data_memory);
+    free((void *)deflate_compressed_data_memory);
+    free((void *)deflate_decompressed_data_memory);
     return STATUS_ERROR;
    }
      
@@ -130,8 +130,8 @@ dword_t convert_png_to_image_data(dword_t png_memory, dword_t png_file_length) {
     log("PNG: DEFLATE decompression error\n");
     
     delete_image(image_memory);
-    free(deflate_compressed_data_memory);
-    free(deflate_decompressed_data_memory);
+    free((void *)deflate_compressed_data_memory);
+    free((void *)deflate_decompressed_data_memory);
     return STATUS_ERROR;
    }
    if(decoded_stream_length!=expected_size_of_file) {
@@ -144,17 +144,17 @@ dword_t convert_png_to_image_data(dword_t png_memory, dword_t png_file_length) {
     log_var(decoded_stream_length);
     
     delete_image(image_memory);
-    free(deflate_compressed_data_memory);
-    free(deflate_decompressed_data_memory);
+    free((void *)deflate_compressed_data_memory);
+    free((void *)deflate_decompressed_data_memory);
     return STATUS_ERROR;
    }
    
    //decompress filtering
    byte_t *png_data = (byte_t *) deflate_decompressed_data_memory;
    byte_t *png_palette_data = (byte_t *) palette_memory;
-   dword_t filtering_previous_line_r_memory = calloc(width);
-   dword_t filtering_previous_line_g_memory = calloc(width);
-   dword_t filtering_previous_line_b_memory = calloc(width);
+   dword_t filtering_previous_line_r_memory = (dword_t) calloc(width);
+   dword_t filtering_previous_line_g_memory = (dword_t) calloc(width);
+   dword_t filtering_previous_line_b_memory = (dword_t) calloc(width);
    byte_t pixel_r, pixel_g, pixel_b, previous_pixel_r, previous_pixel_g, previous_pixel_b, previous_up_pixel_r, previous_up_pixel_g, previous_up_pixel_b;
    
    for(int line=0; line<height; line++) {
@@ -488,20 +488,20 @@ dword_t convert_png_to_image_data(dword_t png_memory, dword_t png_file_length) {
      log_var(*png_data);
      log("\n");
      
-     free(filtering_previous_line_r_memory);
-     free(filtering_previous_line_g_memory);
-     free(filtering_previous_line_b_memory);
+     free((void *)filtering_previous_line_r_memory);
+     free((void *)filtering_previous_line_g_memory);
+     free((void *)filtering_previous_line_b_memory);
      delete_image(image_memory);
-     free(deflate_compressed_data_memory);
-     free(deflate_decompressed_data_memory);
+     free((void *)deflate_compressed_data_memory);
+     free((void *)deflate_decompressed_data_memory);
      return STATUS_ERROR;
     }
    }
-   free(filtering_previous_line_r_memory);
-   free(filtering_previous_line_g_memory);
-   free(filtering_previous_line_b_memory);
-   free(deflate_compressed_data_memory);
-   free(deflate_decompressed_data_memory);
+   free((void *)filtering_previous_line_r_memory);
+   free((void *)filtering_previous_line_g_memory);
+   free((void *)filtering_previous_line_b_memory);
+   free((void *)deflate_compressed_data_memory);
+   free((void *)deflate_decompressed_data_memory);
  
    return image_memory;
   }
@@ -516,8 +516,8 @@ dword_t convert_png_to_image_data(dword_t png_memory, dword_t png_file_length) {
  
  if(image_memory!=0) {
   delete_image(image_memory);
-  free(deflate_compressed_data_memory);
-  free(deflate_decompressed_data_memory);
+  free((void *)deflate_compressed_data_memory);
+  free((void *)deflate_decompressed_data_memory);
  }
  
  return STATUS_ERROR;

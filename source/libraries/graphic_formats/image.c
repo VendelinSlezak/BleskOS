@@ -2,15 +2,15 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 void initalize_image_operations(void) {
- image_resize_width_array_mem = malloc(4096);
- image_resize_height_array_mem = malloc(4096);
+ image_resize_width_array_mem = (dword_t) malloc(4096);
+ image_resize_height_array_mem = (dword_t) malloc(4096);
 }
 
 void copy_raw_image_data(dword_t source_memory, dword_t source_width, dword_t source_x, dword_t source_y, dword_t image_width, dword_t image_height, dword_t dest_memory, dword_t dest_width, dword_t dest_x, dword_t dest_y) {
@@ -41,11 +41,11 @@ void copy_and_resize_raw_image_data(dword_t source_memory, dword_t source_width,
  dword_t destination_start_of_line = ((dword_t)destination);
  dword_t source_start_of_line = ((dword_t)source);
  
- //we will calculate how many times will be displayed pixel in every column(image_resize_width_array) and in every line(image_resize_height_array)
- //for example if we have image with size 4x4, and we want to resize it to 2x2, arrays will look like this:
- //image_resize_width_array = 0, 1, 0, 1 image_resize_height_array = 0, 1, 0, 1
- //if we want to resize it to size 8x4, arrays will look like this:
- //image_resize_width_array = 2, 2, 2, 2 image_resize_height_array = 1, 1, 1, 1
+ // we will calculate how many times will be displayed pixel in every column(image_resize_width_array) and in every line(image_resize_height_array)
+ // for example if we have image with size 4x4, and we want to resize it to 2x2, arrays will look like this:
+ // image_resize_width_array = 0, 1, 0, 1 image_resize_height_array = 0, 1, 0, 1
+ // if we want to resize it to size 8x4, arrays will look like this:
+ // image_resize_width_array = 2, 2, 2, 2 image_resize_height_array = 1, 1, 1, 1
  
  //add base pixels
  dword_t width_base = (resized_source_width/source_width); 
@@ -171,7 +171,7 @@ void copy_and_resize_raw_image_data(dword_t source_memory, dword_t source_width,
 }
 
 dword_t create_image(dword_t width, dword_t height) {
- dword_t image_info_mem = calloc(IMAGE_SIZE_OF_INFO_IN_BYTES+(width*height*4));
+ dword_t image_info_mem = (dword_t) calloc(IMAGE_SIZE_OF_INFO_IN_BYTES+(width*height*4));
  dword_t *image_info = (dword_t *) image_info_mem;
 
  image_info[IMAGE_INFO_REAL_WIDTH] = width;
@@ -193,7 +193,7 @@ dword_t create_image(dword_t width, dword_t height) {
 }
 
 void delete_image(dword_t image_info_mem) {
- free(image_info_mem);
+ free((void *)image_info_mem);
 }
 
 dword_t get_image_data_memory(dword_t image_info_mem) {
@@ -442,7 +442,7 @@ void image_reverse_vertically(dword_t image_info_mem) {
 void image_turn_left(dword_t image_info_mem) {
  dword_t *image_info = (dword_t *) image_info_mem;
  dword_t *image_data = (dword_t *) (image_info_mem+IMAGE_SIZE_OF_INFO_IN_BYTES);
- dword_t second_image_mem = malloc(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGHT]*4);
+ dword_t second_image_mem = (dword_t) malloc(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGHT]*4);
  dword_t second_image_data_starting_point = (second_image_mem+(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGHT]*4)-(image_info[IMAGE_INFO_REAL_HEIGHT]*4));
  dword_t *second_image_data = (dword_t *) second_image_data_starting_point;
  
@@ -472,13 +472,13 @@ void image_turn_left(dword_t image_info_mem) {
  dword_t var=image_info[IMAGE_INFO_REAL_HEIGHT];
  image_info[IMAGE_INFO_REAL_HEIGHT] = image_info[IMAGE_INFO_REAL_WIDTH];
  image_info[IMAGE_INFO_REAL_WIDTH] = var;
- free(second_image_mem);
+ free((void *)second_image_mem);
 }
 
 void image_turn_right(dword_t image_info_mem) {
  dword_t *image_info = (dword_t *) image_info_mem;
  dword_t *image_data = (dword_t *) (image_info_mem+IMAGE_SIZE_OF_INFO_IN_BYTES+(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGHT]*4)-4);
- dword_t second_image_mem = malloc(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGHT]*4);
+ dword_t second_image_mem = (dword_t) malloc(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGHT]*4);
  dword_t second_image_data_starting_point = (second_image_mem+(image_info[IMAGE_INFO_REAL_WIDTH]*image_info[IMAGE_INFO_REAL_HEIGHT]*4)-(image_info[IMAGE_INFO_REAL_HEIGHT]*4));
  dword_t *second_image_data = (dword_t *) second_image_data_starting_point;
  
@@ -508,5 +508,5 @@ void image_turn_right(dword_t image_info_mem) {
  dword_t var=image_info[IMAGE_INFO_REAL_HEIGHT];
  image_info[IMAGE_INFO_REAL_HEIGHT] = image_info[IMAGE_INFO_REAL_WIDTH];
  image_info[IMAGE_INFO_REAL_WIDTH] = var;
- free(second_image_mem);
+ free((void *)second_image_mem);
 }

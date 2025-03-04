@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -123,7 +123,7 @@ byte_t *read_iso9660_folder(dword_t folder_location, dword_t folder_size_in_byte
  if((dword_t)iso9660_folder==STATUS_ERROR) {
   return STATUS_ERROR;
  }
- iso9660_folder = (byte_t *) (realloc((dword_t)iso9660_folder, folder_size_in_bytes+256)); //add zero bytes at end
+ iso9660_folder = (byte_t *) (realloc((void *)iso9660_folder, folder_size_in_bytes+256)); //add zero bytes at end
 
  /* convert ISO9660 folder to BleskOS Virtual File System folder */
 
@@ -189,7 +189,7 @@ byte_t *read_iso9660_folder(dword_t folder_location, dword_t folder_size_in_byte
  }
 
  //free allocated memory
- free((dword_t)iso9660_folder);
+ free((void *)iso9660_folder);
 
  //return virtual file system folder
  return ((byte_t *)vfs_folder);

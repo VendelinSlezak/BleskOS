@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -68,7 +68,7 @@ void file_manager_event_click_on_connected_partitions(void) {
  if(get_program_value(PROGRAM_INTERFACE_NUMBER_OF_FILES)==0) {
   add_file((word_t *)"N\0e\0w\0\0\0", 0, 0, 0, 0, 0);
   set_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY, 0);
-  set_file_value(FILE_MANAGER_FOLDER_PATH_NAMES, calloc(20*2*(MAX_NUMBER_OF_FOLDERS_IN_PATH+2)));
+  set_file_value(FILE_MANAGER_FOLDER_PATH_NAMES, (dword_t) calloc(20*2*(MAX_NUMBER_OF_FOLDERS_IN_PATH+2)));
   set_file_value(FILE_MANAGER_SCROLLBAR_RIDER_POSITION, 0);
 
   word_t *path_names = (word_t *) (get_file_value(FILE_MANAGER_FOLDER_PATH_NAMES));
@@ -147,7 +147,7 @@ void file_manager_event_key_page_up(void) {
   //add tab
   add_file((word_t *)"N\0e\0w\0\0\0", 0, 0, 0, 0, 0);
   set_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY, 0);
-  set_file_value(FILE_MANAGER_FOLDER_PATH_NAMES, calloc(20*2*(MAX_NUMBER_OF_FOLDERS_IN_PATH+2)));
+  set_file_value(FILE_MANAGER_FOLDER_PATH_NAMES, (dword_t) calloc(20*2*(MAX_NUMBER_OF_FOLDERS_IN_PATH+2)));
   set_file_value(FILE_MANAGER_SCROLLBAR_RIDER_POSITION, 0);
   word_t *path_names = (word_t *) (get_file_value(FILE_MANAGER_FOLDER_PATH_NAMES));
   path_names[0] = 'R';
@@ -255,7 +255,7 @@ void file_manager_event_key_page_down(void) {
   //add tab
   add_file((word_t *)"N\0e\0w\0\0\0", 0, 0, 0, 0, 0);
   set_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY, 0);
-  set_file_value(FILE_MANAGER_FOLDER_PATH_NAMES, calloc(20*2*(MAX_NUMBER_OF_FOLDERS_IN_PATH+2)));
+  set_file_value(FILE_MANAGER_FOLDER_PATH_NAMES, (dword_t) calloc(20*2*(MAX_NUMBER_OF_FOLDERS_IN_PATH+2)));
   set_file_value(FILE_MANAGER_SCROLLBAR_RIDER_POSITION, 0);
   word_t *path_names = (word_t *) (get_file_value(FILE_MANAGER_FOLDER_PATH_NAMES));
   path_names[0] = 'R';
@@ -828,7 +828,7 @@ dword_t file_manager_preview_window(void) {
    image = (dword_t *) convert_bmp_to_image_data((dword_t)image_file);
   }
 
-  free((dword_t)image_file);
+  free((void *)image_file);
 
   if((dword_t)image==STATUS_ERROR) {
    error_window("Error during decoding image");
@@ -903,7 +903,7 @@ dword_t file_manager_preview_window(void) {
   //exit
   if(event==CLICK_ZONE_FILE_MANAGER_PREVIEW_WINDOW_BACK) {
    if((dword_t)image!=STATUS_ERROR) {
-    free((dword_t)image);
+    free((void *)image);
    }
    return EVENT_REDRAW;
   }
@@ -911,14 +911,14 @@ dword_t file_manager_preview_window(void) {
   //move to other file
   if(event==CLICK_ZONE_FILE_MANAGER_PREVIEW_WINDOW_LEFT && previous_image_file!=0xFFFFFFFF) {
    if((dword_t)image!=STATUS_ERROR) {
-    free((dword_t)image);
+    free((void *)image);
    }
    file_manager_folder_descriptor->selected_entry = previous_image_file;
    goto reload_preview_window;
   }
   if(event==CLICK_ZONE_FILE_MANAGER_PREVIEW_WINDOW_RIGHT && next_image_file!=0xFFFFFFFF) {
    if((dword_t)image!=STATUS_ERROR) {
-    free((dword_t)image);
+    free((void *)image);
    }
    file_manager_folder_descriptor->selected_entry = next_image_file;
    goto reload_preview_window;
@@ -1125,7 +1125,7 @@ dword_t file_manager_copy_file(void) {
 
  //read file
  if((dword_t)file_manager_copied_file_memory!=0) {
-  free((dword_t)file_manager_copied_file_memory);
+  free((void *)file_manager_copied_file_memory);
  }
  file_manager_copied_file_memory = vfs_read_file_show_progress(file_manager_folder_descriptor, file_manager_folder_descriptor->selected_entry);
  if((dword_t)file_manager_copied_file_memory==STATUS_ERROR) {
@@ -1826,7 +1826,7 @@ void redraw_file_manager(void) {
 void file_manager_new_tab(void) {
  add_file((word_t *)"N\0e\0w\0\0\0", 0, 0, 0, 0, 0);
  set_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY, 0);
- set_file_value(FILE_MANAGER_FOLDER_PATH_NAMES, calloc(20*2*(MAX_NUMBER_OF_FOLDERS_IN_PATH+2)));
+ set_file_value(FILE_MANAGER_FOLDER_PATH_NAMES, (dword_t) calloc(20*2*(MAX_NUMBER_OF_FOLDERS_IN_PATH+2)));
  set_file_value(FILE_MANAGER_SCROLLBAR_RIDER_POSITION, 0);
 
  word_t *path_names = (word_t *) (get_file_value(FILE_MANAGER_FOLDER_PATH_NAMES));
@@ -1840,5 +1840,5 @@ void file_manager_close_tab(void) {
  if(get_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY)!=0) {
   vfs_destroy_folder_path_structure((struct folder_descriptor_t *)get_file_value(FILE_MANAGER_FOLDER_STRUCTURE_MEMORY));
  }
- free(get_file_value(FILE_MANAGER_FOLDER_PATH_NAMES));
+ free((void *)get_file_value(FILE_MANAGER_FOLDER_PATH_NAMES));
 }

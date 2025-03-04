@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -20,32 +20,32 @@ void initalize_internet_browser(void) {
  internet_browser_last_show_line = (internet_browser_first_show_line+internet_browser_webpage_height);
  internet_browser_first_show_column = 0;
  internet_browser_last_show_column = (internet_browser_first_show_column+internet_browser_webpage_width);
- internet_browser_url_mem = malloc(2048);
- url_base_mem = calloc(2048);
- url_input_mem = calloc(2048);
- url_output_mem = calloc(2048);
+ internet_browser_url_mem = (dword_t) malloc(2048);
+ url_base_mem = (dword_t) calloc(2048);
+ url_input_mem = (dword_t) calloc(2048);
+ url_output_mem = (dword_t) calloc(2048);
  
- html_title_memory = malloc(1000*2);
+ html_title_memory = (dword_t) malloc(1000*2);
  
- html_tag_css_list_mem = calloc(HTML_TAG_CSS_ENTRY_SIZE*1000);
+ html_tag_css_list_mem = (dword_t) calloc(HTML_TAG_CSS_ENTRY_SIZE*1000);
  html_tag_css_list = (dword_t *) html_tag_css_list_mem;
  html_tag_css_list_pointer = 0;
  
- html_list_type_mem = calloc(1000*4);
+ html_list_type_mem = (dword_t) calloc(1000*4);
  html_list_type = (dword_t *) html_list_type_mem;
  html_list_type_pointer = 0;
- html_table_cell_width_list_mem = calloc(1000*4);
+ html_table_cell_width_list_mem = (dword_t) calloc(1000*4);
  html_table_cell_width_list = (dword_t *) html_table_cell_width_list_mem;
  html_table_cell_width_list_pointer = 0;
  
- css_entries_tag_list_mem = calloc(10000*8);
+ css_entries_tag_list_mem = (dword_t) calloc(10000*8);
  css_entries_tag_list_pointer = 0;
- css_entries_id_list_mem = calloc(10000*8);
+ css_entries_id_list_mem = (dword_t) calloc(10000*8);
  css_entries_id_list_pointer = 0;
- css_entries_class_list_mem = calloc(10000*8);
+ css_entries_class_list_mem = (dword_t) calloc(10000*8);
  css_entries_class_list_pointer = 0;
 
- html_list_of_downloaded_files_mem = calloc(1000*4);
+ html_list_of_downloaded_files_mem = (dword_t) calloc(1000*4);
  html_list_of_downloaded_files = (dword_t *) (html_list_of_downloaded_files_mem);
  html_list_of_downloaded_files_pointer = 0;
 }
@@ -219,7 +219,7 @@ void internet_browser_open_file(void) {
   }
   set_char_of_file_name(19, 0);
  }
- set_file_value(INTERNET_BROWSER_FILE_URL_HISTORY_MEMORY, calloc(10*2048*2));
+ set_file_value(INTERNET_BROWSER_FILE_URL_HISTORY_MEMORY, (dword_t) calloc(10*2048*2));
 }
 
 void internet_browser_new_file(void) {
@@ -236,7 +236,7 @@ void internet_browser_new_file(void) {
  set_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_SIZE, 0);
  set_file_value(INTERNET_BROWSER_FILE_VERTICAL_SCROLLBAR_RIDER_POSITION, 0);
  set_file_value(INTERNET_BROWSER_FILE_HTML_MEMORY, 0);
- set_file_value(INTERNET_BROWSER_FILE_URL_HISTORY_MEMORY, calloc(10*2048*2));
+ set_file_value(INTERNET_BROWSER_FILE_URL_HISTORY_MEMORY, (dword_t) calloc(10*2048*2));
 }
 
 void internet_browser_close_file(void) {
@@ -244,12 +244,12 @@ void internet_browser_close_file(void) {
   return;
  }
  delete_text_area(get_file_value(INTERNET_BROWSER_FILE_TEXT_AREA_MEMORY));
- free(get_file_value(INTERNET_BROWSER_FILE_URL_HISTORY_MEMORY));
+ free((void *)get_file_value(INTERNET_BROWSER_FILE_URL_HISTORY_MEMORY));
  if(get_file_value(INTERNET_BROWSER_FILE_HTML_MEMORY)!=0) {
-  free(get_file_value(INTERNET_BROWSER_FILE_HTML_MEMORY));
+  free((void *)get_file_value(INTERNET_BROWSER_FILE_HTML_MEMORY));
  }
  if(get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_MEMORY)!=0) {
-  free(get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_MEMORY));
+  free((void *)get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_MEMORY));
  }
 }
 
@@ -357,10 +357,10 @@ void internet_browser_load_webpage_from_url_in_text_area(void) {
  if(internet.status==INTERNET_STATUS_CONNECTED) {
   //close actual opened file
   if(get_file_value(INTERNET_BROWSER_FILE_HTML_MEMORY)!=0) {
-   free(get_file_value(INTERNET_BROWSER_FILE_HTML_MEMORY));
+   free((void *)get_file_value(INTERNET_BROWSER_FILE_HTML_MEMORY));
   }
   if(get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_MEMORY)!=0) {
-   free(get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_MEMORY));
+   free((void *)get_file_value(INTERNET_BROWSER_FILE_WEBPAGE_MEMORY));
   }
 
   //prepare arrays and variables
@@ -410,7 +410,7 @@ void internet_browser_load_webpage_from_url_in_text_area(void) {
    }
   }
   if(get_status_of_network_transfer(transfer_number)==NETWORK_TRANSFER_DONE) {
-   html_memory = calloc(get_file_size_of_network_transfer(transfer_number)+2);
+   html_memory = (dword_t) calloc(get_file_size_of_network_transfer(transfer_number)+2);
    html_size = get_file_size_of_network_transfer(transfer_number);
    copy_memory((dword_t)get_file_memory_of_network_transfer(transfer_number), html_memory, html_size);
    copy_memory((dword_t)&network_transfers[transfer_number].url, (dword_t)&file_full_url, MAX_LENGTH_OF_URL);

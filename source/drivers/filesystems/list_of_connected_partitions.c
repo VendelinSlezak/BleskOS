@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -54,13 +54,13 @@ void remove_partitions_of_medium_from_list(byte_t medium_type, byte_t medium_num
 
    //free memory allocated by filesystem driver
    if(connected_partitions[i].filesystem_specific_info_pointer!=0) {
-    free((dword_t)connected_partitions[i].filesystem_specific_info_pointer);
+    free((void *)connected_partitions[i].filesystem_specific_info_pointer);
    }
 
    //free all loaded folders from array
    for(dword_t j=0; j<MAX_NUMBER_OF_LOADED_FOLDERS; j++) {
     if(array_of_loaded_folders[j].state==AOLF_FOLDER_LOADED && array_of_loaded_folders[j].partition_number==i) {
-     free((dword_t)array_of_loaded_folders[j].memory_of_entries);
+     free((void *)array_of_loaded_folders[j].memory_of_entries);
      array_of_loaded_folders[j].state = AOLF_FREE_ENTRY;
     }
    }

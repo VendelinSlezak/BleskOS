@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -396,7 +396,7 @@ void vfs_destroy_folder_path_structure(struct folder_descriptor_t *folder_path_s
  }
  
  //unallocate folder structure
- free((dword_t)folder_path_structure);
+ free((void *)folder_path_structure);
 }
 
 byte_t vfs_open_folder(struct folder_descriptor_t *folder_path_structure, dword_t number_of_entry) {
@@ -536,7 +536,7 @@ byte_t vfs_create_folder(struct folder_descriptor_t *folder_path_structure, word
  }
 
  //create new entry in folder
- array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].memory_of_entries = (byte_t *) realloc((dword_t)(vfs_get_folder_data_pointer(folder_path_structure)), sizeof(struct file_descriptor_t)*(vfs_get_folder_number_of_files(folder_path_structure)+1));
+ array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].memory_of_entries = (byte_t *) realloc((void *)(vfs_get_folder_data_pointer(folder_path_structure)), sizeof(struct file_descriptor_t)*(vfs_get_folder_number_of_files(folder_path_structure)+1));
  struct file_descriptor_t *vfs_folder_new_entry = (struct file_descriptor_t *) ((dword_t)vfs_get_folder_data_pointer(folder_path_structure)+(sizeof(struct file_descriptor_t)*vfs_get_folder_number_of_files(folder_path_structure)));
  
  vfs_folder_new_entry->partition_number = folder_path_structure->partition_number;
@@ -572,7 +572,7 @@ byte_t vfs_create_folder(struct folder_descriptor_t *folder_path_structure, word
  if(vfs_save_folder(folder_path_structure)==STATUS_ERROR) {
   //erase new entry
   array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].number_of_files--;
-  array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].memory_of_entries = (byte_t *) realloc((dword_t)(vfs_get_folder_data_pointer(folder_path_structure)), sizeof(struct file_descriptor_t)*(vfs_get_folder_number_of_files(folder_path_structure)));
+  array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].memory_of_entries = (byte_t *) realloc((void *)(vfs_get_folder_data_pointer(folder_path_structure)), sizeof(struct file_descriptor_t)*(vfs_get_folder_number_of_files(folder_path_structure)));
 
   //try to delete created folder, it do not matter if it will work or not
   delete_folder(folder_path_structure->partition_number, folder_location);
@@ -710,7 +710,7 @@ byte_t vfs_delete_folder(struct folder_descriptor_t *folder_path_structure, dwor
  //delete file entry
  remove_space_from_memory_area((dword_t)folder, vfs_get_folder_number_of_files(folder_path_structure)*sizeof(struct file_descriptor_t), (dword_t)(&folder[number_of_entry]), sizeof(struct file_descriptor_t));
  array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].number_of_files--;
- array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].memory_of_entries = (byte_t *) realloc((dword_t)(vfs_get_folder_data_pointer(folder_path_structure)), sizeof(struct file_descriptor_t)*(vfs_get_folder_number_of_files(folder_path_structure)));
+ array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].memory_of_entries = (byte_t *) realloc((void *)(vfs_get_folder_data_pointer(folder_path_structure)), sizeof(struct file_descriptor_t)*(vfs_get_folder_number_of_files(folder_path_structure)));
 
  //save changes to folder
  if(vfs_save_folder(folder_path_structure)==STATUS_ERROR) {
@@ -798,7 +798,7 @@ byte_t vfs_create_file(struct folder_descriptor_t *folder_path_structure, word_t
  }
 
  //create new entry in folder
- array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].memory_of_entries = (byte_t *) realloc((dword_t)(vfs_get_folder_data_pointer(folder_path_structure)), sizeof(struct file_descriptor_t)*(vfs_get_folder_number_of_files(folder_path_structure)+1));
+ array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].memory_of_entries = (byte_t *) realloc((void *)(vfs_get_folder_data_pointer(folder_path_structure)), sizeof(struct file_descriptor_t)*(vfs_get_folder_number_of_files(folder_path_structure)+1));
  struct file_descriptor_t *vfs_folder_new_entry = (struct file_descriptor_t *) ((dword_t)vfs_get_folder_data_pointer(folder_path_structure)+(sizeof(struct file_descriptor_t)*vfs_get_folder_number_of_files(folder_path_structure)));
  
  vfs_folder_new_entry->partition_number = folder_path_structure->partition_number;
@@ -851,7 +851,7 @@ byte_t vfs_create_file(struct folder_descriptor_t *folder_path_structure, word_t
  if(vfs_save_folder(folder_path_structure)==STATUS_ERROR) {
   //erase new entry
   array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].number_of_files--;
-  array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].memory_of_entries = (byte_t *) realloc((dword_t)(vfs_get_folder_data_pointer(folder_path_structure)), sizeof(struct file_descriptor_t)*(vfs_get_folder_number_of_files(folder_path_structure)));
+  array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].memory_of_entries = (byte_t *) realloc((void *)(vfs_get_folder_data_pointer(folder_path_structure)), sizeof(struct file_descriptor_t)*(vfs_get_folder_number_of_files(folder_path_structure)));
 
   //try to delete created file, it do not matter if it will work or not
   delete_file(folder_path_structure->partition_number, file_location);
@@ -879,7 +879,7 @@ byte_t vfs_create_file_by_file_descriptor(struct folder_descriptor_t *folder_pat
  file_descriptor.file_location = file_location;
 
  //create new entry in folder
- array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].memory_of_entries = (byte_t *) realloc((dword_t)(vfs_get_folder_data_pointer(folder_path_structure)), sizeof(struct file_descriptor_t)*(vfs_get_folder_number_of_files(folder_path_structure)+1));
+ array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].memory_of_entries = (byte_t *) realloc((void *)(vfs_get_folder_data_pointer(folder_path_structure)), sizeof(struct file_descriptor_t)*(vfs_get_folder_number_of_files(folder_path_structure)+1));
  copy_memory((dword_t)(&file_descriptor), ((dword_t)vfs_get_folder_data_pointer(folder_path_structure)+(sizeof(struct file_descriptor_t)*vfs_get_folder_number_of_files(folder_path_structure))), sizeof(struct file_descriptor_t));
  array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].number_of_files++;
 
@@ -887,7 +887,7 @@ byte_t vfs_create_file_by_file_descriptor(struct folder_descriptor_t *folder_pat
  if(vfs_save_folder(folder_path_structure)==STATUS_ERROR) {
   //erase new entry
   array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].number_of_files--;
-  array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].memory_of_entries = (byte_t *) realloc((dword_t)(vfs_get_folder_data_pointer(folder_path_structure)), sizeof(struct file_descriptor_t)*(vfs_get_folder_number_of_files(folder_path_structure)));
+  array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].memory_of_entries = (byte_t *) realloc((void *)(vfs_get_folder_data_pointer(folder_path_structure)), sizeof(struct file_descriptor_t)*(vfs_get_folder_number_of_files(folder_path_structure)));
 
   //try to delete created file, it do not matter if it will work or not
   delete_file(folder_path_structure->partition_number, file_location);
@@ -919,7 +919,7 @@ byte_t vfs_delete_file(struct folder_descriptor_t *folder_path_structure, dword_
  //delete file entry
  remove_space_from_memory_area((dword_t)folder, vfs_get_folder_number_of_files(folder_path_structure)*sizeof(struct file_descriptor_t), (dword_t)(&folder[number_of_entry]), sizeof(struct file_descriptor_t));
  array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].number_of_files--;
- array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].memory_of_entries = (byte_t *) realloc((dword_t)(vfs_get_folder_data_pointer(folder_path_structure)), sizeof(struct file_descriptor_t)*(vfs_get_folder_number_of_files(folder_path_structure)));
+ array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].memory_of_entries = (byte_t *) realloc((void *)(vfs_get_folder_data_pointer(folder_path_structure)), sizeof(struct file_descriptor_t)*(vfs_get_folder_number_of_files(folder_path_structure)));
 
  //save changes to folder
  if(vfs_save_folder(folder_path_structure)==STATUS_ERROR) {

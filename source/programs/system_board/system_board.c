@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -58,35 +58,13 @@ void system_board_redraw(void) {
  //draw item specific things
  if(system_board_items_list[system_board_selected_item]==SYSTEM_BOARD_MEMORY) {
   print("All memory in MB:", screen_x_center, 30, BLACK);
-  print_var(all_memory_in_bytes/1024/1024, screen_x_center+18*8, 30, BLACK);
+  print_var(components->ram.full_memory_size/1024/1024, screen_x_center+18*8, 30, BLACK);
 
   print("All free memory in MB:", screen_x_center, 50, BLACK);
-  print_var(all_free_memory_in_bytes/1024/1024, screen_x_center+23*8, 50, BLACK);
+  print_var(components->ram.free_memory_size/1024/1024, screen_x_center+23*8, 50, BLACK);
 
   print("All actual free memory in MB:", screen_x_center, 70, BLACK);
-  print_var(all_actual_free_memory_in_bytes/1024/1024, screen_x_center+30*8, 70, BLACK);
-
-  dword_t *memory_entries = (dword_t *) (mem_memory_entries+system_item_variable*16);
-  dword_t num_of_printed_items = 0, num_of_max_printable_items = ((screen_height-100)/10);
-
-  for(dword_t i=0; i<(0xFFFF-system_item_variable) && num_of_printed_items<num_of_max_printable_items; i++) {
-   if(memory_entries[MEM_ENTRY_TYPE]==MEM_FREE_MEMORY) {
-    print("Free memory", screen_x_center, 90+num_of_printed_items*10, BLACK);
-    print_hex(memory_entries[MEM_ENTRY_START], screen_x_center+12*8, 90+num_of_printed_items*10, BLACK); //start of memory
-    print_var(memory_entries[MEM_ENTRY_LENGTH], screen_x_center+12*8+11*8, 90+num_of_printed_items*10, BLACK); //length in B
-    print_var(memory_entries[MEM_ENTRY_LENGTH]/1024/1024, screen_x_center+12*8+11*8+10*8, 90+num_of_printed_items*10, BLACK); //length in MB
-    num_of_printed_items++;
-   }
-   else if(memory_entries[MEM_ENTRY_TYPE]==MEM_ALLOCATED_MEMORY) {
-    print("Used memory", screen_x_center, 90+num_of_printed_items*10, BLACK);
-    print_hex(memory_entries[MEM_ENTRY_START], screen_x_center+12*8, 90+num_of_printed_items*10, BLACK); //start of memory
-    print_var(memory_entries[MEM_ENTRY_LENGTH], screen_x_center+12*8+11*8, 90+num_of_printed_items*10, BLACK); //length in B
-    print_var(memory_entries[MEM_ENTRY_LENGTH]/1024/1024, screen_x_center+12*8+11*8+10*8, 90+num_of_printed_items*10, BLACK); //length in MB
-    num_of_printed_items++;
-   }
-
-   memory_entries+=4;
-  }
+  print_var(components->ram.available_free_memory_size/1024/1024, screen_x_center+30*8, 70, BLACK);
  }
  else if(system_board_items_list[system_board_selected_item]==SYSTEM_BOARD_PCI) {
   dword_t *pci_devices_array = (dword_t *) (pci_devices_array_mem+system_item_variable*12);
@@ -193,14 +171,14 @@ void system_board_redraw(void) {
   word_t *vesa_info_block = (word_t *) (0x3006);
   byte_t *vesa_oem_string = (byte_t *) (vesa_info_block[1]*0x10+vesa_info_block[0]);
   dword_t num_of_chars_in_oem_string = ((screen_x_center-10)/8-9);
-  dword_t vesa_oem_string_mem = malloc(num_of_chars_in_oem_string);
+  dword_t vesa_oem_string_mem = (dword_t) malloc(num_of_chars_in_oem_string);
   byte_t *vesa_copied_oem_string = (byte_t *) (vesa_oem_string_mem);
   for(dword_t i=0; i<num_of_chars_in_oem_string; i++) {
    vesa_copied_oem_string[i]=vesa_oem_string[i];
   }
   vesa_copied_oem_string[num_of_chars_in_oem_string]=0;
   print_ascii(vesa_copied_oem_string, screen_x_center+9*8, 70, BLACK);
-  free(vesa_oem_string_mem);
+  free((void *)vesa_oem_string_mem);
  }
  else if(system_board_items_list[system_board_selected_item]==SYSTEM_BOARD_ACPI) {
   dword_t *rsdt = (dword_t *) (rsdt_mem);

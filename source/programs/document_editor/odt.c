@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -24,7 +24,7 @@ dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size) {
   return STATUS_ERROR;
  }
  dword_t content_xml_file_memory = prepare_xml_file(content_raw_xml_file_memory, zip_extracted_file_size, XML_NO_SPECIAL_ATTRIBUTES);
- free(content_raw_xml_file_memory);
+ free((void *)content_raw_xml_file_memory);
 
  //count how many memory we will need for DMF and find all available styles
  word_t *content_xml = (word_t *) (content_xml_file_memory);
@@ -80,13 +80,13 @@ dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size) {
  }
  if(((dword_t)odt_body_tag)==0) {
   log("\nODT: no <office:body>");
-  free(content_xml_file_memory);
+  free((void *)content_xml_file_memory);
   return STATUS_ERROR;
  }
 
  //allocate memory for DMF
  dmf_size+=4; //ending
- dword_t dmf_memory = calloc(dmf_size);
+ dword_t dmf_memory = (dword_t) calloc(dmf_size);
 
  //default page layout - A4 with 2 cm margins
  dmf_page_width = 794;
@@ -102,7 +102,7 @@ dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size) {
   dword_t styles_raw_xml_file_memory = zip_extract_file(odt_memory, odt_size, styles_xml_file_number);
   if(styles_raw_xml_file_memory!=STATUS_ERROR) {
    dword_t styles_xml_file_memory = prepare_xml_file(styles_raw_xml_file_memory, zip_extracted_file_size, XML_NO_SPECIAL_ATTRIBUTES);
-   free(styles_raw_xml_file_memory);
+   free((void *)styles_raw_xml_file_memory);
 
    //scan styles.xml
    word_t *styles_xml = (word_t *) (styles_xml_file_memory);
@@ -140,7 +140,7 @@ dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size) {
      styles_xml++;
     }
    }
-   free(styles_xml_file_memory);
+   free((void *)styles_xml_file_memory);
   }
   else {
    log("\nODT: error with extracting styles.xml");
@@ -366,7 +366,7 @@ dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size) {
   }
  }
 
- free(content_xml_file_memory);
+ free((void *)content_xml_file_memory);
  return dmf_memory;
 }
 

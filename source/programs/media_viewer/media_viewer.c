@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -284,7 +284,7 @@ void media_viewer_open_file(void) {
   else if(is_loaded_file_extension("jpg")==STATUS_TRUE) {
    set_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY, convert_jpg_to_image_data((dword_t)file_dialog_open_file_memory, file_dialog_file_descriptor->file_size_in_bytes));
   }
-  free((dword_t)file_dialog_open_file_memory);
+  free((void *)file_dialog_open_file_memory);
   if(get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY)==STATUS_ERROR) {
    remove_file(get_program_value(PROGRAM_INTERFACE_SELECTED_FILE));
    set_program_value(PROGRAM_INTERFACE_SELECTED_FILE, get_program_value(PROGRAM_INTERFACE_SELECTED_FILE_SAVE_VALUE));
@@ -363,7 +363,7 @@ void media_viewer_save_file(void) {
    convert_image_data_to_qoi(get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY));
    status = file_dialog_save((byte_t *)converted_file_memory, converted_file_size, "qoi");
   }
-  free(converted_file_memory);
+  free((void *)converted_file_memory);
  }
  else if(get_file_value(MEDIA_VIEWER_FILE_TYPE)==MEDIA_VIEWER_FILE_SOUND) {
   struct audio_file_t *audio_info = (struct audio_file_t *) (get_file_value(MEDIA_VIEWER_FILE_AUDIO_INFO_MEMORY));
@@ -377,7 +377,7 @@ void media_viewer_save_file(void) {
   else if(audio_info->type==AUDIO_FILE_TYPE_CDDA) {
    convert_sound_data_to_wav(audio_info->file_pointer, audio_info->file_size, 16, 2, 44100);
    file_dialog_save((byte_t *)converted_file_memory, converted_file_size, "wav");
-   free(converted_file_memory);
+   free((void *)converted_file_memory);
   }
  }
 }

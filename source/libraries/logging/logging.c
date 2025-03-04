@@ -2,14 +2,14 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 void initalize_logging(void) {
- logging_mem = calloc(1024*1024);
+ logging_mem = (dword_t) calloc(1024*1024);
  if(logging_mem==0) {
   memory_error_debug(0x0000FF);
  }
@@ -45,7 +45,7 @@ void developer_program_log(void) {
 
    //save file
    file_dialog_save((byte_t *)converted_file_memory, converted_file_size-1, "txt"); //size is without zero char ending
-   free(converted_file_memory);
+   free((void *)converted_file_memory);
    goto redraw;
   }
   else if(keyboard_code_of_pressed_key==KEY_HOME) {
@@ -429,5 +429,58 @@ void logf(byte_t *string, ...) {
     string++;
    }
   }
+ }
+}
+
+void memory_error_debug(dword_t color) {
+ dword_t screen_line_start = (dword_t)monitor_screen_linear_frame_buffer_memory_pointer;
+ byte_t *color8 = (byte_t *) (&color);
+
+ developer_program_log();
+
+ if(screen_bpp==32) {
+  dword_t *screen = (dword_t *) (screen_line_start);
+  for(int i=0; i<screen_height; i++) {
+   screen = (dword_t *) (screen_line_start);
+
+   for(int j=0; j<screen_width; j++) {
+    *screen = color;
+    screen++;
+   }
+
+   screen_line_start += monitor_screen_bytes_per_line;
+  }
+ }
+ else if(screen_bpp==24) {
+  byte_t *screen = (byte_t *) (screen_line_start);
+  for(int i=0; i<screen_height; i++) {
+   screen = (byte_t *) (screen_line_start);
+
+   for(int j=0; j<screen_width; j++) {
+    screen[0] = color8[0];
+    screen[1] = color8[1];
+    screen[2] = color8[2];
+    screen += 3;
+   }
+
+   screen_line_start += monitor_screen_bytes_per_line;
+  }
+ }
+ else if(screen_bpp==16) {
+  word_t *screen = (word_t *) (screen_line_start);
+  for(int i=0; i<screen_height; i++) {
+  screen = (word_t *) (screen_line_start);
+
+  for(int j=0; j<screen_width; j++) {
+   *screen = (((color8[2] & 0xF8)<<8) | ((color8[1] & 0xFC)<<3) | ((color8[0] & 0xF8)>>3));
+   screen++;
+  }
+
+  screen_line_start += monitor_screen_bytes_per_line;
+ }
+ }
+ 
+ while(1) {
+  asm volatile ("hlt");
  }
 }

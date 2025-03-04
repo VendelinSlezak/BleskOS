@@ -2,17 +2,17 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
- dword_t html_in_unicode_mem = calloc(html_length*2);
+ dword_t html_in_unicode_mem = (dword_t) calloc(html_length*2);
  convert_utf_8_to_unicode(html_mem, html_in_unicode_mem, html_length);
  word_t *html = (word_t *) html_in_unicode_mem;
- dword_t webpage_mem = calloc((html_length+1)*2);
+ dword_t webpage_mem = (dword_t) calloc((html_length+1)*2);
  word_t *webpage = (word_t *) webpage_mem;
  word_t *webpage16;
  dword_t *webpage32;
@@ -1210,10 +1210,10 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
 
  //free all downloaded files
  for(int i=0; i<html_list_of_downloaded_files_pointer; i++) {
-  free(html_list_of_downloaded_files[i]);
+  free((void *)html_list_of_downloaded_files[i]);
  }
  
- free(html_in_unicode_mem);
+ free((void *)html_in_unicode_mem);
  return webpage_mem;
 }
 

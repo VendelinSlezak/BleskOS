@@ -2,22 +2,22 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 void initalize_scalable_font(void) {
- scalable_font_pixel_distance_mem = malloc(256*2);
+ scalable_font_pixel_distance_mem = (dword_t) malloc(256*2);
  scalable_font_pixel_distance = (word_t *) scalable_font_pixel_distance_mem;
- scalable_font_char_board_mem = malloc(256*256*4);
- scalable_font_char_mem = malloc(10*10*4);
+ scalable_font_char_board_mem = (dword_t) malloc(256*256*4);
+ scalable_font_char_mem = (dword_t) malloc(10*10*4);
  set_scalable_char_size(10);
  scalable_font_char_emphasis = SF_EMPHASIS_NONE;
 
  //predraw scalable font in size 10 for speeding up performance of drawing
- scalable_font_predraw_size_10_mem = malloc(11*20*4*128);
+ scalable_font_predraw_size_10_mem = (dword_t) malloc(11*20*4*128);
 
  //clear space
  dword_t *predraw8 = (dword_t *) (scalable_font_predraw_size_10_mem);
@@ -47,8 +47,8 @@ void set_scalable_char_size(dword_t size) {
  
  scalable_font_char_size = size;
  
- free(scalable_font_char_mem);
- scalable_font_char_mem = calloc(scalable_font_char_size*scalable_font_char_size*4);
+ free((void *)scalable_font_char_mem);
+ scalable_font_char_mem = (dword_t) calloc(scalable_font_char_size*scalable_font_char_size*4);
  
  for(int i=0; i<256; i++) {
   scalable_font_pixel_distance[i] = (i*size/100);

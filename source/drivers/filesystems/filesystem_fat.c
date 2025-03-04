@@ -2,7 +2,7 @@
 
 /*
 * MIT License
-* Copyright (c) 2023-2025 Vendelín Slezák
+* Copyright (c) 2023-2025 BleskOS developers
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -48,7 +48,7 @@ void filesystem_fat_read_specific_info(struct connected_partition_info_t *connec
  fat_info->cluster_size_in_sectors = fat16_bpb.sectors_per_cluster;
  if(fat_info->cluster_size_in_sectors==0) {
   log("\nFAT: invalid cluster size");
-  free((dword_t)fat_info);
+  free((void *)fat_info);
   return;
  }
  fat_info->cluster_size_in_bytes = (fat_info->cluster_size_in_sectors*512);
@@ -68,7 +68,7 @@ void filesystem_fat_read_specific_info(struct connected_partition_info_t *connec
  //load first sector from FAT table
  if(read_storage_medium(fat_info->fat_table_first_sector, 1, (dword_t)(&fat_info->fat_table_sector))==STATUS_ERROR) {
   log("\nFAT: can not read first FAT table sector");
-  free((dword_t)fat_info);
+  free((void *)fat_info);
   return;
  }
  //fat_info->loaded_fat_table_sector = 0, already set by calloc()
@@ -679,7 +679,7 @@ byte_t *read_fat_folder(dword_t cluster) {
  }
 
  //free allocated memory
- free((dword_t)fat_folder);
+ free((void *)fat_folder);
 
  //return virtual file system folder
  return ((byte_t *)vfs_folder);
@@ -962,10 +962,10 @@ dword_t create_fat_folder(dword_t previous_folder_location) {
    //write folder data to cluster
    if(write_storage_medium(fat_info->data_first_sector+((cluster-2)*fat_info->cluster_size_in_sectors), fat_info->cluster_size_in_sectors, (dword_t)fat_folder)==STATUS_ERROR) {
     log("\nFAT: create folder error during writing data to cluster");
-    free((dword_t)fat_folder);
+    free((void *)fat_folder);
     return STATUS_ERROR;
    }
-   free((dword_t)fat_folder);
+   free((void *)fat_folder);
 
    //set cluster in FAT table
    write_fat_table_entry(cluster, fat_info->file_ending_entry_value);
