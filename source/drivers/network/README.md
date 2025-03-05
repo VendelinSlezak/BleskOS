@@ -29,7 +29,7 @@ if(internet.status != INTERNET_STATUS_CONNECTED) {
 
 byte_t transfer_number = download_file_from_url("example.com");
 if(transfer_number == NETWORK_TRANSFER_ERROR_NO_FREE_ENTRY) {
- log("Too much files are currently being transferred!");
+ logf("Too much files are currently being transferred!");
 }
 
 while(get_status_of_network_transfer(transfer_number) == NETWORK_TRANSFER_TRANSFERRING_DATA) {
@@ -37,7 +37,7 @@ while(get_status_of_network_transfer(transfer_number) == NETWORK_TRANSFER_TRANSF
 }
 
 if(get_status_of_network_transfer(transfer_number) == NETWORK_TRANSFER_DONE) {
- log("Transfer of file from example.com was successfull");
+ logf("Transfer of file from example.com was successfull");
  byte_t *file_memory = get_file_memory_of_network_transfer(transfer_number);
  dword_t file_size = get_file_size_of_network_transfer(transfer_number);
 
@@ -45,7 +45,7 @@ if(get_status_of_network_transfer(transfer_number) == NETWORK_TRANSFER_DONE) {
 
 }
 else if(get_status_of_network_transfer(transfer_number) == NETWORK_TRANSFER_ERROR) {
- log("There was error during transfer");
+ logf("There was error during transfer");
 }
 
 close_network_transfer(transfer_number);

@@ -131,7 +131,7 @@ void check_usb_interface_initalization(void) {
     usb_devices[i].hub.timeout_for_finalizing_initalization = 0;
 
     //log
-    l("\nUSB hub was initalized");
+    logf("\nUSB hub was initalized");
 
     //check devices on hub
     usb_hub_check_connections();
@@ -150,13 +150,13 @@ void check_usb_interface_initalization(void) {
 
     //this transfer was already transfered
     if(status_of_transfer == USB_TRANSFER_DONE || status_of_transfer == USB_TRANSFER_ERROR) {
-     l("\nCalled USB IRQ routine");
+     logf("\nCalled USB IRQ routine");
      usb_irq();
      continue;
     }
 
     //transfer was not transferred in time
-    l("\nControl transfer error: timeout ");
+    logf("\nControl transfer error: timeout ");
     usb_devices[i].control_transfer.transfer_error(i);
    }
 
@@ -208,7 +208,7 @@ void usb_remove_device(byte_t device_address) {
 
  //remove devices connected to hub
  if(usb_devices[device_address].hub.is_present == STATUS_TRUE && usb_devices[device_address].hub.is_initalized == STATUS_TRUE) {
-  l("\nRemoving HUB from hub");
+  logf("\nRemoving HUB from hub");
   
   //go through all USB devices
   for(dword_t i=0; i<MAX_NUMBER_OF_USB_DEVICES; i++) {
@@ -270,7 +270,7 @@ void usb_irq(void) {
     }
     //transfer was not transferred in time
     else if(time_of_system_running >= usb_devices[i].control_transfer.timeout) {
-     l("\nControl transfer error: timeout ");
+     logf("\nControl transfer error: timeout ");
      usb_devices[i].control_transfer.transfer_error(i);
     }
    }
@@ -320,7 +320,7 @@ void usb_check_interrupt_transfer(byte_t device_address, struct usb_interrupt_tr
  else if(status_of_transfer == USB_TRANSFER_ERROR) {
   interrupt_transfer->line_of_errors++;
   if(interrupt_transfer->line_of_errors >= 20) {
-   l("\nUSB: Interrupt transfer halted because of line of errors");
+   logf("\nUSB: Interrupt transfer halted because of line of errors");
   }
   else {
    usb_devices[device_address].restart_interrupt_transfer(device_address, interrupt_transfer);
@@ -353,7 +353,7 @@ void usb_check_bulk_transfer(byte_t device_address, struct usb_bulk_transfer_inf
  }
  //transfer was not transferred in time
  else if(time_of_system_running >= bulk_transfer->timeout) {
-  l("\nBulk transfer error: timeout ");
+  logf("\nBulk transfer error: timeout ");
   bulk_transfer->transfer_error(device_address, bulk_transfer->transfer_info);
  }
 }

@@ -19,6 +19,7 @@ struct components_info_t {
     dword_t n_hpet;
 
     /* components connected to fixed ports */
+    dword_t n_e9_debug_device;
 
     /* components connected to PCI */
 };

@@ -65,7 +65,7 @@ byte_t download_file_from_url(byte_t *url) {
   pointer++;
  }
  if(domain_detected == STATUS_FALSE) {
-  log("\nInvalid URL requested: No domain name");
+  logf("\nInvalid URL requested: No domain name");
   return NETWORK_TRANSFER_ERROR_INVALID_URL;
  }
 

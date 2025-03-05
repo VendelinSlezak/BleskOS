@@ -15,10 +15,10 @@ void initalize_graphic(void) {
  //read EDID info loaded by bootloader on 0x2000
  is_bootloader_edid_present = parse_edid_data(0x2000);
  if(is_bootloader_edid_present==STATUS_FALSE) {
-  log("\n\nBootloader did not load EDID");
+  logf("\n\nBootloader did not load EDID");
  }
  else {
-  log("\n\nBOOTLOADER EDID");
+  logf("\n\nBOOTLOADER EDID");
   log_edid_data();
  }
 

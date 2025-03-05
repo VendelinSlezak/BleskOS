@@ -50,15 +50,15 @@ void finalize_builded_network_packet(void) {
 
 //TODO:
 void log_network_packet(void) {
- log("\nPACKET "); log_var(size_of_network_packet);
+ logf("\nPACKET %d", size_of_network_packet);
  
- log("\n");
+ logf("\n");
  dword_t pointer;
  for(dword_t i=0; i<size_of_network_packet; i++) {
-  log_hex_specific_size_with_space(memory_for_building_network_packet[pointer], 2);
+  logf("0x%02x ", memory_for_building_network_packet[pointer]);
   pointer++;
   if((pointer % 10)==0) {
-   log("\n");
+   logf("\n");
   }
   if(pointer == size_of_network_packet) {
    break;

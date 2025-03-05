@@ -54,8 +54,7 @@ If you want to write driver for new card, do not forget that it is detected and 
 This method is called only once during boot process. It needs to initalize card to state that is is capable of sending and receiving packets, and reporting status of cable. As first, it should log its name with device ID:
 
 ```
-log("\n\nNameOfCard driver\nDevice ID: ");
-log_hex_specific_size((ethernet_cards[number_of_card].id >> 16), 4);
+logf("\n\nNameOfCard driver\nDevice ID: 0x%02x", (ethernet_cards[number_of_card].id >> 16));
 ```
 
 It needs to read MAC address of card and save it to `ethernet_cards[number_of_card].mac_address`.

@@ -12,7 +12,7 @@
 
 void initalize_ehci_controller(dword_t number_of_controller) {
  //log
- l("\n\nEHCI controller ");
+ logf("\n\nEHCI controller ");
 
  //disable BIOS ownership
  dword_t pci_ehci_bios_register_offset = ((mmio_ind(ehci_controllers[number_of_controller].base+0x08)>>8) & 0xFF);
@@ -20,13 +20,12 @@ void initalize_ehci_controller(dword_t number_of_controller) {
   //check if BIOS released ownership
   if((pci_read(ehci_controllers[number_of_controller].bus, ehci_controllers[number_of_controller].device, ehci_controllers[number_of_controller].function, pci_ehci_bios_register_offset) & 0x01010000)!=0x01000000) {
    //BIOS did not released ownership
-   log("\nERROR: EHCI controller is still in BIOS ownership ");
-   log_hex(pci_read(ehci_controllers[number_of_controller].bus, ehci_controllers[number_of_controller].device, ehci_controllers[number_of_controller].function, pci_ehci_bios_register_offset));
+   logf("\nERROR: EHCI controller is still in BIOS ownership 0x%x", pci_read(ehci_controllers[number_of_controller].bus, ehci_controllers[number_of_controller].device, ehci_controllers[number_of_controller].function, pci_ehci_bios_register_offset));
    ehci_controllers[number_of_controller].number_of_ports = 0;
    return;
   }
   else {
-   l("\nBIOS ownership released");
+   logf("\nBIOS ownership released");
   }
  }
 
@@ -38,14 +37,14 @@ void initalize_ehci_controller(dword_t number_of_controller) {
  ehci_controllers[number_of_controller].number_of_ports = (mmio_ind(ehci_controllers[number_of_controller].base+0x04) & 0xF);
 
  //stop controller
- l("\n");
+ logf("\n");
  mmio_outd(oper_base+0x00, (8 << 16));
  volatile dword_t timeout = (time_of_system_running+10);
  while((mmio_ind(oper_base+0x04) & (1 << 12)) != (1 << 12)) {
   asm("nop");
 
   if(time_of_system_running >= timeout) {
-   l("unable to halt");
+   logf("unable to halt");
    return;
   }
  }
@@ -57,11 +56,11 @@ void initalize_ehci_controller(dword_t number_of_controller) {
   asm("nop");
 
   if(time_of_system_running >= timeout) {
-   l("Host Controller Reset error");
+   logf("Host Controller Reset error");
    return;
   }
  }
- l("reset in "); lv(50-(timeout-time_of_system_running));
+ logf("reset in %d", 50-(timeout-time_of_system_running));
  
  //set upper 32 bits of segment
  mmio_outd(oper_base+0x10, 0x00000000);
@@ -232,7 +231,7 @@ void ehci_check_if_port_is_enabled(void) {
 
  //check if port is enabled
  if((ehci_port_value & (1 << 2))==(1 << 2)) {
-  l("\nEHCI port is enabled");
+  logf("\nEHCI port is enabled");
   
   //when port is enabled, it mean, that device is ready for transfers and have address 0, so fill all needed entries
   usb_devices[0].disable_device_on_port = ehci_disable_device_on_port;
@@ -274,8 +273,7 @@ void ehci_check_if_port_passed_device(void) {
 
  //check device status
  if((ehci_port_value & (1 << 0))==(1 << 0)) {
-  l("\nEHCI ERROR: device was not passed to companion controller ");
-  lh(ehci_port_value);
+  logf("\nEHCI ERROR: device was not passed to companion controller 0x%x", ehci_port_value);
  }
  else {
   //clear status change
@@ -439,7 +437,7 @@ void ehci_remove_asychronous_queue_head(dword_t number_of_controller, struct ehc
  if(queue_head->td.next_qtd_pointer != EHCI_INVALID_QTD_POINTER && queue_head->td.next_qtd_pointer != 0) {
   // struct ehci_queue_transfer_descriptor_t *next_qtd = (struct ehci_queue_transfer_descriptor_t *) queue_head->td.next_qtd_pointer;
   // next_qtd->status_bits.active = 0;
-  l("\nRemoving active qTD");
+  logf("\nRemoving active qTD");
  }
 //  queue_head->td.status_bits.active = 0;
 
@@ -489,21 +487,21 @@ byte_t get_state_of_ehci_transfer(byte_t device_address, void *transfer_descript
  //check actual status of transfer
  if((queue_head->td.status & 0x7C) != 0x00) {
   //log error
-  l("\nEHCI transfer error: ");
+  logf("\nEHCI transfer error: ");
   if(queue_head->td.status_bits.missed_microframe == 1) {
-   l("Missed Microframe");
+   logf("Missed Microframe");
   }
   else if(queue_head->td.status_bits.transaction_error == 1) {
-   l("Transaction Error");
+   logf("Transaction Error");
   }
   else if(queue_head->td.status_bits.babble == 1) {
-   l("Babble");
+   logf("Babble");
   }
   else if(queue_head->td.status_bits.data_buffer_error == 1) {
-   l("Data Buffer Error");
+   logf("Data Buffer Error");
   }
   else if(queue_head->td.status_bits.halted == 1) {
-   l("Halted");
+   logf("Halted");
   }
 
   return USB_TRANSFER_ERROR;
@@ -659,7 +657,7 @@ void ehci_interrupt_transfer(byte_t device_address, byte_t transfer_direction, s
  //recalculate interval
  dword_t interval = interrupt_transfer->interval;
  if(interrupt_transfer->interval == 0) {
-  l("\nEHCI ERROR: invalid interrupt transfer interval");
+  logf("\nEHCI ERROR: invalid interrupt transfer interval");
   return;
  }
  else if(interrupt_transfer->interval > 2) { //interval 1ms / 2ms do not need to be recalculated

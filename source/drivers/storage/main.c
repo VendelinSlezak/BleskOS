@@ -17,7 +17,7 @@ void initalize_storage_controllers(void) {
  device_info = (struct ata_identify_command_device_info *) (malloc(512));
 
  //detect all storage devices
- log("\n");
+ logf("\n");
  for(dword_t i=0; i<number_of_storage_controllers; i++) {
   if(storage_controllers[i].controller_type==IDE_CONTROLLER) {
    initalize_ide_controller(i);
@@ -31,36 +31,25 @@ void initalize_storage_controllers(void) {
  free((void *)device_info);
 
  //log
- log("\n");
+ logf("\n");
  if(hard_disk_info.controller_type!=NO_CONTROLLER) {
-  log("\nHard disk: ");
+  logf("\nHard disk: ");
   if(hard_disk_info.controller_type==IDE_CONTROLLER) {
-   log("IDE ");
-   log_hex_specific_size_with_space(hard_disk_info.base_1, 4);
-   log_hex_specific_size_with_space(hard_disk_info.device_port, 2);
+   logf("IDE 0x%04x 0x%02x ", hard_disk_info.base_1, hard_disk_info.device_port);
   }
   else if(hard_disk_info.controller_type==AHCI_CONTROLLER) {
-   log("AHCI ");
-   log_hex_with_space(hard_disk_info.base_1);
-   log("port ");
-   log_var_with_space(hard_disk_info.device_port);
+   logf("AHCI 0x%x port %d ", hard_disk_info.base_1, hard_disk_info.device_port);
   }
-  log("Number of sectors: ");
-  log_var(hard_disk_info.number_of_sectors);
+  logf("Number of sectors: %d", hard_disk_info.number_of_sectors);
  }
 
  if(optical_drive_info.controller_type!=NO_CONTROLLER) {
-  log("\nOptical drive: ");
+  logf("\nOptical drive: ");
   if(optical_drive_info.controller_type==IDE_CONTROLLER) {
-   log("IDE ");
-   log_hex_specific_size_with_space(optical_drive_info.base_1, 4);
-   log_hex_specific_size_with_space(optical_drive_info.device_port, 2);
+   logf("IDE 0x%04x 0x%02x", optical_drive_info.base_1, optical_drive_info.device_port);
   }
   else if(optical_drive_info.controller_type==AHCI_CONTROLLER) {
-   log("AHCI ");
-   log_hex_with_space(optical_drive_info.base_1);
-   log("port ");
-   log_var_with_space(optical_drive_info.device_port);
+   logf("AHCI 0x%x port %d", optical_drive_info.base_1, optical_drive_info.device_port);
   }
  }
 

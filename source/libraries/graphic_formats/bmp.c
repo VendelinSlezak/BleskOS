@@ -15,7 +15,7 @@ dword_t convert_bmp_to_image_data(dword_t bmp_memory) {
  
  //check signature
  if(bmp8[0]!='B' || bmp8[1]!='M') {
-  log("BMP: invalid signature\n");
+  logf("BMP: invalid signature\n");
   return STATUS_ERROR;
  }
  
@@ -27,7 +27,7 @@ dword_t convert_bmp_to_image_data(dword_t bmp_memory) {
  dword_t bpp = (bmp16[0]/8);
  
  if(width==0 || height==0 || bpp<1 || bpp>4 || (width*height)>4096*4096) {
-  log("BMP: not fitting\n");
+  logf("BMP: not fitting\n");
   return STATUS_ERROR;
  }
  

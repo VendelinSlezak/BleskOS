@@ -29,7 +29,7 @@ byte_t is_partition_ext(dword_t first_partition_sector) {
    return STATUS_TRUE;
   }
   else {
-   log("\nUnmountable ext "); log_var(ext_superblock.major_version); log("."); log_var_with_space(ext_superblock.minor_version); log("filesystem: "); log_hex(ext_superblock.required_features);
+   logf("\nUnmountable ext %d.%d filesystem: %x", ext_superblock.major_version, ext_superblock.minor_version, ext_superblock.required_features);
   }
  }
 
@@ -86,10 +86,10 @@ void filesystem_ext_read_specific_info(struct connected_partition_info_t *connec
  }
  
  //log
- log("\n\nExt filesystem");
- log("\npartition label: "); log(connected_partition_info->partition_label);
- log("\nblock size in kilobytes: "); log_var(ext_info->block_size_in_bytes/1024);
- log("\ninodes in group: "); log_var(ext_info->number_of_inodes_in_group);
+ logf("\n\nExt filesystem");
+ logf("\npartition label: %s", connected_partition_info->partition_label);
+ logf("\nblock size in kilobytes: %d", ext_info->block_size_in_bytes/1024);
+ logf("\ninodes in group: %d", ext_info->number_of_inodes_in_group);
 }
 
 byte_t read_ext_inode(dword_t inode) {
@@ -106,7 +106,7 @@ byte_t read_ext_inode(dword_t inode) {
  
  if(ext_info->loaded_block_group_descriptor_sector!=sector_with_group_descriptor) {
   if(read_storage_medium(sector_with_group_descriptor, 1, (dword_t)&ext_info->block_group_descriptors_sector)==STATUS_ERROR) {
-   log("\nExt: can not read sector with block group descriptor");
+   logf("\nExt: can not read sector with block group descriptor");
    return STATUS_ERROR;
   }
   ext_info->loaded_block_group_descriptor_sector = sector_with_group_descriptor;
@@ -119,7 +119,7 @@ byte_t read_ext_inode(dword_t inode) {
  
  if(ext_info->loaded_inode_table_sector!=sector_with_inode) {
   if(read_storage_medium(sector_with_inode, 2, (dword_t)&ext_info->inode_table_sectors)==STATUS_ERROR) {
-   log("\nExt: can not read sector with inode");
+   logf("\nExt: can not read sector with inode");
    return STATUS_ERROR;
   }
   ext_info->loaded_inode_table_sector = sector_with_inode;
@@ -136,7 +136,7 @@ byte_t *read_ext_file(dword_t file_location) {
 
  //read inode
  if(read_ext_inode(file_location)==STATUS_ERROR) {
-  log("\nExt: can not read inode "); log_var(file_location);
+  logf("\nExt: can not read inode %d", file_location);
   return STATUS_ERROR;
  }
 
@@ -160,19 +160,19 @@ byte_t *read_ext_file(dword_t file_location) {
 
  //add indirect block pointers sectors
  if(ext_add_single_indirect_pointer_blocks(descriptor_of_file_sectors, ext_info->inode.single_indirect_block_ptr)==STATUS_ERROR) {
-  log("\nExt: can not read single indirect block pointers");
+  logf("\nExt: can not read single indirect block pointers");
   return STATUS_ERROR;
  }
 
  //add double indirect block pointers sectors
  if(ext_add_double_indirect_pointer_blocks(descriptor_of_file_sectors, ext_info->inode.double_indirect_block_ptr)==STATUS_ERROR) {
-  log("\nExt: can not read double indirect block pointers");
+  logf("\nExt: can not read double indirect block pointers");
   return STATUS_ERROR;
  }
 
  //add triple indirect block pointers sectors
  if(ext_add_triple_indirect_pointer_blocks(descriptor_of_file_sectors, ext_info->inode.triple_indirect_block_ptr)==STATUS_ERROR) {
-  log("\nExt: can not read triple indirect block pointers");
+  logf("\nExt: can not read triple indirect block pointers");
   return STATUS_ERROR;
  }
 
@@ -288,7 +288,7 @@ byte_t *read_ext_folder(dword_t folder_location) {
  //read folder data
  byte_t *ext_folder = read_ext_file(folder_location);
  if((dword_t)ext_folder==STATUS_ERROR) {
-  log("\nExt: can not read folder data");
+  logf("\nExt: can not read folder data");
   return STATUS_ERROR;
  }
 
@@ -327,7 +327,7 @@ byte_t *read_ext_folder(dword_t folder_location) {
 
   //read inode of file
   if(read_ext_inode(ext_folder_entry->inode)==STATUS_ERROR) {
-   log("\nExt: can not read inode of folder entry");
+   logf("\nExt: can not read inode of folder entry");
    free((void *)ext_folder);
    return STATUS_ERROR;
   }

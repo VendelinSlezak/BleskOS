@@ -44,7 +44,7 @@ void add_byte_to_byte_stream(struct byte_stream_descriptor_t *actual_byte_stream
         actual_byte_stream_descriptor->size_of_allocated_memory += actual_byte_stream_descriptor->size_of_one_block;
         actual_byte_stream_descriptor->start_of_allocated_memory = (dword_t) (realloc((void *)actual_byte_stream_descriptor->start_of_allocated_memory, actual_byte_stream_descriptor->size_of_allocated_memory));
         if(actual_byte_stream_descriptor->start_of_allocated_memory == 0) {
-            log("SERIOUS ERROR: not enough memory for byte stream");
+            logf("SERIOUS ERROR: not enough memory for byte stream");
             return;
         }
         actual_byte_stream_descriptor->end_of_allocated_memory = (actual_byte_stream_descriptor->start_of_allocated_memory+actual_byte_stream_descriptor->size_of_allocated_memory);

@@ -70,8 +70,7 @@ dword_t ec_realtek_8169_ind(dword_t number_of_card, dword_t port) {
 
 void ec_realtek_8169_initalize(dword_t number_of_card) {
  //log device ID of card
- log("\n\nRealtek 8169 driver\nDevice ID: ");
- log_hex_specific_size((ethernet_cards[number_of_card].id >> 16), 4);
+ logf("\n\nRealtek 8169 driver\nDevice ID: 0x%04x", (ethernet_cards[number_of_card].id >> 16));
 
  //set card methods
  ethernet_cards[number_of_card].get_cable_status = ec_realtek_8169_get_cable_status;
@@ -87,7 +86,7 @@ void ec_realtek_8169_initalize(dword_t number_of_card) {
  while((ec_realtek_8169_inb(number_of_card, 0x37) & (1 << 4))==(1 << 4)) {
   asm("nop");
   if(time_of_system_running >= timeout) {
-   log("\nERROR: Reset was not successful");
+   logf("\nERROR: Reset was not successful");
    return;
   }
  }
@@ -98,9 +97,9 @@ void ec_realtek_8169_initalize(dword_t number_of_card) {
  }
 
  //log MAC address
- log("\nMAC: ");
+ logf("\nMAC: ");
  for(dword_t i=0; i<6; i++) {
-  log_hex_specific_size_with_space(ethernet_cards[number_of_card].mac_address[i], 2);
+  logf("0x%02x ", ethernet_cards[number_of_card].mac_address[i]);
  }
 
  //unlock registers
@@ -189,7 +188,7 @@ byte_t ec_realtek_8169_send_packet(dword_t number_of_card, byte_t *packet_memory
  //check if descriptors are not full
  struct ec_realtek_8169_tx_descriptor_t *tx_descriptor = (struct ec_realtek_8169_tx_descriptor_t *) (((dword_t)ethernet_cards[number_of_card].tx_descriptors_memory)+(sizeof(struct ec_realtek_8169_tx_descriptor_t)*ethernet_cards[number_of_card].tx_descriptor_pointer));
  if(tx_descriptor->owned_by_card == 1) {
-  log("\nERROR: Ethernet tx buffer is full");
+  logf("\nERROR: Ethernet tx buffer is full");
   return STATUS_ERROR;
  }
 

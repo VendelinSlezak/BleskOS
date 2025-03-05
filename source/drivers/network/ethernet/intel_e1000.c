@@ -82,13 +82,12 @@ word_t ec_intel_e1000_read_eeprom(dword_t number_of_card, dword_t address, dword
 
 void ec_intel_e1000_initalize(dword_t number_of_card) {
  //log device ID of card
- log("\n\nIntel E1000 driver\nDevice ID: ");
- log_hex_specific_size((ethernet_cards[number_of_card].id >> 16), 4);
+ logf("\n\nIntel E1000 driver\nDevice ID: 0x%04x", (ethernet_cards[number_of_card].id >> 16));
 
  //reset card
  ec_intel_e1000_write(number_of_card, EC_INTEL_E1000_PORT_DEVICE_CONTROL, (1 << 26));
  if(ec_intel_e1000_read_timeout(number_of_card, EC_INTEL_E1000_PORT_DEVICE_CONTROL, (1 << 26), 0x00000000, 100)==STATUS_ERROR) {
-  log("\nIntel E1000 ERROR: can not reset card");
+  logf("\nIntel E1000 ERROR: can not reset card");
   return;
  }
 
@@ -99,7 +98,7 @@ void ec_intel_e1000_initalize(dword_t number_of_card) {
 
  //read MAC address from EEPROM or ports
  if((ec_intel_e1000_read(number_of_card, EC_INTEL_E1000_PORT_EEPROM_CONTROL) & 0x100)==0x100) { //check if card has EEPROM
-  log("\nEEPROM present with address shift ");
+  logf("\nEEPROM present with address shift ");
 
   //read EEPROM address 0x00
   ec_intel_e1000_read_eeprom(number_of_card, 0x00, 0);
@@ -109,7 +108,7 @@ void ec_intel_e1000_initalize(dword_t number_of_card) {
   if((ec_intel_e1000_read(number_of_card, EC_INTEL_E1000_PORT_EEPROM_READ) & 0x10)==0x10) {
    shift = 8;
   }
-  log_var(shift);
+  logf("%d", shift);
 
   //read MAC address from EEPROM
   ethernet_cards[number_of_card].mac_address[0] = (ec_intel_e1000_read_eeprom(number_of_card, 0x00, shift) & 0xFF);
@@ -120,7 +119,7 @@ void ec_intel_e1000_initalize(dword_t number_of_card) {
   ethernet_cards[number_of_card].mac_address[5] = (ec_intel_e1000_read_eeprom(number_of_card, 0x02, shift) >> 8);
  }
  else {
-  log("\nEEPROM not present");
+  logf("\nEEPROM not present");
 
   //read MAC address from ports
   for(dword_t i=0; i<6; i++) {
@@ -129,9 +128,9 @@ void ec_intel_e1000_initalize(dword_t number_of_card) {
  }
 
  //log MAC address
- log("\nMAC: ");
+ logf("\nMAC: ");
  for(dword_t i=0; i<6; i++) {
-  log_hex_specific_size_with_space(ethernet_cards[number_of_card].mac_address[i], 2);
+  logf("0x%02x ", ethernet_cards[number_of_card].mac_address[i]);
  }
 
  //start card
@@ -221,7 +220,7 @@ byte_t ec_intel_e1000_send_packet(dword_t number_of_card, byte_t *packet_memory,
 
  //check if descriptors are not full
  if(one_descriptor_ahead == ec_intel_e1000_read(number_of_card, 0x3810)) { //compare with head
-  log("\nERROR: Ethernet tx buffer is full");
+  logf("\nERROR: Ethernet tx buffer is full");
   return STATUS_ERROR;
  }
 

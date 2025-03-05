@@ -338,14 +338,14 @@ void vfs_sort_folder(struct folder_descriptor_t *folder_path_structure) {
 
 struct folder_descriptor_t *vfs_create_folder_path_structure(byte_t partition_number) {
  if(number_of_folder_structures>=MAX_NUMBER_OF_FOLDER_STRUCTURES) {
-  log("\nVFS: too many folder structures");
+  logf("\nVFS: too many folder structures");
   return STATUS_ERROR;
  }
 
  //read root folder of this partition
  word_t root_folder_aolf_number = read_folder(partition_number, ROOT_FOLDER, 0);
  if(root_folder_aolf_number==STATUS_ERROR) {
-  log("\nVFS: error with reading root folder");
+  logf("\nVFS: error with reading root folder");
   return STATUS_ERROR;
  }
 
@@ -401,7 +401,7 @@ void vfs_destroy_folder_path_structure(struct folder_descriptor_t *folder_path_s
 
 byte_t vfs_open_folder(struct folder_descriptor_t *folder_path_structure, dword_t number_of_entry) {
  if(folder_path_structure->partition_number==NO_PARTITION_SELECTED) {
-  log("\nVFS: device was unplugged");
+  logf("\nVFS: device was unplugged");
   return STATUS_ERROR;
  }
 
@@ -412,7 +412,7 @@ byte_t vfs_open_folder(struct folder_descriptor_t *folder_path_structure, dword_
 
  //too many folders in path
  if(folder_path_structure->pointer_to_path>=(MAX_NUMBER_OF_FOLDERS_IN_PATH-1)) {
-  log("\nVFS: too many folders in path");
+  logf("\nVFS: too many folders in path");
   return STATUS_ERROR;
  }
 
@@ -424,7 +424,7 @@ byte_t vfs_open_folder(struct folder_descriptor_t *folder_path_structure, dword_
   //read folder data
   word_t opened_folder_aolf_number = read_folder(folder_path_structure->partition_number, folder[number_of_entry].file_location, folder[number_of_entry].file_size_in_bytes);
   if(opened_folder_aolf_number==STATUS_ERROR) {
-   log("\nVFS: error with reading folder");
+   logf("\nVFS: error with reading folder");
    return STATUS_ERROR;
   }
 
@@ -452,13 +452,13 @@ byte_t vfs_open_folder(struct folder_descriptor_t *folder_path_structure, dword_
 
 byte_t vfs_go_back_in_folder_path(struct folder_descriptor_t *folder_path_structure) {
  if(folder_path_structure->partition_number==NO_PARTITION_SELECTED) {
-  log("\nVFS: device was unplugged");
+  logf("\nVFS: device was unplugged");
   return STATUS_ERROR;
  }
 
  //we are in root folder
  if(folder_path_structure->pointer_to_path==0) {
-  log("\nVFS: can not go back from root folder");
+  logf("\nVFS: can not go back from root folder");
   return STATUS_ERROR;
  }
 
@@ -466,7 +466,7 @@ byte_t vfs_go_back_in_folder_path(struct folder_descriptor_t *folder_path_struct
  folder_path_structure->pointer_to_path--;
  word_t previous_folder_aolf_number = read_folder(folder_path_structure->partition_number, folder_path_structure->path_folder_locations[folder_path_structure->pointer_to_path], folder_path_structure->path_folder_sizes[folder_path_structure->pointer_to_path]);
  if(previous_folder_aolf_number==STATUS_ERROR) {
-  log("\nVFS: error with reading folder");
+  logf("\nVFS: error with reading folder");
   folder_path_structure->pointer_to_path++; //we did not go back in path
   return STATUS_ERROR;
  }
@@ -488,7 +488,7 @@ byte_t vfs_go_back_in_folder_path(struct folder_descriptor_t *folder_path_struct
 
 byte_t vfs_save_folder(struct folder_descriptor_t *folder_path_structure) {
  if(folder_path_structure->partition_number==NO_PARTITION_SELECTED) {
-  log("\nVFS: device was unplugged");
+  logf("\nVFS: device was unplugged");
   return STATUS_ERROR;
  }
 
@@ -499,7 +499,7 @@ byte_t vfs_save_folder(struct folder_descriptor_t *folder_path_structure) {
                     0,
                     (struct file_descriptor_t *) (array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].memory_of_entries),
                     array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].number_of_files)==STATUS_ERROR) {
-   log("\nVFS: error with saving folder");
+   logf("\nVFS: error with saving folder");
    return STATUS_ERROR;
   }
   else {
@@ -513,7 +513,7 @@ byte_t vfs_save_folder(struct folder_descriptor_t *folder_path_structure) {
                     folder_path_structure->path_folder_locations[(folder_path_structure->pointer_to_path-1)],
                     (struct file_descriptor_t *) (array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].memory_of_entries),
                     array_of_loaded_folders[folder_path_structure->folder_number_in_array_of_loaded_folders].number_of_files)==STATUS_ERROR) {
-   log("\nVFS: error with saving folder");
+   logf("\nVFS: error with saving folder");
    return STATUS_ERROR;
   }
   else {
@@ -524,14 +524,14 @@ byte_t vfs_save_folder(struct folder_descriptor_t *folder_path_structure) {
 
 byte_t vfs_create_folder(struct folder_descriptor_t *folder_path_structure, word_t *name) {
  if(folder_path_structure->partition_number==NO_PARTITION_SELECTED) {
-  log("\nVFS: device was unplugged");
+  logf("\nVFS: device was unplugged");
   return STATUS_ERROR;
  }
 
  //create new folder
  dword_t folder_location = create_folder(folder_path_structure->partition_number, folder_path_structure->path_folder_locations[(folder_path_structure->pointer_to_path-1)]);
  if(folder_location==STATUS_ERROR) {
-  log("\nVFS: error during creating folder");
+  logf("\nVFS: error during creating folder");
   return STATUS_ERROR;
  }
 
@@ -577,7 +577,7 @@ byte_t vfs_create_folder(struct folder_descriptor_t *folder_path_structure, word
   //try to delete created folder, it do not matter if it will work or not
   delete_folder(folder_path_structure->partition_number, folder_location);
 
-  log("\nVFS: error with creating new folder");
+  logf("\nVFS: error with creating new folder");
   return STATUS_ERROR;
  }
 
@@ -587,7 +587,7 @@ byte_t vfs_create_folder(struct folder_descriptor_t *folder_path_structure, word
 
 byte_t vfs_delete_folder(struct folder_descriptor_t *folder_path_structure, dword_t number_of_entry) {
  if(folder_path_structure->partition_number==NO_PARTITION_SELECTED) {
-  log("\nVFS: device was unplugged");
+  logf("\nVFS: device was unplugged");
   return STATUS_ERROR;
  }
 
@@ -604,7 +604,7 @@ byte_t vfs_delete_folder(struct folder_descriptor_t *folder_path_structure, dwor
  //read content of folder
  word_t aolf_number_of_folder = read_folder(folder_path_structure->partition_number, folder[number_of_entry].file_location, folder[number_of_entry].file_size_in_bytes);
  if(aolf_number_of_folder==STATUS_ERROR) {
-  log("\nVFS: delete folder error with reading content of folder");
+  logf("\nVFS: delete folder error with reading content of folder");
   destroy_byte_stream(list_of_files_in_folder);
   return STATUS_ERROR;
  }
@@ -620,7 +620,7 @@ byte_t vfs_delete_folder(struct folder_descriptor_t *folder_path_structure, dwor
    //read content of folder and add it to list
    aolf_number_of_folder = read_folder(folder_path_structure->partition_number, list_of_files_in_folder_pointer[pointer_to_list].file_location, list_of_files_in_folder_pointer[pointer_to_list].file_size_in_bytes);
    if(aolf_number_of_folder==STATUS_ERROR) {
-    log("\nVFS: delete folder error with reading content of folder");
+    logf("\nVFS: delete folder error with reading content of folder");
     destroy_byte_stream(list_of_files_in_folder);
     return STATUS_ERROR;
    }
@@ -629,7 +629,7 @@ byte_t vfs_delete_folder(struct folder_descriptor_t *folder_path_structure, dwor
    release_loaded_folder_in_array_from_usage_in_structure(aolf_number_of_folder);
 
    if(number_of_files_in_list>10000) {
-    log("\nVFS: too many files in folder");
+    logf("\nVFS: too many files in folder");
     destroy_byte_stream(list_of_files_in_folder);
     return STATUS_ERROR;
    }
@@ -643,14 +643,14 @@ byte_t vfs_delete_folder(struct folder_descriptor_t *folder_path_structure, dwor
  for(dword_t i=0; i<number_of_files_in_list; i++) {
   if(list_of_files_in_folder_pointer[i].type==NORMAL_FILE) {
    if(delete_file(folder_path_structure->partition_number, list_of_files_in_folder_pointer[i].file_location)==STATUS_ERROR) {
-    log("\nVFS: can not delete file");
+    logf("\nVFS: can not delete file");
     destroy_byte_stream(list_of_files_in_folder);
     return STATUS_ERROR;
    }
   }
   else if(list_of_files_in_folder_pointer[i].type==FILE_FOLDER) {
    if(delete_folder(folder_path_structure->partition_number, list_of_files_in_folder_pointer[i].file_location)==STATUS_ERROR) {
-    log("\nVFS: can not delete folder");
+    logf("\nVFS: can not delete folder");
     destroy_byte_stream(list_of_files_in_folder);
     return STATUS_ERROR;
    }
@@ -682,7 +682,7 @@ byte_t vfs_delete_folder(struct folder_descriptor_t *folder_path_structure, dwor
 
  //delete folder itself
  if(delete_folder(folder_path_structure->partition_number, folder[number_of_entry].file_location)==STATUS_ERROR) {
-  log("\nVFS: can not delete folder itself");
+  logf("\nVFS: can not delete folder itself");
   return STATUS_ERROR;
  }
 
@@ -714,7 +714,7 @@ byte_t vfs_delete_folder(struct folder_descriptor_t *folder_path_structure, dwor
 
  //save changes to folder
  if(vfs_save_folder(folder_path_structure)==STATUS_ERROR) {
-  log("\nVFS: error with saving changes to folder");
+  logf("\nVFS: error with saving changes to folder");
   return STATUS_ERROR;
  }
 
@@ -723,13 +723,13 @@ byte_t vfs_delete_folder(struct folder_descriptor_t *folder_path_structure, dwor
 
 byte_t *vfs_read_file(struct folder_descriptor_t *folder_path_structure, dword_t number_of_entry) {
  if(folder_path_structure->partition_number==NO_PARTITION_SELECTED) {
-  log("\nVFS: device was unplugged");
+  logf("\nVFS: device was unplugged");
   return STATUS_ERROR;
  }
 
  //request for reading nonexisting entry
  if(number_of_entry>=vfs_get_folder_number_of_files(folder_path_structure)) {
-  log("\nVFS: request for nonexisting entry");
+  logf("\nVFS: request for nonexisting entry");
   return STATUS_ERROR;
  }
 
@@ -745,21 +745,21 @@ byte_t *vfs_read_file(struct folder_descriptor_t *folder_path_structure, dword_t
   return read_file(folder_path_structure->partition_number, folder[number_of_entry].file_location, folder[number_of_entry].file_size_in_bytes);
  }
  else {
-  log("\nVFS: request for reading not normal file");
+  logf("\nVFS: request for reading not normal file");
   return STATUS_ERROR; //not file entry
  }
 }
 
 byte_t vfs_save_file(struct folder_descriptor_t *folder_path_structure, dword_t number_of_entry, byte_t *file_memory, dword_t file_size_in_bytes) {
  if(folder_path_structure->partition_number==NO_PARTITION_SELECTED) {
-  log("\nVFS: device was unplugged");
+  logf("\nVFS: device was unplugged");
   return STATUS_ERROR;
  }
 
  //rewrite file
  struct file_descriptor_t *folder = (vfs_get_folder_data_pointer(folder_path_structure));
  if(rewrite_file(folder_path_structure->partition_number, folder[number_of_entry].file_location, file_memory, file_size_in_bytes)==STATUS_ERROR) {
-  log("\nVFS: error during rewriting file");
+  logf("\nVFS: error during rewriting file");
   return STATUS_ERROR;
  }
 
@@ -776,7 +776,7 @@ byte_t vfs_save_file(struct folder_descriptor_t *folder_path_structure, dword_t 
 
  //save changes to folder
  if(vfs_save_folder(folder_path_structure)==STATUS_ERROR) {
-  log("\nVFS: error with saving changes to folder");
+  logf("\nVFS: error with saving changes to folder");
   return STATUS_ERROR;
  }
 
@@ -786,14 +786,14 @@ byte_t vfs_save_file(struct folder_descriptor_t *folder_path_structure, dword_t 
 
 byte_t vfs_create_file(struct folder_descriptor_t *folder_path_structure, word_t *name, byte_t *extension, byte_t *file_memory, dword_t file_size_in_bytes) {
  if(folder_path_structure->partition_number==NO_PARTITION_SELECTED) {
-  log("\nVFS: device was unplugged");
+  logf("\nVFS: device was unplugged");
   return STATUS_ERROR;
  }
 
  //create new file
  dword_t file_location = create_file(folder_path_structure->partition_number, file_memory, file_size_in_bytes);
  if(file_location==STATUS_ERROR) {
-  log("\nVFS: error during creating file");
+  logf("\nVFS: error during creating file");
   return STATUS_ERROR;
  }
 
@@ -856,7 +856,7 @@ byte_t vfs_create_file(struct folder_descriptor_t *folder_path_structure, word_t
   //try to delete created file, it do not matter if it will work or not
   delete_file(folder_path_structure->partition_number, file_location);
 
-  log("\nVFS: error with creating new file");
+  logf("\nVFS: error with creating new file");
   return STATUS_ERROR;
  }
 
@@ -866,14 +866,14 @@ byte_t vfs_create_file(struct folder_descriptor_t *folder_path_structure, word_t
 
 byte_t vfs_create_file_by_file_descriptor(struct folder_descriptor_t *folder_path_structure, struct file_descriptor_t file_descriptor, byte_t *file_memory) {
  if(folder_path_structure->partition_number==NO_PARTITION_SELECTED) {
-  log("\nVFS: device was unplugged");
+  logf("\nVFS: device was unplugged");
   return STATUS_ERROR;
  }
 
  //create new file
  dword_t file_location = create_file(folder_path_structure->partition_number, file_memory, file_descriptor.file_size_in_bytes);
  if(file_location==STATUS_ERROR) {
-  log("\nVFS: error during creating file");
+  logf("\nVFS: error during creating file");
   return STATUS_ERROR;
  }
  file_descriptor.file_location = file_location;
@@ -892,7 +892,7 @@ byte_t vfs_create_file_by_file_descriptor(struct folder_descriptor_t *folder_pat
   //try to delete created file, it do not matter if it will work or not
   delete_file(folder_path_structure->partition_number, file_location);
 
-  log("\nVFS: error with creating new file");
+  logf("\nVFS: error with creating new file");
   return STATUS_ERROR;
  }
 
@@ -902,7 +902,7 @@ byte_t vfs_create_file_by_file_descriptor(struct folder_descriptor_t *folder_pat
 
 byte_t vfs_delete_file(struct folder_descriptor_t *folder_path_structure, dword_t number_of_entry) {
  if(folder_path_structure->partition_number==NO_PARTITION_SELECTED) {
-  log("\nVFS: device was unplugged");
+  logf("\nVFS: device was unplugged");
   return STATUS_ERROR;
  }
 
@@ -912,7 +912,7 @@ byte_t vfs_delete_file(struct folder_descriptor_t *folder_path_structure, dword_
   return STATUS_ERROR;
  }
  if(delete_file(folder_path_structure->partition_number, folder[number_of_entry].file_location)==STATUS_ERROR) {
-  log("\nVFS: can not delete file");
+  logf("\nVFS: can not delete file");
   return STATUS_ERROR;
  }
 
@@ -923,7 +923,7 @@ byte_t vfs_delete_file(struct folder_descriptor_t *folder_path_structure, dword_
 
  //save changes to folder
  if(vfs_save_folder(folder_path_structure)==STATUS_ERROR) {
-  log("\nVFS: error with saving changes to folder");
+  logf("\nVFS: error with saving changes to folder");
   return STATUS_ERROR;
  }
 

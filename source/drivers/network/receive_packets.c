@@ -11,7 +11,7 @@
 void process_packet(byte_t *packet_memory, dword_t packet_size) {
  //check if packet is long enough to contain ethernet layer
  if(packet_size < sizeof(struct network_packet_ethernet_layer_t)) {
-  log("\nsmall packet: ethernet layer");
+  logf("\nsmall packet: ethernet layer");
   return;
  }
 
@@ -29,7 +29,7 @@ void process_packet(byte_t *packet_memory, dword_t packet_size) {
  if(packet_ethernet_layer->type_of_next_layer==BIG_ENDIAN_WORD(NETWORK_PACKET_IPV4_LAYER)) {
   //check if packet is long enough to contain IPv4 layer
   if(packet_size < (sizeof(struct network_packet_ethernet_layer_t)+sizeof(struct network_packet_ipv4_layer_t))) {
-   log("\nsmall packet: IPv4 layer");
+   logf("\nsmall packet: IPv4 layer");
    return;
   }
 
@@ -44,7 +44,7 @@ void process_packet(byte_t *packet_memory, dword_t packet_size) {
   if(packet_ipv4_layer->protocol==NETWORK_PACKET_TCP_LAYER) {
    //check if packet is long enough to contain TCP layer
    if(packet_size < (sizeof(struct network_packet_ethernet_layer_t)+sizeof(struct network_packet_ipv4_layer_t)+sizeof(struct network_packet_tcp_layer_t))) {
-    log("\nsmall packet: TCP layer");
+    logf("\nsmall packet: TCP layer");
     return;
    }
 
@@ -66,7 +66,7 @@ void process_packet(byte_t *packet_memory, dword_t packet_size) {
   else if(packet_ipv4_layer->protocol==NETWORK_PACKET_UDP_LAYER) {
    //check if packet is long enough to contain UDP layer
    if(packet_size < (sizeof(struct network_packet_ethernet_layer_t)+sizeof(struct network_packet_ipv4_layer_t)+sizeof(struct network_packet_udp_layer_t))) {
-    log("\nsmall packet: UDP layer");
+    logf("\nsmall packet: UDP layer");
     return;
    }
 
@@ -85,14 +85,14 @@ void process_packet(byte_t *packet_memory, dword_t packet_size) {
    packet_size = (BIG_ENDIAN_WORD(packet_ipv4_layer->total_length) - (sizeof(struct network_packet_ipv4_layer_t)+sizeof(struct network_packet_udp_layer_t)));
   }
   else { //unsupported layer
-   log("\nunknown layer after IPv4");
+   logf("\nunknown layer after IPv4");
    return;
   }
  }
  else if(packet_ethernet_layer->type_of_next_layer==BIG_ENDIAN_WORD(NETWORK_PACKET_ARP_LAYER)) {
   //check if packet is long enough to contain ARP layer
   if(packet_size < (sizeof(struct network_packet_ethernet_layer_t)+sizeof(struct network_packet_arp_layer_t))) {
-   log("\nsmall packet: ARP layer");
+   logf("\nsmall packet: ARP layer");
    return;
   }
 
@@ -123,7 +123,6 @@ void process_packet(byte_t *packet_memory, dword_t packet_size) {
   packet_size -= sizeof(struct network_packet_ethernet_layer_t);
  }
  else { //unsupported layer
-  // log("\nunknown layer after ethernet "); log_hex_specific_size(BIG_ENDIAN_WORD(packet_ethernet_layer->type_of_next_layer), 4);
   return;
  }
 

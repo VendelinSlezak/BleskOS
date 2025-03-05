@@ -122,7 +122,7 @@ void initalize_ps2_controller(void) {
   return;
  }
  else {
-  log("\n\nPS/2 controller ");
+  logf("\n\nPS/2 controller ");
  }
 
  //initalize variables
@@ -147,7 +147,7 @@ void initalize_ps2_controller(void) {
   }
  }
  if((inb(0x64) & 0x1)==0x1) { //error: data port was not cleared
-  log("has locked data port");
+  logf("has locked data port");
   return;
  }
 
@@ -169,11 +169,11 @@ void initalize_ps2_controller(void) {
  write_ps2_command(0xAA);
  if(read_ps2_data()==0x55) {
   //self-test succesfull
-  log("self-test succesfull");
+  logf("self-test succesfull");
  }
  else {
   //self-test failed
-  log("self-test failed");
+  logf("self-test failed");
   ps2_first_channel_present = DEVICE_NOT_PRESENT;
   ps2_second_channel_present = DEVICE_NOT_PRESENT;
   return;
@@ -211,10 +211,10 @@ void initalize_ps2_controller(void) {
  if(ps2_first_channel_present==DEVICE_PRESENT) {
   write_ps2_command(0xAB);
   if(read_ps2_data()==0x00) { //test successfull
-   log("\nfirst channel test successfull");
+   logf("\nfirst channel test successfull");
   }
   else { //test failed
-   log("\nfirst channel test failed");
+   logf("\nfirst channel test failed");
    ps2_first_channel_present = DEVICE_PRESENT_BUT_ERROR_STATE;
   }
  }
@@ -223,10 +223,10 @@ void initalize_ps2_controller(void) {
  if(ps2_second_channel_present==DEVICE_PRESENT) {
   write_ps2_command(0xA9);
   if(read_ps2_data()==0x00) { //test successfull
-   log("\nsecond channel test successfull");
+   logf("\nsecond channel test successfull");
   }
   else { //test failed
-   log("\nsecond channel test failed");
+   logf("\nsecond channel test failed");
    ps2_second_channel_present = DEVICE_PRESENT_BUT_ERROR_STATE;
   }
  }
@@ -250,20 +250,20 @@ void initalize_ps2_controller(void) {
   write_ps2_command(0xAE);
   write_to_first_ps2_channel(0xFF); //reset
   if(ps2_first_channel_wait_for_ack()==STATUS_ERROR) {
-   log("\nfirst channel no ACK after reset");
+   logf("\nfirst channel no ACK after reset");
   }
   if(ps2_first_channel_wait_for_response()==STATUS_ERROR) {
-   log("\nfirst channel no response after reset");
+   logf("\nfirst channel no response after reset");
   }
  }
  if(ps2_second_channel_present==DEVICE_PRESENT) {
   write_ps2_command(0xA8);
   write_to_second_ps2_channel(0xFF); //reset
   if(ps2_second_channel_wait_for_ack()==STATUS_ERROR) {
-   log("\nsecond channel no ACK after reset");
+   logf("\nsecond channel no ACK after reset");
   }
   if(ps2_second_channel_wait_for_response()==STATUS_ERROR) {
-   log("\nsecond channel no response after reset");
+   logf("\nsecond channel no response after reset");
   }
  }
 
@@ -272,13 +272,13 @@ void initalize_ps2_controller(void) {
   //after reset device should not be in streaming mode, but to be sure disable streaming
   write_to_first_ps2_channel(0xF5);
   if(ps2_first_channel_wait_for_ack()==STATUS_ERROR) {
-   log("\nfirst channel no ACK after 0xF5");
+   logf("\nfirst channel no ACK after 0xF5");
   }
 
   //read device ID
   ps2_first_channel_buffer[1] = 0xFF;
   write_to_first_ps2_channel(0xF2);
-  log("\n");
+  logf("\n");
   if(ps2_first_channel_wait_for_ack()==STATUS_GOOD) {
    if(ps2_first_channel_wait_for_response()==STATUS_GOOD) {
     if(ps2_first_channel_buffer[1]==0xAB || ps2_first_channel_buffer[1]==0xAC) {
@@ -288,17 +288,17 @@ void initalize_ps2_controller(void) {
      ps2_first_channel_device = ps2_first_channel_buffer[1]; //unknown device
     }
 
-    log("first channel device ID: ");
+    logf("first channel device ID: ");
     for(dword_t i=1; i<ps2_first_channel_buffer_pointer; i++) {
-     log_hex_specific_size_with_space(ps2_first_channel_buffer[i], 2);
+     logf("0x%02x ", ps2_first_channel_buffer[i]);
     }
    }
    else {
-    log("first channel device did not send ID data");
+    logf("first channel device did not send ID data");
    }
   }
   else {
-   log("first channel device did not send ID ack");
+   logf("first channel device did not send ID ack");
   }
  }
 
@@ -307,13 +307,13 @@ void initalize_ps2_controller(void) {
   //after reset device should not be in streaming mode, but to be sure disable streaming
   write_to_second_ps2_channel(0xF5);
   if(ps2_second_channel_wait_for_ack()==STATUS_ERROR) {
-   log("\nsecond channel no ACK after 0xF5");
+   logf("\nsecond channel no ACK after 0xF5");
   }
 
   //read device ID
   ps2_second_channel_buffer[1] = 0xFF;
   write_to_second_ps2_channel(0xF2);
-  log("\n");
+  logf("\n");
   if(ps2_second_channel_wait_for_ack()==STATUS_GOOD) {
    if(ps2_second_channel_wait_for_response()==STATUS_GOOD) {
     if(ps2_second_channel_buffer[1]==0x00 || ps2_second_channel_buffer[1]==0x03 || ps2_second_channel_buffer[1]==0x04) {
@@ -323,17 +323,17 @@ void initalize_ps2_controller(void) {
      ps2_second_channel_device = ps2_second_channel_buffer[1]; //unknown device
     }
    
-    log("second channel device ID: ");
+    logf("second channel device ID: ");
     for(dword_t i=1; i<ps2_second_channel_buffer_pointer; i++) {
-     log_hex_specific_size_with_space(ps2_second_channel_buffer[i], 2);
+     logf("0x%02x ", ps2_second_channel_buffer[i]);
     }
    }
    else {
-    log("second channel device did not send ID data");
+    logf("second channel device did not send ID data");
    }
   }
   else {
-   log("second channel device did not send ID ack");
+   logf("second channel device did not send ID ack");
   }
  }
 }
@@ -345,7 +345,7 @@ void ps2_first_channel_irq_handler(void) {
  //move pointer
  ps2_first_channel_buffer_pointer++;
  if(ps2_first_channel_buffer_pointer>=10) {
-  log("\nERROR: PS/2 first channel buffer is full");
+  logf("\nERROR: PS/2 first channel buffer is full");
   ps2_first_channel_buffer_pointer = 0;
  }
 
@@ -396,7 +396,7 @@ void ps2_second_channel_irq_handler(void) {
  //move pointer
  ps2_second_channel_buffer_pointer++;
  if(ps2_second_channel_buffer_pointer>=10) {
-  log("\nERROR: PS/2 second channel buffer is full");
+  logf("\nERROR: PS/2 second channel buffer is full");
   ps2_second_channel_buffer_pointer = 0;
  }
 

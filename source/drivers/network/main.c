@@ -34,7 +34,7 @@ void check_change_in_internet_connection(void) {
  //if we are connected to internet, check if connection was not ended
  if(internet.status==INTERNET_STATUS_CONNECTED || internet.status==INTERNET_STATUS_CONNECTION_ERROR || internet.status==INTERNET_STATUS_CONNECTING) {
   if(internet.connection_type==INTERNET_CONNECTION_ETHERNET && ethernet_cards[internet.connection_device_number].cable_status==ETHERNET_CARD_CABLE_DISCONNECTED) {
-   log("\n\nEthernet cable was removed");
+   logf("\n\nEthernet cable was removed");
    internet.status = INTERNET_STATUS_DISCONNECTED;
   }
  }
@@ -45,7 +45,7 @@ void check_change_in_internet_connection(void) {
   for(dword_t i=0; i<number_of_ethernet_cards; i++) {
    //this ethernet card is connected to something
    if(ethernet_cards[i].cable_status==ETHERNET_CARD_CABLE_CONNECTED) {
-    log("\n\nConnecting to internet...");
+    logf("\n\nConnecting to internet...");
     internet.status = INTERNET_STATUS_CONNECTING;
     select_ethernet_card_as_internet_connection_device(i);
     dhcp_connect_to_router();

@@ -28,7 +28,6 @@
 #include "drivers/boot.h"
 
 #include "libraries/basic/include.h"
-#include "libraries/logging/logging.h"
 #include "libraries/drawing/include.h"
 #include "libraries/graphic_user_interface_elements/include.h"
 #include "libraries/decoders/include.h"
@@ -71,7 +70,6 @@
 #include "drivers/boot.c"
 
 #include "libraries/basic/include.c"
-#include "libraries/logging/logging.c"
 #include "libraries/drawing/include.c"
 #include "libraries/graphic_user_interface_elements/include.c"
 #include "libraries/decoders/include.c"
@@ -107,7 +105,7 @@ void bleskos(dword_t bootloader_passed_value) {
 
     // detect and initalize all inbuild devices
     boot_devices();
- 
+
  /* this code is not rewritten yet */
  bleskos_show_message_on_starting_screen("Initalizing libraries...");
  initalize_program_interface();
@@ -136,7 +134,7 @@ void bleskos(dword_t bootloader_passed_value) {
  initalize_performance_rating();
 
  bleskos_show_message_on_starting_screen("Starting Graphic User Interface...");
- log("\n\nEND OF BOOTING\n");
+ logf("\n\nEND OF BOOTING\n");
 
  mouse_cursor_x = screen_x_center;
  mouse_cursor_y = screen_y_center;

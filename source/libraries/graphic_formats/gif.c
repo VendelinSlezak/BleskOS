@@ -18,7 +18,7 @@ dword_t convert_gif_to_image_data(dword_t gif_memory, dword_t gif_file_length) {
 
  //check signature
  if(gif8[0]!='G' || gif8[1]!='I' || gif8[2]!='F' || gif8[3]!='8' || !(gif8[4]=='7' || gif8[4]=='9') || gif8[5]!='a') {
-  log("\nGIF: wrong signature");
+  logf("\nGIF: wrong signature");
   return STATUS_ERROR;
  }
   
@@ -27,7 +27,7 @@ dword_t convert_gif_to_image_data(dword_t gif_memory, dword_t gif_file_length) {
  height = gif16[4];
  
  if(width==0 || height==0 || (width*height)>4096*4096) {
-  log("GIF: not fitting\n");
+  logf("GIF: not fitting\n");
   return STATUS_ERROR;
  }
  
@@ -73,9 +73,7 @@ dword_t convert_gif_to_image_data(dword_t gif_memory, dword_t gif_file_length) {
     continue;
    }
    else {
-    log("GIF: unknown extension ");
-    log_hex(gif8[1]);
-    log("\n");
+    logf("GIF: unknown extension 0x%x\n", gif8[1]);
     delete_image(image_memory);
     return STATUS_ERROR;
    }
@@ -84,14 +82,14 @@ dword_t convert_gif_to_image_data(dword_t gif_memory, dword_t gif_file_length) {
    //TODO: other size of image
    gif16 = (word_t *) ((dword_t)gif8+1);
    if(gif16[2]!=width || gif16[3]!=height || gif16[0]!=0 || gif16[0]!=0) {
-    log("GIF: image not fitting\n");
+    logf("GIF: image not fitting\n");
     delete_image(image_memory);
     return STATUS_ERROR;
    }
    
    //local palette
    if((gif8[9] & 0x80)!=0x80 && palette_memory==0) {
-    log("GIF: no palette\n");
+    logf("GIF: no palette\n");
     delete_image(image_memory);
     return STATUS_ERROR;
    }
@@ -123,7 +121,7 @@ dword_t convert_gif_to_image_data(dword_t gif_memory, dword_t gif_file_length) {
    //decode image data from LZW
    dword_t gif_image_decoded_data = (dword_t) malloc(width*height);
    if(decode_lzw(num_of_colors, gif_image_data, length_of_image_data, gif_image_decoded_data, (width*height))==STATUS_ERROR) {
-    log("GIF: LZW error\n");
+    logf("GIF: LZW error\n");
     delete_image(image_memory);
     free((void *)gif_image_data);
     free((void *)gif_image_decoded_data);
@@ -145,9 +143,7 @@ dword_t convert_gif_to_image_data(dword_t gif_memory, dword_t gif_file_length) {
    break;
   }
   else {
-   log("GIF: unknown value ");
-   log_hex(gif8[0] | gif8[1]<<8);
-   log("\n");
+   logf("GIF: unknown value 0x%x\n", gif8[0] | gif8[1]<<8);
    delete_image(image_memory);
    return STATUS_ERROR;
   }

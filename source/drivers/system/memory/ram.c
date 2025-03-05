@@ -52,7 +52,7 @@ void log_ram_info(void) {
         else {
             logf("%d", memory_entry[i].type);
         }
-        logf(" entry 0x%x%x size %d b %d MB",
+        logf(" entry 0x%x%x size %db %d MB",
             (dword_t)(memory_entry[i].memory >> 32),
             (dword_t)(memory_entry[i].memory),
             (dword_t)memory_entry[i].size,

@@ -29,10 +29,10 @@ void initalize_ahci_controller(byte_t number_of_controller) {
    
    //wait 2 sec
    if(ahci_wait(storage_controllers[number_of_controller].base_1 + 0x28, 0x3, 0x2, 1000)==STATUS_GOOD) {
-    log("\nAHCI: ownership released");
+    logf("\nAHCI: ownership released");
    }
    else {
-    log("\nAHCI ERROR: BIOS did not released ownership");
+    logf("\nAHCI ERROR: BIOS did not released ownership");
     return;
    }
   }
@@ -42,10 +42,10 @@ void initalize_ahci_controller(byte_t number_of_controller) {
  mmio_outd(storage_controllers[number_of_controller].base_1 + 0x04, 0x80000001); //set reset bit
  if(ahci_wait(storage_controllers[number_of_controller].base_1 + 0x04, 0x1, 0x0, 500)==STATUS_GOOD) {
   wait(100); //wait for ports to finish reset
-  log("\nAHCI: controller is resetted");
+  logf("\nAHCI: controller is resetted");
  }
  else {
-  log("\nAHCI ERROR: can not leave reset");
+  logf("\nAHCI ERROR: can not leave reset");
   return;
  }
 
@@ -57,8 +57,7 @@ void initalize_ahci_controller(byte_t number_of_controller) {
  for(int port_number=0, mask=1; port_number<32; port_number++, mask<<=1) {
   //test if port exist
   if((mmio_ind(storage_controllers[number_of_controller].base_1 + 0x0C) & mask)==mask) {
-   log("\nPort ");
-   log_var_with_space(port_number);
+   logf("\nPort %d ", port_number);
 
    //calculate base address of port
    ahci_port_base_address = (storage_controllers[number_of_controller].base_1 + 0x100 + (port_number*0x80));
@@ -67,7 +66,7 @@ void initalize_ahci_controller(byte_t number_of_controller) {
    if((mmio_ind(ahci_port_base_address + 0x18) & 0x4)!=0x4) {
     mmio_outd(ahci_port_base_address + 0x18, mmio_ind(ahci_port_base_address + 0x18) | 0x4);
     if(ahci_wait(ahci_port_base_address + 0x18, 0x4, 0x4, 100)==STATUS_ERROR) {
-     log("can not be powered");
+     logf("can not be powered");
      continue; //go to next port
     }
    }
@@ -85,13 +84,13 @@ void initalize_ahci_controller(byte_t number_of_controller) {
     //spin-up device - it will cause initalization sequence
     mmio_outd(ahci_port_base_address + 0x18, mmio_ind(ahci_port_base_address + 0x18) | 0x2);
     if(ahci_wait(ahci_port_base_address + 0x18, 0x2, 0x2, 100)==STATUS_ERROR) {
-     log("can not be spinned-up");
+     logf("can not be spinned-up");
      continue; //go to next port
     }
 
     //wait for communication to be estabilished
     if(ahci_wait(ahci_port_base_address + 0x28, 0xF, 0x3, 200)==STATUS_ERROR) {
-     log("can not estabilish communication");
+     logf("can not estabilish communication");
      continue; //go to next port
     }
    }
@@ -111,22 +110,22 @@ void initalize_ahci_controller(byte_t number_of_controller) {
     if((mmio_ind(ahci_port_base_address + 0x18) & 0x11)!=0x00) {
      mmio_outd(ahci_port_base_address + 0x18, mmio_ind(ahci_port_base_address + 0x18) & ~0x01); //clear start bit
      if(ahci_wait(ahci_port_base_address + 0x18, 0x1, 0x0, 100)==STATUS_ERROR) {
-      log("\nAHCI ERROR: port command list can not be stopped");
+      logf("\nAHCI ERROR: port command list can not be stopped");
       continue; //go to next port
      }
      mmio_outd(ahci_port_base_address + 0x18, mmio_ind(ahci_port_base_address + 0x18) & ~0x10); //clear FIS receive enable
      if(ahci_wait(ahci_port_base_address + 0x18, 0x10, 0x0, 100)==STATUS_ERROR) {
-      log("\nAHCI ERROR: port FIS receive can not be stopped");
+      logf("\nAHCI ERROR: port FIS receive can not be stopped");
       continue; //go to next port
      }
     }
 
     //check signature to see what type of device is connected
     if(mmio_ind(ahci_port_base_address + 0x24)==AHCI_NO_DEVICE_ATTACHED) {
-     log("has no device attached");
+     logf("has no device attached");
     }
     else if(mmio_ind(ahci_port_base_address + 0x24)==AHCI_SATA_DEVICE) {
-     log("has SATA device");
+     logf("has SATA device");
      if(hard_disk_info.controller_type==NO_CONTROLLER) {
       //enable port
       hard_disk_info.base_2 = (dword_t) (ahci_enable_port(ahci_port_base_address));
@@ -153,13 +152,13 @@ void initalize_ahci_controller(byte_t number_of_controller) {
        }
       }
       else {
-       log("\nAHCI: can not get IDENTIFY command from hard disk");
+       logf("\nAHCI: can not get IDENTIFY command from hard disk");
        hard_disk_info.number_of_sectors = 0;
       }
      }
     }
     else if(mmio_ind(ahci_port_base_address + 0x24)==AHCI_SATAPI_DEVICE) {
-     log("has SATAPI device");
+     logf("has SATAPI device");
      if(optical_drive_info.controller_type==NO_CONTROLLER) {
       //enable port
       optical_drive_info.base_2 = (dword_t) (ahci_enable_port(ahci_port_base_address));
@@ -173,12 +172,11 @@ void initalize_ahci_controller(byte_t number_of_controller) {
      }
     }
     else {
-     log("signature is ");
-     log_hex(mmio_ind(ahci_port_base_address + 0x28));
+     logf("signature is 0x%x", mmio_ind(ahci_port_base_address + 0x28));
     }
    }
    else {
-    log("is not active");
+    logf("is not active");
    }
   }
  }
@@ -210,12 +208,12 @@ byte_t *ahci_enable_port(dword_t port_base_address) {
  //start port
  mmio_outd(port_base_address + 0x18, mmio_ind(port_base_address + 0x18) | 0x01); //set start bit
  if(ahci_wait(port_base_address + 0x18, 0x1, 0x1, 100)==STATUS_ERROR) {
-  log("\nAHCI ERROR: port command list can not be started");
+  logf("\nAHCI ERROR: port command list can not be started");
   return STATUS_ERROR;
  }
  mmio_outd(port_base_address + 0x18, mmio_ind(port_base_address + 0x18) | 0x10); //set FIS receive enable
  if(ahci_wait(port_base_address + 0x18, 0x10, 0x10, 100)==STATUS_ERROR) {
-  log("\nAHCI ERROR: port FIS receive can not be started");
+  logf("\nAHCI ERROR: port FIS receive can not be started");
   return STATUS_ERROR;
  }
 
@@ -271,7 +269,7 @@ byte_t ahci_send_command(dword_t port_base_address, dword_t command_list_memory,
 
  //wait to be possible to send command list entry 0
  if(ahci_wait(port_base_address + 0x38, 0x01, 0x0, 100)==STATUS_ERROR) {
-  log("\nAHCI ERROR: command 0 is not free");
+  logf("\nAHCI ERROR: command 0 is not free");
   return STATUS_ERROR;
  }
 
@@ -297,11 +295,11 @@ byte_t ahci_send_command(dword_t port_base_address, dword_t command_list_memory,
    //we need to clear COMMAND_ISSUE register to be able to send commands again, to do so we will restart command list
    mmio_outd(port_base_address + 0x18, mmio_ind(port_base_address + 0x18) & ~0x01); //clear start bit
    if(ahci_wait(port_base_address + 0x18, 0x1, 0x0, 100)==STATUS_ERROR) {
-    log("\nAHCI ERROR: port command list can not be stopped");
+    logf("\nAHCI ERROR: port command list can not be stopped");
    }
    mmio_outd(port_base_address + 0x18, mmio_ind(port_base_address + 0x18) | 0x01); //set start bit
    if(ahci_wait(port_base_address + 0x18, 0x1, 0x1, 100)==STATUS_ERROR) {
-    log("\nAHCI ERROR: port command list can not be started");
+    logf("\nAHCI ERROR: port command list can not be started");
    }
 
    return STATUS_ERROR;
@@ -309,7 +307,7 @@ byte_t ahci_send_command(dword_t port_base_address, dword_t command_list_memory,
  }
  
  //timeout
- log("\nAHCI: command timeout");
+ logf("\nAHCI: command timeout");
  return STATUS_ERROR;
 }
 

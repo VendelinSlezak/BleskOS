@@ -65,7 +65,7 @@ void scan_pci(void) {
  pci_devices_array_mem = (dword_t) calloc(12*1000);
  pci_num_of_devices = 0;
  
- log("\n\nPCI devices:");
+ logf("\n\nPCI devices:");
 
  for(dword_t bus=0; bus<256; bus++) {
   for(dword_t device=0; device<32; device++) {
@@ -109,7 +109,7 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
 
  //Graphic card
  if(type_of_device==0x030000 && number_of_graphic_cards<MAX_NUMBER_OF_GRAPHIC_CARDS) {
-  log("\nGraphic card");
+  logf("\nGraphic card");
 
   if(number_of_graphic_cards >= MAX_NUMBER_OF_GRAPHIC_CARDS) {
    return;
@@ -139,7 +139,7 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  
  //IDE controller
  if((type_of_device & 0xFFFF00)==0x010100 && number_of_storage_controllers<MAX_NUMBER_OF_STORAGE_CONTROLLERS) { 
-  log("\nIDE controller");
+  logf("\nIDE controller");
 
   pci_device_ide_controller:
   pci_enable_io_busmastering(bus, device, function);
@@ -195,13 +195,13 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  
  //SATA controller
  if(type_of_device==0x010601 && number_of_storage_controllers<MAX_NUMBER_OF_STORAGE_CONTROLLERS) {
-  log("\nAHCI controller");
+  logf("\nAHCI controller");
   pci_enable_mmio_busmastering(bus, device, function);
   pci_disable_interrupts(bus, device, function);
   
   //test presence of AHCI interface
   if((mmio_ind(pci_read_mmio_bar(bus, device, function, PCI_BAR5) + 0x04) & 0x80000000)==0x00000000) {
-   log(" with IDE interface");
+   logf(" with IDE interface");
    goto pci_device_ide_controller; //IDE interface
   }
   
@@ -214,8 +214,7 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  
  //Ethernet card
  if(type_of_device==0x020000) {
-  log("\nEthernet card ");
-  log_hex_with_space(full_device_id);
+  logf("\nEthernet card 0x%x", full_device_id);
   
   if(number_of_ethernet_cards>=MAX_NUMBER_OF_ETHERNET_CARDS) {
    return;
@@ -308,14 +307,14 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
 
  //Ethernet card
  if(type_of_device==0x028000) {
-  log("\nWireless card "); log_hex_with_space(full_device_id);
+  logf("\nWireless card 0x%x", full_device_id);
 
   return;
  }
  
  //AC97 sound card
  if(type_of_device==0x040100 && number_of_sound_cards<MAX_NUMBER_OF_SOUND_CARDS) {
-  log("\nsound card AC97");
+  logf("\nsound card AC97");
 
   if(number_of_sound_cards>=MAX_NUMBER_OF_SOUND_CARDS) {
    return;
@@ -335,7 +334,7 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  
  //HD Audio sound card
  if(type_of_device==0x040300 && number_of_sound_cards<MAX_NUMBER_OF_SOUND_CARDS) {
-  log("\nsound card HDA");
+  logf("\nsound card HDA");
 
   if(number_of_sound_cards>=MAX_NUMBER_OF_SOUND_CARDS) {
    return;
@@ -354,7 +353,7 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  
  //Universal Host Controller Interface
  if(type_of_device==0x0C0300) {
-  log("\nUHCI ");
+  logf("\nUHCI ");
 
   if(number_of_uhci_controllers >= MAX_NUMBER_OF_UHCI_CONTROLLERS) {
    return;
@@ -379,7 +378,7 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  
  //Open Host Controller Interface
  if(type_of_device==0x0C0310) {
-  log("\nOHCI");
+  logf("\nOHCI");
 
   if(number_of_ohci_controllers >= MAX_NUMBER_OF_UHCI_CONTROLLERS) {
    return;
@@ -406,7 +405,7 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  
  //Enhanced Host Controller Interface
  if(type_of_device==0x0C0320) {
-  log("\nEHCI ");
+  logf("\nEHCI ");
 
   pci_enable_mmio_busmastering(bus, device, function);
 
@@ -420,7 +419,7 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
   //disable BIOS ownership
   dword_t pci_ehci_bios_register_offset = ((mmio_ind(ehci_controllers[number_of_ehci_controllers].base+0x08)>>8) & 0xFF);
   if(pci_ehci_bios_register_offset >= 0x40 && (pci_read(bus, device, function, pci_ehci_bios_register_offset) & 0xFF)==0x01) {
-   l("(releasing BIOS ownership)");
+   logf("(releasing BIOS ownership)");
    pci_write(bus, device, function, pci_ehci_bios_register_offset, (1 << 24)); //set OS ownership
   }
 
@@ -431,7 +430,7 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  
  //eXtensible Host Controller Interface
  if(type_of_device==0x0C0330) {
-  log("\nxHCI");
+  logf("\nxHCI");
 
   pci_enable_mmio_busmastering(bus, device, function);
 
@@ -444,10 +443,9 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
 
   //disable BIOS ownership
   dword_t xhci_bios_register_offset = ((mmio_ind(xhci_controllers[number_of_xhci_controllers].base+0x10)>>16)*4);
-  lhw(xhci_bios_register_offset);
-  lhw(mmio_ind(xhci_controllers[number_of_xhci_controllers].base+xhci_bios_register_offset));
+  logf("%x %x", xhci_bios_register_offset, mmio_ind(xhci_controllers[number_of_xhci_controllers].base+xhci_bios_register_offset));
   if(xhci_bios_register_offset != 0 && (mmio_ind(xhci_controllers[number_of_xhci_controllers].base+xhci_bios_register_offset) & 0xFF)==0x01) {
-   l("(releasing BIOS ownership)");
+   logf("(releasing BIOS ownership)");
    mmio_outd(xhci_controllers[number_of_xhci_controllers].base+xhci_bios_register_offset, (mmio_ind(xhci_controllers[number_of_xhci_controllers].base+xhci_bios_register_offset) & ~(1 << 16)) | (1 << 24)); //set OS ownership
   }
 
@@ -458,42 +456,40 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
 
  //Host bridge
  if(type_of_device==0x060000) {
-  log("\nHost bridge");
+  logf("\nHost bridge");
   
   return;
  }
 
  //ISA bridge
  if(type_of_device==0x060100) {
-  log("\nISA bridge ");
+  logf("\nISA bridge ");
   
   return;
  }
 
  //PCI-to-PCI bridge
  if((type_of_device & 0xFFFF00)==0x060400) {
-  log("\nPCI-to-PCI bridge 0x04");
+  logf("\nPCI-to-PCI bridge 0x04");
   
   return;
  }
 
  //PCI-to-PCI bridge
  if((type_of_device & 0xFFFF00)==0x060900) {
-  log("\nPCI-to-PCI bridge 0x09");
+  logf("\nPCI-to-PCI bridge 0x09");
   
   return;
  }
 
  //Other bridge
  if(type_of_device==0x068000) {
-  log("\nOther bridge");
+  logf("\nOther bridge");
   
   return;
  }
  
- log("\nunknown device ");
- log_hex(type_of_device);
- // pci_disable_interrupts(bus, device, function); //disable interrupts from every device that we do not know
+ logf("\nunknown device %x", type_of_device);
 }
 
 byte_t *get_pci_vendor_string(dword_t vendor_id) {

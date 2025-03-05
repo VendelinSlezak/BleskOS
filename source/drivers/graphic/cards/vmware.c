@@ -20,7 +20,7 @@ void vmware_graphic_card_write(byte_t graphic_card_number, byte_t index, dword_t
 
 void initalize_vmware_graphic_card(byte_t graphic_card_number) {
  //try all possible IDs from newest to oldest version
- l("\n\nVMWare SVGA ");
+ logf("\n\nVMWare SVGA ");
  byte_t initalized = STATUS_FALSE;
  for(dword_t i=0x90000002; i>=0x90000000; i--) {
   vmware_graphic_card_write(graphic_card_number, VMWARE_GRAPHIC_CARD_INDEX_ID, i);
@@ -31,7 +31,7 @@ void initalize_vmware_graphic_card(byte_t graphic_card_number) {
   }
  }
  if(initalized == STATUS_FALSE) {
-  l("unknown version");
+  logf("unknown version");
   return;
  }
 

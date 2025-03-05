@@ -13,17 +13,17 @@ void usb_msd_save_informations(byte_t device_address, struct usb_full_interface_
 
  //check if this device do not already have msd interface
  if(usb_devices[device_address].msd.is_present == STATUS_TRUE) {
-  l("\nUSB ERROR: more MSD interfaces at one device");
+  logf("\nUSB ERROR: more MSD interfaces at one device");
   return;
  }
 
  //check if this interface has all needed informations
  if(interface.bulk_in_endpoint == 0 || interface.bulk_out_endpoint == 0) {
-  l("\nUSB ERROR: USB MSD do not have bulk IN and OUT endpoint");
+  logf("\nUSB ERROR: USB MSD do not have bulk IN and OUT endpoint");
   return;
  }
  if(interface.bulk_in_endpoint->wMaxPacketSize == 0 || interface.bulk_out_endpoint->wMaxPacketSize == 0) {
-  l("\nUSB ERROR: USB MSD wrong endpoint size");
+  logf("\nUSB ERROR: USB MSD wrong endpoint size");
   return;
  }
 
@@ -45,15 +45,15 @@ void usb_msd_save_informations(byte_t device_address, struct usb_full_interface_
  usb_devices[device_address].msd.unit_state = USB_MSD_WITHOUT_UNIT;
 
  //log
- l("\nUSB Mass Storage with Bulk Only protocol\n Endpoint IN: "); lvw(usb_devices[device_address].msd.bulk_only.in.endpoint);
- l("\n Endpoint OUT: "); lvw(usb_devices[device_address].msd.bulk_only.out.endpoint);
+ logf("\nUSB Mass Storage with Bulk Only protocol\n Endpoint IN: %d", usb_devices[device_address].msd.bulk_only.in.endpoint);
+ logf("\n Endpoint OUT: %d", usb_devices[device_address].msd.bulk_only.out.endpoint);
 }
 
 void usb_msd_initalize(byte_t device_address) {
  //set device into initalization phase
  usb_devices[device_address].is_interface_in_initalization = STATUS_TRUE;
 
- l("\nstart of initalization of MSD");
+ logf("\nstart of initalization of MSD");
 
  //sent INQUIRY command
  usb_bulk_only_prepare_transfer((struct usb_bbb_t *)&usb_devices[device_address].msd.bulk_only,
@@ -68,30 +68,28 @@ void usb_msd_initalize(byte_t device_address) {
 }
 
 void usb_msd_inquiry_success(byte_t device_address) {
- l("\nUSB MSD: INQUIRY success");
+ logf("\nUSB MSD: INQUIRY success");
 
  //log
  struct usb_msd_inquiry_t *inquiry = (struct usb_msd_inquiry_t *) usb_devices[device_address].msd.bulk_only.buffer;
- l("\n Device type: ");
+ logf("\n Device type: ");
  if(inquiry->peripheral_device_type==0x0) {
-  l("Direct Access Block Device");
+  logf("Direct Access Block Device");
  }
  else if(inquiry->peripheral_device_type==0x5) {
-  l("CD-ROM/DVD");
+  logf("CD-ROM/DVD");
  }
  else {
-  lhs(inquiry->peripheral_device_type, 1);
+  logf("0x%01x", inquiry->peripheral_device_type);
  }
 
  byte_t string[9];
  string[8] = 0;
  copy_memory((dword_t)(&inquiry->vendor_id), (dword_t)(&string), 8);
- l("\n Vendor ID string: ");
- l(string);
+ logf("\n Vendor ID string: %s", string);
  
  copy_memory((dword_t)(&inquiry->product_id), (dword_t)(&string), 8);
- l("\n Product ID string: ");
- l(string);
+ logf("\n Product ID string: %s", string);
 
  //free memory of INQUIRY
  free((void *)usb_devices[device_address].msd.bulk_only.buffer);
@@ -137,7 +135,7 @@ void usb_msd_monitor_unit_state(void) {
 void usb_msd_send_tur(byte_t device_address) {
  //check if there are possible tries
  if(usb_devices[device_address].msd.test_unit_ready_retries == 0) {
-  l("\nUSB MSD: TUR retries ended");
+  logf("\nUSB MSD: TUR retries ended");
   //TODO: call error
   return;
  }
@@ -158,7 +156,7 @@ void usb_msd_tur_success(byte_t device_address) {
   return;
  }
  else {
-  l("\nUSB MSD: unit is ready");
+  logf("\nUSB MSD: unit is ready");
  }
 
  //send READ_CAPACITY(10) command
@@ -174,7 +172,7 @@ void usb_msd_tur_success(byte_t device_address) {
 }
 
 void usb_msd_read_capacity_success(byte_t device_address) {
- l("\nUSB MSD: READ_CAPACITY(10) success");
+ logf("\nUSB MSD: READ_CAPACITY(10) success");
 
  //read returned data
  struct usb_read_capacity_t *read_capacity = (struct usb_read_capacity_t *) usb_devices[device_address].msd.bulk_only.buffer;
@@ -182,12 +180,9 @@ void usb_msd_read_capacity_success(byte_t device_address) {
  usb_devices[device_address].msd.size_of_sector = BIG_ENDIAN_DWORD(read_capacity->big_endian_size_of_sector_on_disk);
 
  //log
- log("\n Sector size: ");
- log_var(usb_devices[device_address].msd.size_of_sector);
- log("\n Number of sectors: ");
- log_var(usb_devices[device_address].msd.number_of_sectors);
- log("\n Size in MB: ");
- log_var((usb_devices[device_address].msd.number_of_sectors/2000));
+ logf("\n Sector size: %d", usb_devices[device_address].msd.size_of_sector);
+ logf("\n Number of sectors: %d", usb_devices[device_address].msd.number_of_sectors);
+ logf("\n Size in MB: %d", (usb_devices[device_address].msd.number_of_sectors/2000));
 
  //free memory of READ_CAPACITY(10)
  free((void *)usb_devices[device_address].msd.bulk_only.buffer);
@@ -221,15 +216,15 @@ byte_t usb_msd_transfer(byte_t device_address, byte_t direction, dword_t sector,
         || usb_devices[device_address].msd.reset_sequence_waiting == STATUS_TRUE
         || usb_devices[device_address].msd.reset_sequence_running == STATUS_TRUE) {
    if(time_of_system_running > timeout) {
-    l("\nUSB MSD: can not do transfer ");
+    logf("\nUSB MSD: can not do transfer ");
     if(usb_devices[device_address].msd.bulk_only.is_running == STATUS_TRUE) {
-     l("Bulk running ");
+     logf("Bulk running ");
     }
     if(usb_devices[device_address].msd.reset_sequence_waiting == STATUS_TRUE) {
-     l("Reset waiting ");
+     logf("Reset waiting ");
     }
     if(usb_devices[device_address].msd.reset_sequence_running == STATUS_TRUE) {
-     l("Reset running ");
+     logf("Reset running ");
     }
     return STATUS_ERROR;
    }
@@ -245,7 +240,7 @@ byte_t usb_msd_transfer(byte_t device_address, byte_t direction, dword_t sector,
 
  //now we support only 512 bytes sectors TODO: add support for bigger sizes
  if(usb_devices[device_address].msd.size_of_sector!=512) {
-  l("\nUSB MSD: Bad size of sector");
+  logf("\nUSB MSD: Bad size of sector");
   return STATUS_ERROR;
  }
 
@@ -278,7 +273,7 @@ byte_t usb_msd_transfer(byte_t device_address, byte_t direction, dword_t sector,
  }
 
  if(usb_devices[device_address].msd.transfer_status == USB_TRANSFER_ERROR) {
-  l("\nUSB MSD: transfer error");
+  logf("\nUSB MSD: transfer error");
   return STATUS_ERROR;
  }
  else {
@@ -388,21 +383,19 @@ void usb_msd_request_sense_success(byte_t device_address) {
  }
  //other reasons will be logged
  else {
-  l("\nUSB MSD: REQUEST_SENSE ");
+  logf("\nUSB MSD: REQUEST_SENSE ");
 
   if(request_sense->sense_key==0x00 && request_sense->additional_sense_code==0x00 && request_sense->additional_sense_qualifier==0x00) {
-    log("No Sense");
+    logf("No Sense");
   }
   else if(request_sense->sense_key==0x06 && request_sense->additional_sense_code==0x28 && request_sense->additional_sense_qualifier==0x00) {
-    log("Not ready to ready transition - Media changed");
+    logf("Not ready to ready transition - Media changed");
   }
   else if(request_sense->sense_key==0x07 && request_sense->additional_sense_code==0x27 && request_sense->additional_sense_qualifier==0x00) {
-    log("Write protected media");
+    logf("Write protected media");
   }
   else {
-    log_hex_specific_size_with_space(request_sense->sense_key, 2);
-    log_hex_specific_size_with_space(request_sense->additional_sense_code, 2);
-    log_hex_specific_size(request_sense->additional_sense_qualifier, 2);
+    logf("0x%02x 0x%02x 0x%02x", request_sense->sense_key, request_sense->additional_sense_code, request_sense->additional_sense_qualifier);
   }
  }
 
@@ -415,7 +408,7 @@ void usb_msd_request_sense_success(byte_t device_address) {
 /* errors */
 
 void usb_msd_inquiry_error(byte_t device_address) {
- l("\nUSB MSD: INQUIRY was not transferred");
+ logf("\nUSB MSD: INQUIRY was not transferred");
 
  //free memory of INQUIRY buffer for data
  free((void *)usb_devices[device_address].msd.bulk_only.buffer);
@@ -431,7 +424,7 @@ void usb_msd_tur_error(byte_t device_address) {
 }
 
 void usb_msd_read_capacity_error(byte_t device_address) {
- l("\nUSB MSD: READ_CAPACITY(10) error");
+ logf("\nUSB MSD: READ_CAPACITY(10) error");
 
  //free memory of READ_CAPACITY(10) buffer for data
  free((void *)usb_devices[device_address].msd.bulk_only.buffer);
@@ -441,21 +434,21 @@ void usb_msd_read_capacity_error(byte_t device_address) {
 }
 
 void usb_msd_read_10_error(byte_t device_address) {
- l("\nUSB MSD: READ(10) error");
+ logf("\nUSB MSD: READ(10) error");
 
  //send REQUEST_SENSE
  usb_msd_send_request_sense(device_address);
 }
 
 void usb_msd_write_10_error(byte_t device_address) {
- l("\nUSB MSD: WRITE(10) error");
+ logf("\nUSB MSD: WRITE(10) error");
 
  //send REQUEST_SENSE
  usb_msd_send_request_sense(device_address);
 }
 
 void usb_msd_request_sense_error(byte_t device_address) {
- l("\nUSB MSD: REQUEST_SENSE error");
+ logf("\nUSB MSD: REQUEST_SENSE error");
 
  //free memory of REQUEST_SENSE buffer for data
  free((void *)usb_devices[device_address].msd.bulk_only.buffer);
@@ -476,7 +469,7 @@ void usb_msd_call_reset_sequence(byte_t device_address) {
  }
 
  //start reset sequence by resetting MSD
- l("\nUSB MSD: Start of Reset Sequence");
+ logf("\nUSB MSD: Start of Reset Sequence");
  usb_devices[device_address].msd.reset_sequence_waiting = STATUS_FALSE;
  usb_devices[device_address].msd.reset_sequence_running = STATUS_TRUE;
  usb_control_transfer_without_data(device_address, usb_msd_reset_sequence_device_reset_success, usb_msd_reset_sequence_error, 200, 0x21, 0xFF, 0x0000, usb_devices[device_address].msd.interface);
@@ -486,7 +479,7 @@ void usb_msd_reset_sequence_device_reset_success(byte_t device_address) {
  //close transfer
  usb_close_control_transfer(device_address);
 
- l("\nUSB MSD: Reset IN endpoint");
+ logf("\nUSB MSD: Reset IN endpoint");
 
  //reset IN endpoint
  usb_control_transfer_without_data(device_address, usb_msd_reset_sequence_reset_endpoint_in_success, usb_msd_reset_sequence_error, 200, 0x02, 0x01, 0x0000, usb_devices[device_address].msd.bulk_only.in.endpoint);
@@ -499,7 +492,7 @@ void usb_msd_reset_sequence_reset_endpoint_in_success(byte_t device_address) {
  //toggle of IN endpoint was resetted
  usb_devices[device_address].msd.bulk_only.in.endpoint_toggle = USB_TOGGLE_0;
 
- l("\nUSB MSD: Reset OUT endpoint");
+ logf("\nUSB MSD: Reset OUT endpoint");
 
  //reset OUT endpoint
  usb_control_transfer_without_data(device_address, usb_msd_reset_sequence_reset_endpoint_out_success, usb_msd_reset_sequence_error, 200, 0x02, 0x01, 0x0000, usb_devices[device_address].msd.bulk_only.out.endpoint);
@@ -518,13 +511,13 @@ void usb_msd_reset_sequence_reset_endpoint_out_success(byte_t device_address) {
  }
 
  //reset sequence was successfull
- l("\nUSB MSD: Reset Sequence was successfull");
+ logf("\nUSB MSD: Reset Sequence was successfull");
  usb_devices[device_address].msd.reset_sequence_running = STATUS_FALSE;
 }
 
 void usb_msd_reset_sequence_error(byte_t device_address) {
  //log
- l("\nUSB MSD "); lvw(device_address); l("FATAL ERROR: Reset Sequence failed, disabling MSD interface");
+ logf("\nUSB MSD %d FATAL ERROR: Reset Sequence failed, disabling MSD interface", device_address);
 
  //close transfer
  usb_close_control_transfer(device_address);

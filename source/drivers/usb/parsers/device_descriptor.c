@@ -11,46 +11,40 @@
 void parse_usb_device_descriptor(dword_t descriptor_mem) {
  struct usb_device_descriptor_t *usb_device_descriptor = (struct usb_device_descriptor_t *) (descriptor_mem);
  
- log("\nUSB descriptor");
- log("\n USB version of this device: ");
+ logf("\nUSB descriptor");
+ logf("\n USB version of this device: ");
  if(usb_device_descriptor->usb_specification_release_number==0x0100) {
-  log("1.0");
+  logf("1.0");
  }
  else if(usb_device_descriptor->usb_specification_release_number==0x0110) {
-  log("1.1");
+  logf("1.1");
  }
  else if(usb_device_descriptor->usb_specification_release_number==0x0200) {
-  log("2.0");
+  logf("2.0");
  }
  else {
-  log_hex_specific_size(usb_device_descriptor->usb_specification_release_number, 4);
+  logf("%04x", usb_device_descriptor->usb_specification_release_number);
  }
- log("\n Device type: ");
+ logf("\n Device type: ");
  if(usb_device_descriptor->device_class==0x00 && usb_device_descriptor->device_subclass==0x00 && usb_device_descriptor->device_protocol==0x00) {
-  log("in configuration descriptor");
+  logf("in configuration descriptor");
  }
  else {
-  log_hex_specific_size_with_space(usb_device_descriptor->device_class, 2);
-  log_hex_specific_size_with_space(usb_device_descriptor->device_subclass, 2);
-  log_hex_specific_size(usb_device_descriptor->device_protocol, 2);
+    logf("%02x %02x %02x", usb_device_descriptor->device_class, usb_device_descriptor->device_subclass, usb_device_descriptor->device_protocol);
  }
- log("\n Control endpoint: ");
+ logf("\n Control endpoint: ");
  dword_t usb_control_endpoint_size = usb_device_descriptor->size_of_control_endpoint;
  if(usb_control_endpoint_size==8) {
-  log("low speed");
+  logf("low speed");
  }
  else if(usb_control_endpoint_size==64) {
-  log("full speed");
+  logf("full speed");
  }
  else {
-  log_var(usb_control_endpoint_size);
+  logf("%d", usb_control_endpoint_size);
  }
- log("\n Vendor ID: ");
- log_hex(usb_device_descriptor->vendor_id);
- log("\n Product ID: ");
- log_hex(usb_device_descriptor->product_id);
- log("\n Device version: ");
- log_hex(usb_device_descriptor->device_release_number);
- log("\n Number of configurations: ");
- log_var(usb_device_descriptor->number_of_configurations);
+ logf("\n Vendor ID: %04x", usb_device_descriptor->vendor_id);
+ logf("\n Product ID: %04x", usb_device_descriptor->product_id);
+ logf("\n Device version: %04x", usb_device_descriptor->device_release_number);
+ logf("\n Number of configurations: %d", usb_device_descriptor->number_of_configurations);
 }

@@ -41,24 +41,20 @@ void read_acpi_tables(void) {
   memory_pointer++;
  }
  if(rsdp_mem==0) {
-  log("\n\nno RSDP table founded\n");
+  logf("\n\nno RSDP table founded\n");
   return;
  }
- log("\n\nRSDP table memory: ");
- log_hex(rsdp_mem);
- log("\n");
+ logf("\n\nRSDP table memory: %x\n", rsdp_mem);
  
  //RSDT table pointer
  rsdt_mem = mem[4];
  mem = (dword_t *) rsdt_mem;
  if(*mem!=0x54445352) { //signature "RSDT"
   rsdt_mem = 0;
-  log("no RSDT table founded\n");
+  logf("no RSDT table founded\n");
   return;
  }
- log("RSDT table memory: ");
- log_hex(rsdt_mem);
- log("\n");
+ logf("RSDT table memory: %x\n", rsdt_mem);
  number_of_entries = ((mem[1]-36)>>2);
  
  //search for HPET table
@@ -85,12 +81,10 @@ void read_acpi_tables(void) {
   mem++;
  }
  if(facp_mem==0) {
-  log("no FACP table founded\n");
+  logf("no FACP table founded\n");
   return;
  }
- log("FACP table memory: ");
- log_hex(facp_mem);
- log("\n");
+ logf("FACP table memory: %x\n", facp_mem);
  
  //read useful values from FACP
  acpi_version = mmio_inb(facp_mem + 8);
@@ -103,7 +97,7 @@ void read_acpi_tables(void) {
   ps2_controller_present = ((mmio_inw(facp_mem + 109)>>1) & 0x1); //0 = not present 1 = present
  }
 
- l("\nACPI SCI: "); lv(mmio_inw(facp_mem + 40 + 6));
+ logf("\nACPI SCI: %d", mmio_inw(facp_mem + 40 + 6));
  
  // //turn ACPI on
  // if(acpi_command_register!=0) {
@@ -128,15 +122,8 @@ void read_acpi_tables(void) {
  }
  
  //LOG
- log("\nACPI pm1 control port: ");
- log_hex_with_space(acpi_pm1_control_register);
- log("shutdown value for pm1: ");
- log_hex(shutdown_value_pm1);
- log("\n");
- log("ACPI pm2 control port: ");
- log_hex_with_space(acpi_pm2_control_register);
- log("shutdown value for pm2: ");
- log_hex(shutdown_value_pm2);
+ logf("\nACPI pm1 control port: 0x%04x shutdown value for pm1: %0x4x", acpi_pm1_control_register, shutdown_value_pm1);
+ logf("\nACPI pm2 control port: 0x%04x shutdown value for pm2: %0x4x", acpi_pm2_control_register, shutdown_value_pm2);
 }
 
 void shutdown(void) {

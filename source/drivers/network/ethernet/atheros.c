@@ -36,14 +36,13 @@ void ec_atheros_write_phy(dword_t number_of_card, dword_t reg, word_t value) {
  }
 
  //timeout error
- log("\nwrite PHY error");
+ logf("\nwrite PHY error");
  return;
 }
 
 void ec_atheros_initalize(dword_t number_of_card) {
  //log device ID of card
- log("\n\nQualcomm Atheros driver\nDevice ID: ");
- log_hex_specific_size((ethernet_cards[number_of_card].id >> 16), 4);
+ logf("\n\nQualcomm Atheros driver\nDevice ID: 0x%04x", (ethernet_cards[number_of_card].id >> 16));
 
  //set card methods
  ethernet_cards[number_of_card].get_cable_status = ec_atheros_get_cable_status;
@@ -62,42 +61,10 @@ void ec_atheros_initalize(dword_t number_of_card) {
  }
 
  //log MAC address
- log("\nMAC: ");
+ logf("\nMAC: ");
  for(dword_t i=0; i<6; i++) {
-  log_hex_specific_size_with_space(ethernet_cards[number_of_card].mac_address[i], 2);
+  logf("0x%02x ", ethernet_cards[number_of_card].mac_address[i], 2);
  }
-
- //enable interrupts
- set_irq_handler(ethernet_cards[number_of_card].irq, (dword_t)network_irq);
-
- #define ATHEROS_ISR 0x1600
- #define ATHEROS_IMR 0x1604
- #define ATHEROS_MSIX_MASK 0x0090
-
- #define ATHEROS_MII_GIGA_PSSR 0x11
- #define ATHEROS_MII_IER 0x12
- #define ATHEROS_MII_ISR 0x13
-
- //set interrupts for PHY
- // log("\nIRQ PHY ISR mask: "); log_hex_specific_size(ec_atheros_read_phy(number_of_card, ATHEROS_MII_ISR), 4);
- // word_t irq_phy_mask = ec_atheros_read_phy(number_of_card, ATHEROS_MII_IER);
- // log("\nIRQ PHY mask: "); log_hex_specific_size(irq_phy_mask, 4);
- // ec_atheros_write_phy(number_of_card, ATHEROS_MII_IER, irq_phy_mask | 0x0400 | 0x0800); //link up, link down
- // log("\nIRQ PHY mask after: "); log_hex_specific_size(ec_atheros_read_phy(number_of_card, ATHEROS_MII_IER), 4);
-
- //set interrupts
- log("\nMSI MASK: "); log_hex(mmio_ind(ethernet_cards[number_of_card].base+ATHEROS_MSIX_MASK));
- log("\nISR: "); log_hex(mmio_ind(ethernet_cards[number_of_card].base+ATHEROS_ISR));
- log("\nIMR: "); log_hex(mmio_ind(ethernet_cards[number_of_card].base+ATHEROS_IMR));
- //mov     dword[esi + ATHEROS_MSI_RETRANS_TIMER], 0
-
- mmio_outd(ethernet_cards[number_of_card].base + ATHEROS_ISR, ~(1 << 31));
- mmio_outd(ethernet_cards[number_of_card].base + ATHEROS_ISR, 0);
- mmio_outd(ethernet_cards[number_of_card].base + ATHEROS_IMR, (1 << 12)); //PHY interrupt enable
- mmio_ind(ethernet_cards[number_of_card].base + 0x0); //write flush
-
- log("\nISR: "); log_hex(mmio_ind(ethernet_cards[number_of_card].base+ATHEROS_ISR));
- log("\nIMR: "); log_hex(mmio_ind(ethernet_cards[number_of_card].base+ATHEROS_IMR));
 }
 
 byte_t ec_atheros_get_cable_status(dword_t number_of_card) {
@@ -115,12 +82,12 @@ byte_t ec_atheros_send_packet(dword_t number_of_card, byte_t *packet_memory, dwo
 }
 
 void ec_atheros_process_irq(dword_t number_of_card) {
- //read interrupt status
- dword_t irq_status = mmio_ind(ethernet_cards[number_of_card].base+ATHEROS_ISR);
+//  //read interrupt status
+//  dword_t irq_status = mmio_ind(ethernet_cards[number_of_card].base+ATHEROS_ISR);
 
- pstr("irq");
- phex(irq_status);
+//  pstr("irq");
+//  phex(irq_status);
 
- //acknowledge interrupt
- mmio_outd(ethernet_cards[number_of_card].base+ATHEROS_ISR, irq_status | (1 << 31));
+//  //acknowledge interrupt
+//  mmio_outd(ethernet_cards[number_of_card].base+ATHEROS_ISR, irq_status | (1 << 31));
 }

@@ -48,7 +48,7 @@ word_t read_folder(dword_t partition_number, dword_t folder_location, dword_t fo
   if(array_of_loaded_folders[i].state==AOLF_FREE_ENTRY) {
    //select partition
    if(select_partition(partition_number)==STATUS_ERROR) {
-    log("\nAOLF: invalid partition");
+    logf("\nAOLF: invalid partition");
     return STATUS_ERROR;
    }
 
@@ -78,7 +78,7 @@ word_t read_folder(dword_t partition_number, dword_t folder_location, dword_t fo
    }
 
    if((dword_t)folder_memory==STATUS_ERROR) {
-    log("\nAOLF: error with reading folder");
+    logf("\nAOLF: error with reading folder");
     return STATUS_ERROR;
    }
 
@@ -96,14 +96,14 @@ word_t read_folder(dword_t partition_number, dword_t folder_location, dword_t fo
  }
 
  //all entries are used
- log("\nAOLF: not enough entries");
+ logf("\nAOLF: not enough entries");
  return STATUS_ERROR;
 }
 
 byte_t rewrite_folder(dword_t partition_number, dword_t folder_location, dword_t previous_folder_location, struct file_descriptor_t *vfs_folder, dword_t number_of_files_in_vfs_folder) {
  //select partition
  if(select_partition(partition_number)==STATUS_ERROR) {
-  log("\nREWRITE FOLDER: invalid partition");
+  logf("\nREWRITE FOLDER: invalid partition");
   return STATUS_ERROR;
  }
 
@@ -113,14 +113,14 @@ byte_t rewrite_folder(dword_t partition_number, dword_t folder_location, dword_t
   return rewrite_fat_folder(folder_location, previous_folder_location, vfs_folder, number_of_files_in_vfs_folder);
  }
 
- log("\nREWRITE FOLDER: not readable filesystem");
+ logf("\nREWRITE FOLDER: not readable filesystem");
  return STATUS_ERROR;
 }
 
 dword_t create_folder(dword_t partition_number, dword_t previous_folder_location) {
  //select partition
  if(select_partition(partition_number)==STATUS_ERROR) {
-  log("\nCREATE FOLDER: invalid partition");
+  logf("\nCREATE FOLDER: invalid partition");
   return STATUS_ERROR;
  }
 
@@ -130,14 +130,14 @@ dword_t create_folder(dword_t partition_number, dword_t previous_folder_location
   return create_fat_folder(previous_folder_location);
  }
 
- log("\nCREATE FOLDER: not readable filesystem");
+ logf("\nCREATE FOLDER: not readable filesystem");
  return STATUS_ERROR;
 }
 
 byte_t *read_file(dword_t partition_number, dword_t file_location, dword_t file_size) {
  //select partition
  if(select_partition(partition_number)==STATUS_ERROR) {
-  log("\nREAD FILE: invalid partition");
+  logf("\nREAD FILE: invalid partition");
   return STATUS_ERROR;
  }
 
@@ -157,7 +157,7 @@ byte_t *read_file(dword_t partition_number, dword_t file_location, dword_t file_
   return read_cdda_file(file_location, file_size);
  }
  else {
-  log("\nREAD FILE: not readable filesystem");
+  logf("\nREAD FILE: not readable filesystem");
   return STATUS_ERROR;
  }
 }
@@ -165,7 +165,7 @@ byte_t *read_file(dword_t partition_number, dword_t file_location, dword_t file_
 dword_t rewrite_file(dword_t partition_number, dword_t file_location, byte_t *file_memory, dword_t file_size_in_bytes) {
  //select partition
  if(select_partition(partition_number)==STATUS_ERROR) {
-  log("\nREWRITE FILE: invalid partition");
+  logf("\nREWRITE FILE: invalid partition");
   return STATUS_ERROR;
  }
 
@@ -176,7 +176,7 @@ dword_t rewrite_file(dword_t partition_number, dword_t file_location, byte_t *fi
   return rewrite_fat_file(file_location, file_memory, file_size_in_bytes);
  }
  else {
-  log("\nREWRITE FILE: not readable filesystem");
+  logf("\nREWRITE FILE: not readable filesystem");
   return STATUS_ERROR;
  }
 }
@@ -184,7 +184,7 @@ dword_t rewrite_file(dword_t partition_number, dword_t file_location, byte_t *fi
 dword_t create_file(dword_t partition_number, byte_t *file_memory, dword_t file_size_in_bytes) {
  //select partition
  if(select_partition(partition_number)==STATUS_ERROR) {
-  log("\nCREATE FILE: invalid partition");
+  logf("\nCREATE FILE: invalid partition");
   return STATUS_ERROR;
  }
 
@@ -195,7 +195,7 @@ dword_t create_file(dword_t partition_number, byte_t *file_memory, dword_t file_
   return create_fat_file(FAT_FIND_FREE_CLUSTER, file_memory, file_size_in_bytes);
  }
  else {
-  log("\nCREATE FILE: not readable filesystem");
+  logf("\nCREATE FILE: not readable filesystem");
   return STATUS_ERROR;
  }
 }
@@ -203,7 +203,7 @@ dword_t create_file(dword_t partition_number, byte_t *file_memory, dword_t file_
 byte_t delete_file(dword_t partition_number, dword_t file_location) {
  //select partition
  if(select_partition(partition_number)==STATUS_ERROR) {
-  log("\nDELETE FILE: invalid partition");
+  logf("\nDELETE FILE: invalid partition");
   return STATUS_ERROR;
  }
 
@@ -213,7 +213,7 @@ byte_t delete_file(dword_t partition_number, dword_t file_location) {
   return delete_fat_file(file_location);
  }
  else {
-  log("\nDELETE FILE: not readable filesystem");
+  logf("\nDELETE FILE: not readable filesystem");
   return STATUS_ERROR;
  }
 }

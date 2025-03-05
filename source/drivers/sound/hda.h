@@ -42,7 +42,7 @@
 #define HDA_OUTPUT_NODE 0x1
 #define HDA_INPUT_NODE 0x2
 
-byte_t hda_playing_state, hda_selected_output_node;
+byte_t hda_selected_output_node;
 dword_t *hda_corb_mem;
 dword_t hda_corb_pointer, hda_corb_number_of_entries;
 dword_t *hda_rirb_mem;

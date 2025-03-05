@@ -13,21 +13,21 @@ void usb_keyboard_save_informations(byte_t device_address, struct usb_full_inter
 
  //check if this device do not already have keyboard interface
  if(usb_devices[device_address].keyboard.is_present == STATUS_TRUE) {
-  l("\nUSB ERROR: more keyboard interfaces at one device");
+  logf("\nUSB ERROR: more keyboard interfaces at one device");
   return;
  }
 
  //check if this interface has all needed informations
  if(interface.interrupt_in_endpoint == 0) {
-  l("\nUSB ERROR: USB keyboard do not have interrupt in endpoint");
+  logf("\nUSB ERROR: USB keyboard do not have interrupt in endpoint");
   return;
  }
  if(interface.interrupt_in_endpoint->bInterval == 0) {
-  l("\nUSB ERROR: USB keyboard invalid endpoint interval");
+  logf("\nUSB ERROR: USB keyboard invalid endpoint interval");
   return;
  }
  if(interface.interrupt_in_endpoint->wMaxPacketSize < 8) {
-  l("\nUSB ERROR: USB keyboard invalid endpoint size");
+  logf("\nUSB ERROR: USB keyboard invalid endpoint size");
   return;
  }
 
@@ -51,9 +51,9 @@ void usb_keyboard_save_informations(byte_t device_address, struct usb_full_inter
  }
 
  //log
- l("\nUSB keyboard\n Endpoint: "); lvw(usb_devices[device_address].keyboard.interrupt_transfer.endpoint);
- l("\n Size: "); lvw(usb_devices[device_address].keyboard.interrupt_transfer.endpoint_size);
- l("\n Interval: "); lv(usb_devices[device_address].keyboard.interrupt_transfer.interval); l("ms");
+ logf("\nUSB keyboard\n Endpoint: %d", usb_devices[device_address].keyboard.interrupt_transfer.endpoint);
+ logf("\n Size: %d", usb_devices[device_address].keyboard.interrupt_transfer.endpoint_size);
+ logf("\n Interval: %d", usb_devices[device_address].keyboard.interrupt_transfer.interval); logf("ms");
 }
 
 void usb_keyboard_initalize(byte_t device_address) {
@@ -221,7 +221,7 @@ void usb_keyboard_led_interrupt_transfer_successfull(byte_t device_address) {
 /* errors */
 
 void usb_keyboard_stop_initalization(byte_t device_address, byte_t *err_string) {
- l("\nUSB keyboard error: "); l(err_string);
+ logf("\nUSB keyboard error: %s", err_string);
  usb_devices[device_address].keyboard.is_present = STATUS_FALSE;
  usb_devices[device_address].is_interface_in_initalization = STATUS_FALSE;
  usb_close_control_transfer(device_address);
@@ -233,7 +233,7 @@ void usb_keyboard_set_boot_protocol_error(byte_t device_address) {
 
 void usb_keyboard_set_idle_error(byte_t device_address) {
  //some deviced do not support this feature, so it do not matter if it fails, we will finalize initalization
- l("\nUSB keyboard: set idle not supported");
+ logf("\nUSB keyboard: set idle not supported");
  
  //close transfer
  usb_close_control_transfer(device_address);
@@ -243,7 +243,7 @@ void usb_keyboard_set_idle_error(byte_t device_address) {
 }
 
 void usb_keyboard_set_led_error(byte_t device_address) {
- l("\nUSB keyboard: error with setting LEDs");
+ logf("\nUSB keyboard: error with setting LEDs");
 
  //close transfer
  usb_close_control_transfer(device_address);

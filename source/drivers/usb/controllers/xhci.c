@@ -12,7 +12,7 @@
 
 void initalize_xhci_controller(dword_t number_of_controller) {
  //log
- l("\n\nXHCI controller ");
+ logf("\n\nXHCI controller ");
 
  //disable BIOS ownership
  dword_t xhci_bios_register_offset = ((mmio_ind(xhci_controllers[number_of_xhci_controllers].base+0x10)>>16)*4);
@@ -24,7 +24,7 @@ void initalize_xhci_controller(dword_t number_of_controller) {
    return;
   }
   else {
-   l("\nBIOS ownership released");
+   logf("\nBIOS ownership released");
   }
  }
 }

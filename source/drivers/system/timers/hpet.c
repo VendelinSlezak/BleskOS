@@ -18,12 +18,12 @@ void initalize_hpet(void) {
  //read HPET base address
  dword_t *hpet_table = (dword_t *) (hpet_table_mem+44);
  if(hpet_table[1]!=0) {
-  log("\n\nHPET: 64 bit base address\n");
+  logf("\n\nHPET: 64 bit base address\n");
   return; //64 bit base - we can not access HPET registers
  }
  hpet_base = hpet_table[0];
  if(hpet_base==0) {
-  log("\n\nHPET: invalid base address\n");
+  logf("\n\nHPET: invalid base address\n");
   return; //invalid base address
  }
 
@@ -31,8 +31,7 @@ void initalize_hpet(void) {
  hpet_num_of_timers = ((mmio_ind(hpet_base+0x00)>>8) & 0xF);
  hpet_one_tick_how_many_nanoseconds = (mmio_ind(hpet_base+0x04)/1000000);
  if(hpet_one_tick_how_many_nanoseconds>100 || hpet_one_tick_how_many_nanoseconds==0) {
-  log("\n\nHPET: invalid nanoseconds value ");
-  log_var(hpet_one_tick_how_many_nanoseconds);
+  logf("\n\nHPET: invalid nanoseconds value %d", hpet_one_tick_how_many_nanoseconds);
   hpet_base = 0;
   return; //invalid value
  }
@@ -50,9 +49,7 @@ void initalize_hpet(void) {
  mmio_outd(hpet_base+0x10, 1);
 
  //log info
- log("\n\nHPET: ");
- log_var_with_space(hpet_one_tick_how_many_nanoseconds);
- log("nanoseconds per tick");
+ logf("\n\nHPET: %d nanoseconds per tick", hpet_one_tick_how_many_nanoseconds);
 }
 
 void hpet_reset_counter(void) {

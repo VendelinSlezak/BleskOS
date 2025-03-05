@@ -403,7 +403,7 @@ void internet_browser_load_webpage_from_url_in_text_area(void) {
    asm("hlt");
 
    if(time_of_system_running >= timeout) {
-    log("\nInternet browser transfer timeout");
+    logf("\nInternet browser transfer timeout");
     kill_network_transfer(transfer_number);
     set_file_value(INTERNET_BROWSER_FILE_STATUS, INTERNET_BROWSER_FILE_STATUS_ERROR);
     return;

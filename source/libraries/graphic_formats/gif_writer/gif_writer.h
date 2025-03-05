@@ -309,7 +309,7 @@ void jo_gif_frame(jo_gif_t *gif, unsigned char * rgba, short delayCsec) {
 	int size = width * height;
 
  reset_timer();
- log("GIF: start");
+ logf("GIF: start");
 
 	unsigned char localPalTbl[0x300];
 	unsigned char *palette = gif->frame == 0 ? gif->palette : localPalTbl;
@@ -317,7 +317,7 @@ void jo_gif_frame(jo_gif_t *gif, unsigned char * rgba, short delayCsec) {
 		jo_gif_quantize(rgba, size*4, 1, palette, gif->numColors);		
 	}
 
- log("\n"); log_var(get_timer_value_in_microseconds());
+ logf("\n%d", get_timer_value_in_microseconds());
 
 	unsigned char *indexedPixels = (unsigned char *)malloc(size);
 	{

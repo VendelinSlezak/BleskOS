@@ -51,7 +51,7 @@ struct ac97_buffer_entry {
 }__attribute__((packed));
 
 struct ac97_buffer_entry *ac97_buffer_memory_pointer;
-byte_t ac97_headphone_output_present, ac97_free_entry, ac97_playing_state, ac97_selected_output, ac97_aux_out_number_of_volume_steps;
+byte_t ac97_headphone_output_present, ac97_free_entry, ac97_selected_output, ac97_aux_out_number_of_volume_steps;
 word_t ac97_nam_base, ac97_nabm_base, ac97_extended_capabilities;
 dword_t ac97_sound_memory, ac97_number_of_samples_in_one_channel;
 

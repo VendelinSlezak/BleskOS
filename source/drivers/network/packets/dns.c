@@ -62,7 +62,7 @@ byte_t parse_dns_reply(byte_t *dns_layer_pointer, dword_t dns_layer_size) {
 
  //too small
  if(dns_layer_size < sizeof(struct network_packet_dns_layer_t)) {
-  log("\nDNS parse error: small layer "); log_var(dns_layer_size);
+  logf("\nDNS parse error: small layer %d", dns_layer_size);
   return STATUS_ERROR;
  }
 
@@ -80,7 +80,7 @@ byte_t parse_dns_reply(byte_t *dns_layer_pointer, dword_t dns_layer_size) {
 
  //check number of questions and answers
  if(dns_layer->qd_count!=BIG_ENDIAN_WORD(1)) {
-  log("\nDNS parse error: more questions at once");
+  logf("\nDNS parse error: more questions at once");
   return STATUS_ERROR;
  }
 
@@ -95,7 +95,7 @@ byte_t parse_dns_reply(byte_t *dns_layer_pointer, dword_t dns_layer_size) {
    dns_layer_pointer += ((*dns_layer_pointer) + 1); //skip one part of domain name
 
    if(dns_layer_pointer >= end) {
-    log("\nDNS parse error: small layer questions");
+    logf("\nDNS parse error: small layer questions");
     return STATUS_ERROR;
    }
   }
@@ -106,7 +106,7 @@ byte_t parse_dns_reply(byte_t *dns_layer_pointer, dword_t dns_layer_size) {
  //process all answers
  for(dword_t i = 0; i < BIG_ENDIAN_WORD(dns_layer->an_count); i++) {
   if(dns_layer_pointer >= end) {
-   log("\nDNS parse error: small layer answers");
+   logf("\nDNS parse error: small layer answers");
    return STATUS_ERROR;
   }
 
@@ -120,7 +120,7 @@ byte_t parse_dns_reply(byte_t *dns_layer_pointer, dword_t dns_layer_size) {
     dns_layer_pointer += ((*dns_layer_pointer) + 1); //skip one part of domain name
 
     if(dns_layer_pointer >= end) {
-     log("\nDNS parse error: small layer answers 2");
+     logf("\nDNS parse error: small layer answers 2");
      return STATUS_ERROR;
     }
    }
@@ -131,7 +131,7 @@ byte_t parse_dns_reply(byte_t *dns_layer_pointer, dword_t dns_layer_size) {
   struct network_packet_dns_layer_answer_t *network_packet_dns_layer_answer = (struct network_packet_dns_layer_answer_t *) dns_layer_pointer;
   dns_layer_pointer += (sizeof(struct network_packet_dns_layer_answer_t) + BIG_ENDIAN_WORD(network_packet_dns_layer_answer->data_length));
   if(dns_layer_pointer > end) {
-   log("\nDNS parse error: answer above packet");
+   logf("\nDNS parse error: answer above packet");
    return STATUS_ERROR; //answer is above packet
   }
 
@@ -147,7 +147,7 @@ byte_t parse_dns_reply(byte_t *dns_layer_pointer, dword_t dns_layer_size) {
   }
  }
 
- log("\nDNS parse error: no IP");
+ logf("\nDNS parse error: no IP");
 
  return STATUS_ERROR; //IP address was not readed
 }

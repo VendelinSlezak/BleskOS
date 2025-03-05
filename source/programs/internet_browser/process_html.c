@@ -540,7 +540,7 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
    }
    else if(is_tag_equal((word_t *)html, "ul")==STATUS_TRUE) { //<ul>
     if(html_list_type_pointer>=1000) {
-     log("IB: too many lists\n");
+     logf("IB: too many lists\n");
     }
     
     html_list_type_pointer++;
@@ -553,7 +553,7 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
    }
    else if(is_tag_equal((word_t *)html, "ol")==STATUS_TRUE) { //<ol>
     if(html_list_type_pointer>=1000) {
-     log("IB: too many lists\n");
+     logf("IB: too many lists\n");
     }
     
     html_list_type_pointer++;
@@ -871,7 +871,7 @@ dword_t convert_html_to_bleskos_webpage(dword_t html_mem, dword_t html_length) {
    
    //ADD TAG TO LIST
    if(html_tag_css_list_pointer>=1000) {
-    log("IB error: more than 1000 tags inside\n");
+    logf("IB error: more than 1000 tags inside\n");
     goto skip_tag;
    }
    html_tag_css_list = (dword_t *) (html_tag_css_list_mem+html_tag_css_list_pointer*HTML_TAG_CSS_ENTRY_SIZE);
