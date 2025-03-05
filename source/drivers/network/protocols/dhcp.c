@@ -70,23 +70,23 @@ byte_t dhcp_acknowledge_received(byte_t number_of_packet_entry, byte_t *packet_m
  internet.status = INTERNET_STATUS_CONNECTED;
 
  //log connection
- log("\n\nNetwork: Connection to router was succesfull");
- log("\nOur IP: "); log_var(internet.our_ip[0]); log("."); log_var(internet.our_ip[1]); log("."); log_var(internet.our_ip[2]); log("."); log_var(internet.our_ip[3]);
- log("\nRouter IP: "); log_var(internet.router_ip[0]); log("."); log_var(internet.router_ip[1]); log("."); log_var(internet.router_ip[2]); log("."); log_var(internet.router_ip[3]);
- log("\nDNS server IP: "); log_var(internet.dns_server_ip[0]); log("."); log_var(internet.dns_server_ip[1]); log("."); log_var(internet.dns_server_ip[2]); log("."); log_var(internet.dns_server_ip[3]);
+ logf("\n\nNetwork: Connection to router was succesfull");
+ logf("\nOur IP: %d.%d.%d.%d", internet.our_ip[0], internet.our_ip[1], internet.our_ip[2], internet.our_ip[3]);
+ logf("\nRouter IP: %d.%d.%d.%d", internet.router_ip[0], internet.router_ip[1], internet.router_ip[2], internet.router_ip[3]);
+ logf("\nDNS server IP: %d.%d.%d.%d", internet.dns_server_ip[0], internet.dns_server_ip[1], internet.dns_server_ip[2], internet.dns_server_ip[3]);
 
  //this transfer ends here
  return PWRM_END_TRANSFER;
 }
 
 void dhcp_discover_error(byte_t number_of_packet_entry, byte_t error) {
- log("\nERROR: DHCP offer was not received");
+ logf("\nERROR: DHCP offer was not received");
 
  internet.status = INTERNET_STATUS_CONNECTION_ERROR;
 }
 
 void dhcp_response_error(byte_t number_of_packet_entry, byte_t error) {
- log("\nERROR: DHCP acknowledgement was not received");
+ logf("\nERROR: DHCP acknowledgement was not received");
 
  internet.status = INTERNET_STATUS_CONNECTION_ERROR;
 }

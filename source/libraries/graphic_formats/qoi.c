@@ -12,7 +12,7 @@ dword_t convert_qoi_to_image_data(dword_t qoi_memory) {
  //test signature 'qoif'
  dword_t *qoi32 = (dword_t *) (qoi_memory);
  if(qoi32[0]!=0x66696F71) {
-  log("\nQOI: invalid signature");
+  logf("\nQOI: invalid signature");
   return STATUS_ERROR;
  }
 
@@ -22,7 +22,7 @@ dword_t convert_qoi_to_image_data(dword_t qoi_memory) {
  dword_t height = ((qoi8[4]<<24) | (qoi8[5]<<16) | (qoi8[6]<<8) | (qoi8[7]));
  byte_t channels = (qoi8[8] & 0xFF);
  if(width==0 || height==0 || channels<3 || channels>4 || (width*height)>4096*4096) {
-  log("QOI: not fitting\n");
+  logf("QOI: not fitting\n");
   return STATUS_ERROR;
  }
 

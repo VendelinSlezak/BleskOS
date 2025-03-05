@@ -12,7 +12,7 @@
 
 void initalize_uhci_controller(dword_t number_of_controller) {
  //log
- l("\n\nUHCI controller ");
+ logf("\n\nUHCI controller ");
 
  //Host Controller Reset
  outw(uhci_controllers[number_of_controller].base+0x0, (1 << 1));
@@ -20,11 +20,11 @@ void initalize_uhci_controller(dword_t number_of_controller) {
  while((inw(uhci_controllers[number_of_controller].base+0x0) & (1 << 1))==(1 << 1)) {
   asm("nop");
   if(time_of_system_running >= timeout) {
-   l("Host Controller Reset error");
+   logf("Host Controller Reset error");
    return;
   }
  }
- l("reset in "); lv(50-(timeout-time_of_system_running));
+ logf("reset in %d", 50-(timeout-time_of_system_running));
 
  //Global Reset
  outw(uhci_controllers[number_of_controller].base+0x0, (1 << 2));
@@ -200,7 +200,7 @@ void uhci_check_if_port_is_enabled(void) {
 
  //check if port is enabled
  if((uhci_port_value & (1 << 2))==(1 << 2)) {
-  l("\nUHCI port is enabled in "); lvw(100-(usb_devices[0].timeout-time_of_system_running));
+  logf("\nUHCI port is enabled in %d ", 100-(usb_devices[0].timeout-time_of_system_running));
   
   //when port is enabled, it mean, that device have address 0 and is ready for transfers, so fill all needed entries
   usb_devices[0].disable_device_on_port = uhci_disable_device_on_port;
@@ -233,7 +233,7 @@ void uhci_check_if_port_is_enabled(void) {
  }
  else if(time_of_system_running >= usb_devices[0].timeout) {
   //timeout error
-  l("\nERROR: UHCI device was not enabled");
+  logf("\nERROR: UHCI device was not enabled");
 
   //disable device
   uhci_disable_device_on_port(usb_devices[0].controller_number, usb_devices[0].port_number);
@@ -402,27 +402,27 @@ byte_t get_state_of_uhci_transfer(byte_t device_address, void *transfer_descript
   //check if there is error
   else if(transfer_descriptor[i].status_bits.active == 0 && transfer_descriptor[i].status != 0x00) {
    //log error
-   l("\nUHCI transfer error: ");
+   logf("\nUHCI transfer error: ");
    if(transfer_descriptor[i].status_bits.stalled == 1) {
-    l("stalled");
+    logf("stalled");
    }
    else if(transfer_descriptor[i].status_bits.data_buffer_error == 1) {
-    l("data buffer error");
+    logf("data buffer error");
    }
    else if(transfer_descriptor[i].status_bits.babble_detected == 1) {
-    l("babble");
+    logf("babble");
    }
    else if(transfer_descriptor[i].status_bits.nak_received == 1) {
-    l("NAK");
+    logf("NAK");
    }
    else if(transfer_descriptor[i].status_bits.crc_timeout_error == 1) {
-    l("CRC/timeout error");
+    logf("CRC/timeout error");
    }
    else if(transfer_descriptor[i].status_bits.bitstuff_error == 1) {
-    l("bitstuff error");
+    logf("bitstuff error");
    }
    else {
-    lhs(transfer_descriptor[i].status, 2);
+    logf("0x%02x", transfer_descriptor[i].status);
    }
 
    return USB_TRANSFER_ERROR;
@@ -604,7 +604,7 @@ void uhci_interrupt_transfer(byte_t device_address, byte_t transfer_direction, s
  //recalculate interval
  dword_t interval = interrupt_transfer->interval;
  if(interrupt_transfer->interval == 0) {
-  l("\nUHCI ERROR: invalid interrupt transfer interval");
+  logf("\nUHCI ERROR: invalid interrupt transfer interval");
   return;
  }
  else if(interrupt_transfer->interval > 2) { //interval 1ms / 2ms do not need to be recalculated

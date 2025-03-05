@@ -9,7 +9,7 @@
 */
 
 void initalize_mtrr(void) {
- l("\n");
+ logf("\n");
 
  //start with assumption that MTRR do not exist
  mtrr_available = STATUS_FALSE;
@@ -19,7 +19,7 @@ void initalize_mtrr(void) {
 
  //check if MTRR is available
  if((cpuid.edx & (1 << 12)) != (1 << 12)) {
-  l("\nMemory-Type Range Registers are not available");
+  logf("\nMemory-Type Range Registers are not available");
   return;
  }
 
@@ -31,7 +31,7 @@ void initalize_mtrr(void) {
 
  //check if MTRR has any entries
  if(mtrr_number_of_entries == 0) {
-  l("\nMemory-Type Range Registers without entries");
+  logf("\nMemory-Type Range Registers without entries");
   return;
  }
 
@@ -41,10 +41,10 @@ void initalize_mtrr(void) {
   
   //check if MTRR was enabled
   if((read_msr(MTRR_REG_DEFAULT_TYPE) & (1 << 11)) == (1 << 11)) {
-   l("\nMemory-Type Range Registers successfully enabled");
+   logf("\nMemory-Type Range Registers successfully enabled");
   }
   else {
-   l("\nMemory-Type Range Registers were not successfully enabled");
+   logf("\nMemory-Type Range Registers were not successfully enabled");
    return;
   }
  }
@@ -53,30 +53,26 @@ void initalize_mtrr(void) {
  mtrr_available = STATUS_TRUE;
 
  //log all entries
- l("\nMemory-Type Range Registers");
- l("\n Number of entries: "); lv(mtrr_number_of_entries);
+ logf("\nMemory-Type Range Registers");
+ logf("\n Number of entries: %d", mtrr_number_of_entries);
  if(mtrr_write_combining_available == STATUS_TRUE) {
-  l("\n Write-combining available");
+  logf("\n Write-combining available");
  }
- l("\n Default memory type: ");
+ logf("\n Default memory type:");
  log_mtrr_memory_type(mtrr_default_memory_type);
- l("\n");
+ logf("\n");
  for(dword_t i=0; i<mtrr_number_of_entries; i++) {
-  l("\nMTRR entry ");
-  lv(i);
-  l(": ");
+  logf("\nMTRR entry %d: ", i);
   if((read_msr(MTRR_REG_MASK + i*2) & (1 << 11)) == (1 << 11)) {
    log_mtrr_memory_type(read_msr(MTRR_REG_BASE + i*2) & 0xFF);
-   l(" ");
+   logf(" ");
    if((read_msr(MTRR_REG_BASE + i*2) >> 32) != 0) {
-    lhw((dword_t)(read_msr(MTRR_REG_BASE + i*2) >> 32));
+    logf("0x%x ", (dword_t)(read_msr(MTRR_REG_BASE + i*2) >> 32));
    }
-   lhw((dword_t)(read_msr(MTRR_REG_BASE + i*2) & 0xFFFFF000));
-   lv((dword_t)((~(read_msr(MTRR_REG_MASK + i*2) & 0xFFFFF000))+1)/1024);
-   l("Kb");
+   logf("0x%x %d Kb", (dword_t)(read_msr(MTRR_REG_BASE + i*2) & 0xFFFFF000), (dword_t)((~(read_msr(MTRR_REG_MASK + i*2) & 0xFFFFF000))+1)/1024);
   }
   else {
-   l("Free");
+   logf("Free");
   }
  }
 }
@@ -84,27 +80,27 @@ void initalize_mtrr(void) {
 void log_mtrr_memory_type(byte_t type) {
  switch(type) {
   case (MTRR_MEMORY_TYPE_UNCACHEABLE):
-   l("Uncacheable");
+   logf("Uncacheable");
    break;
 
   case (MTRR_MEMORY_TYPE_WRITE_COMBINING):
-   l("Write Combining");
+   logf("Write Combining");
    break;
 
   case (MTRR_MEMORY_TYPE_WRITE_THROUGH):
-   l("Write Through");
+   logf("Write Through");
    break;
 
   case (MTRR_MEMORY_TYPE_WRITE_PROTECT):
-   l("Write Protect");
+   logf("Write Protect");
    break;
 
   case (MTRR_MEMORY_TYPE_WRITE_BACK):
-   l("Write Back");
+   logf("Write Back");
    break;
   
   default:
-   lv(type);
+   logf("%d", type);
  }
 }
 
@@ -120,7 +116,7 @@ void mtrr_set_free_entry(dword_t memory, dword_t mask, byte_t type) {
  }
 
  //log
- l("\nERROR: no free MTRR entry");
+ logf("\nERROR: no free MTRR entry");
 
  //we do not need to report error to higher method, because memory will always work in some mode
 }

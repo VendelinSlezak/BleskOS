@@ -45,10 +45,7 @@ dword_t convert_pcm_to_2_channels_16_bit_samples_48000_44100_sample_rate(dword_t
  }
 
  //calculate basic values
- log("\nPCM: convert sound ");
- log_var_with_space(channels);
- log_var_with_space(bits_per_sample);
- log_var_with_space(sample_rate);
+ logf("\nPCM: convert sound %d %d %d", channels, bits_per_sample, sample_rate);
  dword_t bytes_per_sample = (bits_per_sample/8);
  dword_t number_of_samples = (length_of_data/channels/bytes_per_sample);
  dword_t how_many_times_to_multiply_sample = 0;

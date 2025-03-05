@@ -95,23 +95,23 @@ byte_t dns_reply_received(byte_t number_of_packet_entry, byte_t *packet_memory, 
 
  //parse DNS reply
  if(parse_dns_reply(packet_memory, packet_length)==STATUS_ERROR) {
-  log("\nDNS parse error");
+  logf("\nDNS parse error");
   return PWRM_CONTINUE_TRANSFER;
  }
 
  //check if this is valid ID of this transfer
  if(dns_info.packet_id != 0x1234) {
-  log("\nDNS ID error");
+  logf("\nDNS ID error");
   return PWRM_CONTINUE_TRANSFER;
  }
 
  //check if this DNS reply has IP address
  if(dns_info.reply != DNS_REPLY_GOOD) {
   if(dns_info.reply == DNS_REPLY_DOMAIN_DO_NOT_EXIST) {
-   log("\nDomain name do not exist");
+   logf("\nDomain name do not exist");
   }
   else {
-   log("\nDNS packet reply error "); log_var(dns_info.reply);
+   logf("\nDNS packet reply error %d", dns_info.reply);
   }
   http_file_transfers[hft_entry].status = HFT_STATUS_ERROR;
   return PWRM_END_TRANSFER;
@@ -123,7 +123,7 @@ byte_t dns_reply_received(byte_t number_of_packet_entry, byte_t *packet_memory, 
  }
 
  //log
- log("\nIP of domain: "); log_var(dns_info.ip[0]); log("."); log_var(dns_info.ip[1]); log("."); log_var(dns_info.ip[2]); log("."); log_var(dns_info.ip[3]);
+ logf("\nIP of domain: %d.%d.%d.%d", dns_info.ip[0], dns_info.ip[1], dns_info.ip[2], dns_info.ip[3]);
 
  //create TCP handshake packet
  start_building_network_packet();
@@ -155,7 +155,7 @@ byte_t tcp_server_handshake_received(byte_t number_of_packet_entry, byte_t *pack
 
  //check if this is not kill of connection by RST
  if((full_packet_tcp_layer->control & TCP_LAYER_RST_FLAG) == TCP_LAYER_RST_FLAG) {
-  log("\nConnection on HFTE "); log_var_with_space(hft_entry); log("was killed");
+  logf("\nConnection on HFTE %d was killed", hft_entry);
 
   hft_close_entry(hft_entry);
   http_file_transfers[hft_entry].status = HFT_STATUS_ERROR;
@@ -165,7 +165,7 @@ byte_t tcp_server_handshake_received(byte_t number_of_packet_entry, byte_t *pack
 
  //check if this is really TCP handshake
  if(full_packet_tcp_layer->control != (TCP_LAYER_SYN_FLAG | TCP_LAYER_ACK_FLAG)) {
-  log("\nnot TCP server handshake "); log_hex(full_packet_tcp_layer->control);
+  logf("\nnot TCP server handshake 0x%x", full_packet_tcp_layer->control);
   return PWRM_CONTINUE_TRANSFER;
  }
 
@@ -206,7 +206,7 @@ byte_t tcp_http_data_received(byte_t number_of_packet_entry, byte_t *packet_memo
 
  //check if this is not kill of connection by RST
  if((full_packet_tcp_layer->control & TCP_LAYER_RST_FLAG) == TCP_LAYER_RST_FLAG) {
-  log("\nConnection on HFTE "); log_var_with_space(hft_entry); log("was killed");
+  logf("\nConnection on HFTE %d was killed", hft_entry);
 
   hft_close_entry(hft_entry);
   http_file_transfers[hft_entry].status = HFT_STATUS_ERROR;
@@ -230,7 +230,7 @@ byte_t tcp_http_data_received(byte_t number_of_packet_entry, byte_t *packet_memo
  //check if we did not received full HTTP header, and if yes, parse it
  if(http_file_transfers[hft_entry].http_header_received == STATUS_FALSE && parse_http_layer((byte_t *)http_file_transfers[hft_entry].data->start_of_allocated_memory, http_file_transfers[hft_entry].data->size_of_stream) == STATUS_GOOD) {
   //log
-  log("\nHFT entry "); log_var_with_space(hft_entry); log("HTTP header received");
+  logf("\nHFT entry %d HTTP header received", hft_entry);
   
   //update status
   http_file_transfers[hft_entry].http_header_received = STATUS_TRUE;
@@ -275,13 +275,9 @@ byte_t tcp_fin_received(byte_t number_of_packet_entry, byte_t *packet_memory, dw
  }
 
  //log
- log("\nHFT entry ");
- log_var_with_space(number_of_packet_entry);
- log("was transferred in ");
- log_var(time_of_system_running-http_file_transfers[hft_entry].starting_time);
- log("ms with size ");
- log_var(http_file_transfers[hft_entry].data->size_of_stream/1024);
- log("kb");
+ logf("\nHFT entry %d was transferred in %dms with size %dkb", number_of_packet_entry,
+    time_of_system_running-http_file_transfers[hft_entry].starting_time,
+    http_file_transfers[hft_entry].data->size_of_stream/1024);
 
  //close byte stream
  http_file_transfers[hft_entry].file_size = http_file_transfers[hft_entry].data->size_of_stream;
@@ -290,7 +286,7 @@ byte_t tcp_fin_received(byte_t number_of_packet_entry, byte_t *packet_memory, dw
 
  //parse HTTP header
  if(parse_http_layer(http_file_transfers[hft_entry].file_memory, http_file_transfers[hft_entry].file_size)==STATUS_ERROR) {
-  log("\nMalformed HTTP response on "); log_var_with_space(hft_entry);
+  logf("\nMalformed HTTP response on %d ", hft_entry);
   goto error;
  }
 
@@ -301,7 +297,7 @@ byte_t tcp_fin_received(byte_t number_of_packet_entry, byte_t *packet_memory, dw
   if(http_info.body_data_pointer!=0) {
    //check transfer encoding
    if(http_info.transfer_encoding_type == UNSUPPORTED_TRANSFER_ENCODING) {
-    log("\nHTTP unknown transfer encoding");
+    logf("\nHTTP unknown transfer encoding");
     goto error;
    }
 
@@ -320,7 +316,7 @@ byte_t tcp_fin_received(byte_t number_of_packet_entry, byte_t *packet_memory, dw
     while(start < end) {
      //check if chunk starts with number
      if(is_hex_number(*start)==STATUS_FALSE) {
-      log("\nHTTP malformed chunk without size");
+      logf("\nHTTP malformed chunk without size");
       goto error;
      }
 
@@ -343,7 +339,7 @@ byte_t tcp_fin_received(byte_t number_of_packet_entry, byte_t *packet_memory, dw
       start++;
      }
      if(start >= end) {
-      log("\nHTTP malformed chunk in header");
+      logf("\nHTTP malformed chunk in header");
       goto error;
      }
 
@@ -359,13 +355,13 @@ byte_t tcp_fin_received(byte_t number_of_packet_entry, byte_t *packet_memory, dw
       start++;
      }
      if(start >= end) {
-      log("\nHTTP malformed chunk without start");
+      logf("\nHTTP malformed chunk without start");
       goto error;
      }
 
      //check if this is not too big chunk
      if(((dword_t)start + size_of_chunk) >= (dword_t)end) {
-      log("\nHTTP malformed too big chunk");
+      logf("\nHTTP malformed too big chunk");
       goto error;
      }
 
@@ -377,13 +373,13 @@ byte_t tcp_fin_received(byte_t number_of_packet_entry, byte_t *packet_memory, dw
 
      //skip ending of chunk
      if(((dword_t)start + 2) >= (dword_t)end || is_memory_equal_with_memory(start, "\r\n", 2)==STATUS_FALSE) {
-      log("\nHTTP malformed chunk without ending");
+      logf("\nHTTP malformed chunk without ending");
       goto error;
      }
      start += 2;
     }
     if(start >= end) {
-     log("\nHTTP malformed chunked response");
+     logf("\nHTTP malformed chunked response");
      goto error;
     }
    }
@@ -403,21 +399,21 @@ byte_t tcp_fin_received(byte_t number_of_packet_entry, byte_t *packet_memory, dw
   //FILE IS IN OTHER URL LOCATION
   //check if HTTP contained new location
   if(http_info.location_data_size == 0) {
-   log("\nHTTP redirection without address");
+   logf("\nHTTP redirection without address");
    goto error;
   }
 
   //copy new location
   byte_t url_of_new_location[MAX_LENGTH_OF_URL];
   if(http_info.location_data_size >= (MAX_LENGTH_OF_URL-1)) {
-   log("\nRedirection to too long URL");
+   logf("\nRedirection to too long URL");
    goto error;
   }
   copy_memory((dword_t)http_info.location_data_pointer, (dword_t)&url_of_new_location, http_info.location_data_size);
   url_of_new_location[http_info.location_data_size] = 0;
 
   //log
-  log("\nRedirection to location: "); log(url_of_new_location);
+  logf("\nRedirection to location: %s", url_of_new_location);
 
   //free used entries
   remove_packet_entry(number_of_packet_entry);
@@ -426,13 +422,13 @@ byte_t tcp_fin_received(byte_t number_of_packet_entry, byte_t *packet_memory, dw
   //find which network entry uses this transfer
   byte_t network_transfer_number = get_number_of_network_transfer_from_type_of_transfer(NETWORK_TRANSFER_TYPE_HTTP, hft_entry);
   if(network_transfer_number == NETWORK_TRANSFER_NO_ENTRY_FOUNDED) {
-   log("\nSERIOUS ERROR: transfer was lost");
+   logf("\nSERIOUS ERROR: transfer was lost");
    return PWRM_END_TRANSFER;
   }
 
   //check number of redirections
   if(network_transfers[network_transfer_number].max_number_of_redirections == 0) {
-   log("\nToo many redirections");
+   logf("\nToo many redirections");
    goto error;
   }
 
@@ -450,8 +446,7 @@ byte_t tcp_fin_received(byte_t number_of_packet_entry, byte_t *packet_memory, dw
  else {
   //THERE WAS ERROR DURING HTTP TRANSFER
   //log
-  log("\nHTTP transfer not successful ");
-  log_var(http_info.status_code);
+  logf("\nHTTP transfer not successful %d", http_info.status_code);
   goto error;
  }
 
@@ -478,8 +473,7 @@ void http_any_transfer_error(byte_t number_of_packet_entry, byte_t *error_descri
  }
 
  //log
- log("\nERROR: ");
- log(error_description);
+ logf("\nERROR: %s", error_description);
 
  //update status
  hft_close_entry(hft_entry);

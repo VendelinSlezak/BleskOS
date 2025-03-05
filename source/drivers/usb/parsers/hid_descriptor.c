@@ -18,7 +18,7 @@ void parse_hid_descriptor(struct hid_entry_t *hid_descriptor, dword_t hid_descri
  number_of_hid_parsed_entries = 0;
 
  //log
- l("\n\nHID descriptor");
+ logf("\n\nHID descriptor");
 
  //parse all entries
  while(hid_descriptor < hid_descriptor_end) {
@@ -30,22 +30,22 @@ void parse_hid_descriptor(struct hid_entry_t *hid_descriptor, dword_t hid_descri
   //parse entry
   if(hid_descriptor->long_item.signature == HID_LONG_ENTRY_SIGNATURE) { //long entry
    //TODO: support for long entry
-   l("\nerror: long entry");
+   logf("\nerror: long entry");
   }
   else { //short entry
    //log
-   l("\ns: ");
+   logf("\ns: ");
 
    //get type of entry
    if(hid_descriptor->short_item.type == HID_SHORT_ENTRY_TYPE_MAIN) {
-    l("main ");
+    logf("main ");
 
     if(hid_descriptor->short_item.tag == 0x8) { //insert input
-     l("Insert Input");
+     logf("Insert Input");
 
      //check if this is not called with invalid input
      if(report_count == 0 || report_size == 0) {
-      l("\nInvalid Input call");
+      logf("\nInvalid Input call");
       return;
      }
 
@@ -53,7 +53,7 @@ void parse_hid_descriptor(struct hid_entry_t *hid_descriptor, dword_t hid_descri
      for(dword_t i=0; i<report_count; i++) {
       //check if there are not too many HID entries
       if(number_of_hid_parsed_entries >= MAX_NUMBER_OF_PARSED_HID_ENTRIES) {
-       l("\nToo many HID entries");
+       logf("\nToo many HID entries");
        return;
       }
 
@@ -85,20 +85,20 @@ void parse_hid_descriptor(struct hid_entry_t *hid_descriptor, dword_t hid_descri
      usages_pointer = number_of_hid_parsed_entries;
     }
     else if(hid_descriptor->short_item.tag == 0xA) { //collection
-     l("Collection");
+     logf("Collection");
 
      if(hid_descriptor->short_item.data[0] == 0x00) { //physical collection
-      l(" Physical");
+      logf(" Physical");
      }
     }
     else {
-     lhs(hid_descriptor->short_item.tag, 2);
+     logf("%02x", hid_descriptor->short_item.tag);
     }
    }
    else if(hid_descriptor->short_item.type == HID_SHORT_ENTRY_TYPE_GLOBAL) {
-    l("global ");
+    logf("global ");
     if(hid_descriptor->short_item.tag == 0x0) { //usage page
-     l("Usage Page");
+     logf("Usage Page");
 
      //save usage page type
      usage_page = hid_descriptor->short_item.data[0];
@@ -114,15 +114,15 @@ void parse_hid_descriptor(struct hid_entry_t *hid_descriptor, dword_t hid_descri
      usage_max = 0;
     }
     else if(hid_descriptor->short_item.tag == 0x7) { //report size
-     l("Report Size");
+     logf("Report Size");
      report_size = hid_descriptor->short_item.data[0];
     }
     else if(hid_descriptor->short_item.tag == 0x8) { //report ID
-     l("Report ID");
+     logf("Report ID");
 
      //check if there are not too many HID entries
      if(number_of_hid_parsed_entries >= MAX_NUMBER_OF_PARSED_HID_ENTRIES) {
-      l("\nToo many HID entries");
+      logf("\nToo many HID entries");
       return;
      }
 
@@ -141,21 +141,21 @@ void parse_hid_descriptor(struct hid_entry_t *hid_descriptor, dword_t hid_descri
      usages_pointer = number_of_hid_parsed_entries;
     }
     else if(hid_descriptor->short_item.tag == 0x9) { //report count
-     l("Report Count");
+     logf("Report Count");
      report_count = hid_descriptor->short_item.data[0];
     }
     else {
-     lhs(hid_descriptor->short_item.tag, 2);
+     logf("%02x", hid_descriptor->short_item.tag);
     }
    }
    else if(hid_descriptor->short_item.type == HID_SHORT_ENTRY_TYPE_LOCAL) {
-    l("local ");
+    logf("local ");
     if(hid_descriptor->short_item.tag == 0x0) { //usage
-     l("Usage");
+     logf("Usage");
 
      //check if there are not too many HID entries
      if(usages_pointer >= MAX_NUMBER_OF_PARSED_HID_ENTRIES) {
-      l("\nToo many HID entries to save Usages");
+      logf("\nToo many HID entries to save Usages");
       return;
      }
 
@@ -169,26 +169,26 @@ void parse_hid_descriptor(struct hid_entry_t *hid_descriptor, dword_t hid_descri
      }     
     }
     else if(hid_descriptor->short_item.tag == 0x1) { //usage min
-     l("Usage Min");
+     logf("Usage Min");
      usage_min = hid_descriptor->short_item.data[0];
     }
     else if(hid_descriptor->short_item.tag == 0x2) { //usage max
-     l("Usage Max");
+     logf("Usage Max");
      usage_max = hid_descriptor->short_item.data[0];
     }
     else {
-     lhs(hid_descriptor->short_item.tag, 2);
+     logf("0x%02x ", hid_descriptor->short_item.tag);
     }
    }
    else { //HID_SHORT_ENTRY_TYPE_RESERVED
-    l("reserved "); lhs(hid_descriptor->short_item.tag, 2);
+    logf("reserved 0x%02x", hid_descriptor->short_item.tag);
    }
 
    //log data
    if(hid_descriptor->short_item.size > 0) {
-    l(" data: ");
+    logf(" data: ");
     for(dword_t i=0; i<hid_descriptor->short_item.size; i++) {
-     lhsw(hid_descriptor->short_item.data[i], 2);
+     logf("%02x ", hid_descriptor->short_item.data[i]);
     }
    }
   }
@@ -203,46 +203,44 @@ void parse_hid_descriptor(struct hid_entry_t *hid_descriptor, dword_t hid_descri
  }
 
  //log parsed hid descriptor
- l("\n\nParsed HID descriptor");
+ logf("\n\nParsed HID descriptor");
  for(dword_t i=0; i<number_of_hid_parsed_entries; i++) {
-  l("\n");
-  lvw(parsed_hid[i].offset_in_bits); lvw(parsed_hid[i].size_in_bits);
+  logf("\n%d %d ", parsed_hid[i].offset_in_bits, parsed_hid[i].size_in_bits);
 
-  l("Usage Page: ");
+  logf("Usage Page: ");
   if(parsed_hid[i].usage_page == HID_USAGE_PAGE_GENERIC_DESKTOP) {
-   l("Generic Desktop");
+   logf("Generic Desktop");
   }
   else if(parsed_hid[i].usage_page == HID_USAGE_PAGE_BUTTON) {
-   l("Button");
+   logf("Button");
   }
   else {
-   lhs(parsed_hid[i].usage_page, 2);
+   logf("%02x ", parsed_hid[i].usage_page);
   }
 
-  l(" Usage:");
+  logf(" Usage:");
   if(parsed_hid[i].usage_page == HID_USAGE_PAGE_GENERIC_DESKTOP) {
-   l(" ");
+   logf(" ");
    
    if(parsed_hid[i].usage == HID_GENERIC_DESKTOP_USAGE_X) {
-    l("X");
+    logf("X");
    }
    else if(parsed_hid[i].usage == HID_GENERIC_DESKTOP_USAGE_Y) {
-    l("Y");
+    logf("Y");
    }
    else if(parsed_hid[i].usage == HID_GENERIC_DESKTOP_USAGE_WHEEL) {
-    l("Wheel");
+    logf("Wheel");
    }
    else {
-    lhs(parsed_hid[i].usage, 2);
+    logf("%02x ", parsed_hid[i].usage);
    }
   }
   else {
-   l(" ");
-   lhs(parsed_hid[i].usage, 2);
+   logf(" ");
+   logf("%02x ", parsed_hid[i].usage);
   }
 
-  l(" ");
-  lv(parsed_hid[i].usage_value);
+  logf(" %d", parsed_hid[i].usage_value);
  }
 }
 

@@ -64,9 +64,9 @@ void initalize_ac97_sound_card(byte_t sound_card_number) {
  create_task(ac97_check_headphone_connection_change, TASK_TYPE_PERIODIC_INTERRUPT, 50);
  
  //log
- log("\n\nSound card AC97");
- log("\nCapabilities: "); log_hex_specific_size(inw(ac97_nam_base + AC97_NAM_IO_CAPABILITES), 4);
- log("\nExtended capabilities: "); log_hex_specific_size(ac97_extended_capabilities, 4);
+ logf("\n\nSound card AC97");
+ logf("\nCapabilities: 0x%04x", inw(ac97_nam_base + AC97_NAM_IO_CAPABILITES));
+ logf("\nExtended capabilities: 0x%04x", ac97_extended_capabilities);
 }
 
 byte_t ac97_is_headphone_connected(void) {
@@ -230,9 +230,6 @@ void ac97_stop_sound(void) {
 
  //clear status
  outw(ac97_nabm_base + AC97_NABM_IO_PCM_OUTPUT_STATUS, 0x1C);
-
- //buffers will not be filled by code in drivers/system/processes_on_background.c
- ac97_playing_state = AC97_BUFFER_FILLED;
 
  //destroy task for looping
  destroy_task(task_ac97_play_buffer_in_loop);

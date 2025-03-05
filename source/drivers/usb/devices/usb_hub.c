@@ -13,7 +13,7 @@ void usb_hub_save_informations(byte_t device_address, struct usb_full_interface_
 
  //check if this device do not already have hub interface
  if(usb_devices[device_address].hub.is_present == STATUS_TRUE) {
-  l("\nUSB ERROR: more hub interfaces at one device");
+  logf("\nUSB ERROR: more hub interfaces at one device");
   return;
  }
 
@@ -23,7 +23,7 @@ void usb_hub_save_informations(byte_t device_address, struct usb_full_interface_
  usb_devices[device_address].hub.initalize = usb_hub_initalize;
 
  //log
- l("\nUSB hub");
+ logf("\nUSB hub");
 }
 
 void usb_hub_initalize(byte_t device_address) {
@@ -48,7 +48,7 @@ void usb_hub_get_descriptor_success(byte_t device_address) {
  }
  usb_devices[device_address].hub.number_of_ports = hub_descriptor->number_of_ports;
  usb_devices[device_address].hub.power_on_to_power_good_time = (hub_descriptor->power_on_to_power_good_time*2);
- l("\nHUB ports: "); lv(usb_devices[device_address].hub.number_of_ports);
+ logf("\nHUB ports: %d", usb_devices[device_address].hub.number_of_ports);
 
  //close transfer
  usb_close_control_transfer(device_address);
@@ -123,7 +123,7 @@ void usb_hub_get_port_status_success(byte_t device_address) {
      && usb_devices[0].hub_port_number == (usb_devices[device_address].hub.actual_port+1)
      && usb_devices[0].control_transfer.is_running == STATUS_FALSE) {
    //log
-   l("\nUSB HUB: Zero device");
+   logf("\nUSB HUB: Zero device");
 
    //start initalizing of zero address device
    initalize_zero_address_device();
@@ -135,7 +135,7 @@ void usb_hub_get_port_status_success(byte_t device_address) {
 
  //was device removed?
  if((port_status & (1 << 0))==0x0) {
-  l("\nUSB HUB: Device removed");
+  logf("\nUSB HUB: Device removed");
   //clear connection status change
   usb_control_transfer_without_data(device_address, usb_hub_clear_status_change_success, usb_hub_clear_status_change_error, 50, 0x23, 0x01, USB_HUB_CLEAR_PORT_CHANGE_STATUS, usb_devices[device_address].hub.actual_port+1);
   return;
@@ -219,7 +219,7 @@ void usb_hub_clear_status_change_success(byte_t device_address) {
  //close transfer
  usb_close_control_transfer(device_address);
 
- l("\nUSB hub port status change was cleared");
+ logf("\nUSB hub port status change was cleared");
 
  //get again port status
  usb_control_transfer_in(device_address, usb_hub_get_port_status_again_success, usb_hub_get_port_status_again_error, 100, 0xA3, 0x00, 0, usb_devices[device_address].hub.actual_port+1, 4);
@@ -266,7 +266,7 @@ void usb_hub_get_port_status_again_success(byte_t device_address) {
  else {
   //check if port is enabled
   if((port_status & (1 << 1))==(1 << 1)) {
-   l("\nUSB HUB port is enabled");
+   logf("\nUSB HUB port is enabled");
 
    //usb device changed
    usb_device_change_event = STATUS_TRUE;
@@ -275,15 +275,15 @@ void usb_hub_get_port_status_again_success(byte_t device_address) {
    byte_t device_speed = ((port_status >> 9) & 0b11);
    if((port_status & (1 << 9))==(1 << 9)) {
     usb_devices[0].device_speed = USB_LOW_SPEED;
-    l(" low speed");
+    logf(" low speed");
    }
    else if((port_status & (1 << 10))==0) {
     usb_devices[0].device_speed = USB_FULL_SPEED;
-    l(" full speed");
+    logf(" full speed");
    }
    else {
     usb_devices[0].device_speed = USB_HIGH_SPEED;
-    l(" high speed");
+    logf(" high speed");
    }
    
    //when port is enabled, it mean, that device is ready for transfers and have address 0, so fill all needed entries
@@ -306,7 +306,7 @@ void usb_hub_get_port_status_again_success(byte_t device_address) {
   }
   else {
    //timeout error
-   l("\nERROR: USB hub device was not enabled");
+   logf("\nERROR: USB hub device was not enabled");
 
    //initalization of port ended, and device is not in zero address state
    usb_devices[0].is_used = STATUS_FALSE;

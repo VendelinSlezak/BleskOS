@@ -20,7 +20,7 @@ dword_t convert_mp3_to_sound_data(dword_t mp3_memory, dword_t mp3_length) {
  //decode first frame to found out if file is not corrupted
  dword_t samples = mp3dec_decode_frame(mp3_decoder_working_area, mp3, mp3_length, mp3_frame_pcm_output, mp3_frame_info);
  if(samples==0) { //not mp3 file / corrupted data
-  log("\nMP3: corrupted file");
+  logf("\nMP3: corrupted file");
   return STATUS_ERROR;
  }
 
@@ -67,7 +67,7 @@ struct mp3_info_t *read_mp3_info(byte_t *mp3_memory, dword_t mp3_length) {
  //decode first frame to found out if file is not corrupted and to get sound parameters
  dword_t samples = mp3dec_decode_frame(mp3_decoder_working_area, (byte_t *)mp3_memory, mp3_length, mp3_frame_pcm_output, mp3_frame_info);
  if(samples==0) { //corrupted mp3 file
-  log("\nMP3: corrupted file");
+  logf("\nMP3: corrupted file");
   return STATUS_ERROR;
  }
  dword_t samples_in_one_frame = samples;

@@ -14,12 +14,12 @@ void boot_fundamental_interface(void) {
     components = (struct components_info_t *) calloc(sizeof(struct components_info_t));
     read_ram_info();
 
- /* this code is not rewritten yet */
- initalize_logging();
- log("BleskOS 2025 update 3\n\nPress F2 to save System log as TXT file");
-//  log_starting_memory();
+    // initalize logging
+    detect_e9_debug_device();
+    initalize_logging();
     log_ram_info();
 
+ /* this code is not rewritten yet */
     // CPU
  initalize_mtrr();
 
@@ -29,8 +29,8 @@ void boot_fundamental_interface(void) {
     // CMOS
  read_time_format();
 
-    // interrupts
- set_interrupts();
+    // set interrupts
+    initalize_interrupts();
 
     // timers
  set_pit();

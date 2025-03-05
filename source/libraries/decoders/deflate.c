@@ -153,8 +153,7 @@ byte_t decode_deflate(dword_t input, dword_t input_length, dword_t output, dword
       decoded_values_of_tables += value8;
      }
      else {
-      log("\nDEFLATE: invalid encoding huffman table value ");
-      log_var(value32);
+      logf("\nDEFLATE: invalid encoding huffman table value %d", value32);
       return STATUS_ERROR;
      }
     }
@@ -190,8 +189,7 @@ byte_t decode_deflate(dword_t input, dword_t input_length, dword_t output, dword
      decoded_stream_length += repeat;
     }
     else { //unknown value
-     log("\nDEFLATE: invalid char from stream ");
-     log_var(value32);
+     logf("\nDEFLATE: invalid char from stream %x", value32);
      return STATUS_ERROR;
     }
    }
@@ -200,7 +198,7 @@ byte_t decode_deflate(dword_t input, dword_t input_length, dword_t output, dword
    }
   }
   else { //invalid compression type 3
-   log("\nDEFLATE: invalid compression type 3");
+   logf("\nDEFLATE: invalid compression type 3");
    return STATUS_ERROR;
   }
  }

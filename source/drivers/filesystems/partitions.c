@@ -96,10 +96,9 @@ void read_partitions_of_medium(void) {
     //check valid info
     struct gpt_partition_header_t *gpt_partition_header = (struct gpt_partition_header_t *) (gpt);
     if((gpt_partition_header->first_lba_of_guid_partition_entry_array>>32)!=0 || gpt_partition_header->first_lba_of_guid_partition_entry_array==0 || gpt_partition_header->first_lba_of_guid_partition_entry_array>2 || gpt_partition_header->size_of_partition_entry<128 || (gpt_partition_header->size_of_partition_entry%128)!=0) { //partition array is saved above 2 TB / invalid partition entry size
-     log("\nInvalid GPT table ");
-     log_hex_with_space((gpt_partition_header->first_lba_of_guid_partition_entry_array>>32));
-     log_hex_with_space((gpt_partition_header->first_lba_of_guid_partition_entry_array & 0xFFFFFFFF));
-     log_var(gpt_partition_header->size_of_partition_entry);
+     logf("\nInvalid GPT table %x %x %d", (gpt_partition_header->first_lba_of_guid_partition_entry_array>>32),
+        (gpt_partition_header->first_lba_of_guid_partition_entry_array & 0xFFFFFFFF),
+        gpt_partition_header->size_of_partition_entry);
      continue;
     }
 
@@ -163,38 +162,36 @@ void connect_partitions_of_medium(byte_t medium_type, byte_t medium_number) {
  }
 
  //log partitions
- log("\n\nPartitions on ");
+ logf("\n\nPartitions on ");
  if(medium_type==MEDIUM_HARD_DISK) {
-  log("hard disk");
+  logf("hard disk");
  }
  else if(medium_type==MEDIUM_OPTICAL_DRIVE) {
-  log("optical disk");
+  logf("optical disk");
  }
  else if(medium_type==MEDIUM_USB_MSD) {
-  log("USB mass storage device");
+  logf("USB mass storage device");
  }
- log(":");
+ logf(":");
  for(int i=0; i<number_of_partitions_in_table; i++) {
-  log("\n");
-  log_hex_with_space(partitions[i].first_sector);
-  log_var_with_space(partitions[i].num_of_sectors);
+  logf("\n0x%x %d ", partitions[i].first_sector, partitions[i].num_of_sectors);
   if(partitions[i].type==PARTITION_FILESYSTEM_FAT) {
-   log("FAT");
+   logf("FAT");
   }
   else if(partitions[i].type==PARTITION_FILESYSTEM_EXT) {
-   log("Ext");
+   logf("Ext");
   }
   else if(partitions[i].type==PARTITION_FILESYSTEM_ISO9660) {
-   log("ISO9660");
+   logf("ISO9660");
   }
   else if(partitions[i].type==PARTITION_FILESYSTEM_CDDA) {
-   log("CDDA");
+   logf("CDDA");
   }
   else if(partitions[i].type==PARTITION_FILESYSTEM_BLESKOS_BOOTABLE_PARTITION) {
-   log("BleskOS bootable partition");
+   logf("BleskOS bootable partition");
   }
   else {
-   log("unknown filesystem");
+   logf("unknown filesystem");
   }
  }
 }

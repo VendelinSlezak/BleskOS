@@ -35,9 +35,7 @@ dword_t convert_png_to_image_data(dword_t png_memory, dword_t png_file_length) {
    png8 = (byte_t *) ((dword_t)png32+16);
    bits_per_channel = png8[0];
    if(bits_per_channel!=8) {
-    log("PNG: unsupported bits per channel ");
-    log_var(bits_per_channel);
-    log("\n");
+    logf("PNG: unsupported bits per channel %d\n", bits_per_channel);
     return STATUS_ERROR;
    }
   
@@ -58,27 +56,25 @@ dword_t convert_png_to_image_data(dword_t png_memory, dword_t png_file_length) {
     bpp = PNG_BPP_PALETTE_8_BITS;
    }
    else {
-    log("PNG: invalid color type ");
-    log_var(png8[1]);
-    log("\n");
+    logf("PNG: invalid color type %d\n", png8[1]);
     return STATUS_ERROR;
    }
    
    //compression method
    if(png8[3]!=0) {
-    log("PNG: unknown compression method\n");
+    logf("PNG: unknown compression method\n");
     return STATUS_ERROR;
    }
    
    //interlacing TODO: support for interlacing
    if(png8[4]!=0) {
-    log("PNG: interlaced image\n");
+    logf("PNG: interlaced image\n");
     return STATUS_ERROR;
    }
    
    //test limits for image
    if(width==0 || height==0 || bpp<1 || bpp>5 || (width*height)>4096*4096) {
-    log("PNG: not fitting size\n");
+    logf("PNG: not fitting size\n");
     return STATUS_ERROR;
    }
    
@@ -104,7 +100,7 @@ dword_t convert_png_to_image_data(dword_t png_memory, dword_t png_file_length) {
   }
   else if(png32[1]==0x444E4549) { //IEND
    if(bpp==PNG_BPP_PALETTE_8_BITS && palette_memory==0) {
-    log("PNG: no palette\n");
+    logf("PNG: no palette\n");
     
     delete_image(image_memory);
     free((void *)deflate_compressed_data_memory);
@@ -112,7 +108,7 @@ dword_t convert_png_to_image_data(dword_t png_memory, dword_t png_file_length) {
     return STATUS_ERROR;
    }
    else if(bpp==PNG_BPP_PALETTE_8_BITS && bits_per_channel==16) {
-    log("PNG: palette with 16 bit channel\n");
+    logf("PNG: palette with 16 bit channel\n");
     
     delete_image(image_memory);
     free((void *)deflate_compressed_data_memory);
@@ -127,7 +123,7 @@ dword_t convert_png_to_image_data(dword_t png_memory, dword_t png_file_length) {
     expected_size_of_file = (width*height*(bits_per_channel/8)+height);
    }
    if(decode_deflate(deflate_compressed_data_memory+2, deflate_compressed_data_memory_length-6, deflate_decompressed_data_memory, expected_size_of_file)==STATUS_ERROR) {
-    log("PNG: DEFLATE decompression error\n");
+    logf("PNG: DEFLATE decompression error\n");
     
     delete_image(image_memory);
     free((void *)deflate_compressed_data_memory);
@@ -135,13 +131,12 @@ dword_t convert_png_to_image_data(dword_t png_memory, dword_t png_file_length) {
     return STATUS_ERROR;
    }
    if(decoded_stream_length!=expected_size_of_file) {
-    log("PNG: DEFLATE did not decoded succesfully\n");
-    log_var_with_space(width);
-    log_var_with_space(height);
-    log_var_with_space(bpp);
-    log_var_with_space(bits_per_channel);
-    log_var_with_space(expected_size_of_file);
-    log_var(decoded_stream_length);
+    logf("PNG: DEFLATE did not decoded succesfully\n%d %d %d %d %d %d", width,
+        height,
+        bpp,
+        bits_per_channel,
+        expected_size_of_file,
+        decoded_stream_length);
     
     delete_image(image_memory);
     free((void *)deflate_compressed_data_memory);
@@ -484,9 +479,7 @@ dword_t convert_png_to_image_data(dword_t png_memory, dword_t png_file_length) {
      }
     }
     else {
-     log("PNG: unknown filtering ");
-     log_var(*png_data);
-     log("\n");
+     logf("PNG: unknown filtering %d\n", *png_data);
      
      free((void *)filtering_previous_line_r_memory);
      free((void *)filtering_previous_line_g_memory);

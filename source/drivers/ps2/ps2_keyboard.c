@@ -63,11 +63,11 @@ void ps2_keyboard_set_leds(void) {
   if(ps2_first_channel_wait_for_ack()==STATUS_GOOD) {
    write_to_first_ps2_channel(data);
    if(ps2_first_channel_wait_for_ack()==STATUS_ERROR) {
-    log("\nPS/2: LED change data not ACKed");
+    logf("\nPS/2: LED change data not ACKed");
    }
   }
   else {
-   log("\nPS/2: 0xED not ACKed");
+   logf("\nPS/2: 0xED not ACKed");
   }
 
   ps2_first_channel_buffer_pointer = 0;

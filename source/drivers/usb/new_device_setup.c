@@ -10,7 +10,7 @@
 
 void initalize_zero_address_device(void) {
  //log
- l("\nUSB: Start of initalization of zero device");
+ logf("\nUSB: Start of initalization of zero device");
  usb_devices[0].is_port_in_initalization = STATUS_TRUE;
 
  //at start we will transfer only 8 bytes from device, so we need to set control endpoint size to 8
@@ -34,7 +34,7 @@ void usb_get_device_descriptor_8_bytes_successfull(byte_t device_address) {
   return;
  }
  else {
-  l("\nUSB device control endpoint with size "); lv(usb_devices[0].control_transfer.endpoint_size);
+  logf("\nUSB device control endpoint with size %d", usb_devices[0].control_transfer.endpoint_size);
  }
 
  //close transfer
@@ -57,7 +57,7 @@ void usb_get_device_descriptor_8_bytes_successfull(byte_t device_address) {
 
 void usb_set_address_successfull(byte_t device_address) {
  //log device address
- l("\nUSB device: successfull SET_ADDRESS "); lv(usb_devices[0].setup_buffer.value);
+ logf("\nUSB device: successfull SET_ADDRESS %d", usb_devices[0].setup_buffer.value);
 
  //close transfer
  usb_close_control_transfer(0);
@@ -176,9 +176,7 @@ void usb_get_configuration_descriptor_successfull(byte_t device_address) {
 
 void usb_set_configuration_success(byte_t device_address) {
  //log
- l("\nUSB device ");
- lvw(device_address);
- l("in configured state");
+ logf("\nUSB device %d in configured state", device_address);
 
  //close transfer
  usb_close_control_transfer(device_address);
@@ -191,7 +189,7 @@ void usb_set_configuration_success(byte_t device_address) {
 
 void usb_new_device_setup_transfer_error(byte_t device_address, byte_t *err_string) {
  //log
- l("\nUSB device setup ERROR: "); l(err_string);
+ logf("\nUSB device setup ERROR: %s", err_string);
 
  //close transfer
  usb_close_control_transfer(device_address);

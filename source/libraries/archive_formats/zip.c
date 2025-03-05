@@ -18,7 +18,7 @@ byte_t is_this_zip(dword_t zip_file_memory, dword_t zip_file_size) {
 
    //check if this is ZIP64
    if(zip_end_of_central_directory_signature[4]==0xFFFFFFFF) {
-    log("\nZIP: ZIP64 files are unsupported"); //TODO: support for ZIP64 files
+    logf("\nZIP: ZIP64 files are unsupported"); //TODO: support for ZIP64 files
     return STATUS_FALSE;
    }
 
@@ -91,13 +91,12 @@ dword_t zip_extract_file(dword_t zip_file_memory, dword_t zip_file_size, dword_t
  zip_file_entry = (dword_t *) (((dword_t)zip_file_entry)+42);
  dword_t *zip_local_file_header = (dword_t *) (zip_file_memory+(*zip_file_entry));
  if(*zip_local_file_header!=ZIP_LOCAL_FILE_HEADER_SIGNATURE) {
-  log("\nZIP: invalid signature in local file header");
+  logf("\nZIP: invalid signature in local file header");
   return STATUS_ERROR;
  }
  word_t compression_method = (zip_local_file_header[2] & 0xFFFF);
  if(!(compression_method==ZIP_NO_COMPRESSION || compression_method==ZIP_COMPRESSION_DEFLATE)) {
-  log("\nZIP: unsupported compression method ");
-  log_var(compression_method);
+  logf("\nZIP: unsupported compression method %d", compression_method);
   return STATUS_ERROR;
  }
  word_t file_name_length = (zip_local_file_header[6]>>16), extra_field_length = (zip_local_file_header[7] & 0xFFFF);
@@ -110,7 +109,7 @@ dword_t zip_extract_file(dword_t zip_file_memory, dword_t zip_file_size, dword_t
  }
  else if(compression_method==ZIP_COMPRESSION_DEFLATE) {
   if(decode_deflate(file_data_compressed_data_mem, file_data_compressed_data_length, file_memory, file_data_uncompressed_data_length)==STATUS_ERROR) {
-   log("\nZIP: DEFLATE error");
+   logf("\nZIP: DEFLATE error");
    free((void *)file_memory);
    return STATUS_ERROR;
   }

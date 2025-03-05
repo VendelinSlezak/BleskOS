@@ -10,16 +10,13 @@
 
 void initalize_ohci_controller(byte_t controller_number) {
  //log
- l("\n\nOHCI controller ");
- lv((mmio_ind(ohci_controllers[controller_number].base+0x00) >> 4) & 0xF);
- l(".");
- lv(mmio_ind(ohci_controllers[controller_number].base+0x00) & 0xF);
+ logf("\n\nOHCI controller %d.%d", (mmio_ind(ohci_controllers[controller_number].base+0x00) >> 4) & 0xF, mmio_ind(ohci_controllers[controller_number].base+0x00) & 0xF);
 
  //Host Controller Reset
  mmio_outd(ohci_controllers[controller_number].base+0x08, (1 << 0));
  wait(10);
  if((mmio_ind(ohci_controllers[controller_number].base+0x08) & (1 << 0)) != 0) {
-  l("Host Controller Reset error");
+  logf("Host Controller Reset error");
   return;
  }
 
@@ -104,7 +101,7 @@ byte_t ohci_acknowledge_interrupt(dword_t number_of_controller) {
 
  //check if there was Unrecoverable Error
  if((irq_status & (1 << 4)) == (1 << 4)) {
-  l("\nOHCI: Serious Unrecoverable Error detected");
+  logf("\nOHCI: Serious Unrecoverable Error detected");
  }
 
  //clear interrupt status
@@ -193,8 +190,7 @@ void ohci_check_if_port_is_enabled(void) {
 
  //check if port is enabled
  if((ohci_port_value & (1 << 1))==(1 << 1)) {
-  l("\nOHCI port is enabled in "); lvw(50-(usb_devices[0].timeout-time_of_system_running));
-  lh(ohci_port_value);
+  logf("\nOHCI port is enabled in %d %x", 50-(usb_devices[0].timeout-time_of_system_running), ohci_port_value);
   
   //when port is enabled, it mean, that device have address 0 and is ready for transfers, so fill all needed entries
   usb_devices[0].disable_device_on_port = ohci_disable_device_on_port;
@@ -227,7 +223,7 @@ void ohci_check_if_port_is_enabled(void) {
  }
  else if(time_of_system_running >= usb_devices[0].timeout) {
   //timeout error
-  l("\nERROR: OHCI device was not enabled");
+  logf("\nERROR: OHCI device was not enabled");
 
   //disable device
   ohci_disable_device_on_port(usb_devices[0].controller_number, usb_devices[0].port_number);
@@ -430,42 +426,42 @@ byte_t get_state_of_ohci_transfer(byte_t device_address, void *transfer_descript
   //check if there is error
   else if(transfer_descriptor[i].status != 0b1110 && transfer_descriptor[i].status != 0b0000) {
    //log error
-   l("\nOHCI transfer error: ");
+   logf("\nOHCI transfer error: ");
    if(transfer_descriptor[i].status == 0b0001) {
-    l("CRC error");
+    logf("CRC error");
    }
    else if(transfer_descriptor[i].status == 0b0010) {
-    l("Bitstuff error");
+    logf("Bitstuff error");
    }
    else if(transfer_descriptor[i].status == 0b0011) {
-    l("Data Toggle mismatch");
+    logf("Data Toggle mismatch");
    }
    else if(transfer_descriptor[i].status == 0b0100) {
-    l("Stalled");
+    logf("Stalled");
    }
    else if(transfer_descriptor[i].status == 0b0101) {
-    l("Device not responding");
+    logf("Device not responding");
    }
    else if(transfer_descriptor[i].status == 0b0110) {
-    l("PID check failure");
+    logf("PID check failure");
    }
    else if(transfer_descriptor[i].status == 0b0111) {
-    l("Unexpected PID");
+    logf("Unexpected PID");
    }
    else if(transfer_descriptor[i].status == 0b1000) {
-    l("Data Overrun");
+    logf("Data Overrun");
    }
    else if(transfer_descriptor[i].status == 0b1001) {
-    l("Data Underrun");
+    logf("Data Underrun");
    }
    else if(transfer_descriptor[i].status == 0b1100) {
-    l("Buffer Overrun");
+    logf("Buffer Overrun");
    }
    else if(transfer_descriptor[i].status == 0b1101) {
-    l("Buffer Underrun");
+    logf("Buffer Underrun");
    }
    else {
-    lhs(transfer_descriptor[i].status, 2);
+    logf("0x%02x", transfer_descriptor[i].status);
    }
 
    return USB_TRANSFER_ERROR;
@@ -621,7 +617,7 @@ void ohci_interrupt_transfer(byte_t device_address, byte_t transfer_direction, s
  //recalculate interval
  dword_t interval = interrupt_transfer->interval;
  if(interrupt_transfer->interval == 0) {
-  l("\nOHCI ERROR: invalid interrupt transfer interval");
+  logf("\nOHCI ERROR: invalid interrupt transfer interval");
   return;
  }
  else if(interrupt_transfer->interval > 2) { //interval 1ms / 2ms do not need to be recalculated

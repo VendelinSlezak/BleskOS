@@ -9,11 +9,13 @@
 */
 
 #include "memory/ram.h"
-#include "memory/detect.h"
 #include "memory/allocator.h"
 #include "memory/physical_memory.h"
 
 #include "interrupts/interrupts.h"
+#include "interrupts/idt.h"
+#include "interrupts/isr.h"
+#include "interrupts/pic.h"
 
 #include "acpi/acpi.h"
 
@@ -33,3 +35,6 @@
 #include "cpu/mtrr.h"
 
 #include "deep_debugger/deep_debugger.h"
+
+#include "logging/logging.h"
+#include "logging/e9_debug_device.h"

@@ -27,24 +27,17 @@ void ec_broadcom_netxtreme_clear_bits(dword_t number_of_card, dword_t port, dwor
 word_t ec_broadcom_netxtreme_read_phy(dword_t number_of_card, byte_t phy_register) {
  ec_broadcom_netxtreme_write(number_of_card, 0x44C, ( (1 << 29) | (0b10 << 26) | (0b1 << 21) | (phy_register << 16) | (0x0000 << 0) ));
  wait(10);
- log("\n0x404: "); log_hex(ec_broadcom_netxtreme_read(number_of_card, 0x404));
- log("\n0x6810: "); log_hex(ec_broadcom_netxtreme_read(number_of_card, 0x6810));
- log("\n0x684C: "); log_hex(ec_broadcom_netxtreme_read(number_of_card, 0x684C));
  return (ec_broadcom_netxtreme_read(number_of_card, 0x44C) & 0xFFFF);
 }
 
 void ec_broadcom_netxtreme_write_phy(dword_t number_of_card, byte_t phy_register, word_t value) {
  ec_broadcom_netxtreme_write(number_of_card, 0x44C, ( (1 << 29) | (0b01 << 26) | (0b1 << 21) | (phy_register << 16) | (value << 0) ));
  wait(10);
- log("\n0x404: "); log_hex(ec_broadcom_netxtreme_read(number_of_card, 0x404));
- log("\n0x6810: "); log_hex(ec_broadcom_netxtreme_read(number_of_card, 0x6810));
- log("\n0x684C: "); log_hex(ec_broadcom_netxtreme_read(number_of_card, 0x684C));
 }
 
 void ec_broadcom_netxtreme_initalize(dword_t number_of_card) {
  //log device ID of card
- log("\n\nBroadcom NetXtreme driver\nDevice ID: ");
- log_hex_specific_size((ethernet_cards[number_of_card].id >> 16), 4);
+ logf("\n\nBroadcom NetXtreme driver\nDevice ID: 0x%04x", (ethernet_cards[number_of_card].id >> 16));
 
  //set card methods
  ethernet_cards[number_of_card].get_cable_status = ec_broadcom_netxtreme_get_cable_status;
@@ -105,7 +98,7 @@ void ec_broadcom_netxtreme_initalize(dword_t number_of_card) {
  // }
 
  //log MAC
- log("\nMAC: "); log_hex_with_space(ec_broadcom_netxtreme_read(number_of_card, 0x410)); log_hex(ec_broadcom_netxtreme_read(number_of_card, 0x414));
+ logf("\nMAC: 0x%x%x", ec_broadcom_netxtreme_read(number_of_card, 0x410), ec_broadcom_netxtreme_read(number_of_card, 0x414));
 }
 
 byte_t ec_broadcom_netxtreme_get_cable_status(dword_t number_of_card) {
@@ -122,18 +115,6 @@ byte_t ec_broadcom_netxtreme_send_packet(dword_t number_of_card, byte_t *packet_
 }
 
 void ec_broadcom_netxtreme_process_irq(dword_t number_of_card) {
- l("Broadcom NetXtreme irq");
-
- l("\nCard: ");
- lhw(pci_read(0x02, 0x0E, 0x00, 0x4));
- l("\nBridge 1: ");
- lhw(pci_read(0x00, 0x1C, 0x00, 0x4));
- l("\nBridge 2: ");
- lhw(pci_read(0x00, 0x1E, 0x00, 0x4));
- l("\nISA Bridge: ");
- lhw(pci_read(0x00, 0x1F, 0x00, 0x4));
- l("\nHost Bridge: ");
- lhw(pci_read(0x00, 0x02, 0x00, 0x4));
-
+ logf("\nBroadcom NetXtreme irq");
  ec_broadcom_netxtreme_set_bits(number_of_card, 0x6808, (1 << 1));
 }

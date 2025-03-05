@@ -8,42 +8,18 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-void initalize_interrupts(void) {
-    // TODO: add code for APIC
-    // TODO: add code to test presence of PIC
-    intalize_pic();
-
-    // reset variables
-    extern dword_t irq_handlers[16][8];
-    clear_memory((dword_t)&irq_handlers, sizeof(irq_handlers));
-    cli_level = 0;
-    interrupt_handler_running = 0;
-
-    // load IDT and enable interrupts
-    extern void load_idt(void);
-    load_idt();
-}
-
-void cli(void) {
-    if(interrupt_handler_running == 1) {
-        return;
+void isr_handler(dword_t isr_number) {
+    serious_kernel_error("ISR");
+    if(isr_number<19) {
+        logf("(%s)", isr_name[isr_number]);
     }
-
-    if(cli_level == 0) {
-        asm("cli");
+    else {
+        logf("(reserved exception %d)", isr_number);
     }
+    show_log();
 
-    cli_level++;
-}
-
-void sti(void) {
-    if(interrupt_handler_running == 1) {
-        return;
-    }
-    
-    cli_level--;
-
-    if(cli_level == 0) {
-        asm("sti");
+    // halt forever
+    while(1) { 
+        asm("hlt");
     }
 }

@@ -10,10 +10,8 @@
 
 void ec_realtek_8139_initalize(dword_t number_of_card) {
  //log device ID of card
- log("\n\nRealtek 8139 driver\nDevice ID: ");
- log_hex_specific_size((ethernet_cards[number_of_card].id >> 16), 4);
- log("\nHardware Version ID: ");
- log_hex_specific_size((ind(ethernet_cards[number_of_card].base+0x40) >> 26), 2);
+ logf("\n\nRealtek 8139 driver\nDevice ID: 0x%04x", (ethernet_cards[number_of_card].id >> 16));
+ logf("\nHardware Version ID: 0x%02x", (ind(ethernet_cards[number_of_card].base+0x40) >> 26));
 
  //set card methods
  ethernet_cards[number_of_card].get_cable_status = ec_realtek_8139_get_cable_status;
@@ -29,7 +27,7 @@ void ec_realtek_8139_initalize(dword_t number_of_card) {
  while((ec_realtek_8169_inb(number_of_card, 0x37) & (1 << 4))==(1 << 4)) {
   asm("nop");
   if(time_of_system_running >= timeout) {
-   log("\nERROR: Reset was not successful");
+   logf("\nERROR: Reset was not successful");
    return;
   }
  }
@@ -40,9 +38,9 @@ void ec_realtek_8139_initalize(dword_t number_of_card) {
  }
 
  //log MAC address
- log("\nMAC: ");
+ logf("\nMAC: ");
  for(dword_t i=0; i<6; i++) {
-  log_hex_specific_size_with_space(ethernet_cards[number_of_card].mac_address[i], 2);
+  logf("0x%02x ",ethernet_cards[number_of_card].mac_address[i]);
  }
 
  //enable receiving and transmitting - we *must* enable them before configuring them, otherwise some cards will not work correctly
@@ -113,7 +111,7 @@ byte_t ec_realtek_8139_send_packet(dword_t number_of_card, byte_t *packet_memory
 
  //check if descriptors are not full
  if(tx_descriptors[actual_descriptor].send_to_card == 1) { //we check all descriptors, so we are back and first descriptor and it is still not free
-  log("\nERROR: Ethernet tx buffer is full");
+  logf("\nERROR: Ethernet tx buffer is full");
   return STATUS_ERROR;
  }
 

@@ -50,10 +50,10 @@ void initalize_ide_controller_drive(byte_t number_of_controller, byte_t number_o
  //log
  logf("\nIDE controller 0x%04x ", storage_controllers[number_of_controller].base_1);
  if(number_of_drive==PATA_MASTER) {
-  log("MASTER ");
+  logf("MASTER ");
  }
  else {
-  log("SLAVE ");
+  logf("SLAVE ");
  }
  logf("0x%04x %d",ide_drive_type, ide_drive_size);
 }

@@ -19,14 +19,6 @@ void initalize_intel_graphic_card(byte_t graphic_card_number) {
   graphic_card_driver_monitor_change_backlight = (&graphic_card_intel_change_backlight);
   graphic_card_intel_change_backlight(100);
  }
-
- //log info
- log("\n\nINTEL graphic card");
- log("\nDevice ID: "); log_hex_specific_size(graphic_cards_info[graphic_card_number].device_id, 4);
- log("\nLinear frame buffer: "); log_hex((dword_t)graphic_cards_info[graphic_card_number].linear_frame_buffer);
- log("\nPipe A mode: "); log_var((mmio_ind(graphic_cards_info[graphic_card_number].mmio_base+0x60000) & 0xFFFF)+1); log("x"); log_var((mmio_ind(graphic_cards_info[graphic_card_number].mmio_base+0x6000C) & 0xFFFF)+1);
- log("\nPipe B mode: "); log_var((mmio_ind(graphic_cards_info[graphic_card_number].mmio_base+0x61000) & 0xFFFF)+1); log("x"); log_var((mmio_ind(graphic_cards_info[graphic_card_number].mmio_base+0x6100C) & 0xFFFF)+1);
- log("\nBacklight port: "); log_hex(mmio_ind(graphic_cards_info[graphic_card_number].mmio_base+GRAPHIC_CARD_INTEL_MMIO_BACKLIGHT_PWM_CONTROL));
 }
 
 void graphic_card_intel_change_backlight(byte_t value) {
@@ -57,7 +49,7 @@ void intel_try_read_edid(void) {
     break;
    }
    if((mmio_ind(graphic_cards_info[selected_graphic_card].mmio_base+GRAPHIC_CARD_INTEL_MMIO_GMBUS2) & (1<<10))==(1<<10)) {
-    log("\nNAK error");
+    logf("\nNAK error");
     break;
    }
   }

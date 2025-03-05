@@ -10,17 +10,17 @@
 
 dword_t convert_docx_to_dmf(dword_t docx_memory, dword_t docx_size) {
  if(is_this_zip(docx_memory, docx_size)==STATUS_FALSE) {
-  log("\nDOCX: not zip file");
+  logf("\nDOCX: not zip file");
   return STATUS_ERROR;
  }
  dword_t document_xml_file_number = search_for_file_in_zip(docx_memory, docx_size, "word/document.xml");
  if(document_xml_file_number==ZIP_FILE_NOT_FOUNDED) {
-  log("\nDOCX: word/document.xml not founded");
+  logf("\nDOCX: word/document.xml not founded");
   return STATUS_ERROR;
  }
  dword_t document_raw_xml_file_memory = zip_extract_file(docx_memory, docx_size, document_xml_file_number);
  if(document_raw_xml_file_memory==STATUS_ERROR) {
-  log("\nDOCX: error with extracting word/document.xml");
+  logf("\nDOCX: error with extracting word/document.xml");
   return STATUS_ERROR;
  }
  dword_t document_xml_file_memory = prepare_xml_file(document_raw_xml_file_memory, zip_extracted_file_size, XML_NO_SPECIAL_ATTRIBUTES);
@@ -53,7 +53,7 @@ dword_t convert_docx_to_dmf(dword_t docx_memory, dword_t docx_size) {
   }
  }
  if(((dword_t)docx_body_tag)==0) {
-  log("\nDOCX: no <w:body>");
+  logf("\nDOCX: no <w:body>");
   free((void *)document_xml_file_memory);
   return STATUS_ERROR;
  }
@@ -147,7 +147,7 @@ dword_t convert_docx_to_dmf(dword_t docx_memory, dword_t docx_size) {
    free((void *)numbering_xml_file_memory);
   }
   else {
-   log("\nDOCX: error with extracting word/numbering.xml");
+   logf("\nDOCX: error with extracting word/numbering.xml");
   }
  }
 

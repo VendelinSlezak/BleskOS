@@ -83,10 +83,10 @@ void filesystem_iso9660_read_specific_info(struct connected_partition_info_t *co
  connected_partition_info->partition_label[10] = 0;
 
  //log
- log("\n\nISO9660 filesystem");
- log("\nroot directory location: "); log_var(iso9660_info->root_directory_sector);
- log("\nroot directory size in sectors: "); log_var(iso9660_info->root_directory_size_in_bytes/2048);
- log("\npartition label: "); log(connected_partition_info->partition_label);
+ logf("\n\nISO9660 filesystem");
+ logf("\nroot directory location: %d", iso9660_info->root_directory_sector);
+ logf("\nroot directory size in sectors: %d", iso9660_info->root_directory_size_in_bytes/2048);
+ logf("\npartition label: %s", connected_partition_info->partition_label);
 }
 
 byte_t *read_iso9660_file(dword_t file_location, dword_t file_size_in_bytes) {

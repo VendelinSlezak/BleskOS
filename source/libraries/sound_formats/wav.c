@@ -15,7 +15,7 @@ dword_t convert_wav_to_sound_data(dword_t wav_memory, dword_t wav_length) {
  
  //check signature
  if(wav32[0]!=0x46464952 && wav32[2]!=0x45564157) {
-  log("\nWAV: invalid signature");
+  logf("\nWAV: invalid signature");
   return STATUS_ERROR;
  }
  
@@ -25,7 +25,7 @@ dword_t convert_wav_to_sound_data(dword_t wav_memory, dword_t wav_length) {
   if(wav32[0]==0x20746D66) { //fmt 
    //check sound format
    if((wav32[2] & 0xFFFF)!=WAV_FORMAT_PCM) {
-    log("\nWAV: not raw PCM");
+    logf("\nWAV: not raw PCM");
     return STATUS_ERROR;
    }
    
@@ -36,7 +36,7 @@ dword_t convert_wav_to_sound_data(dword_t wav_memory, dword_t wav_length) {
   }
   else if(wav32[0]==0x61746164) { //data   
    if(channels==0 || sample_rate==0 || bits_per_sample==0) {
-    log("\nWAV: data chunk before fmt chunk");
+    logf("\nWAV: data chunk before fmt chunk");
     return STATUS_ERROR;
    }
 
@@ -57,8 +57,7 @@ dword_t convert_wav_to_sound_data(dword_t wav_memory, dword_t wav_length) {
    return sound_memory;
   }
   else {
-   log("\nWAV: unknown chunk ");
-   log_hex(wav32[0]);
+   logf("\nWAV: unknown chunk 0x%x", wav32[0]);
   }
   
   //go to next chunk
@@ -76,7 +75,7 @@ struct wav_info_t *read_wav_info(byte_t *wav_memory, dword_t wav_length) {
  
  //check signature
  if(wav32[0]!=0x46464952 && wav32[2]!=0x45564157) {
-  log("\nWAV: invalid signature");
+  logf("\nWAV: invalid signature");
   return STATUS_ERROR;
  }
  
@@ -86,7 +85,7 @@ struct wav_info_t *read_wav_info(byte_t *wav_memory, dword_t wav_length) {
   if(wav32[0]==0x20746D66) { //fmt 
    //check sound format
    if((wav32[2] & 0xFFFF)!=WAV_FORMAT_PCM) {
-    log("\nWAV: not raw PCM");
+    logf("\nWAV: not raw PCM");
     return STATUS_ERROR;
    }
    
@@ -106,7 +105,7 @@ struct wav_info_t *read_wav_info(byte_t *wav_memory, dword_t wav_length) {
   }
   else if(wav32[0]==0x61746164) { //data   
    if(wav_info->pcm_data_number_of_channels==0 || wav_info->pcm_data_sample_rate==0 || wav_info->pcm_data_bits_per_sample==0) {
-    log("\nWAV: data chunk before fmt chunk");
+    logf("\nWAV: data chunk before fmt chunk");
     return STATUS_ERROR;
    }
 
@@ -126,7 +125,7 @@ struct wav_info_t *read_wav_info(byte_t *wav_memory, dword_t wav_length) {
     wav_info->length_of_output_pcm_data = (wav_info->length_of_output_pcm_data*(wav_info->output_pcm_data_sample_rate/wav_info->pcm_data_sample_rate));
    }
    else {
-    log("Unplayable WAV: "); log_var_with_space(wav_info->pcm_data_number_of_channels); log_var_with_space(wav_info->pcm_data_sample_rate); log_var_with_space(wav_info->pcm_data_bits_per_sample);
+    logf("Unplayable WAV: %d %d %d", wav_info->pcm_data_number_of_channels, wav_info->pcm_data_sample_rate, wav_info->pcm_data_bits_per_sample);
     wav_info->length_of_output_pcm_data = 0;
     return STATUS_ERROR;
    }
@@ -134,8 +133,7 @@ struct wav_info_t *read_wav_info(byte_t *wav_memory, dword_t wav_length) {
    return wav_info;
   }
   else {
-   log("\nWAV: unknown chunk ");
-   log_hex(wav32[0]);
+   logf("\nWAV: unknown chunk 0x%x", wav32[0]);
   }
   
   //go to next chunk

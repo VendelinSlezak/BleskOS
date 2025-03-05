@@ -8,16 +8,15 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#define BIOS_MEMORY_ENTRY_TYPE_FREE 1
-#define BIOS_MEMORY_ENTRY_TYPE_USED 2
+void detect_e9_debug_device(void) {
+    if(inb(0xE9) == 0xE9) {
+        components->n_e9_debug_device = 1;
+    }
+    else {
+        components->n_e9_debug_device = 0;
+    }
+}
 
-struct bios_memory_table_entry_t {
-    qword_t memory;
-    qword_t size;
-    dword_t type;
-
-    // ACPI 3.0 extended attributes
-    dword_t usable : 1;
-    dword_t non_volatile : 1;
-    dword_t : 30;
-}__attribute__((packed));
+static inline void e9_debug_device_send_char(byte_t character) {
+    outb(0xE9, character);
+}

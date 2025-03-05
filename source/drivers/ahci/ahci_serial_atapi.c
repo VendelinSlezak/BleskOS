@@ -37,7 +37,7 @@ byte_t satapi_read_capabilities(dword_t port_base_address, dword_t command_list_
 
  //read capabilities
  if(ahci_send_atapi_command(port_base_address, command_list_memory, (dword_t)(&response), 8, atapi_command)==STATUS_ERROR){
-  log("\nAHCI: READ CAPABILITES error");
+  logf("\nAHCI: READ CAPABILITES error");
   return STATUS_ERROR;
  }
 

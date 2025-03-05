@@ -15,21 +15,21 @@ dword_t convert_jpg_to_image_data(dword_t jpg_memory, dword_t jpg_size) {
  //decode JPEG image by nanojpeg
  byte_t status = njDecode((void *)jpg_memory, jpg_size);
  if(status!=NJ_OK) {
-  log("\nNANOJPEG error: ");
+  logf("\nNANOJPEG error: ");
   if(status==NJ_NO_JPEG) {
-   log("not JPG file");
+   logf("not JPG file");
   }
   else if(status==NJ_UNSUPPORTED) {
-   log("unsupported format");
+   logf("unsupported format");
   }
   else if(status==NJ_OUT_OF_MEM) {
-   log("uout of memory");
+   logf("uout of memory");
   }
   else if(status==NJ_INTERNAL_ERR) {
-   log("internal error");
+   logf("internal error");
   }
   else if(status==NJ_SYNTAX_ERROR) {
-   log("syntax error");
+   logf("syntax error");
   }
   njDone();
   return STATUS_ERROR;

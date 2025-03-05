@@ -48,7 +48,7 @@ void usb_bulk_only_prepare_transfer(struct usb_bbb_t *bulk_only,
 void usb_bulk_only_send_command(byte_t device_address, struct usb_bbb_t *bulk_only) {
  //check if there is already some transfer
  if(bulk_only->is_running == STATUS_TRUE) {
-  l("\nUSB ERROR: Request for BBB during transfer");
+  logf("\nUSB ERROR: Request for BBB during transfer");
   return;
  }
 
@@ -156,7 +156,7 @@ void usb_bulk_only_close_transfer(byte_t device_address, struct usb_bbb_t *bulk_
 }
 
 void usb_bulk_only_send_cbw_error(byte_t device_address, void *transfer_info) {
- l("\nUSB BBB: Command Block Wrapper not transferred");
+ logf("\nUSB BBB: Command Block Wrapper not transferred");
 
  //set pointer
  struct usb_bbb_t *bulk_only = (struct usb_bbb_t *) transfer_info;
@@ -170,7 +170,7 @@ void usb_bulk_only_send_cbw_error(byte_t device_address, void *transfer_info) {
 }
 
 void usb_bulk_only_transfer_data_error(byte_t device_address, void *transfer_info) {
- l("\nUSB BBB: Data were not transferred");
+ logf("\nUSB BBB: Data were not transferred");
 
  //set pointer
  struct usb_bbb_t *bulk_only = (struct usb_bbb_t *) transfer_info;
@@ -184,7 +184,7 @@ void usb_bulk_only_transfer_data_error(byte_t device_address, void *transfer_inf
 }
 
 void usb_bulk_only_read_csw_error(byte_t device_address, void *transfer_info) {
- l("\nUSB BBB: Command Status Wrapper not received");
+ logf("\nUSB BBB: Command Status Wrapper not received");
 
  //set pointer
  struct usb_bbb_t *bulk_only = (struct usb_bbb_t *) transfer_info;

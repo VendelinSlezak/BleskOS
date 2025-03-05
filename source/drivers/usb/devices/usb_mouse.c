@@ -13,21 +13,21 @@ void usb_mouse_save_informations(byte_t device_address, struct usb_full_interfac
 
  //check if this device do not already have mouse interface
  if(usb_devices[device_address].mouse.is_present == STATUS_TRUE) {
-  l("\nUSB ERROR: more mouse interfaces at one device");
+  logf("\nUSB ERROR: more mouse interfaces at one device");
   return;
  }
 
  //check if this interface has all needed informations
  if(interface.interrupt_in_endpoint == 0) {
-  l("\nUSB ERROR: USB mouse do not have interrupt in endpoint");
+  logf("\nUSB ERROR: USB mouse do not have interrupt in endpoint");
   return;
  }
  if(interface.interrupt_in_endpoint->bInterval == 0) {
-  l("\nUSB ERROR: USB mouse invalid endpoint interval");
+  logf("\nUSB ERROR: USB mouse invalid endpoint interval");
   return;
  }
  if(interface.hid_descriptor == 0) {
-  l("\nUSB ERROR: USB mouse do not have any HID descriptor");
+  logf("\nUSB ERROR: USB mouse do not have any HID descriptor");
   return;
  }
  word_t hid_descriptor_0x22_length = 0;
@@ -39,7 +39,7 @@ void usb_mouse_save_informations(byte_t device_address, struct usb_full_interfac
   }
  }
  if(hid_descriptor_0x22_length == 0) {
-  l("\nUSB ERROR: USB mouse do not have HID descriptor 0x22");
+  logf("\nUSB ERROR: USB mouse do not have HID descriptor 0x22");
   return;
  }
 
@@ -57,9 +57,9 @@ void usb_mouse_save_informations(byte_t device_address, struct usb_full_interfac
  usb_devices[device_address].mouse.interrupt_transfer.interval = interface.interrupt_in_endpoint->bInterval;
 
  //log
- l("\nUSB mouse\n Endpoint: "); lvw(usb_devices[device_address].mouse.interrupt_transfer.endpoint);
- l("\n Size: "); lvw(usb_devices[device_address].mouse.interrupt_transfer.endpoint_size);
- l("\n Interval: "); lv(usb_devices[device_address].mouse.interrupt_transfer.interval); l("ms");
+ logf("\nUSB mouse\n Endpoint: %d", usb_devices[device_address].mouse.interrupt_transfer.endpoint);
+ logf("\n Size: %d", usb_devices[device_address].mouse.interrupt_transfer.endpoint_size);
+ logf("\n Interval: %d", usb_devices[device_address].mouse.interrupt_transfer.interval); logf("ms");
 }
 
 void usb_mouse_initalize(byte_t device_address) {
@@ -167,7 +167,7 @@ void usb_mouse_interrupt_transfer_successfull(byte_t device_address) {
 /* errors */
 
 void usb_mouse_stop_initalization(byte_t device_address, byte_t *err_string) {
- l("\nUSB mouse error: "); l(err_string);
+ logf("\nUSB mouse error: %s", err_string);
  usb_devices[device_address].mouse.is_present = STATUS_FALSE;
  usb_devices[device_address].is_interface_in_initalization = STATUS_FALSE;
  usb_close_control_transfer(device_address);
@@ -179,7 +179,7 @@ void usb_mouse_set_hid_protocol_error(byte_t device_address) {
 
 void usb_mouse_set_idle_error(byte_t device_address) {
  //some deviced do not support this feature, so it do not matter if it fails, we will continue initalization
- l("\nUSB mouse: set idle not supported");
+ logf("\nUSB mouse: set idle not supported");
  
  //close transfer
  usb_close_control_transfer(device_address);

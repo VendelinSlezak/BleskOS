@@ -13,7 +13,7 @@ byte_t patapi_send_packet_command(word_t base_port, word_t alt_base_port, word_t
 
  //reset drive from condition for stucking
  if((inb(base_port + 7) & 0x88)!=0x00) {
-  log("\nIDE ATAPI: reset");
+  logf("\nIDE ATAPI: reset");
   ide_reset_controller(base_port, alt_base_port);
  }
  
@@ -40,7 +40,7 @@ byte_t patapi_test_unit_ready(word_t base_port, word_t alt_base_port) {
 
  //send packet command
  if(patapi_send_packet_command(base_port, alt_base_port, 0)==STATUS_ERROR) {
-  log("TEST UNIT READY");
+  logf("TEST UNIT READY");
   return STATUS_ERROR;
  }
  
@@ -54,7 +54,7 @@ byte_t patapi_test_unit_ready(word_t base_port, word_t alt_base_port) {
 
  //wait for processing command
  if(ide_wait_drive_not_busy(base_port, 100)==STATUS_ERROR) {
-  log("\nIDE ATAPI: busy for TEST UNIT READY");
+  logf("\nIDE ATAPI: busy for TEST UNIT READY");
   return STATUS_ERROR;
  }
  
@@ -88,7 +88,7 @@ byte_t patapi_read_capabilities(word_t base_port, word_t alt_base_port) {
  
  //send packet command
  if(patapi_send_packet_command(base_port, alt_base_port, 8)==STATUS_ERROR) {
-  log("READ CAPABILITES");
+  logf("READ CAPABILITES");
   return STATUS_ERROR;
  }
  
@@ -102,7 +102,7 @@ byte_t patapi_read_capabilities(word_t base_port, word_t alt_base_port) {
  
  //wait
  if(ide_wait_for_data(base_port, 200)==STATUS_ERROR) {
-  log("\nIDE ATAPI: busy for READ CAPABILITES");
+  logf("\nIDE ATAPI: busy for READ CAPABILITES");
   return STATUS_ERROR;
  }
  
@@ -128,7 +128,7 @@ byte_t patapi_start_stop_command(word_t base_port, word_t alt_base_port, byte_t 
 
  //send packet command
  if(patapi_send_packet_command(base_port, alt_base_port, 0)==STATUS_ERROR) {
-  log("EJECT");
+  logf("EJECT");
   return STATUS_ERROR;
  }
  
@@ -158,7 +158,7 @@ byte_t patapi_read_cd_toc(word_t base_port, word_t alt_base_port, dword_t memory
  
  //send packet command
  if(patapi_send_packet_command(base_port, alt_base_port, 252)==STATUS_ERROR) {
-  log("TABLE OF CONTENT");
+  logf("TABLE OF CONTENT");
   return STATUS_ERROR;
  }
  
@@ -202,7 +202,7 @@ byte_t patapi_read(word_t base_port, word_t alt_base_port, dword_t sector, byte_
  
  //send packet command
  if(patapi_send_packet_command(base_port, alt_base_port, 2048)==STATUS_ERROR) {
-  log("READ");
+  logf("READ");
   return STATUS_ERROR;
  }
  
@@ -244,7 +244,7 @@ byte_t patapi_read_audio_cd(word_t base_port, word_t alt_base_port, dword_t sect
  
  //send packet command
  if(patapi_send_packet_command(base_port, alt_base_port, (number_of_sectors*2352))==STATUS_ERROR) {
-  log("READ CD");
+  logf("READ CD");
   return STATUS_ERROR;
  }
  

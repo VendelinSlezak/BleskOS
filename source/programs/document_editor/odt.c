@@ -10,17 +10,17 @@
 
 dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size) {
  if(is_this_zip(odt_memory, odt_size)==STATUS_FALSE) {
-  log("\nODT: not zip file");
+  logf("\nODT: not zip file");
   return STATUS_ERROR;
  }
  dword_t content_xml_file_number = search_for_file_in_zip(odt_memory, odt_size, "content.xml");
  if(content_xml_file_number==ZIP_FILE_NOT_FOUNDED) {
-  log("\nODT: content.xml not founded");
+  logf("\nODT: content.xml not founded");
   return STATUS_ERROR;
  }
  dword_t content_raw_xml_file_memory = zip_extract_file(odt_memory, odt_size, content_xml_file_number);
  if(content_raw_xml_file_memory==STATUS_ERROR) {
-  log("\nODT: error with extracting content.xml");
+  logf("\nODT: error with extracting content.xml");
   return STATUS_ERROR;
  }
  dword_t content_xml_file_memory = prepare_xml_file(content_raw_xml_file_memory, zip_extracted_file_size, XML_NO_SPECIAL_ATTRIBUTES);
@@ -79,7 +79,7 @@ dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size) {
   }
  }
  if(((dword_t)odt_body_tag)==0) {
-  log("\nODT: no <office:body>");
+  logf("\nODT: no <office:body>");
   free((void *)content_xml_file_memory);
   return STATUS_ERROR;
  }
@@ -143,7 +143,7 @@ dword_t convert_odt_to_dmf(dword_t odt_memory, dword_t odt_size) {
    free((void *)styles_xml_file_memory);
   }
   else {
-   log("\nODT: error with extracting styles.xml");
+   logf("\nODT: error with extracting styles.xml");
   }
  }
 

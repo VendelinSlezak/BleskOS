@@ -26,12 +26,12 @@ byte_t is_partition_fat(dword_t first_partition_sector) {
 }
 
 void filesystem_fat_read_specific_info(struct connected_partition_info_t *connected_partition_info) {
- log("\n");
+ logf("\n");
 
  //load first sector of partition with info about FAT
  struct fat16_bpb_t fat16_bpb;
  if(read_storage_medium(connected_partition_info->first_sector, 1, (dword_t)(&fat16_bpb))==STATUS_ERROR) {
-  log("\nFAT: can not read first partition sector");
+  logf("\nFAT: can not read first partition sector");
   return;
  }
 
@@ -47,7 +47,7 @@ void filesystem_fat_read_specific_info(struct connected_partition_info_t *connec
  //size of one cluster
  fat_info->cluster_size_in_sectors = fat16_bpb.sectors_per_cluster;
  if(fat_info->cluster_size_in_sectors==0) {
-  log("\nFAT: invalid cluster size");
+  logf("\nFAT: invalid cluster size");
   free((void *)fat_info);
   return;
  }
@@ -67,7 +67,7 @@ void filesystem_fat_read_specific_info(struct connected_partition_info_t *connec
 
  //load first sector from FAT table
  if(read_storage_medium(fat_info->fat_table_first_sector, 1, (dword_t)(&fat_info->fat_table_sector))==STATUS_ERROR) {
-  log("\nFAT: can not read first FAT table sector");
+  logf("\nFAT: can not read first FAT table sector");
   free((void *)fat_info);
   return;
  }
@@ -133,25 +133,25 @@ void filesystem_fat_read_specific_info(struct connected_partition_info_t *connec
  }
 
  //log
- log("\nFAT");
+ logf("\nFAT");
  if(fat_info->number_of_clusters<4085) {
-  log("12");
+  logf("12");
  }
  else if(fat_info->number_of_clusters<=65536) {
-  log("16");
+  logf("16");
  }
  else {
-  log("32");
+  logf("32");
  }
- log(" filesystem");
- log("\ntotal number of sectors: "); log_var(fat_info->total_number_of_sectors);
- log("\ntotal number of clusters: "); log_var(fat_info->number_of_clusters);
- log("\ncluster size in bytes: "); log_var(fat_info->cluster_size_in_sectors*512);
- log("\nroot directory location: "); log_var(fat_info->root_directory_location);
+ logf(" filesystem");
+ logf("\ntotal number of sectors: %d", fat_info->total_number_of_sectors);
+ logf("\ntotal number of clusters: %d", fat_info->number_of_clusters);
+ logf("\ncluster size in bytes: %d", fat_info->cluster_size_in_sectors*512);
+ logf("\nroot directory location: %d", fat_info->root_directory_location);
  if(fat_info->type!=FAT32) {
-  log("\nroot directory size in sectors: "); log_var(fat_info->root_directory_size_in_sectors);
+  logf("\nroot directory size in sectors: %d", fat_info->root_directory_size_in_sectors);
  }
- log("\npartition label: "); log(connected_partition_info->partition_label);
+ logf("\npartition label: %s", connected_partition_info->partition_label);
 }
 
 byte_t load_fat_table_sector(dword_t sector) {
@@ -164,7 +164,7 @@ byte_t load_fat_table_sector(dword_t sector) {
  
  //load FAT table sector to memory
  if(read_storage_medium(fat_info->fat_table_first_sector+sector, 1, (dword_t)(&fat_info->fat_table_sector))==STATUS_ERROR) {
-  log("\nFAT: ERROR with reading FAT table sector");
+  logf("\nFAT: ERROR with reading FAT table sector");
   fat_info->loaded_fat_table_sector = 0xFFFFFFFF;
   return STATUS_ERROR;
  }
@@ -180,7 +180,7 @@ byte_t save_loaded_fat_table_sector(void) {
  //save loaded FAT table sector to all FAT tables
  for(dword_t i=0; i<fat_info->number_of_fat_tables; i++) {
   if(write_storage_medium(fat_info->fat_table_first_sector+fat_info->loaded_fat_table_sector+(i*fat_info->fat_table_size_in_sectors), 1, (dword_t)(&fat_info->fat_table_sector))==STATUS_ERROR) {
-   log("\nFAT: ERROR with writing FAT table sector");
+   logf("\nFAT: ERROR with writing FAT table sector");
    return STATUS_ERROR;
   }
  }
@@ -212,7 +212,7 @@ dword_t read_fat_table_entry(dword_t entry) {
  
  //invalid entry returns used entry
  if(entry>=fat_info->number_of_clusters) {
-  log("\nFAT: read entry invalid request "); log_hex(entry);
+  logf("\nFAT: read entry invalid request 0x%x", entry);
   return 0xFFFFFFFF;
  }
 
@@ -275,7 +275,7 @@ byte_t write_fat_table_entry(dword_t entry, dword_t value) {
  
  //invalid entry
  if(entry>=fat_info->number_of_clusters) {
-  log("\nFAT: write entry invalid request "); log_hex(entry);
+  logf("\nFAT: write entry invalid request 0x%x", entry);
   return STATUS_ERROR;
  }
 
@@ -353,8 +353,7 @@ byte_t *read_fat_file(dword_t cluster) {
  for(dword_t i=0; i<fat_info->number_of_clusters; i++) {
   //check invalid cluster value
   if(cluster<2 || cluster>=fat_info->number_of_clusters) {
-   log("\nFAT: read file invalid cluster value ");
-   log_hex(cluster);
+   logf("\nFAT: read file invalid cluster value 0x%x", cluster);
    destroy_byte_stream(descriptor_of_file_sectors);
    return STATUS_ERROR;
   }
@@ -386,7 +385,7 @@ dword_t create_fat_file(dword_t first_cluster, byte_t *file_memory, dword_t file
  struct fat_specific_info_t *fat_info = (struct fat_specific_info_t *) (connected_partitions[selected_partition].filesystem_specific_info_pointer);
 
  if(file_size_in_bytes==0) {
-  log("\nFAT: write file invalid size");
+  logf("\nFAT: write file invalid size");
   return STATUS_ERROR;
  }
 
@@ -447,7 +446,7 @@ dword_t create_fat_file(dword_t first_cluster, byte_t *file_memory, dword_t file
 
  //test if we finded enough free clusters
  if(number_of_finded_free_clusters<number_of_clusters_in_file) {
-  log("\nFAT: write file not enough free clusters on medium");
+  logf("\nFAT: write file not enough free clusters on medium");
   destroy_byte_stream(clusters_of_file);
   destroy_byte_stream(descriptor_of_file_sectors);
   return STATUS_ERROR;
@@ -455,7 +454,7 @@ dword_t create_fat_file(dword_t first_cluster, byte_t *file_memory, dword_t file
 
  //write file data
  if(write_whole_descriptor_of_file_sector(descriptor_of_file_sectors, file_memory)==STATUS_ERROR) {
-  log("\nFAT: write file error during writing data of file");
+  logf("\nFAT: write file error during writing data of file");
   destroy_byte_stream(clusters_of_file);
   destroy_byte_stream(descriptor_of_file_sectors);
   return STATUS_ERROR;
@@ -468,7 +467,7 @@ dword_t create_fat_file(dword_t first_cluster, byte_t *file_memory, dword_t file
  first_cluster = clusters_of_file_pointer[0];
  for(dword_t i=0; i<(number_of_clusters_in_file-1); i++) {
   if(write_fat_table_entry(clusters_of_file_pointer[i], clusters_of_file_pointer[i+1])==STATUS_ERROR) { //link to next cluster
-   log("\nFAT: write file error during updating FAT entries");
+   logf("\nFAT: write file error during updating FAT entries");
    destroy_byte_stream(clusters_of_file);
    return STATUS_ERROR;
   }
@@ -476,7 +475,7 @@ dword_t create_fat_file(dword_t first_cluster, byte_t *file_memory, dword_t file
 
  //set last entry
  if(write_fat_table_entry(clusters_of_file_pointer[number_of_clusters_in_file-1], fat_info->file_ending_entry_value)==STATUS_ERROR) {
-  log("\nFAT: write file error during updating FAT entries");
+  logf("\nFAT: write file error during updating FAT entries");
   destroy_byte_stream(clusters_of_file);
   return STATUS_ERROR;
  }
@@ -486,7 +485,7 @@ dword_t create_fat_file(dword_t first_cluster, byte_t *file_memory, dword_t file
 
  //save all FAT table changes to medium
  if(save_loaded_fat_table_sector()==STATUS_ERROR) {
-  log("\nFAT: write file error during updating FAT entries");
+  logf("\nFAT: write file error during updating FAT entries");
   return STATUS_ERROR;
  }
 
@@ -519,7 +518,7 @@ byte_t delete_fat_file(dword_t cluster) {
  dword_t *clusters_of_file_pointer = (dword_t *) (clusters_of_file->start_of_allocated_memory);
  for(dword_t i=0; i<(clusters_of_file->size_of_stream/4); i++) {
   if(write_fat_table_entry(clusters_of_file_pointer[i], 0x00000000)==STATUS_ERROR) {
-   log("\nFAT: delete file error with clearing FAT entry "); log_hex(cluster);
+   logf("\nFAT: delete file error with clearing FAT entry 0x%x", cluster);
    destroy_byte_stream(clusters_of_file);
    return STATUS_ERROR;
   }
@@ -528,7 +527,7 @@ byte_t delete_fat_file(dword_t cluster) {
 
  //save all FAT table changes to medium
  if(save_loaded_fat_table_sector()==STATUS_ERROR) {
-  log("\nFAT: delete file error during updating FAT entries");
+  logf("\nFAT: delete file error during updating FAT entries");
   return STATUS_ERROR;
  }
  
@@ -540,7 +539,7 @@ dword_t rewrite_fat_file(dword_t first_cluster, byte_t *file_memory, dword_t fil
  
  //delete file
  if(delete_fat_file(first_cluster)==STATUS_ERROR) {
-  log("\nFAT: can not delete file to rewrite it");
+  logf("\nFAT: can not delete file to rewrite it");
   return STATUS_ERROR;
  }
 
@@ -572,7 +571,7 @@ byte_t *read_fat_folder(dword_t cluster) {
 
  //test if there was error
  if((dword_t)fat_folder==STATUS_ERROR) {
-  log("\nFAT: reading folder error");
+  logf("\nFAT: reading folder error");
   return STATUS_ERROR;
  }
 
@@ -875,7 +874,7 @@ byte_t rewrite_fat_folder(dword_t folder_location, dword_t previous_folder_locat
  if(folder_location==ROOT_FOLDER) {
   if(fat_info->type==FAT32) {
    if(delete_fat_file(fat_info->root_directory_location)==STATUS_ERROR) {
-    log("\nFAT: error with deleting folder");
+    logf("\nFAT: error with deleting folder");
    }
    else {
     status = create_fat_file(fat_info->root_directory_location, (byte_t *)fat_folder_byte_stream->start_of_allocated_memory, fat_folder_byte_stream->size_of_stream);
@@ -883,7 +882,7 @@ byte_t rewrite_fat_folder(dword_t folder_location, dword_t previous_folder_locat
   }
   else { //FAT12/16
    if(fat_folder_byte_stream->size_of_stream>(fat_info->root_directory_size_in_sectors*512)) {
-    log("\nFAT: root folder is too small");
+    logf("\nFAT: root folder is too small");
    }
    else {
     //fill stream with zeroes to be as big as root directory
@@ -901,7 +900,7 @@ byte_t rewrite_fat_folder(dword_t folder_location, dword_t previous_folder_locat
  }
  else {
   if(delete_fat_file(folder_location)==STATUS_ERROR) {
-   log("\nFAT: error with deleting folder");
+   logf("\nFAT: error with deleting folder");
   }
   else {
    status = create_fat_file(folder_location, (byte_t *)fat_folder_byte_stream->start_of_allocated_memory, fat_folder_byte_stream->size_of_stream);
@@ -961,7 +960,7 @@ dword_t create_fat_folder(dword_t previous_folder_location) {
 
    //write folder data to cluster
    if(write_storage_medium(fat_info->data_first_sector+((cluster-2)*fat_info->cluster_size_in_sectors), fat_info->cluster_size_in_sectors, (dword_t)fat_folder)==STATUS_ERROR) {
-    log("\nFAT: create folder error during writing data to cluster");
+    logf("\nFAT: create folder error during writing data to cluster");
     free((void *)fat_folder);
     return STATUS_ERROR;
    }
@@ -970,7 +969,7 @@ dword_t create_fat_folder(dword_t previous_folder_location) {
    //set cluster in FAT table
    write_fat_table_entry(cluster, fat_info->file_ending_entry_value);
    if(save_loaded_fat_table_sector()==STATUS_ERROR) {
-    log("\nFAT: create folder error during updating FAT entries");
+    logf("\nFAT: create folder error during updating FAT entries");
     return STATUS_ERROR;
    }
 
@@ -979,6 +978,6 @@ dword_t create_fat_folder(dword_t previous_folder_location) {
   }
  }
 
- log("\nFAT: no free cluster for new folder");
+ logf("\nFAT: no free cluster for new folder");
  return STATUS_ERROR;
 }

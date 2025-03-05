@@ -30,8 +30,7 @@ void ec_amd_pcnet_write_bcr(dword_t number_of_card, dword_t port, dword_t value)
 
 void ec_amd_pcnet_initalize(dword_t number_of_card) {
  //log device ID of card
- log("\n\nAmd PCNET driver\nDevice ID: ");
- log_hex_specific_size((ethernet_cards[number_of_card].id >> 16), 4);
+ logf("\n\nAmd PCNET driver\nDevice ID: 0x%04x", (ethernet_cards[number_of_card].id >> 16));
 
  //set card methods
  ethernet_cards[number_of_card].get_cable_status = ec_amd_pcnet_get_cable_status;
@@ -61,9 +60,9 @@ void ec_amd_pcnet_initalize(dword_t number_of_card) {
  }
 
  //log MAC address
- log("\nMAC: ");
+ logf("\nMAC: ");
  for(dword_t i=0; i<6; i++) {
-  log_hex_specific_size_with_space(ethernet_cards[number_of_card].mac_address[i], 2);
+  logf("0x%02x ", ethernet_cards[number_of_card].mac_address[i], 2);
  }
  
  //enable ASEL to automatically switch between ethernet interfaces
@@ -137,11 +136,11 @@ void ec_amd_pcnet_initalize(dword_t number_of_card) {
  while((ec_amd_pcnet_read_csr(number_of_card, 0) & (1 << 8))!=(1 << 8)) {
   asm("nop");
   if(time_of_system_running >= timeout) {
-   log("\nERROR: card did not received initalization block");
+   logf("\nERROR: card did not received initalization block");
    return;
   }
  }
- log("\nCard successfully received initalization block");
+ logf("\nCard successfully received initalization block");
 
  //enable that LED status will reflect status of link
  //TODO: is there any better way to get status of link?
@@ -164,7 +163,7 @@ byte_t ec_amd_pcnet_send_packet(dword_t number_of_card, byte_t *packet_memory, d
  //check if descriptors are not full
  struct ec_amd_pcnet_tx_descriptor_t *tx_descriptor = (struct ec_amd_pcnet_tx_descriptor_t *) (((dword_t)ethernet_cards[number_of_card].tx_descriptors_memory)+(sizeof(struct ec_amd_pcnet_tx_descriptor_t)*ethernet_cards[number_of_card].tx_descriptor_pointer));
  if(tx_descriptor->own_by_card == 1) {
-  log("\nERROR: Ethernet tx buffer is full");
+  logf("\nERROR: Ethernet tx buffer is full");
   return STATUS_ERROR;
  }
 
