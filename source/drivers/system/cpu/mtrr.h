@@ -21,7 +21,17 @@
 
 byte_t mtrr_available, mtrr_write_combining_available, mtrr_number_of_entries, mtrr_default_memory_type;
 
+byte_t *mtrr_memory_type_string[] = {
+    "Uncacheable",
+    "Write-Combining",
+    0,
+    0,
+    "Write Through",
+    "Write Protect",
+    "Write Back"
+};
+
 void initalize_mtrr(void);
-void log_mtrr_memory_type(byte_t type);
+byte_t *get_mtrr_memory_type_string(byte_t mtrr_memory_type);
 void mtrr_set_free_entry(dword_t memory, dword_t mask, byte_t type);
 void mtrr_set_memory_type(void *memory, dword_t size, byte_t type);

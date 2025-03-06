@@ -18,10 +18,13 @@
 #include "interrupts/pic.h"
 
 #include "acpi/acpi.h"
+#include "acpi/aml.h"
+#include "acpi/power_state.h"
 
 #include "buses/pci.h"
 
 #include "bios/cmos.h"
+#include "bios/bios_data_area.h"
 
 #include "user_input.h"
 #include "scheduler.h"

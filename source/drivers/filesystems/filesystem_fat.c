@@ -786,16 +786,16 @@ byte_t rewrite_fat_folder(dword_t folder_location, dword_t previous_folder_locat
   }
 
   //set time of last access
-  fat_folder_entry.day_of_last_access = time_day;
-  fat_folder_entry.month_of_last_access = time_month;
-  if(time_year<=1980) {
+  fat_folder_entry.day_of_last_access = time.day;
+  fat_folder_entry.month_of_last_access = time.month;
+  if(time.year<=1980) {
    fat_folder_entry.year_of_last_access = 0;
   }
-  else if(time_year>2107) {
+  else if(time.year>2107) {
    fat_folder_entry.year_of_last_access = 0x7F;
   }
   else {
-   fat_folder_entry.year_of_last_access = (time_year-1980);
+   fat_folder_entry.year_of_last_access = (time.year-1980);
   }
 
   //set time of modification

@@ -8,24 +8,25 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-void set_pit(void) {
- //set PIT to 500 Hz = fire interrupt every 2 ms
- outb(0x43, 0x36);
- outb(0x40, (2386 & 0xFF));
- outb(0x40, (2386 >> 8));
- 
- //set interrupt routine
- ticks = 0;
- set_irq_handler(0, (dword_t)pit_handler);
+void initalize_pit(void) {
+    // set PIT to 500 Hz = fire interrupt every 2 ms
+    outb(0x43, 0x36);
+    outb(0x40, (2386 & 0xFF));
+    outb(0x40, (2386 >> 8));
+    
+    // set interrupt routine
+    time_of_system_running = 0;
+    ticks = 0;
+    set_irq_handler(0, (dword_t)pit_handler);
 }
 
 void pit_handler(void) {
- //this variable counts how long system runs
- time_of_system_running+=2;
+    // this variable counts how long system runs
+    time_of_system_running += MILISECONDS_PER_ONE_PIT_TICK;
 
- //this variable counts PIT interrupts
- ticks++;
+    // this variable counts PIT interrupts
+    ticks++;
 
- //run tasks in scheduler
- scheduler_periodic_interrupt();
+    // run tasks in scheduler
+    scheduler_periodic_interrupt();
 }

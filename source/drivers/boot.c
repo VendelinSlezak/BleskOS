@@ -19,25 +19,27 @@ void boot_fundamental_interface(void) {
     initalize_logging();
     log_ram_info();
 
- /* this code is not rewritten yet */
     // CPU
- initalize_mtrr();
+    read_cpu_info();
+    initalize_mtrr();
+
+    // Extended BIOS Data Area
+    read_extended_bios_data_area();
 
     // ACPI
- read_acpi_tables();
+    read_acpi_tables();
 
     // CMOS
- read_time_format();
+    read_cmos_data();
 
     // set interrupts
     initalize_interrupts();
 
-    // timers
- set_pit();
- initalize_hpet();
+    // start timers
+    initalize_timers();
 
     // scheduler
- initalize_scheduler();
+    initalize_scheduler();
 }
 
 void boot_devices(void) {

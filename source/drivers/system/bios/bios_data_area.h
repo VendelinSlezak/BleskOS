@@ -8,23 +8,9 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-struct cmos_info_t {
-    dword_t time_format_24_hours;
-    dword_t time_format_binary;
+struct ebda_info_t {
+    byte_t *memory;
+    word_t size;
 };
 
-struct {
-    byte_t second;
-    byte_t minute;
-    byte_t hour;
-    byte_t day;
-    byte_t weekday;
-    byte_t month;
-    dword_t year;
-} time;
-
-byte_t cmos_read(byte_t reg);
-byte_t cmos_write(byte_t reg, byte_t value);
-void read_cmos_data(void);
-byte_t cmos_read_time_register(byte_t reg);
-void read_time(void);
+void read_extended_bios_data_area(void);

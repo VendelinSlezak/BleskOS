@@ -10,13 +10,15 @@
 
 void detect_e9_debug_device(void) {
     if(inb(0xE9) == 0xE9) {
-        components->n_e9_debug_device = 1;
+        components->p_e9_debug_device = STATUS_TRUE;
     }
     else {
-        components->n_e9_debug_device = 0;
+        components->p_e9_debug_device = STATUS_FALSE;
     }
 }
 
 static inline void e9_debug_device_send_char(byte_t character) {
-    outb(0xE9, character);
+    if(character >= 32 || character == 0xA) {
+        outb(0xE9, character);
+    }
 }
