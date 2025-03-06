@@ -18,10 +18,13 @@
 #include "interrupts/pic.c"
 
 #include "acpi/acpi.c"
+#include "acpi/aml.c"
+#include "acpi/power_state.c"
 
 #include "buses/pci.c"
 
 #include "bios/cmos.c"
+#include "bios/bios_data_area.c"
 
 #include "user_input.c"
 #include "scheduler.c"
@@ -30,6 +33,7 @@
 #include "timers/hpet.c"
 #include "timers/timer.c"
 
+#include "cpu/cpu.c"
 #include "cpu/commands.c"
 #include "cpu/mtrr.c"
 

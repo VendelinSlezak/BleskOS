@@ -118,7 +118,7 @@ void initalize_ps2_controller(void) {
  byte_t controller_configuration_byte = 0;
 
  //check presence of PS/2 controller
- if(ps2_controller_present==DEVICE_NOT_PRESENT) {
+ if(components->p_8042_controller == STATUS_FALSE) {
   return;
  }
  else {

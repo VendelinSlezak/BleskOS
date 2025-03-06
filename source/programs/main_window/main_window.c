@@ -29,44 +29,44 @@ void bleskos_main_window_redraw_time(void) {
     draw_full_square(screen_width-20-152, screen_height-30, 152, 10, 0x00C000);
 
     //draw actual time
-    if(time_hour<10) {
+    if(time.hour<10) {
         print("0", screen_width-20-152, screen_height-30, BLACK);
-        print_var(time_hour, screen_width-20-144, screen_height-30, BLACK);
+        print_var(time.hour, screen_width-20-144, screen_height-30, BLACK);
     }
     else {
-        print_var(time_hour, screen_width-20-152, screen_height-30, BLACK);
+        print_var(time.hour, screen_width-20-152, screen_height-30, BLACK);
     }
-    if(time_minute<10) {
+    if(time.minute<10) {
         print("0", screen_width-20-128, screen_height-30, BLACK);
-        print_var(time_minute, screen_width-20-120, screen_height-30, BLACK);
+        print_var(time.minute, screen_width-20-120, screen_height-30, BLACK);
     }
     else {
-        print_var(time_minute, screen_width-20-128, screen_height-30, BLACK);
+        print_var(time.minute, screen_width-20-128, screen_height-30, BLACK);
     }
-    if(time_second<10) {
+    if(time.second<10) {
         print("0", screen_width-20-104, screen_height-30, BLACK);
-        print_var(time_second, screen_width-20-96, screen_height-30, BLACK);
+        print_var(time.second, screen_width-20-96, screen_height-30, BLACK);
     }
     else {
-        print_var(time_second, screen_width-20-104, screen_height-30, BLACK);
+        print_var(time.second, screen_width-20-104, screen_height-30, BLACK);
     }
     
     print(":  :     /  /", screen_width-20-136, screen_height-30, BLACK);
-    if(time_day<10) {
+    if(time.day<10) {
         print("0", screen_width-20-80, screen_height-30, BLACK);
-        print_var(time_day, screen_width-20-72, screen_height-30, BLACK);
+        print_var(time.day, screen_width-20-72, screen_height-30, BLACK);
     }
     else {
-        print_var(time_day, screen_width-20-80, screen_height-30, BLACK);
+        print_var(time.day, screen_width-20-80, screen_height-30, BLACK);
     }
-    if(time_month<10) {
+    if(time.month<10) {
         print("0", screen_width-20-56, screen_height-30, BLACK);
-        print_var(time_month, screen_width-20-48, screen_height-30, BLACK);
+        print_var(time.month, screen_width-20-48, screen_height-30, BLACK);
     }
     else {
-        print_var(time_month, screen_width-20-56, screen_height-30, BLACK);
+        print_var(time.month, screen_width-20-56, screen_height-30, BLACK);
     }
-    print_var(time_year, screen_width-20-32, screen_height-30, BLACK);
+    print_var(time.year, screen_width-20-32, screen_height-30, BLACK);
 
     //show changes
     redraw_part_of_screen(screen_width-20-152, screen_height-30, 152, 10);

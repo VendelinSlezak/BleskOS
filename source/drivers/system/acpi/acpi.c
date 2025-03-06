@@ -9,131 +9,198 @@
 */
 
 void read_acpi_tables(void) {
- dword_t *mem, *mem_2;
- byte_t *mem_byte;
- dword_t memory_pointer = 0xE0000, number_of_entries;
- byte_t checksum;
+    logf("\n\n");
 
- //set variables
- ps2_controller_present = DEVICE_PRESENT;
- acpi_pm1_control_register = 0;
- acpi_pm2_control_register = 0;
- 
- //search for RSDP table
- rsdp_mem = 0;
- for(int i=0; i<0x20000; i++) {
-  mem = (dword_t *) memory_pointer;
-  if(*mem==0x20445352) { //signature "RSDP"
-   //test RSDP checksum
-   mem_byte = (byte_t *) memory_pointer;
-   checksum = 0;
-   for(int j=0; j<20; j++) {
-    checksum += *mem_byte;
-    mem_byte++;
-   }
-   
-   //this is RSDP table
-   if(checksum==0) {
-    rsdp_mem = memory_pointer;
-    break;
-   }
-  }
-  memory_pointer++;
- }
- if(rsdp_mem==0) {
-  logf("\n\nno RSDP table founded\n");
-  return;
- }
- logf("\n\nRSDP table memory: %x\n", rsdp_mem);
- 
- //RSDT table pointer
- rsdt_mem = mem[4];
- mem = (dword_t *) rsdt_mem;
- if(*mem!=0x54445352) { //signature "RSDT"
-  rsdt_mem = 0;
-  logf("no RSDT table founded\n");
-  return;
- }
- logf("RSDT table memory: %x\n", rsdt_mem);
- number_of_entries = ((mem[1]-36)>>2);
- 
- //search for HPET table
- hpet_table_mem = 0;
- mem = (dword_t *) (rsdt_mem+36);
- for(int i=0; i<number_of_entries; i++) {
-  mem_2 = (dword_t *) (*mem);
-  if(*mem_2==0x54455048) { //'HPET'
-   hpet_table_mem = ((dword_t) mem_2);
-   break;
-  }
-  mem++;
- }
+    // if ACPI table do not exist, we can assume that 8042 controller exist
+    components->p_8042_controller = STATUS_TRUE;
 
- //search for FACP table
- facp_mem = 0;
- mem = (dword_t *) (rsdt_mem+36);
- for(int i=0; i<number_of_entries; i++) {
-  mem_2 = (dword_t *) (*mem);
-  if(*mem_2==0x50434146) { //'FACP'
-   facp_mem = ((dword_t)mem_2);
-   break;
-  }
-  mem++;
- }
- if(facp_mem==0) {
-  logf("no FACP table founded\n");
-  return;
- }
- logf("FACP table memory: %x\n", facp_mem);
- 
- //read useful values from FACP
- acpi_version = mmio_inb(facp_mem + 8);
- dsdt_mem = mmio_ind(facp_mem + 40);
- acpi_command_register = mmio_inw(facp_mem + 48);
- acpi_turn_on_command = mmio_inb(facp_mem + 52);
- acpi_pm1_control_register = mmio_inw(facp_mem + 64);
- acpi_pm2_control_register = mmio_inw(facp_mem + 68);
- if(acpi_version>=3) {
-  ps2_controller_present = ((mmio_inw(facp_mem + 109)>>1) & 0x1); //0 = not present 1 = present
- }
+    // search for RSDP table
+    struct rsdp_table_t *rsdp = (struct rsdp_table_t *) 0xE0000;
+    for(dword_t i = 0; i < 0x1FFF; i++, rsdp = (struct rsdp_table_t *) ((dword_t)rsdp + 0x10)) {
+        if(rsdp->signature == 0x2052545020445352 && acpi_table_is_checksum_valid(rsdp, 20) == STATUS_TRUE) { //signature = 'RSD PTR '
+            if(rsdp->revision >= 2 && acpi_table_is_checksum_valid((byte_t *)rsdp+20, 20) == STATUS_FALSE) {
+                continue;
+            }
+            components->p_acpi = STATUS_TRUE;
+            break;
+        }
+    }
+    if(components->p_acpi == STATUS_FALSE && components->p_ebda == STATUS_TRUE) {
+        rsdp = (struct rsdp_table_t *) components->ebda.memory;
+        for(dword_t i = 0; i < 0x3F; i++, rsdp = (struct rsdp_table_t *) ((dword_t)rsdp + 0x10)) {
+            if(rsdp->signature == 0x2052545020445352 && acpi_table_is_checksum_valid(rsdp, 20) == STATUS_TRUE) { //signature = 'RSD PTR '
+                if(rsdp->revision >= 2 && acpi_table_is_checksum_valid((byte_t *)rsdp+20, 20) == STATUS_FALSE) {
+                    continue;
+                }
+                components->p_acpi = STATUS_TRUE;
+                break;
+            }
+        }
+    }
+    if(components->p_acpi == STATUS_FALSE) {
+        logf("ACPI tables do not exist");
+        return;
+    }
+    else {
+        logf("ACPI TABLES INFO\nRSDP table at 0x%x", (dword_t)rsdp);
+        logf("\n Revision: %d", rsdp->revision);
+        logf("\n OEM ID: %06s", rsdp->oem_id);
+    }
 
- logf("\nACPI SCI: %d", mmio_inw(facp_mem + 40 + 6));
- 
- // //turn ACPI on
- // if(acpi_command_register!=0) {
- //  if((inw(acpi_command_register) & 0x1)==0x0) {
- //   outb(acpi_command_register, acpi_turn_on_command);
- //  }
- // }
- 
- //read values for shutdown
- shutdown_value_pm1 = 0x2000;
- shutdown_value_pm2 = 0x2000;
- memory_pointer = dsdt_mem;
- number_of_entries = mem[1];
- for(int i=0; i<number_of_entries; i++) {
-  mem = (dword_t *) (memory_pointer);
-  if(*mem==0x5F35535F) { //signature "_S5_"
-   shutdown_value_pm1 |= (word_t) ((mem[2] & 0xFF)<<10);
-   shutdown_value_pm2 |= (word_t) (((mem[2]>>16) & 0xFF)<<10);
-   break;
-  }
-  memory_pointer += 1;
- }
- 
- //LOG
- logf("\nACPI pm1 control port: 0x%04x shutdown value for pm1: %0x4x", acpi_pm1_control_register, shutdown_value_pm1);
- logf("\nACPI pm2 control port: 0x%04x shutdown value for pm2: %0x4x", acpi_pm2_control_register, shutdown_value_pm2);
+    // move to RSDT or XSDT table
+    if(rsdp->revision == 1) { // unknown revision number
+        return;
+    }
+    // RSDT table
+    else if(rsdp->revision == 0) {
+        struct rsdt_table_t *rsdt = (struct rsdt_table_t *) rsdp->rsdt_address;
+
+        // check checksum and signature
+        if(acpi_table_is_checksum_valid(rsdt, rsdt->header.length) == STATUS_FALSE) {
+            logf("\nInvalid RSDT checksum");
+            return;
+        }
+        if(rsdt->header.signature != 0x54445352) {
+            logf("\nInvalid RSDT signature");
+            return;
+        }
+
+        // log table info
+        logf("\nRSDT table at 0x%x", (dword_t)rsdt);
+        logf("\n Revision: %d", rsdt->header.revision);
+        logf("\n OEM ID: %06s", rsdt->header.oem_id);
+        logf("\n OEM table ID: %08s", rsdt->header.oem_table_id);
+
+        // go through all ACPI tables
+        for(dword_t i = 0; i < ((rsdt->header.length - sizeof(struct acpi_table_header_t))/4); i++) {
+            read_acpi_table(rsdt->tables[i]);
+        }
+    }
+    // XSDT table
+    else {
+        // BleskOS as 32-bit system can read memory only below 4 GB
+        if((rsdp->xsdt_address >> 32) == 0) {
+            struct xsdt_table_t *xsdt = (struct xsdt_table_t *) (dword_t)rsdp->xsdt_address;
+
+            // check checksum and signature
+            if(acpi_table_is_checksum_valid(xsdt, xsdt->header.length) == STATUS_FALSE) {
+                logf("\nInvalid XSDT checksum");
+                return;
+            }
+            if(xsdt->header.signature != 0x54445358) {
+                logf("\nInvalid XSDT signature");
+                return;
+            }
+
+            // log table info
+            logf("\nXSDT table at 0x%x", (dword_t)xsdt);
+            logf("\n Revision: %d", xsdt->header.revision);
+            logf("\n OEM ID: %06s", xsdt->header.oem_id);
+            logf("\n OEM table ID: %08s", xsdt->header.oem_table_id);
+
+            // go through all ACPI tables
+            for(dword_t i = 0; i < ((xsdt->header.length - sizeof(struct acpi_table_header_t))/8); i++) {
+                // BleskOS as 32-bit system can read memory only below 4 GB
+                if((xsdt->tables[i] >> 32) == 0) {
+                    read_acpi_table((void *)(dword_t)xsdt->tables[i]);
+                }
+                else {
+                    logf("\nCan not access table at 0x%x%x", xsdt->tables[i] >> 32, (dword_t)xsdt->tables[i]);
+                }
+            }
+        }
+        else {
+            logf("\nCan not access XSDT table at 0x%x%x", rsdp->xsdt_address >> 32, (dword_t)rsdp->xsdt_address);
+            return;
+        }
+    }
 }
 
-void shutdown(void) {
- if(acpi_pm1_control_register!=0) {
-  outw(acpi_pm1_control_register, shutdown_value_pm1);
- }
- if(acpi_pm2_control_register!=0) {
-  outw(acpi_pm2_control_register, shutdown_value_pm2);
- }
- for(dword_t i=0; i<1000; i++) {
-  asm("hlt");
- }
+dword_t acpi_table_is_checksum_valid(void *table, dword_t length_of_table) {
+    byte_t *pointer = (byte_t *) table;
+    byte_t checksum = 0;
+
+    for(dword_t i = 0; i < length_of_table; i++) {
+        checksum += *pointer;
+        pointer++;
+    }
+
+    if(checksum == 0) {
+        return STATUS_TRUE;
+    }
+    else {
+        return STATUS_FALSE;
+    }
+}
+
+void read_acpi_table(void *table) {
+    struct acpi_table_header_t *header = (struct acpi_table_header_t *) table;
+
+    logf("\n%04s table revision %d at 0x%x ", &header->signature, header->revision, (dword_t)table);
+
+    if(header->signature == 0x50434146) { // 'FACP'
+        // check if this is duplicate table
+        if(components->acpi.p_fadp == STATUS_TRUE) {
+            return;
+        }
+
+        // save existence of table
+        struct fadp_table_t *fadp = (struct fadp_table_t *) table;
+        components->acpi.p_fadp = STATUS_TRUE;
+
+        // read registers
+        components->acpi.pm1a_control_reg = fadp->pm1a_cnt_blk;
+        components->acpi.pm1b_control_reg = fadp->pm1b_cnt_blk;
+
+        // detect 8042 controller
+        if(header->revision >= 3 && (fadp->iapc_boot_arch & (1 << 1)) == 0) {
+            components->p_8042_controller = STATUS_FALSE;
+        }
+
+        logf("\n SCI interrupt: %d", fadp->sci_int);
+        logf("\n ACPI control reg: 0x%04x", fadp->smi_cmd);
+        logf("\n PM1a ctrl reg: 0x%04x", fadp->pm1a_cnt_blk);
+        logf("\n PM1b ctrl reg: 0x%04x", fadp->pm1b_cnt_blk);
+
+        // get DSDT pointer
+        if(fadp->x_dsdt >> 32 == 0 && (dword_t)fadp->x_dsdt != 0) {
+            components->acpi.dsdt = (struct acpi_table_header_t *)(dword_t)fadp->x_dsdt;
+        }
+        else if(fadp->dsdt != 0) {
+            components->acpi.dsdt = (struct acpi_table_header_t *) fadp->dsdt;
+        }
+        if(components->acpi.dsdt != 0) {
+            components->acpi.dsdt_aml_data = (byte_t *) ((dword_t)fadp->dsdt + sizeof(struct acpi_table_header_t));
+
+            logf("\n DSDT: 0x%x", (dword_t)components->acpi.dsdt);
+            parse_s5_shutdown_values();
+
+            // dump_aml_objects(components->acpi.dsdt_aml_data, components->acpi.dsdt->length);
+        }
+    }
+    else if(header->signature == 0x54455048) { // 'HPET'
+        // check if this is duplicate table
+        if(components->p_hpet == STATUS_TRUE) {
+            return;
+        }
+
+        // check if we can use this timer
+        struct hpet_table_t *hpet = (struct hpet_table_t *) table;
+        if((hpet->base_address.address >> 32) != 0) {
+            logf("\n Unsupported 64-bit address");
+            return;
+        }
+        if(hpet->base_address.address == 0) {
+            logf("\n Invalid base address");
+            return;
+        }
+
+        // save existence of table
+        components->p_hpet = STATUS_TRUE;
+        components->hpet.port_type = hpet->base_address.address_type;
+        components->hpet.base = (dword_t)hpet->base_address.address;
+
+        // log
+        logf("\n Vendor ID: 0x%04x", hpet->id >> 16);
+    }
 }

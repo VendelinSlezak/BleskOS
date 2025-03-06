@@ -545,19 +545,19 @@ byte_t vfs_create_folder(struct folder_descriptor_t *folder_path_structure, word
  vfs_folder_new_entry->file_size_in_bytes = 0; //this works only in FAT, so update if there is write support for other filesystems
 
  read_time();
- vfs_folder_new_entry->year_of_creation = time_year;
- vfs_folder_new_entry->month_of_creation = time_month;
- vfs_folder_new_entry->day_of_creation = time_day;
- vfs_folder_new_entry->hour_of_creation = time_hour;
- vfs_folder_new_entry->minute_of_creation = time_minute;
- vfs_folder_new_entry->second_of_creation = time_second;
+ vfs_folder_new_entry->year_of_creation = time.year;
+ vfs_folder_new_entry->month_of_creation = time.month;
+ vfs_folder_new_entry->day_of_creation = time.day;
+ vfs_folder_new_entry->hour_of_creation = time.hour;
+ vfs_folder_new_entry->minute_of_creation = time.minute;
+ vfs_folder_new_entry->second_of_creation = time.second;
 
- vfs_folder_new_entry->year_of_modification = time_year;
- vfs_folder_new_entry->month_of_modification = time_month;
- vfs_folder_new_entry->day_of_modification = time_day;
- vfs_folder_new_entry->hour_of_modification = time_hour;
- vfs_folder_new_entry->minute_of_modification = time_minute;
- vfs_folder_new_entry->second_of_modification = time_second;
+ vfs_folder_new_entry->year_of_modification = time.year;
+ vfs_folder_new_entry->month_of_modification = time.month;
+ vfs_folder_new_entry->day_of_modification = time.day;
+ vfs_folder_new_entry->hour_of_modification = time.hour;
+ vfs_folder_new_entry->minute_of_modification = time.minute;
+ vfs_folder_new_entry->second_of_modification = time.second;
 
  for(dword_t i=0; i<255; i++) {
   if(name[i]==0) {
@@ -767,12 +767,12 @@ byte_t vfs_save_file(struct folder_descriptor_t *folder_path_structure, dword_t 
  folder[number_of_entry].file_size_in_bytes = file_size_in_bytes;
 
  read_time();
- folder[number_of_entry].year_of_modification = time_year;
- folder[number_of_entry].month_of_modification = time_month;
- folder[number_of_entry].day_of_modification = time_day;
- folder[number_of_entry].hour_of_modification = time_hour;
- folder[number_of_entry].minute_of_modification = time_minute;
- folder[number_of_entry].second_of_modification = time_second;
+ folder[number_of_entry].year_of_modification = time.year;
+ folder[number_of_entry].month_of_modification = time.month;
+ folder[number_of_entry].day_of_modification = time.day;
+ folder[number_of_entry].hour_of_modification = time.hour;
+ folder[number_of_entry].minute_of_modification = time.minute;
+ folder[number_of_entry].second_of_modification = time.second;
 
  //save changes to folder
  if(vfs_save_folder(folder_path_structure)==STATUS_ERROR) {
@@ -807,19 +807,19 @@ byte_t vfs_create_file(struct folder_descriptor_t *folder_path_structure, word_t
  vfs_folder_new_entry->file_size_in_bytes = file_size_in_bytes;
 
  read_time();
- vfs_folder_new_entry->year_of_creation = time_year;
- vfs_folder_new_entry->month_of_creation = time_month;
- vfs_folder_new_entry->day_of_creation = time_day;
- vfs_folder_new_entry->hour_of_creation = time_hour;
- vfs_folder_new_entry->minute_of_creation = time_minute;
- vfs_folder_new_entry->second_of_creation = time_second;
+ vfs_folder_new_entry->year_of_creation = time.year;
+ vfs_folder_new_entry->month_of_creation = time.month;
+ vfs_folder_new_entry->day_of_creation = time.day;
+ vfs_folder_new_entry->hour_of_creation = time.hour;
+ vfs_folder_new_entry->minute_of_creation = time.minute;
+ vfs_folder_new_entry->second_of_creation = time.second;
 
- vfs_folder_new_entry->year_of_modification = time_year;
- vfs_folder_new_entry->month_of_modification = time_month;
- vfs_folder_new_entry->day_of_modification = time_day;
- vfs_folder_new_entry->hour_of_modification = time_hour;
- vfs_folder_new_entry->minute_of_modification = time_minute;
- vfs_folder_new_entry->second_of_modification = time_second;
+ vfs_folder_new_entry->year_of_modification = time.year;
+ vfs_folder_new_entry->month_of_modification = time.month;
+ vfs_folder_new_entry->day_of_modification = time.day;
+ vfs_folder_new_entry->hour_of_modification = time.hour;
+ vfs_folder_new_entry->minute_of_modification = time.minute;
+ vfs_folder_new_entry->second_of_modification = time.second;
 
  //copy name
  for(dword_t i=0; i<245; i++) {

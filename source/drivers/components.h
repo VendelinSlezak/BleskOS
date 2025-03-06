@@ -8,18 +8,29 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+// p_* = presence of component that can be present only once STATUS_FALSE / STATUS_TRUE
 // n_* = number of components of this type
 
 struct components_info_t {
-    /* hardware components that has to be present if BleskOS runs */
+    /* components that has to be present if BleskOS runs */
     struct cpu_info_t cpu;
     struct ram_info_t ram;
+    struct cmos_info_t cmos;
 
-    /* ACPI components */
-    dword_t n_hpet;
+    /* system components */
+    dword_t p_ebda;
+    struct ebda_info_t ebda;
+    dword_t p_acpi;
+    struct acpi_info_t acpi;
+    dword_t p_pic;
+    dword_t p_apic;
+    dword_t p_pit;
+    dword_t p_hpet;
+    struct hpet_info_t hpet;
 
     /* components connected to fixed ports */
-    dword_t n_e9_debug_device;
+    dword_t p_e9_debug_device;
+    dword_t p_8042_controller;
 
     /* components connected to PCI */
 };

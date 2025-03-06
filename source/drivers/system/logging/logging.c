@@ -191,7 +191,7 @@ void log_char(word_t character) {
     }
 
     // send character to debug device
-    if(components->n_e9_debug_device == 1 && character < 0x100) {
+    if(components->p_e9_debug_device == STATUS_TRUE && character < 0x100) {
         e9_debug_device_send_char((byte_t)character);
     }
 
