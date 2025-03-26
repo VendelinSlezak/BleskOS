@@ -8,20 +8,23 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-void boot_fundamental_interface(void) {
+void boot_drivers(void) {
+    /* PREPARE FUNDAMENTAL INTERFACE */
+
     // RAM memory
     create_physical_memory_allocator();
     components = (struct components_info_t *) calloc(sizeof(struct components_info_t));
     read_ram_info();
 
     // initalize logging
-    detect_e9_debug_device();
+    check_presence_of_e9_debug_device();
     initalize_logging();
     log_ram_info();
 
     // CPU
     read_cpu_info();
     initalize_mtrr();
+    // TODO: initalize_fpu();
 
     // Extended BIOS Data Area
     read_extended_bios_data_area();
@@ -32,7 +35,7 @@ void boot_fundamental_interface(void) {
     // CMOS
     read_cmos_data();
 
-    // set interrupts
+    // initalize IDT and PIC
     initalize_interrupts();
 
     // start timers
@@ -40,18 +43,17 @@ void boot_fundamental_interface(void) {
 
     // scheduler
     initalize_scheduler();
-}
 
-void boot_devices(void) {
- /* this code is not rewritten yet */
+    /* DETECT DEVICES */
 
-    /* DETECT ALL DEVICES */
- scan_pci();
+    // detect devices connected to PCI bus
+    pci_new_scan();
 
- // wait for any changes made during PCI initalization to take place
- wait(200);
+    // detect devices connected to fixed ports
+    check_presence_of_bga();
 
     /* INITALIZE DEVICES */
+ /* this code is not rewritten yet */
  // draw starting screen
  if((boot_options & BOOT_OPTION_DEEP_DEBUGGER) != BOOT_OPTION_DEEP_DEBUGGER) {
     initalize_graphic();

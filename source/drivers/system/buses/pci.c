@@ -8,7 +8,290 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-dword_t pci_read(dword_t bus, dword_t device, dword_t function, dword_t offset) {
+dword_t pci_ind(struct pci_device_info_t device, dword_t offset) {
+    if(components->pci.is_memory_access_supported == STATUS_TRUE) {
+        return *((dword_t *) (device.segment_memory + ((device.bus << 20) | (device.device << 15) | (device.function << 12) | offset)));
+    }
+    else {
+        outd(0xCF8, (0x80000000 | (device.bus << 16) | (device.device << 11) | (device.function << 8) | offset));
+        return ind(0xCFC);
+    }
+}
+
+word_t pci_inw(struct pci_device_info_t device, dword_t offset) {
+    if(components->pci.is_memory_access_supported == STATUS_TRUE) {
+        return *((word_t *) (device.segment_memory + ((device.bus << 20) | (device.device << 15) | (device.function << 12) | offset)));
+    }
+    else {
+        outd(0xCF8, (0x80000000 | (device.bus << 16) | (device.device << 11) | (device.function << 8) | (offset & ~0x3)));
+        return (word_t) (ind(0xCFC) >> ((offset & 0x3)*8));
+    }
+}
+
+byte_t pci_inb(struct pci_device_info_t device, dword_t offset) {
+    if(components->pci.is_memory_access_supported == STATUS_TRUE) {
+        return *((byte_t *) (device.segment_memory + ((device.bus << 20) | (device.device << 15) | (device.function << 12) | offset)));
+    }
+    else {
+        outd(0xCF8, (0x80000000 | (device.bus << 16) | (device.device << 11) | (device.function << 8) | (offset & ~0x3)));
+        return (byte_t) (ind(0xCFC) >> ((offset & 0x3)*8));
+    }
+}
+
+void pci_outd(struct pci_device_info_t device, dword_t offset, dword_t value) {
+    if(components->pci.is_memory_access_supported == STATUS_TRUE) {
+        *((dword_t *) (device.segment_memory + ((device.bus << 20) | (device.device << 15) | (device.function << 12) | offset))) = value;
+    }
+    else {
+        outd(0xCF8, (0x80000000 | (device.bus << 16) | (device.device << 11) | (device.function << 8) | offset));
+        outd(0xCFC, value);
+    }
+}
+
+void pci_set_bits(struct pci_device_info_t device, dword_t offset, dword_t bits) {
+    pci_outd(device, offset, pci_ind(device, offset) | bits);
+}
+
+void pci_clear_bits(struct pci_device_info_t device, dword_t offset, dword_t bits) {
+    pci_outd(device, offset, pci_ind(device, offset) & ~bits);
+}
+
+void pci_outw(struct pci_device_info_t device, dword_t offset, word_t value) {
+    if (components->pci.is_memory_access_supported == STATUS_TRUE) {
+        *((word_t *)(device.segment_memory + ((device.bus << 20) | (device.device << 15) |  (device.function << 12) |  offset))) = value;
+    }
+    else {
+        outd(0xCF8, (0x80000000 | (device.bus << 16) | (device.device << 11) | (device.function << 8) | (offset & ~0x3)));
+        word_t temp = ind(0xCFC);
+        temp &= ~(0xFFFF << ((offset & 0x3) * 8));
+        temp |= (value << ((offset & 0x3) * 8));
+        outd(0xCFC, temp);
+    }
+}
+
+void pci_outb(struct pci_device_info_t device, dword_t offset, byte_t value) {
+    if (components->pci.is_memory_access_supported == STATUS_TRUE) {
+        *((byte_t *)(device.segment_memory + ((device.bus << 20) | (device.device << 15) | (device.function << 12) | offset))) = value;
+    }
+    else {
+        outd(0xCF8, (0x80000000 | (device.bus << 16) | (device.device << 11) | (device.function << 8) | (offset & ~0x3)));
+        dword_t temp = ind(0xCFC);
+        temp &= ~(0xFF << ((offset & 0x3) * 8));
+        temp |= (value << ((offset & 0x3) * 8));
+        outd(0xCFC, temp);
+    }
+}
+
+byte_t *pci_get_vendor_name(word_t vendor_id) {
+    for(dword_t i = 0; pci_vendor_list[i].vendor_name != 0; i++) {
+        if(pci_vendor_list[i].vendor_id == vendor_id) {
+            return pci_vendor_list[i].vendor_name;
+        }
+    }
+
+    return "Unknown Vendor";
+}
+
+byte_t *pci_get_device_type_string(dword_t type) {
+    for(dword_t i = 0; pci_device_type_list[i].description != 0; i++) {
+        if(pci_device_type_list[i].type == type) {
+            return pci_device_type_list[i].description;
+        }
+    }
+
+    return "Unknown Device";
+}
+
+void pci_new_scan(void) {
+    logf("\n\nPCI INFO\nAccess: ");
+
+    if(components->pci.is_memory_access_supported == STATUS_TRUE) {
+        logf("MMIO");
+
+        dword_t number_of_segments = (components->pci.mcfg->header.length - sizeof(struct acpi_table_header_t) - 8)/sizeof(struct mcfg_pci_segment_info_t);
+        logf("\nNumber of segments: %d", number_of_segments);
+
+        struct pci_device_info_t pci_device;
+        for(dword_t i = 0; i < number_of_segments; i++) {
+            pci_device.segment = components->pci.mcfg->segments[i].segment;
+            pci_device.segment_memory = components->pci.mcfg->segments[i].base;
+
+            for(dword_t bus = components->pci.mcfg->segments[i].first_bus; bus <= components->pci.mcfg->segments[i].last_bus; bus++) {
+                pci_device.bus = bus;
+
+                for(dword_t device = 0; device < 32; device++) {
+                    pci_device.device = device;
+                    pci_device.function = 0;
+
+                    // read informations about device on primary function
+                    if(pci_inw(pci_device, 0x00) != 0xFFFF) {
+                        pci_new_scan_device(pci_device);
+
+                        // check if this is multifunctional device
+                        if((pci_inb(pci_device, 0x0E) & (1 << 7)) == (1 << 7)) {
+                            for(dword_t function = 1; function < 8; function++) {
+                                pci_device.function = function;
+
+                                // read informations about device on other functions
+                                if(pci_inw(pci_device, 0x00) != 0xFFFF) {
+                                    pci_new_scan_device(pci_device);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    else {
+        logf("IO");
+
+        dword_t buses[256];
+        clear_memory((dword_t)&buses, 256*sizeof(dword_t));
+        dword_t number_of_buses = 1;
+
+        struct pci_device_info_t pci_device;
+        pci_device.segment = 0;
+        for(dword_t i = 0; i < number_of_buses; i++) {
+            pci_device.bus = buses[i];
+
+            for(dword_t device = 0; device < 32; device++) {
+                pci_device.device = device;
+                pci_device.function = 0;
+
+                // read informations about device on primary function
+                if(pci_inw(pci_device, 0x00) != 0xFFFF) {
+                    pci_new_scan_device(pci_device);
+
+                    // if it is PCI-to-PCI bridge, read secondary bus
+                    if(pci_inw(pci_device, 0x0A) == 0x0604 && number_of_buses < 256) {
+                        buses[number_of_buses] = pci_inb(pci_device, 0x19);
+                        number_of_buses++;
+                    }
+
+                    // check if this is multifunctional device
+                    if((pci_inb(pci_device, 0x0E) & (1 << 7)) == (1 << 7)) {
+                        for(dword_t function = 1; function < 8; function++) {
+                            pci_device.function = function;
+
+                            // read informations about device on other functions
+                            if(pci_inw(pci_device, 0x00) != 0xFFFF) {
+                                pci_new_scan_device(pci_device);
+
+                                // if it is PCI-to-PCI bridge, read secondary bus
+                                if(pci_inw(pci_device, 0x0A) == 0x0604 && number_of_buses < 256) {
+                                    buses[number_of_buses] = pci_inb(pci_device, 0x19);
+                                    number_of_buses++;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void pci_new_scan_device(struct pci_device_info_t device) {
+    // read basic device informations
+    device.vendor_id = pci_inw(device, 0x00);
+    device.device_id = pci_inw(device, 0x02);
+    device.interrupt_line = pci_inb(device, 0x3C);
+    device.interrupt_pin = pci_inb(device, 0x3D);
+    device.msi_register = 0;
+    device.msi_x_register = 0;
+    byte_t progif = pci_inb(device, 0x09);
+    byte_t subclass = pci_inb(device, 0x0A);
+    byte_t class = pci_inb(device, 0x0B);
+    dword_t type = (pci_ind(device, 0x08) & 0xFFFFFF00);
+
+    // log basic device informations
+    logf("\n\nPCI device\n Location: %d:%d:%d:%d\n Type: %s\n Vendor Name: %s\n Vendor ID: 0x%04x\n Device ID: 0x%04x",
+            device.segment, device.bus, device.device, device.function,
+            pci_get_device_type_string(type),
+            pci_get_vendor_name(device.vendor_id),
+            device.vendor_id,
+            device.device_id);
+    if(device.interrupt_pin != 0) {
+        logf("\n Interrupt PIN: %c\n Interrupt Line: %d", device.interrupt_pin - 1 + 'A', device.interrupt_line);
+    }
+
+    // read device capability list
+    if((pci_inw(device, 0x06) & (1 << 4)) == (1 << 4)) {
+        logf("\n Capabilities:");
+
+        dword_t pointer = pci_inb(device, 0x34);
+        for(dword_t i = 0; i < 255; i++) {
+            byte_t capability_id = pci_inb(device, pointer+0x00);
+            logf("\n  ID: ");
+            switch(capability_id) {
+                case(0x05):
+                    logf("MSI");
+                    device.msi_register = pointer;
+                    break;
+                case(0x11):
+                    logf("MSI-X");
+                    device.msi_x_register = pointer;
+                    break;
+                default:
+                    logf("0x%02x", capability_id);
+            }
+
+            // move to next capability
+            pointer = pci_inb(device, pointer+0x01);
+            if(pointer == 0) {
+                break;
+            }
+        }
+    }
+
+    // connect device to driver
+    for(dword_t i = 0; pci_device_type_list[i].description != 0; i++) {
+        // we find type of device
+        if(pci_device_type_list[i].type == type) {
+            // check if we have driver for it
+            if(pci_device_type_list[i].driver_add_new_pci_device != 0) {
+                // check if this device is supported by driver
+                if(pci_device_type_list[i].supported_devices == 0) {
+                    logf("\n Driver: ");
+                    pci_device_type_list[i].driver_add_new_pci_device(device);
+                    return;
+                }
+                else {
+                    for(dword_t j = 0; pci_device_type_list[i].supported_devices[j].vendor_id != 0; j++) {
+                        if(device.vendor_id == pci_device_type_list[i].supported_devices[j].vendor_id
+                           && device.device_id == pci_device_type_list[i].supported_devices[j].device_id) {
+                            logf("\n Driver: ");
+                            pci_device_type_list[i].driver_add_new_pci_device(device);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // TODO: initalize PCI-to-PCI bridges
+}
+
+word_t pci_get_io(struct pci_device_info_t device, dword_t bar) {
+    return (pci_inw(device, bar) & 0xFFFC);
+}
+
+dword_t pci_get_mmio(struct pci_device_info_t device, dword_t bar) {
+    return (pci_ind(device, bar) & 0xFFFFFFF0);
+}
+
+void pci_device_install_interrupt_handler(struct pci_device_info_t device, void (*handler)(void)) {
+    // TODO: add support for MSI and MSI-X
+
+    // TODO: add support for ACPI
+
+    // set handler for PCI IRQ
+    set_irq_handler(device.interrupt_line, (dword_t)handler);
+}
+
+dword_t pci_read(dword_t segment_memory, dword_t bus, dword_t device, dword_t function, dword_t offset) {
  outd(0xCF8, (0x80000000 | (bus << 16) | (device << 11) | (function << 8) | (offset)));
  return ind(0xCFC);
 }
@@ -39,40 +322,33 @@ dword_t pci_read_mmio_bar(dword_t bus, dword_t device, dword_t function, dword_t
 }
 
 void pci_enable_io_busmastering(dword_t bus, dword_t device, dword_t function) {
- pci_write(bus, device, function, 0x04, ((pci_read(bus, device, function, 0x04) & ~(1<<10)) | (1<<2) | (1<<0))); //enable interrupts, enable bus mastering, enable IO space
+ pci_write(bus, device, function, 0x04, ((pci_read(0, bus, device, function, 0x04) & ~(1<<10)) | (1<<2) | (1<<0))); //enable interrupts, enable bus mastering, enable IO space
 }
 
 void pci_enable_mmio_busmastering(dword_t bus, dword_t device, dword_t function) {
- pci_write(bus, device, function, 0x04, ((pci_read(bus, device, function, 0x04) & ~(1<<10)) | (1<<2) | (1<<1))); //enable interrupts, enable bus mastering, enable MMIO space
+ pci_write(bus, device, function, 0x04, ((pci_read(0, bus, device, function, 0x04) & ~(1<<10)) | (1<<2) | (1<<1))); //enable interrupts, enable bus mastering, enable MMIO space
 }
 
 void pci_disable_interrupts(dword_t bus, dword_t device, dword_t function) {
- pci_write(bus, device, function, 0x04, (pci_read(bus, device, function, 0x04) | (1<<10))); //disable interrupts
+ pci_write(bus, device, function, 0x04, (pci_read(0, bus, device, function, 0x04) | (1<<10))); //disable interrupts
 }
 
 void scan_pci(void) {
  //initalize values that are used to determine presence of devices
  ide_0x1F0_controller_present = STATUS_FALSE;
  ide_0x170_controller_present = STATUS_FALSE;
- number_of_graphic_cards = 0;
  number_of_sound_cards = 0;
  number_of_storage_controllers = 0;
  number_of_ethernet_cards = 0;
  number_of_uhci_controllers = 0;
  number_of_ehci_controllers = 0;
-
- //this array is used in System board
- pci_devices_array_mem = (dword_t) calloc(12*1000);
- pci_num_of_devices = 0;
  
- logf("\n\nPCI devices:");
-
  for(dword_t bus=0; bus<256; bus++) {
   for(dword_t device=0; device<32; device++) {
    scan_pci_device(bus, device, 0);
    
    //multifunctional device
-   if((pci_read(bus, device, 0, 0x0C) & 0x00800000)==0x00800000) {
+   if((pci_read(0, bus, device, 0, 0x0C) & 0x00800000)==0x00800000) {
     for(dword_t function=1; function<8; function++) {
      scan_pci_device(bus, device, function);
     }
@@ -86,61 +362,20 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  word_t io_port_base;
 
  //read base informations about device
- vendor_id = (pci_read(bus, device, function, 0) & 0xFFFF);
- device_id = (pci_read(bus, device, function, 0) >> 16);
- full_device_id = pci_read(bus, device, function, 0);
+ vendor_id = (pci_read(0, bus, device, function, 0) & 0xFFFF);
+ device_id = (pci_read(0, bus, device, function, 0) >> 16);
+ full_device_id = pci_read(0, bus, device, function, 0);
  if(full_device_id==0xFFFFFFFF) {
   return; //no device
  }
- type_of_device = (pci_read(bus, device, function, 0x08) >> 8);
+ type_of_device = (pci_read(0, bus, device, function, 0x08) >> 8);
  class = (type_of_device >> 16);
  subclass = ((type_of_device >> 8) & 0xFF);
  progif = (type_of_device & 0xFF);
- device_irq = (pci_read(bus, device, function, 0x3C) & 0xFF);
-
- //save device to array
- if(pci_num_of_devices<1000) {
-  dword_t *pci_devices_array = (dword_t *) (pci_devices_array_mem+pci_num_of_devices*12);
-  pci_devices_array[0] = (bus | (device<<8) | (function<<16));
-  pci_devices_array[1] = type_of_device;
-  pci_devices_array[2] = full_device_id;
-  pci_num_of_devices++;
- }
-
- //Graphic card
- if(type_of_device==0x030000 && number_of_graphic_cards<MAX_NUMBER_OF_GRAPHIC_CARDS) {
-  logf("\nGraphic card");
-
-  if(number_of_graphic_cards >= MAX_NUMBER_OF_GRAPHIC_CARDS) {
-   return;
-  }
-
-  graphic_cards_info[number_of_graphic_cards].vendor_id = vendor_id;
-  graphic_cards_info[number_of_graphic_cards].device_id = device_id;
-  graphic_cards_info[number_of_graphic_cards].initalize = 0;
-
-  if(vendor_id == VENDOR_INTEL) {
-   pci_enable_io_busmastering(bus, device, function);
-   pci_enable_mmio_busmastering(bus, device, function);
-   graphic_cards_info[number_of_graphic_cards].mmio_base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
-   graphic_cards_info[number_of_graphic_cards].linear_frame_buffer = (byte_t *) (pci_read_mmio_bar(bus, device, function, PCI_BAR2));
-   graphic_cards_info[number_of_graphic_cards].initalize = initalize_intel_graphic_card;
-  }
-  else if(vendor_id == 0x15AD && device_id == 0x0405) {
-   pci_enable_io_busmastering(bus, device, function);
-   pci_enable_mmio_busmastering(bus, device, function);
-   graphic_cards_info[number_of_graphic_cards].io_base = pci_read_io_bar(bus, device, function, PCI_BAR0);
-   graphic_cards_info[number_of_graphic_cards].initalize = initalize_vmware_graphic_card;
-  }
-
-  number_of_graphic_cards++;
-  return;
- }
+ device_irq = (pci_read(0, bus, device, function, 0x3C) & 0xFF);
  
  //IDE controller
  if((type_of_device & 0xFFFF00)==0x010100 && number_of_storage_controllers<MAX_NUMBER_OF_STORAGE_CONTROLLERS) { 
-  logf("\nIDE controller");
-
   pci_device_ide_controller:
   pci_enable_io_busmastering(bus, device, function);
   pci_disable_interrupts(bus, device, function);
@@ -195,13 +430,11 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  
  //SATA controller
  if(type_of_device==0x010601 && number_of_storage_controllers<MAX_NUMBER_OF_STORAGE_CONTROLLERS) {
-  logf("\nAHCI controller");
   pci_enable_mmio_busmastering(bus, device, function);
   pci_disable_interrupts(bus, device, function);
   
   //test presence of AHCI interface
   if((mmio_ind(pci_read_mmio_bar(bus, device, function, PCI_BAR5) + 0x04) & 0x80000000)==0x00000000) {
-   logf(" with IDE interface");
    goto pci_device_ide_controller; //IDE interface
   }
   
@@ -214,15 +447,13 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  
  //Ethernet card
  if(type_of_device==0x020000) {
-  logf("\nEthernet card 0x%x", full_device_id);
-  
   if(number_of_ethernet_cards>=MAX_NUMBER_OF_ETHERNET_CARDS) {
    return;
   }
   
   //read basic values
   ethernet_cards[number_of_ethernet_cards].id = full_device_id;
-  ethernet_cards[number_of_ethernet_cards].irq = (pci_read(bus, device, function, 0x3C) & 0xFF);
+  ethernet_cards[number_of_ethernet_cards].irq = (pci_read(0, bus, device, function, 0x3C) & 0xFF);
   ethernet_cards[number_of_ethernet_cards].bus = bus;
   ethernet_cards[number_of_ethernet_cards].dev = device;
   ethernet_cards[number_of_ethernet_cards].func = function;
@@ -307,15 +538,11 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
 
  //Ethernet card
  if(type_of_device==0x028000) {
-  logf("\nWireless card 0x%x", full_device_id);
-
   return;
  }
  
  //AC97 sound card
  if(type_of_device==0x040100 && number_of_sound_cards<MAX_NUMBER_OF_SOUND_CARDS) {
-  logf("\nsound card AC97");
-
   if(number_of_sound_cards>=MAX_NUMBER_OF_SOUND_CARDS) {
    return;
   }
@@ -334,8 +561,6 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  
  //HD Audio sound card
  if(type_of_device==0x040300 && number_of_sound_cards<MAX_NUMBER_OF_SOUND_CARDS) {
-  logf("\nsound card HDA");
-
   if(number_of_sound_cards>=MAX_NUMBER_OF_SOUND_CARDS) {
    return;
   }
@@ -353,8 +578,6 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  
  //Universal Host Controller Interface
  if(type_of_device==0x0C0300) {
-  logf("\nUHCI ");
-
   if(number_of_uhci_controllers >= MAX_NUMBER_OF_UHCI_CONTROLLERS) {
    return;
   }
@@ -378,8 +601,6 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  
  //Open Host Controller Interface
  if(type_of_device==0x0C0310) {
-  logf("\nOHCI");
-
   if(number_of_ohci_controllers >= MAX_NUMBER_OF_UHCI_CONTROLLERS) {
    return;
   }
@@ -405,8 +626,6 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  
  //Enhanced Host Controller Interface
  if(type_of_device==0x0C0320) {
-  logf("\nEHCI ");
-
   pci_enable_mmio_busmastering(bus, device, function);
 
   //save EHCI controller info
@@ -418,8 +637,7 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
 
   //disable BIOS ownership
   dword_t pci_ehci_bios_register_offset = ((mmio_ind(ehci_controllers[number_of_ehci_controllers].base+0x08)>>8) & 0xFF);
-  if(pci_ehci_bios_register_offset >= 0x40 && (pci_read(bus, device, function, pci_ehci_bios_register_offset) & 0xFF)==0x01) {
-   logf("(releasing BIOS ownership)");
+  if(pci_ehci_bios_register_offset >= 0x40 && (pci_read(0, bus, device, function, pci_ehci_bios_register_offset) & 0xFF)==0x01) {
    pci_write(bus, device, function, pci_ehci_bios_register_offset, (1 << 24)); //set OS ownership
   }
 
@@ -430,8 +648,6 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  
  //eXtensible Host Controller Interface
  if(type_of_device==0x0C0330) {
-  logf("\nxHCI");
-
   pci_enable_mmio_busmastering(bus, device, function);
 
   //save xHCI controller
@@ -445,7 +661,6 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
   dword_t xhci_bios_register_offset = ((mmio_ind(xhci_controllers[number_of_xhci_controllers].base+0x10)>>16)*4);
   logf("%x %x", xhci_bios_register_offset, mmio_ind(xhci_controllers[number_of_xhci_controllers].base+xhci_bios_register_offset));
   if(xhci_bios_register_offset != 0 && (mmio_ind(xhci_controllers[number_of_xhci_controllers].base+xhci_bios_register_offset) & 0xFF)==0x01) {
-   logf("(releasing BIOS ownership)");
    mmio_outd(xhci_controllers[number_of_xhci_controllers].base+xhci_bios_register_offset, (mmio_ind(xhci_controllers[number_of_xhci_controllers].base+xhci_bios_register_offset) & ~(1 << 16)) | (1 << 24)); //set OS ownership
   }
 
@@ -456,40 +671,28 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
 
  //Host bridge
  if(type_of_device==0x060000) {
-  logf("\nHost bridge");
-  
   return;
  }
 
  //ISA bridge
  if(type_of_device==0x060100) {
-  logf("\nISA bridge ");
-  
   return;
  }
 
  //PCI-to-PCI bridge
  if((type_of_device & 0xFFFF00)==0x060400) {
-  logf("\nPCI-to-PCI bridge 0x04");
-  
   return;
  }
 
  //PCI-to-PCI bridge
  if((type_of_device & 0xFFFF00)==0x060900) {
-  logf("\nPCI-to-PCI bridge 0x09");
-  
   return;
  }
 
  //Other bridge
  if(type_of_device==0x068000) {
-  logf("\nOther bridge");
-  
   return;
  }
- 
- logf("\nunknown device %x", type_of_device);
 }
 
 byte_t *get_pci_vendor_string(dword_t vendor_id) {

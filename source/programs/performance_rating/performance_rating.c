@@ -10,7 +10,7 @@
 
 void initalize_performance_rating(void) {
 //  dword_t *image;
-  PERFORMANCE_RATING_NBTASK_PER_PAGE=(screen_height-26)/10;
+  PERFORMANCE_RATING_NBTASK_PER_PAGE=(monitors[0].height-26)/10;
 //  PERFORMANCE_RATING_IMAGE=(dword_t *)create_image(640, 480);
 
 //  for(int i=0, image=PERFORMANCE_RATING_IMAGE;i<640*480;i++) {
@@ -80,14 +80,14 @@ void redraw_performance_rating(void) {
   clear_click_board();
 
   print("Results are time in microseconds for 1x run and 128x runs", 10, line, BLACK);
-  print_var( screen_width, 580, line, BLACK);
+  print_var( monitors[0].width, 580, line, BLACK);
   print("x", 630, line, BLACK);
-  print_var( screen_height, 640, line, BLACK);
+  print_var( monitors[0].height, 640, line, BLACK);
   print("x", 690, line, BLACK);
-  print_var( screen_bpp, 700, line, BLACK);
-  print("x1", screen_width-10*8*2, line, BLACK);
-  print("x128", screen_width-10*8, line, BLACK);
-  draw_line(0,12,screen_width,12,BLACK);
+  print_var( monitors[0].bpp, 700, line, BLACK);
+  print("x1", monitors[0].width-10*8*2, line, BLACK);
+  print("x128", monitors[0].width-10*8, line, BLACK);
+  draw_line(0,12,monitors[0].width,12,BLACK);
   line+=14;
 
   page=PERFORMANCE_RATING_CURRENT_TASK / PERFORMANCE_RATING_NBTASK_PER_PAGE; 
@@ -95,21 +95,21 @@ void redraw_performance_rating(void) {
   for (task=page*PERFORMANCE_RATING_NBTASK_PER_PAGE; task<PERFORMANCE_RATING_NBTASK && task<(page+1)*PERFORMANCE_RATING_NBTASK_PER_PAGE; task++) {
     if ( task == PERFORMANCE_RATING_CURRENT_TASK ) { color=WHITE; } else { color=BLACK; };
     print(performance_rating_tasks[task].name, 10, line, color);
-    print_var(performance_rating_tasks[task].result >> 7, screen_width-10*8*2, line, color);
-    print_var(performance_rating_tasks[task].result, screen_width-10*8, line, color);
+    print_var(performance_rating_tasks[task].result >> 7, monitors[0].width-10*8*2, line, color);
+    print_var(performance_rating_tasks[task].result, monitors[0].width-10*8, line, color);
     line+=10;
   }
 
-  print("[ESC] Quit | [ARROWS] Choose | [ENTER] Run | [I] Inspect | [A] Run all", 10, screen_height-12, BLACK);
-  add_zone_to_click_board(10, screen_height-12, 11*8, 8, PERFORMANCE_RATING_CLICK_ZONE_BACK);
+  print("[ESC] Quit | [ARROWS] Choose | [ENTER] Run | [I] Inspect | [A] Run all", 10, monitors[0].height-12, BLACK);
+  add_zone_to_click_board(10, monitors[0].height-12, 11*8, 8, PERFORMANCE_RATING_CLICK_ZONE_BACK);
   redraw_screen();
 }
 
 void performance_rating_run_task(dword_t task_number) {  // get time of 128 runs
   message_window("Running tasks...");
   redraw_screen();
-  mouse_movement_x = screen_width - mouse_cursor_x - (MOUSE_CURSOR_WIDTH>>1);
-  mouse_movement_y = screen_height - mouse_cursor_y - (MOUSE_CURSOR_HEIGHT>>1);
+  mouse_movement_x = monitors[0].width - mouse_cursor_x - (MOUSE_CURSOR_WIDTH>>1);
+  mouse_movement_y = monitors[0].height - mouse_cursor_y - (MOUSE_CURSOR_HEIGHT>>1);
   move_mouse_cursor(); // mouse need to be on expected position
   reset_timer();
 
@@ -120,8 +120,8 @@ void performance_rating_run_task(dword_t task_number) {  // get time of 128 runs
 }
 
 void performance_rating_inspect_task(dword_t task_number) {  // to be sure what's going on
-  mouse_movement_x = screen_width - mouse_cursor_x - (MOUSE_CURSOR_WIDTH>>1);
-  mouse_movement_y = screen_height - mouse_cursor_y - (MOUSE_CURSOR_HEIGHT>>1);
+  mouse_movement_x = monitors[0].width - mouse_cursor_x - (MOUSE_CURSOR_WIDTH>>1);
+  mouse_movement_y = monitors[0].height - mouse_cursor_y - (MOUSE_CURSOR_HEIGHT>>1);
   move_mouse_cursor(); // mouse need to be on expected position
 
   for(PERFORMANCE_RATING_CURRENT_RUN=0; PERFORMANCE_RATING_CURRENT_RUN<PERFORMANCE_RATING_RUN_COUNT; PERFORMANCE_RATING_CURRENT_RUN++) {
@@ -165,53 +165,53 @@ void performance_rating_task4() { // full screen
   redraw_screen();
 }
 void performance_rating_task5() { // 25% screen
-  redraw_part_of_screen( screen_x_center>>1, screen_y_center>>1, screen_width>>1, screen_height>>1);
+  redraw_part_of_screen( monitors[0].x_center>>1, monitors[0].y_center>>1, monitors[0].width>>1, monitors[0].height>>1);
 }
 void performance_rating_task6() { // 25% screen half rigth
-  redraw_part_of_screen( screen_x_center+(screen_x_center>>1), screen_y_center>>1, screen_width>>1, screen_height>>1);
+  redraw_part_of_screen( monitors[0].x_center+(monitors[0].x_center>>1), monitors[0].y_center>>1, monitors[0].width>>1, monitors[0].height>>1);
 }
 void performance_rating_task7() { // 25% screen half bottom
-  redraw_part_of_screen( screen_x_center>>1, screen_y_center+(screen_y_center>>1), screen_width>>1, screen_height>>1);
+  redraw_part_of_screen( monitors[0].x_center>>1, monitors[0].y_center+(monitors[0].y_center>>1), monitors[0].width>>1, monitors[0].height>>1);
 }
 void performance_rating_task8() { //  Scalable font print
-  scalable_font_print("AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789", screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), screen_y_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);  
+  scalable_font_print("AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789", monitors[0].x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), monitors[0].y_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);  
 }
 void performance_rating_task9() { // bitmap font print
-  print("AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789", screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), screen_y_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);  
+  print("AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789", monitors[0].x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), monitors[0].y_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);  
 }
 void performance_rating_task10() { // print numeric variable 
-  print_var(3473898+(PERFORMANCE_RATING_CURRENT_RUN<<2), screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), screen_y_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);  
+  print_var(3473898+(PERFORMANCE_RATING_CURRENT_RUN<<2), monitors[0].x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), monitors[0].y_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);  
 }
 void performance_rating_task11() { // print unicode string ÀÁÂÃÄÅÈÉÊËÌÍÎÏÑÒÓÔÕÖÙÚÛÜÝßàáâãäåèéêëìíîïñòóôõöùúûüýÿčďěľňŕřšťž
   print_unicode((word_t *)"\xc0\x00\xc1\x00\xc2\x00\xc3\x00\xc4\x00\xc5\x00\xc8\x00\xc9\x00\xca\x00\xcb\x00\xcc\x00\xcd\x00\xce\x00\xcf\x00\xd1\x00\xd2\x00\xd3\x00\xd4\x00\xd5\x00\xd6\x00\xd9\x00\xda\x00\xdb\x00\xdc\x00\xdd\x00\xdf\x00\xe0\x00\xe1\x00\xe2\x00\xe3\x00\xe4\x00\xe5\x00\xe8\x00\xe9\x00\xea\x00\xeb\x00\xec\x00\xed\x00\xee\x00\xef\x00\xf1\x00\xf2\x00\xf3\x00\xf4\x00\xf5\x00\xf6\x00\xf9\x00\xfa\x00\xfb\x00\xfc\x00\xfd\x00\xff\x00\x0d\x01\x0f\x01\x1b\x01\x3e\x01\x48\x01\x55\x01\x59\x01\x61\x01\x65\x01\x7e\x01\x00\x00",
-    screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), screen_y_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);  
+    monitors[0].x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), monitors[0].y_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);  
 }
 void performance_rating_task12() { // print hexa number
-  print_hex(3467423+(PERFORMANCE_RATING_CURRENT_RUN<<2), screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), screen_y_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);  
+  print_hex(3467423+(PERFORMANCE_RATING_CURRENT_RUN<<2), monitors[0].x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), monitors[0].y_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);  
 }
 void performance_rating_task13() { // print ascii
-  print_ascii("AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789", screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), screen_y_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);  
+  print_ascii("AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789", monitors[0].x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), monitors[0].y_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);  
 }
 void performance_rating_task14() { // draw pixel
-  draw_pixel(screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), screen_y_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);
+  draw_pixel(monitors[0].x_center-(PERFORMANCE_RATING_CURRENT_RUN<<2), monitors[0].y_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);
 }
 void performance_rating_task15() { // draw straigth line
-  draw_straigth_line(screen_x_center>>1, screen_y_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), screen_x_center, WHITE);
+  draw_straigth_line(monitors[0].x_center>>1, monitors[0].y_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), monitors[0].x_center, WHITE);
 }
 void performance_rating_task16() { // draw straigth column
-  draw_straigth_column(screen_x_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), screen_y_center>>1, screen_y_center, WHITE);
+  draw_straigth_column(monitors[0].x_center-(PERFORMANCE_RATING_CURRENT_RUN<<1), monitors[0].y_center>>1, monitors[0].y_center, WHITE);
 }
 void performance_rating_task17() { // draw line
-  draw_line(0,(PERFORMANCE_RATING_CURRENT_RUN<<2), screen_width, screen_height-(PERFORMANCE_RATING_CURRENT_RUN<<2), WHITE);
+  draw_line(0,(PERFORMANCE_RATING_CURRENT_RUN<<2), monitors[0].width, monitors[0].height-(PERFORMANCE_RATING_CURRENT_RUN<<2), WHITE);
 }
 void performance_rating_task18() { // draw quadratic bezier
-  draw_quadratic_bezier(PERFORMANCE_RATING_CURRENT_RUN<<3,0,0,PERFORMANCE_RATING_CURRENT_RUN<<2, screen_width, screen_height-(PERFORMANCE_RATING_CURRENT_RUN<<2), WHITE);
+  draw_quadratic_bezier(PERFORMANCE_RATING_CURRENT_RUN<<3,0,0,PERFORMANCE_RATING_CURRENT_RUN<<2, monitors[0].width, monitors[0].height-(PERFORMANCE_RATING_CURRENT_RUN<<2), WHITE);
 }
 void performance_rating_task19() { // draw empty square
-  draw_empty_square(PERFORMANCE_RATING_CURRENT_RUN,PERFORMANCE_RATING_CURRENT_RUN, screen_width-(PERFORMANCE_RATING_CURRENT_RUN<<1), screen_height-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);
+  draw_empty_square(PERFORMANCE_RATING_CURRENT_RUN,PERFORMANCE_RATING_CURRENT_RUN, monitors[0].width-(PERFORMANCE_RATING_CURRENT_RUN<<1), monitors[0].height-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);
 }
 void performance_rating_task20() { // draw full square
-  draw_full_square(PERFORMANCE_RATING_CURRENT_RUN,PERFORMANCE_RATING_CURRENT_RUN, screen_width-(PERFORMANCE_RATING_CURRENT_RUN<<1), screen_height-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);
+  draw_full_square(PERFORMANCE_RATING_CURRENT_RUN,PERFORMANCE_RATING_CURRENT_RUN, monitors[0].width-(PERFORMANCE_RATING_CURRENT_RUN<<1), monitors[0].height-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);
 }
 void performance_rating_task21() { // draw empty circle point
   draw_empty_circle_point((PERFORMANCE_RATING_CURRENT_RUN<<2),(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);
@@ -226,19 +226,19 @@ void performance_rating_task24() { // draw full circle
   draw_full_circle((PERFORMANCE_RATING_CURRENT_RUN<<2),(PERFORMANCE_RATING_CURRENT_RUN<<1),(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);
 }
 void performance_rating_task25() { // draw empty ellipse
-  draw_empty_ellipse((PERFORMANCE_RATING_CURRENT_RUN<<2),(PERFORMANCE_RATING_CURRENT_RUN<<1),screen_width-(PERFORMANCE_RATING_CURRENT_RUN<<2),screen_height-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);
+  draw_empty_ellipse((PERFORMANCE_RATING_CURRENT_RUN<<2),(PERFORMANCE_RATING_CURRENT_RUN<<1),monitors[0].width-(PERFORMANCE_RATING_CURRENT_RUN<<2),monitors[0].height-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);
 }
 void performance_rating_task26() { // draw part empty ellipse
-  draw_parts_of_empty_ellipse(PERFORMANCE_RATING_CURRENT_RUN,(PERFORMANCE_RATING_CURRENT_RUN<<2),(PERFORMANCE_RATING_CURRENT_RUN<<1),screen_width-(PERFORMANCE_RATING_CURRENT_RUN<<2),screen_height-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);
+  draw_parts_of_empty_ellipse(PERFORMANCE_RATING_CURRENT_RUN,(PERFORMANCE_RATING_CURRENT_RUN<<2),(PERFORMANCE_RATING_CURRENT_RUN<<1),monitors[0].width-(PERFORMANCE_RATING_CURRENT_RUN<<2),monitors[0].height-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);
 }
 void performance_rating_task27() { // draw full ellipse
-  draw_full_ellipse((PERFORMANCE_RATING_CURRENT_RUN<<2),(PERFORMANCE_RATING_CURRENT_RUN<<1),screen_width-(PERFORMANCE_RATING_CURRENT_RUN<<2),screen_height-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);
+  draw_full_ellipse((PERFORMANCE_RATING_CURRENT_RUN<<2),(PERFORMANCE_RATING_CURRENT_RUN<<1),monitors[0].width-(PERFORMANCE_RATING_CURRENT_RUN<<2),monitors[0].height-(PERFORMANCE_RATING_CURRENT_RUN<<1), WHITE);
 }
 void performance_rating_task28() { // full framebuffer
   redraw_framebuffer();
 }
 void performance_rating_task29() { // 25% framebuffer
-  redraw_part_of_framebuffer( screen_x_center>>1, screen_y_center>>1, screen_width>>1, screen_height>>1);
+  redraw_part_of_framebuffer( monitors[0].x_center>>1, monitors[0].y_center>>1, monitors[0].width>>1, monitors[0].height>>1);
 }
 void performance_rating_task30() { // math: abs
   PERFORMANCE_RATING_RESULT_NUMBER=abs((int)-PERFORMANCE_RATING_CURRENT_RUN);

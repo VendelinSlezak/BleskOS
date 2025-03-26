@@ -9,46 +9,48 @@
 */
 
 word_t bga_read(byte_t index) {
- outw(BGA_REGISTER_INDEX, index);
- return inw(BGA_REGISTER_DATA);
+    outw(BGA_REGISTER_INDEX, index);
+    return inw(BGA_REGISTER_DATA);
 }
 
 void bga_write(byte_t index, word_t value) {
- outw(BGA_REGISTER_INDEX, index);
- outw(BGA_REGISTER_DATA, value);
+    outw(BGA_REGISTER_INDEX, index);
+    outw(BGA_REGISTER_DATA, value);
 }
 
-byte_t is_bga_present(void) {
- //read ID
- word_t id = bga_read(BGA_INDEX_ID);
+void check_presence_of_bga(void) {
+    // read ID
+    word_t id = bga_read(BGA_INDEX_ID);
 
- //check if BGA is present
- if(id < 0xB0C0 || id > 0xB0C5) {
-  return STATUS_FALSE;
- }
+    // check if BGA is present
+    if(id < 0xB0C0 || id > 0xB0C5) {
+        return;
+    }
 
- //log
- logf("\n\nBochs Graphic Adapter version %d", (id & 0xF));
-
- //BGA is present
- return STATUS_TRUE;
+    // BGA is present
+    components->p_bga = 1;
+    components->bga.id = (id & 0xF);
 }
 
-void bga_set_graphic_mode(void) {
- //disable BGA
- bga_write(BGA_INDEX_ENABLE, 0x0000);
+void initalize_bga(void) {
+    // log
+    logf("\n\nBochs Graphic Adapter\nVersion: %d", components->bga.id);
 
- //set graphic mode 1024x768x32
- bga_write(BGA_INDEX_WIDTH, 1024);
- bga_write(BGA_INDEX_HEIGHT, 768);
- bga_write(BGA_INDEX_BPP, 32);
+    // disable BGA
+    bga_write(BGA_INDEX_ENABLE, 0x0000);
 
- //update variables
- monitor_screen_bytes_per_line = 1024*4;
- screen_width = 1024;
- screen_height = 768;
- screen_bpp = 32;
+    // set graphic mode 1024x768x32
+    bga_write(BGA_INDEX_WIDTH, 1024);
+    bga_write(BGA_INDEX_HEIGHT, 768);
+    bga_write(BGA_INDEX_BPP, 32);
 
- //enable BGA with Linear Frame Buffer
- bga_write(BGA_INDEX_ENABLE, 0x0001 | 0x0040);
+    // save monitor informations
+    monitors[0].connected = STATUS_TRUE;
+    monitors[0].width = 1024;
+    monitors[0].height = 768;
+    monitors[0].bpp = 32;
+    monitors[0].linear_frame_buffer_bpl = 1024*4;
+
+    // enable BGA with Linear Frame Buffer
+    bga_write(BGA_INDEX_ENABLE, 0x0001 | 0x0040);
 }

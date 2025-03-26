@@ -129,6 +129,20 @@ struct hpet_table_t {
     byte_t page_protection;
 }__attribute__((packed));
 
+struct mcfg_pci_segment_info_t {
+    qword_t base;
+    word_t segment;
+    byte_t first_bus;
+    byte_t last_bus;
+    dword_t reserved;
+};
+
+struct mcfg_table_t {
+    struct acpi_table_header_t header;
+    qword_t reserved;
+    struct mcfg_pci_segment_info_t segments[];
+};
+
 void read_acpi_tables(void);
 dword_t acpi_table_is_checksum_valid(void *table, dword_t length_of_table);
 void read_acpi_table(void *table);

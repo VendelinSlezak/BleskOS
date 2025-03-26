@@ -8,38 +8,36 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#define MAX_NUMBER_OF_MONITORS 4
+struct monitor_info_t {
+    dword_t connected;
+    dword_t card_number;
+
+    struct edid_t edid;
+
+    dword_t width;
+    dword_t height;
+    dword_t bpp;
+    dword_t x_center;
+    dword_t y_center;
+    byte_t *linear_frame_buffer;
+    dword_t linear_frame_buffer_bpl;
+    byte_t *double_buffer;
+    dword_t double_buffer_bpl;
+    void (*change_mode)(dword_t monitor_number, byte_t value);
+
+    dword_t backlight;
+    void (*change_backlight)(dword_t monitor_number, byte_t value);
+};
+struct monitor_info_t monitors[MAX_NUMBER_OF_MONITORS];
+
 #define BLACK 0x000000
 #define WHITE 0xFFFFFF
 #define RED 0xFF0000
 #define BLESKOS_GREEN 0x00C000
 #define TRANSPARENT_COLOR 0x88000000
 
-#define MAX_NUMBER_OF_GRAPHIC_CARDS 10
-struct graphic_card_info {
- word_t vendor_id;
- word_t device_id;
-
- dword_t mmio_base;
- word_t io_base;
-
- byte_t *linear_frame_buffer;
- 
- void (*initalize)(byte_t graphic_card_number);
-}__attribute__((packed));
-struct graphic_card_info graphic_cards_info[MAX_NUMBER_OF_GRAPHIC_CARDS];
-dword_t number_of_graphic_cards;
-dword_t selected_graphic_card;
-byte_t is_driver_for_graphic_card;
-byte_t can_graphic_card_driver_change_backlight;
-
-byte_t percent_of_backlight;
-
-dword_t screen_width, screen_height, screen_bpp, screen_x_center, screen_y_center;
-byte_t *screen_double_buffer_memory_pointer;
-dword_t screen_double_buffer_bytes_per_line;
-byte_t *monitor_screen_linear_frame_buffer_memory_pointer;
-dword_t monitor_screen_bytes_per_line;
-
+// TODO: rewrite this concept to something better
 byte_t *save_screen_double_buffer_memory_pointer;
 dword_t save_screen_width;
 dword_t save_screen_height;
@@ -61,8 +59,6 @@ void add_mouse_to_screen_double_buffer(void);
 void remove_mouse_from_screen_double_buffer(void);
 void screen_save_variables(void);
 void screen_restore_variables(void);
-void monitor_change_backlight(byte_t value);
 
 void (*redraw_framebuffer)(void);
 void (*redraw_part_of_framebuffer)(dword_t x, dword_t y, dword_t width, dword_t height);
-void (*graphic_card_driver_monitor_change_backlight)(byte_t value);

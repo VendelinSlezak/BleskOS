@@ -11,11 +11,11 @@
 #define VGA_TEXT_MODE 0
 #define VGA_GRAPHIC_MODE 1
 
-struct component_info_vga_t {
- dword_t mode_type;
- dword_t mode_number;
- dword_t width;
- dword_t height;
+struct vga_info_t {
+    dword_t mode_type;
+    dword_t mode_number;
+    dword_t width;
+    dword_t height;
 };
 
 void vga_text_mode_clear_screen(byte_t color);

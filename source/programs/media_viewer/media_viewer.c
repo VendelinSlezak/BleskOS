@@ -123,7 +123,7 @@ void draw_media_viewer(void) {
   dword_t *image_info = (dword_t *) (get_file_value(MEDIA_VIEWER_FILE_IMAGE_INFO_MEMORY));
 
   //draw buttons
-  draw_full_square(0, 20, screen_width, 20, 0x00C0FF);
+  draw_full_square(0, 20, monitors[0].width, 20, 0x00C0FF);
   draw_button("[l] Turn left", 8, 22, 120, 16);
   add_zone_to_click_board(8, 22, 120, 16, MEDIA_VIEWER_CLICK_ZONE_IMAGE_TURN_LEFT);
   draw_button("[r] Turn right", 8+120+8, 22, 120, 16);
@@ -149,16 +149,16 @@ void draw_media_viewer(void) {
 
   //print zoom
   dword_t zoom = get_file_value(MEDIA_VIEWER_FILE_IMAGE_ZOOM), percent_char_column = 152+8*3;
-  print("Zoom:", 104, screen_height-6-7, BLACK);
-  draw_full_square(152, screen_height-19, 40, 20, 0x0089FF);
-  print_var(zoom, 152, screen_height-6-7, BLACK);
+  print("Zoom:", 104, monitors[0].height-6-7, BLACK);
+  draw_full_square(152, monitors[0].height-19, 40, 20, 0x0089FF);
+  print_var(zoom, 152, monitors[0].height-6-7, BLACK);
   if(zoom<100) {
    percent_char_column = 152+8*2;
    if(zoom<10) {
     percent_char_column = 152+8*1;
    }
   }
-  draw_char('%', percent_char_column, screen_height-6-7, BLACK);
+  draw_char('%', percent_char_column, monitors[0].height-6-7, BLACK);
  }
  else if(get_file_value(MEDIA_VIEWER_FILE_TYPE)==MEDIA_VIEWER_FILE_SOUND) {
   //set state if this is jump between files
@@ -173,77 +173,77 @@ void draw_media_viewer(void) {
 
   //draw play/stop button
   if(media_viewer_sound_state==MEDIA_VIEWER_SOUND_STATE_PLAYING) {
-   draw_button("[space] Stop sound", 10, screen_height-42, 200, 14);
+   draw_button("[space] Stop sound", 10, monitors[0].height-42, 200, 14);
   }
   else {
-   draw_button("[space] Play sound", 10, screen_height-42, 200, 14);
+   draw_button("[space] Play sound", 10, monitors[0].height-42, 200, 14);
   }
-  add_zone_to_click_board(10, screen_height-42, 200, 14, MEDIA_VIEWER_CLICK_ZONE_SOUND_PLAY_STOP);
+  add_zone_to_click_board(10, monitors[0].height-42, 200, 14, MEDIA_VIEWER_CLICK_ZONE_SOUND_PLAY_STOP);
 
   //print volume
-  print("Volume:", 10, screen_height-80+3, WHITE);
-  print_var(sound_volume, 10+64, screen_height-80+3, WHITE);
+  print("Volume:", 10, monitors[0].height-80+3, WHITE);
+  print_var(sound_volume, 10+64, monitors[0].height-80+3, WHITE);
 
   //print length of file
   struct audio_file_t *audio_info = (struct audio_file_t *) (get_file_value(MEDIA_VIEWER_FILE_AUDIO_INFO_MEMORY));
-  print(":  :  /  :  :", screen_width-10-24-24-24-24-24, screen_height-37, WHITE);
+  print(":  :  /  :  :", monitors[0].width-10-24-24-24-24-24, monitors[0].height-37, WHITE);
   dword_t seconds = audio_info->length_seconds;
   dword_t minutes = audio_info->length_minutes;
   dword_t hours = audio_info->length_hours;
   if(seconds<10) {
-   print("0", screen_width-10-16, screen_height-37, WHITE);
-   print_var(seconds, screen_width-10-8, screen_height-37, WHITE);
+   print("0", monitors[0].width-10-16, monitors[0].height-37, WHITE);
+   print_var(seconds, monitors[0].width-10-8, monitors[0].height-37, WHITE);
   }
   else {
-   print_var(seconds, screen_width-10-16, screen_height-37, WHITE);
+   print_var(seconds, monitors[0].width-10-16, monitors[0].height-37, WHITE);
   }
   if(minutes<10) {
-   print("0", screen_width-10-16-24, screen_height-37, WHITE);
-   print_var(minutes, screen_width-10-16-16, screen_height-37, WHITE);
+   print("0", monitors[0].width-10-16-24, monitors[0].height-37, WHITE);
+   print_var(minutes, monitors[0].width-10-16-16, monitors[0].height-37, WHITE);
   }
   else {
-   print_var(minutes, screen_width-10-16-24, screen_height-37, WHITE);
+   print_var(minutes, monitors[0].width-10-16-24, monitors[0].height-37, WHITE);
   }
   if(hours<10) {
-   print("0", screen_width-10-16-24-24, screen_height-37, WHITE);
-   print_var(hours, screen_width-10-16-24-16, screen_height-37, WHITE);
+   print("0", monitors[0].width-10-16-24-24, monitors[0].height-37, WHITE);
+   print_var(hours, monitors[0].width-10-16-24-16, monitors[0].height-37, WHITE);
   }
   else {
-   print_var(hours, screen_width-10-16-24-24, screen_height-37, WHITE);
+   print_var(hours, monitors[0].width-10-16-24-24, monitors[0].height-37, WHITE);
   }
 
   //print length of played part of file
   seconds = audio_info->played_length_seconds;
   minutes = audio_info->played_length_minutes;
   hours = audio_info->played_length_hours;
-  draw_full_square(screen_width-10-24-24-24-24-24-16, screen_height-37, 64, 8, BLACK);
+  draw_full_square(monitors[0].width-10-24-24-24-24-24-16, monitors[0].height-37, 64, 8, BLACK);
   if(seconds<10) {
-   print("0", screen_width-82-16, screen_height-37, WHITE);
-   print_var(seconds, screen_width-82-8, screen_height-37, WHITE);
+   print("0", monitors[0].width-82-16, monitors[0].height-37, WHITE);
+   print_var(seconds, monitors[0].width-82-8, monitors[0].height-37, WHITE);
   }
   else {
-   print_var(seconds, screen_width-82-16, screen_height-37, WHITE);
+   print_var(seconds, monitors[0].width-82-16, monitors[0].height-37, WHITE);
   }
   if(minutes<10) {
-   print("0", screen_width-82-16-24, screen_height-37, WHITE);
-   print_var(minutes, screen_width-82-16-16, screen_height-37, WHITE);
+   print("0", monitors[0].width-82-16-24, monitors[0].height-37, WHITE);
+   print_var(minutes, monitors[0].width-82-16-16, monitors[0].height-37, WHITE);
   }
   else {
-   print_var(minutes, screen_width-82-16-24, screen_height-37, WHITE);
+   print_var(minutes, monitors[0].width-82-16-24, monitors[0].height-37, WHITE);
   }
   if(hours<10) {
-   print("0", screen_width-82-16-24-24, screen_height-37, WHITE);
-   print_var(hours, screen_width-82-16-24-16, screen_height-37, WHITE);
+   print("0", monitors[0].width-82-16-24-24, monitors[0].height-37, WHITE);
+   print_var(hours, monitors[0].width-82-16-24-16, monitors[0].height-37, WHITE);
   }
   else {
-   print_var(hours, screen_width-82-16-24-24, screen_height-37, WHITE);
+   print_var(hours, monitors[0].width-82-16-24-24, monitors[0].height-37, WHITE);
   }
-  print(":  :", screen_width-10-24-24-24-24-24, screen_height-37, WHITE);
+  print(":  :", monitors[0].width-10-24-24-24-24-24, monitors[0].height-37, WHITE);
 
   //draw square of played part of file
-  draw_empty_square(10, screen_height-60, screen_width-20, 10, WHITE);
-  draw_full_square(11, screen_height-59, ((audio_info->actually_played_position/1024)*(screen_width-22)/(audio_info->output_length/1024)), 8, 0x0900FF);
-  add_zone_to_click_board(11, screen_height-59, screen_width-22, 8, MEDIA_VIEWER_CLICK_ZONE_SOUND_PROGRESS);
+  draw_empty_square(10, monitors[0].height-60, monitors[0].width-20, 10, WHITE);
+  draw_full_square(11, monitors[0].height-59, ((audio_info->actually_played_position/1024)*(monitors[0].width-22)/(audio_info->output_length/1024)), 8, 0x0900FF);
+  add_zone_to_click_board(11, monitors[0].height-59, monitors[0].width-22, 8, MEDIA_VIEWER_CLICK_ZONE_SOUND_PROGRESS);
  }
 }
 
@@ -544,30 +544,30 @@ void media_viewer_image_recalculate_scrollbars(void) {
  calculate_image_scrollbars((dword_t)image_info);
 
  //calculate size of image with scrollbars
- if(image_info[IMAGE_INFO_WIDTH]<screen_width) {
+ if(image_info[IMAGE_INFO_WIDTH]<monitors[0].width) {
   image_info[IMAGE_INFO_DRAW_WIDTH] = image_info[IMAGE_INFO_WIDTH];
  }
  else {
-  image_info[IMAGE_INFO_DRAW_WIDTH] = screen_width;
+  image_info[IMAGE_INFO_DRAW_WIDTH] = monitors[0].width;
  }
- if(image_info[IMAGE_INFO_HEIGHT]<(screen_height-60)) {
+ if(image_info[IMAGE_INFO_HEIGHT]<(monitors[0].height-60)) {
   image_info[IMAGE_INFO_DRAW_HEIGHT] = image_info[IMAGE_INFO_HEIGHT];
  }
  else {
-  image_info[IMAGE_INFO_DRAW_HEIGHT] = (screen_height-60);
+  image_info[IMAGE_INFO_DRAW_HEIGHT] = (monitors[0].height-60);
  }
- if(image_info[IMAGE_INFO_WIDTH]>screen_width && image_info[IMAGE_INFO_HEIGHT]>(screen_height-60)) { //both scrollbars
+ if(image_info[IMAGE_INFO_WIDTH]>monitors[0].width && image_info[IMAGE_INFO_HEIGHT]>(monitors[0].height-60)) { //both scrollbars
   image_info[IMAGE_INFO_DRAW_HEIGHT] -= 10;
   image_info[IMAGE_INFO_DRAW_WIDTH] -= 10;
  }
- else if(image_info[IMAGE_INFO_HEIGHT]>(screen_height-60) && image_info[IMAGE_INFO_WIDTH]<=screen_width) { //vertical scrollbar
-  if((screen_width-image_info[IMAGE_INFO_WIDTH])<20 || (screen_width-image_info[IMAGE_INFO_WIDTH])>0x80000000) { //also horizontal scrollbar
+ else if(image_info[IMAGE_INFO_HEIGHT]>(monitors[0].height-60) && image_info[IMAGE_INFO_WIDTH]<=monitors[0].width) { //vertical scrollbar
+  if((monitors[0].width-image_info[IMAGE_INFO_WIDTH])<20 || (monitors[0].width-image_info[IMAGE_INFO_WIDTH])>0x80000000) { //also horizontal scrollbar
    image_info[IMAGE_INFO_DRAW_HEIGHT] -= 10;
    image_info[IMAGE_INFO_DRAW_WIDTH] -= 10;
   }
  }
- else if(image_info[IMAGE_INFO_HEIGHT]<=(screen_height-60) && image_info[IMAGE_INFO_WIDTH]>screen_width) { //horizontal scrollbar
-  if((screen_height-60-image_info[IMAGE_INFO_HEIGHT])<20 || (screen_height-60-image_info[IMAGE_INFO_HEIGHT])>0x80000000) { //also vertical scrollbar
+ else if(image_info[IMAGE_INFO_HEIGHT]<=(monitors[0].height-60) && image_info[IMAGE_INFO_WIDTH]>monitors[0].width) { //horizontal scrollbar
+  if((monitors[0].height-60-image_info[IMAGE_INFO_HEIGHT])<20 || (monitors[0].height-60-image_info[IMAGE_INFO_HEIGHT])>0x80000000) { //also vertical scrollbar
    image_info[IMAGE_INFO_DRAW_HEIGHT] -= 10;
    image_info[IMAGE_INFO_DRAW_WIDTH] -= 10;
   }
@@ -588,26 +588,26 @@ void media_viewer_image_recalculate_zoom(void) {
  image_info[IMAGE_INFO_DRAW_HEIGHT]=image_info[IMAGE_INFO_HEIGHT];
 
  //set dimensions of image for screen
- if(image_info[IMAGE_INFO_WIDTH]<screen_width) {
-  image_info[IMAGE_INFO_SCREEN_X] = (screen_x_center-(image_info[IMAGE_INFO_WIDTH]/2));
+ if(image_info[IMAGE_INFO_WIDTH]<monitors[0].width) {
+  image_info[IMAGE_INFO_SCREEN_X] = (monitors[0].x_center-(image_info[IMAGE_INFO_WIDTH]/2));
   image_info[IMAGE_INFO_DRAW_X] = 0;
  }
  else {
-  image_info[IMAGE_INFO_DRAW_WIDTH] = screen_width;
+  image_info[IMAGE_INFO_DRAW_WIDTH] = monitors[0].width;
   image_info[IMAGE_INFO_SCREEN_X] = 0;
-  if(image_info[IMAGE_INFO_DRAW_X]>(image_info[IMAGE_INFO_WIDTH]-screen_width)) {
-   image_info[IMAGE_INFO_DRAW_X] = (image_info[IMAGE_INFO_WIDTH]-screen_width);
+  if(image_info[IMAGE_INFO_DRAW_X]>(image_info[IMAGE_INFO_WIDTH]-monitors[0].width)) {
+   image_info[IMAGE_INFO_DRAW_X] = (image_info[IMAGE_INFO_WIDTH]-monitors[0].width);
   }
  }
- if(image_info[IMAGE_INFO_HEIGHT]<(screen_height-60)) {
-  image_info[IMAGE_INFO_SCREEN_Y] = (screen_y_center+10-(image_info[IMAGE_INFO_HEIGHT]/2));
+ if(image_info[IMAGE_INFO_HEIGHT]<(monitors[0].height-60)) {
+  image_info[IMAGE_INFO_SCREEN_Y] = (monitors[0].y_center+10-(image_info[IMAGE_INFO_HEIGHT]/2));
   image_info[IMAGE_INFO_DRAW_Y] = 0;
  }
  else {
-  image_info[IMAGE_INFO_DRAW_HEIGHT] = (screen_height-60);
+  image_info[IMAGE_INFO_DRAW_HEIGHT] = (monitors[0].height-60);
   image_info[IMAGE_INFO_SCREEN_Y] = 40;
-  if(image_info[IMAGE_INFO_DRAW_Y]>(image_info[IMAGE_INFO_HEIGHT]-(screen_height-60))) {
-   image_info[IMAGE_INFO_DRAW_Y] = (image_info[IMAGE_INFO_HEIGHT]-(screen_height-60));
+  if(image_info[IMAGE_INFO_DRAW_Y]>(image_info[IMAGE_INFO_HEIGHT]-(monitors[0].height-60))) {
+   image_info[IMAGE_INFO_DRAW_Y] = (image_info[IMAGE_INFO_HEIGHT]-(monitors[0].height-60));
   }
  }
  
@@ -632,7 +632,7 @@ void media_viewer_click_on_sound_progress_square(void) {
   destroy_task(media_viewer_task_sound_update_playing_square);
   
   //calculate where we should move sound
-  audio_calculate_time_of_sound_data_offset(audio_info, ((audio_info->output_length/1024)*(mouse_cursor_x-11)/(screen_width-22))*1024);
+  audio_calculate_time_of_sound_data_offset(audio_info, ((audio_info->output_length/1024)*(mouse_cursor_x-11)/(monitors[0].width-22))*1024);
   
   //play sound if sound is already playing
   if(media_viewer_sound_state==MEDIA_VIEWER_SOUND_STATE_PLAYING) {
@@ -658,37 +658,37 @@ void media_viewer_task_sound_update_playing_square(void) {
   }
   else {
    //update square
-   draw_full_square(11, screen_height-59, ((audio_info->actually_played_position/1024)*(screen_width-22)/(audio_info->output_length/1024)), 8, 0x0900FF);
-   redraw_part_of_screen(11, screen_height-59, screen_width-22, 8);
+   draw_full_square(11, monitors[0].height-59, ((audio_info->actually_played_position/1024)*(monitors[0].width-22)/(audio_info->output_length/1024)), 8, 0x0900FF);
+   redraw_part_of_screen(11, monitors[0].height-59, monitors[0].width-22, 8);
 
    //update time
    dword_t seconds = audio_info->played_length_seconds;
    dword_t minutes = audio_info->played_length_minutes;
    dword_t hours = audio_info->played_length_hours;
-   draw_full_square(screen_width-10-24-24-24-24-24-16, screen_height-37, 64, 8, BLACK);
+   draw_full_square(monitors[0].width-10-24-24-24-24-24-16, monitors[0].height-37, 64, 8, BLACK);
    if(seconds<10) {
-    print("0", screen_width-82-16, screen_height-37, WHITE);
-    print_var(seconds, screen_width-82-8, screen_height-37, WHITE);
+    print("0", monitors[0].width-82-16, monitors[0].height-37, WHITE);
+    print_var(seconds, monitors[0].width-82-8, monitors[0].height-37, WHITE);
    }
    else {
-    print_var(seconds, screen_width-82-16, screen_height-37, WHITE);
+    print_var(seconds, monitors[0].width-82-16, monitors[0].height-37, WHITE);
    }
    if(minutes<10) {
-    print("0", screen_width-82-16-24, screen_height-37, WHITE);
-    print_var(minutes, screen_width-82-16-16, screen_height-37, WHITE);
+    print("0", monitors[0].width-82-16-24, monitors[0].height-37, WHITE);
+    print_var(minutes, monitors[0].width-82-16-16, monitors[0].height-37, WHITE);
    }
    else {
-    print_var(minutes, screen_width-82-16-24, screen_height-37, WHITE);
+    print_var(minutes, monitors[0].width-82-16-24, monitors[0].height-37, WHITE);
    }
    if(hours<10) {
-    print("0", screen_width-82-16-24-24, screen_height-37, WHITE);
-    print_var(hours, screen_width-82-16-24-16, screen_height-37, WHITE);
+    print("0", monitors[0].width-82-16-24-24, monitors[0].height-37, WHITE);
+    print_var(hours, monitors[0].width-82-16-24-16, monitors[0].height-37, WHITE);
    }
    else {
-    print_var(hours, screen_width-82-16-24-24, screen_height-37, WHITE);
+    print_var(hours, monitors[0].width-82-16-24-24, monitors[0].height-37, WHITE);
    }
-   print(":  :", screen_width-10-24-24-24-24-24, screen_height-37, WHITE);
-   redraw_part_of_screen(screen_width-10-24-24-24-24-24-16, screen_height-37, 64, 8);
+   print(":  :", monitors[0].width-10-24-24-24-24-24, monitors[0].height-37, WHITE);
+   redraw_part_of_screen(monitors[0].width-10-24-24-24-24-24-16, monitors[0].height-37, 64, 8);
   }
  }
 }

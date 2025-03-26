@@ -38,7 +38,7 @@ struct edid_detailed_timing_description {
  byte_t type_of_display;
 }__attribute__((packed));
 
-struct edid {
+struct edid_t {
  qword_t signature;
  word_t manufacture_id;
  word_t edid_id_code;

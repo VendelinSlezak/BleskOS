@@ -58,6 +58,54 @@ void write_cr0(dword_t value) {
     asm volatile ("mov %0, %%cr0" : : "r" (value));
 }
 
+dword_t read_cr2(void) {
+    dword_t value;
+
+    // mov (register), cr2
+    // mov value, (register)
+    asm volatile("mov %%cr2, %0" : "=r"(value));
+
+    return value;
+}
+
+void write_cr2(dword_t value) {
+    // mov (register), value
+    // mov cr2, (register)
+    asm volatile("mov %0, %%cr2" : : "r"(value));
+}
+
+dword_t read_cr3(void) {
+    dword_t value;
+
+    // mov (register), cr3
+    // mov value, (register)
+    asm volatile("mov %%cr3, %0" : "=r"(value));
+
+    return value;
+}
+
+void write_cr3(dword_t value) {
+    // mov (register), value
+    // mov cr3, (register)
+    asm volatile("mov %0, %%cr3" : : "r"(value));
+}
+
+dword_t read_cr4(void) {
+    dword_t value;
+
+    // mov (register), cr4
+    // mov value, (register)
+    asm volatile("mov %%cr4, %0" : "=r"(value));
+
+    return value;
+}
+
+void write_cr4(dword_t value) {
+    // mov (register), value
+    // mov cr4, (register)
+    asm volatile("mov %0, %%cr4" : : "r"(value));
+}
+
 static inline void outb(word_t port, byte_t value) {
     // outb value, port
     asm volatile ("outb %0, %1" : : "a"(value), "Nd"(port));

@@ -16,6 +16,7 @@ struct components_info_t {
     struct cpu_info_t cpu;
     struct ram_info_t ram;
     struct cmos_info_t cmos;
+    struct pci_info_t pci;
 
     /* system components */
     dword_t p_ebda;
@@ -31,7 +32,14 @@ struct components_info_t {
     /* components connected to fixed ports */
     dword_t p_e9_debug_device;
     dword_t p_8042_controller;
+    dword_t p_bga;
+    struct bga_info_t bga;
 
     /* components connected to PCI */
+    dword_t p_graphic_card;
+    dword_t n_vmware_graphic_card;
+    struct vmware_graphic_card_info_t vmware_graphic_card[MAX_NUMBER_OF_VMWARE_GRAPHIC_CARDS];
+    dword_t n_intel_graphic_card;
+    struct intel_graphic_card_info_t intel_graphic_card[MAX_NUMBER_OF_INTEL_GRAPHIC_CARDS];
 };
 struct components_info_t *components;

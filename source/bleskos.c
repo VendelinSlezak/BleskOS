@@ -8,7 +8,7 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-// #define NO_PROGRAMS
+#define NO_PROGRAMS
 
 #include "bleskos.h"
 #include "starting_screen.h"
@@ -101,10 +101,7 @@ void bleskos(dword_t bootloader_passed_value) {
     boot_options = bootloader_passed_value;
 
     // prepare interface for BleskOS to be able to run
-    boot_fundamental_interface();
-
-    // detect and initalize all inbuild devices
-    boot_devices();
+    boot_drivers();
 
  /* this code is not rewritten yet */
  bleskos_show_message_on_starting_screen("Initalizing libraries...");
@@ -136,8 +133,12 @@ void bleskos(dword_t bootloader_passed_value) {
  bleskos_show_message_on_starting_screen("Starting Graphic User Interface...");
  logf("\n\nEND OF BOOTING\n");
 
- mouse_cursor_x = screen_x_center;
- mouse_cursor_y = screen_y_center;
+ mouse_cursor_x = monitors[0].x_center;
+ mouse_cursor_y = monitors[0].y_center;
  bleskos_main_window();
  #endif
+
+ developer_program_log();
+
+ shutdown();
 }

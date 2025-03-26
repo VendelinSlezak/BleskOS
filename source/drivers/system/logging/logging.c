@@ -163,7 +163,7 @@ void show_log(void) {
     // draw characters
     dword_t pointer = logging_memory_first_showed_char;
     dword_t x = 10, y = 10;
-    while(y < (screen_height-20)) {
+    while(y < (monitors[0].height-20)) {
         if(logging_memory[pointer] == 0) {
             break; // end of log
         }
@@ -172,7 +172,7 @@ void show_log(void) {
             y += 10;
         }
         else { // draw char on screen
-            if(x < screen_width) {
+            if(x < monitors[0].width) {
                 draw_char(logging_memory[pointer], x, y, WHITE);
             }
             x += 8;

@@ -9,20 +9,20 @@
 */
 
 void initalize_click_board(void) {
- click_board_memory = (dword_t) malloc(screen_width*screen_height*4);
+ click_board_memory = (dword_t) malloc(monitors[0].width*monitors[0].height*4);
 }
 
 void clear_click_board(void) {
  dword_t *click_board = (dword_t *) click_board_memory;
  
- for(int i=0; i<(screen_width*screen_height); i++) {
+ for(int i=0; i<(monitors[0].width*monitors[0].height); i++) {
   *click_board = NO_CLICK;
   click_board++;
  }
 }
 
 void add_zone_to_click_board(dword_t x, dword_t y, dword_t width, dword_t height, dword_t click_value) {
- dword_t first_line_pixel_pointer = (click_board_memory + (y*screen_double_buffer_bytes_per_line) + (x<<2));
+ dword_t first_line_pixel_pointer = (click_board_memory + (y*monitors[0].double_buffer_bpl) + (x<<2));
  dword_t *click_board = (dword_t *) first_line_pixel_pointer;
  
  for(int i=0; i<height; i++) {
@@ -31,12 +31,12 @@ void add_zone_to_click_board(dword_t x, dword_t y, dword_t width, dword_t height
    click_board++;
   }
   
-  first_line_pixel_pointer += screen_double_buffer_bytes_per_line;
+  first_line_pixel_pointer += monitors[0].double_buffer_bpl;
   click_board = (dword_t *) first_line_pixel_pointer;
  }
 }
 
 dword_t get_mouse_cursor_click_board_value(void) {
- dword_t *click_board = (dword_t *) (click_board_memory + (mouse_cursor_y*screen_double_buffer_bytes_per_line) + (mouse_cursor_x<<2));
+ dword_t *click_board = (dword_t *) (click_board_memory + (mouse_cursor_y*monitors[0].double_buffer_bpl) + (mouse_cursor_x<<2));
  return *click_board;
 }

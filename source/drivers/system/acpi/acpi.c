@@ -203,4 +203,14 @@ void read_acpi_table(void *table) {
         // log
         logf("\n Vendor ID: 0x%04x", hpet->id >> 16);
     }
+    else if(header->signature == 0x4746434D) { // 'MCFG'
+        // check if this is duplicate table
+        if(components->pci.is_memory_access_supported == STATUS_TRUE) {
+            return;
+        }
+
+        // save data about table
+        components->pci.is_memory_access_supported = STATUS_TRUE;
+        components->pci.mcfg = table;
+    }
 }

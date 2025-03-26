@@ -16,11 +16,11 @@ void initalize_ehci_controller(dword_t number_of_controller) {
 
  //disable BIOS ownership
  dword_t pci_ehci_bios_register_offset = ((mmio_ind(ehci_controllers[number_of_controller].base+0x08)>>8) & 0xFF);
- if(pci_ehci_bios_register_offset >= 0x40 && (pci_read(ehci_controllers[number_of_controller].bus, ehci_controllers[number_of_controller].device, ehci_controllers[number_of_controller].function, pci_ehci_bios_register_offset) & 0xFF)==0x01) {
+ if(pci_ehci_bios_register_offset >= 0x40 && (pci_read(0, ehci_controllers[number_of_controller].bus, ehci_controllers[number_of_controller].device, ehci_controllers[number_of_controller].function, pci_ehci_bios_register_offset) & 0xFF)==0x01) {
   //check if BIOS released ownership
-  if((pci_read(ehci_controllers[number_of_controller].bus, ehci_controllers[number_of_controller].device, ehci_controllers[number_of_controller].function, pci_ehci_bios_register_offset) & 0x01010000)!=0x01000000) {
+  if((pci_read(0, ehci_controllers[number_of_controller].bus, ehci_controllers[number_of_controller].device, ehci_controllers[number_of_controller].function, pci_ehci_bios_register_offset) & 0x01010000)!=0x01000000) {
    //BIOS did not released ownership
-   logf("\nERROR: EHCI controller is still in BIOS ownership 0x%x", pci_read(ehci_controllers[number_of_controller].bus, ehci_controllers[number_of_controller].device, ehci_controllers[number_of_controller].function, pci_ehci_bios_register_offset));
+   logf("\nERROR: EHCI controller is still in BIOS ownership 0x%x", pci_read(0, ehci_controllers[number_of_controller].bus, ehci_controllers[number_of_controller].device, ehci_controllers[number_of_controller].function, pci_ehci_bios_register_offset));
    ehci_controllers[number_of_controller].number_of_ports = 0;
    return;
   }

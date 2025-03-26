@@ -28,10 +28,10 @@ void initalize_scalable_font(void) {
 
  //draw chars
  screen_save_variables();
- screen_width = 11;
- screen_height = 20*128;
- screen_double_buffer_bytes_per_line = 11*4;
- screen_double_buffer_memory_pointer = (byte_t *) scalable_font_predraw_size_10_mem;
+ monitors[0].width = 11;
+ monitors[0].height = 20*128;
+ monitors[0].double_buffer_bpl = 11*4;
+ monitors[0].double_buffer = (byte_t *) scalable_font_predraw_size_10_mem;
  scalable_font_char_size = 0; //draw_scalable_char_without_emphasis will not try to draw character from predrawed memory
  for(int i=32; i<128; i++) {
   draw_scalable_char_without_emphasis(i, 0, i*20, BLACK);
@@ -68,7 +68,7 @@ void draw_scalable_char_without_emphasis(word_t char_val, dword_t x, dword_t y, 
 
  if(scalable_font_char_size==10 && char_val<128) {
   //we can draw char from predrawed memory
-  copy_raw_image_data(scalable_font_predraw_size_10_mem, 11, 0, char_val*20, 11, 15, (dword_t)screen_double_buffer_memory_pointer, screen_width, x, y);
+  copy_raw_image_data(scalable_font_predraw_size_10_mem, 11, 0, char_val*20, 11, 15, (dword_t)monitors[0].double_buffer, monitors[0].width, x, y);
   return;
  }
  
@@ -137,16 +137,16 @@ void draw_part_of_scalable_char(word_t char_val, dword_t x, dword_t y, dword_t c
   char_board++;
  }
  
- screen_double_buffer_memory_pointer = (byte_t *) scalable_font_char_board_mem;
- screen_width = scalable_font_char_size;
- screen_height = scalable_font_char_size+scalable_font_char_size/2;
- screen_double_buffer_bytes_per_line = scalable_font_char_size*4;
+ monitors[0].double_buffer = (byte_t *) scalable_font_char_board_mem;
+ monitors[0].width = scalable_font_char_size;
+ monitors[0].height = scalable_font_char_size+scalable_font_char_size/2;
+ monitors[0].double_buffer_bpl = scalable_font_char_size*4;
  
  draw_scalable_char(char_val, 0, 0, color);
  
  screen_restore_variables();
 
- copy_raw_image_data(scalable_font_char_board_mem, scalable_font_char_size, char_column, char_line, char_width, char_height, (dword_t)screen_double_buffer_memory_pointer, screen_width, x, y);
+ copy_raw_image_data(scalable_font_char_board_mem, scalable_font_char_size, char_column, char_line, char_width, char_height, (dword_t)monitors[0].double_buffer, monitors[0].width, x, y);
 }
 
 void scalable_font_print(byte_t *string, dword_t x, dword_t y, dword_t color) { 
