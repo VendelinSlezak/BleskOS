@@ -52,7 +52,7 @@ void wait_for_user_input(void) {
  //make screenshot
  #ifndef NO_PROGRAMS
  if(keyboard_code_of_pressed_key==KEY_PRINT_SCREEN) {
-  copy_memory((dword_t)screen_double_buffer_memory_pointer, screenshoot_image_info_data_mem, screenshoot_image_info_data_length);
+  copy_memory((dword_t)monitors[0].double_buffer, screenshoot_image_info_data_mem, screenshoot_image_info_data_length);
   show_system_message("You made a screenshot");
   wait(500);
   remove_system_message();

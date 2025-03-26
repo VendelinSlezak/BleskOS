@@ -16,8 +16,8 @@ void program_layout_set_dimensions(dword_t x, dword_t y, dword_t width, dword_t 
 }
 
 void program_layout_set_dimensions_window(dword_t width, dword_t height) {
- program_layout_draw_x = program_layout_x = (screen_x_center-(width/2)+10);
- program_layout_draw_y = program_layout_y = (screen_y_center-(height/2)+10);
+ program_layout_draw_x = program_layout_x = (monitors[0].x_center-(width/2)+10);
+ program_layout_draw_y = program_layout_y = (monitors[0].y_center-(height/2)+10);
  program_layout_width = (width-20);
  program_layout_height = (height-20);
 }
@@ -41,18 +41,18 @@ void program_element_layout_initalize_for_program(void) {
  program_element_layout_number_of_areas = 1;
  program_element_layout_areas_info[FIRST_AREA].x = 0;
  program_element_layout_areas_info[FIRST_AREA].y = PROGRAM_INTERFACE_TOP_LINE_HEIGHT;
- program_element_layout_areas_info[FIRST_AREA].width = screen_width;
- program_element_layout_areas_info[FIRST_AREA].height = (screen_height-PROGRAM_INTERFACE_TOP_LINE_HEIGHT-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT);
+ program_element_layout_areas_info[FIRST_AREA].width = monitors[0].width;
+ program_element_layout_areas_info[FIRST_AREA].height = (monitors[0].height-PROGRAM_INTERFACE_TOP_LINE_HEIGHT-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT);
  program_element_layout_areas_info[FIRST_AREA].actual_element_x = program_element_layout_areas_info[FIRST_AREA].x;
  program_element_layout_areas_info[FIRST_AREA].actual_element_y = program_element_layout_areas_info[FIRST_AREA].y;
  program_element_layout_bottom_line_left_x = 0;
- program_element_layout_bottom_line_right_x = screen_width;
+ program_element_layout_bottom_line_right_x = monitors[0].width;
 }
 
 void program_element_layout_initalize_for_window(dword_t width, dword_t height) {
  program_element_layout_number_of_areas = 1;
- program_element_layout_areas_info[FIRST_AREA].x = screen_x_center-(width/2);
- program_element_layout_areas_info[FIRST_AREA].y = screen_y_center-(height/2);
+ program_element_layout_areas_info[FIRST_AREA].x = monitors[0].x_center-(width/2);
+ program_element_layout_areas_info[FIRST_AREA].y = monitors[0].y_center-(height/2);
  program_element_layout_areas_info[FIRST_AREA].width = width;
  program_element_layout_areas_info[FIRST_AREA].height = height;
  program_element_layout_areas_info[FIRST_AREA].actual_element_x = program_element_layout_areas_info[FIRST_AREA].x;
@@ -241,19 +241,19 @@ void add_button_with_specific_color(byte_t area_number, byte_t alignment, byte_t
 }
 
 void add_button_to_bottom_line_from_left(byte_t *string, dword_t click_zone) {
- add_zone_to_click_board(program_element_layout_bottom_line_left_x, screen_height-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT, 8+get_number_of_chars_in_ascii_string(string)*8+8, PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT, click_zone);
+ add_zone_to_click_board(program_element_layout_bottom_line_left_x, monitors[0].height-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT, 8+get_number_of_chars_in_ascii_string(string)*8+8, PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT, click_zone);
  program_element_layout_bottom_line_left_x += 8;
- print(string, program_element_layout_bottom_line_left_x, screen_height-13, BLACK);
+ print(string, program_element_layout_bottom_line_left_x, monitors[0].height-13, BLACK);
  program_element_layout_bottom_line_left_x += (get_number_of_chars_in_ascii_string(string)*8+8);
- draw_straigth_column(program_element_layout_bottom_line_left_x, screen_height-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT, PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT, BLACK);
+ draw_straigth_column(program_element_layout_bottom_line_left_x, monitors[0].height-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT, PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT, BLACK);
 }
 
 void add_button_to_bottom_line_from_right(byte_t *string, dword_t click_zone) {
- add_zone_to_click_board(program_element_layout_bottom_line_right_x-8-get_number_of_chars_in_ascii_string(string)*8-8, screen_height-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT, 8+get_number_of_chars_in_ascii_string(string)*8+8, PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT, click_zone);
+ add_zone_to_click_board(program_element_layout_bottom_line_right_x-8-get_number_of_chars_in_ascii_string(string)*8-8, monitors[0].height-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT, 8+get_number_of_chars_in_ascii_string(string)*8+8, PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT, click_zone);
  program_element_layout_bottom_line_right_x -= (get_number_of_chars_in_ascii_string(string)*8+8);
- print(string, program_element_layout_bottom_line_right_x, screen_height-13, BLACK);
+ print(string, program_element_layout_bottom_line_right_x, monitors[0].height-13, BLACK);
  program_element_layout_bottom_line_right_x -= 8;
- draw_straigth_column(program_element_layout_bottom_line_right_x, screen_height-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT, PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT, BLACK);
+ draw_straigth_column(program_element_layout_bottom_line_right_x, monitors[0].height-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT, PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT, BLACK);
 }
 
 void program_element_layout_draw_background_of_area(byte_t area_number, dword_t color) {

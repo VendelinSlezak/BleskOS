@@ -1103,18 +1103,18 @@ void redraw_file_dialog(void) {
  program_element_layout_draw_background_of_area(SECOND_AREA, 0xFF6600);
 
  //draw up border
- draw_full_square(0, 0, screen_width, PROGRAM_INTERFACE_TOP_LINE_HEIGHT, 0x00C000);
- draw_straigth_line(0, (PROGRAM_INTERFACE_TOP_LINE_HEIGHT-1), screen_width, BLACK);
+ draw_full_square(0, 0, monitors[0].width, PROGRAM_INTERFACE_TOP_LINE_HEIGHT, 0x00C000);
+ draw_straigth_line(0, (PROGRAM_INTERFACE_TOP_LINE_HEIGHT-1), monitors[0].width, BLACK);
  print("File dialog", 8, 6, BLACK);
  if(file_dialog_type==FILE_DIALOG_SAVE) {
   dword_t number_of_chars_in_extension = get_number_of_chars_in_ascii_string(file_dialog_extensions);
-  print("Save file with extension:", screen_width-8-(number_of_chars_in_extension*8)-8-(25*8), 6, BLACK);
-  print(file_dialog_extensions, screen_width-8-(number_of_chars_in_extension*8), 6, BLACK);
+  print("Save file with extension:", monitors[0].width-8-(number_of_chars_in_extension*8)-8-(25*8), 6, BLACK);
+  print(file_dialog_extensions, monitors[0].width-8-(number_of_chars_in_extension*8), 6, BLACK);
  }
 
  //draw down border
- draw_full_square(0, screen_height-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT, screen_width, PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT, 0x00C000);
- draw_straigth_line(0, screen_height-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT, screen_width, BLACK);
+ draw_full_square(0, monitors[0].height-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT, monitors[0].width, PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT, 0x00C000);
+ draw_straigth_line(0, monitors[0].height-PROGRAM_INTERFACE_BOTTOM_LINE_HEIGHT, monitors[0].width, BLACK);
  add_button_to_bottom_line_from_left("[esc] Back", CLICK_ZONE_FILE_DIALOG_BACK);
  if((dword_t)file_dialog_folder_descriptor!=0 && file_dialog_folder_descriptor->partition_number!=NO_PARTITION_SELECTED) {
   //if we are not in root folder, add button to go to previous folder
@@ -1145,7 +1145,7 @@ void redraw_file_dialog(void) {
    }
   }
   else { //print to right bottom corner that this is read-only filesystem
-   print("Read-only", screen_width-8-9*8, screen_height-13, BLACK);
+   print("Read-only", monitors[0].width-8-9*8, monitors[0].height-13, BLACK);
   }
  }
 
@@ -1314,7 +1314,7 @@ void redraw_file_dialog(void) {
    if(vfs_get_folder_number_of_files(file_dialog_folder_descriptor)>file_dialog_number_of_items_on_screen) {
     //update variables
     file_dialog_scrollbar_info.size = program_element_layout_areas_info[SECOND_AREA].height;
-    file_dialog_scrollbar_info.x = screen_width-SCROLLBAR_SIZE;
+    file_dialog_scrollbar_info.x = monitors[0].width-SCROLLBAR_SIZE;
     file_dialog_scrollbar_info.y = program_element_layout_areas_info[SECOND_AREA].actual_element_y;
     file_dialog_scrollbar_info.full_document_size = (vfs_get_folder_number_of_files(file_dialog_folder_descriptor)/file_dialog_number_of_columns_on_screen);
     if((vfs_get_folder_number_of_files(file_dialog_folder_descriptor)%file_dialog_number_of_columns_on_screen)!=0) {

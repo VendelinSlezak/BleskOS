@@ -1506,7 +1506,7 @@ void redraw_file_manager(void) {
    }
 
    //print to right bottom corner that this is read-only filesystem
-   print("Read-only", screen_width-8-9*8, screen_height-13, BLACK);
+   print("Read-only", monitors[0].width-8-9*8, monitors[0].height-13, BLACK);
   }
  }
 
@@ -1683,7 +1683,7 @@ void redraw_file_manager(void) {
     //update variables
     file_manager_scrollbar_info.rider_position = get_file_value(FILE_MANAGER_SCROLLBAR_RIDER_POSITION);
     file_manager_scrollbar_info.size = program_element_layout_areas_info[SECOND_AREA].height;
-    file_manager_scrollbar_info.x = screen_width-SCROLLBAR_SIZE;
+    file_manager_scrollbar_info.x = monitors[0].width-SCROLLBAR_SIZE;
     file_manager_scrollbar_info.y = program_element_layout_areas_info[SECOND_AREA].actual_element_y;
     file_manager_scrollbar_info.full_document_size = (vfs_get_folder_number_of_files(file_manager_folder_descriptor)/file_manager_number_of_columns_on_screen);
     if((vfs_get_folder_number_of_files(file_manager_folder_descriptor)%file_manager_number_of_columns_on_screen)!=0) {

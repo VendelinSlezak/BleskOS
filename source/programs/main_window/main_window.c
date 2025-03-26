@@ -26,60 +26,60 @@ void bleskos_main_window_redraw_time(void) {
     read_time();
 
     //clear previous time
-    draw_full_square(screen_width-20-152, screen_height-30, 152, 10, 0x00C000);
+    draw_full_square(monitors[0].width-20-152, monitors[0].height-30, 152, 10, 0x00C000);
 
     //draw actual time
     if(time.hour<10) {
-        print("0", screen_width-20-152, screen_height-30, BLACK);
-        print_var(time.hour, screen_width-20-144, screen_height-30, BLACK);
+        print("0", monitors[0].width-20-152, monitors[0].height-30, BLACK);
+        print_var(time.hour, monitors[0].width-20-144, monitors[0].height-30, BLACK);
     }
     else {
-        print_var(time.hour, screen_width-20-152, screen_height-30, BLACK);
+        print_var(time.hour, monitors[0].width-20-152, monitors[0].height-30, BLACK);
     }
     if(time.minute<10) {
-        print("0", screen_width-20-128, screen_height-30, BLACK);
-        print_var(time.minute, screen_width-20-120, screen_height-30, BLACK);
+        print("0", monitors[0].width-20-128, monitors[0].height-30, BLACK);
+        print_var(time.minute, monitors[0].width-20-120, monitors[0].height-30, BLACK);
     }
     else {
-        print_var(time.minute, screen_width-20-128, screen_height-30, BLACK);
+        print_var(time.minute, monitors[0].width-20-128, monitors[0].height-30, BLACK);
     }
     if(time.second<10) {
-        print("0", screen_width-20-104, screen_height-30, BLACK);
-        print_var(time.second, screen_width-20-96, screen_height-30, BLACK);
+        print("0", monitors[0].width-20-104, monitors[0].height-30, BLACK);
+        print_var(time.second, monitors[0].width-20-96, monitors[0].height-30, BLACK);
     }
     else {
-        print_var(time.second, screen_width-20-104, screen_height-30, BLACK);
+        print_var(time.second, monitors[0].width-20-104, monitors[0].height-30, BLACK);
     }
     
-    print(":  :     /  /", screen_width-20-136, screen_height-30, BLACK);
+    print(":  :     /  /", monitors[0].width-20-136, monitors[0].height-30, BLACK);
     if(time.day<10) {
-        print("0", screen_width-20-80, screen_height-30, BLACK);
-        print_var(time.day, screen_width-20-72, screen_height-30, BLACK);
+        print("0", monitors[0].width-20-80, monitors[0].height-30, BLACK);
+        print_var(time.day, monitors[0].width-20-72, monitors[0].height-30, BLACK);
     }
     else {
-        print_var(time.day, screen_width-20-80, screen_height-30, BLACK);
+        print_var(time.day, monitors[0].width-20-80, monitors[0].height-30, BLACK);
     }
     if(time.month<10) {
-        print("0", screen_width-20-56, screen_height-30, BLACK);
-        print_var(time.month, screen_width-20-48, screen_height-30, BLACK);
+        print("0", monitors[0].width-20-56, monitors[0].height-30, BLACK);
+        print_var(time.month, monitors[0].width-20-48, monitors[0].height-30, BLACK);
     }
     else {
-        print_var(time.month, screen_width-20-56, screen_height-30, BLACK);
+        print_var(time.month, monitors[0].width-20-56, monitors[0].height-30, BLACK);
     }
-    print_var(time.year, screen_width-20-32, screen_height-30, BLACK);
+    print_var(time.year, monitors[0].width-20-32, monitors[0].height-30, BLACK);
 
     //show changes
-    redraw_part_of_screen(screen_width-20-152, screen_height-30, 152, 10);
+    redraw_part_of_screen(monitors[0].width-20-152, monitors[0].height-30, 152, 10);
 }
 
 void bleskos_main_window_redraw_sound_volume(void) {
-    if(is_driver_for_graphic_card==STATUS_TRUE && can_graphic_card_driver_change_backlight==STATUS_TRUE) {
+    if(monitors[0].change_backlight != 0) {
         bleskos_main_window_drawing_line = 40+15+35;
     }
     else {
         bleskos_main_window_drawing_line = 40;
     }
-    bleskos_main_window_drawing_column = screen_x_center;
+    bleskos_main_window_drawing_column = monitors[0].x_center;
     bleskos_main_window_print_item("Sound volume");
     add_zone_to_click_board(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20, MW_SOUND_VOLUME);
     draw_full_square(bleskos_main_window_drawing_column+5, bleskos_main_window_drawing_line, 295, 20, 0x00C000);
@@ -102,10 +102,10 @@ void bleskos_main_window_redraw_sound_volume(void) {
 
 void bleskos_main_window_draw_background(void) {
     clear_screen(0x00C000);
-    draw_full_square(0, 0, screen_width, 10, BLACK);
-    draw_full_square(0, 0, 10, screen_height, BLACK);
-    draw_full_square(0, screen_height-10, screen_width, 10, BLACK);
-    draw_full_square(screen_width-10, 0, 10, screen_height, BLACK);
+    draw_full_square(0, 0, monitors[0].width, 10, BLACK);
+    draw_full_square(0, 0, 10, monitors[0].height, BLACK);
+    draw_full_square(0, monitors[0].height-10, monitors[0].width, 10, BLACK);
+    draw_full_square(monitors[0].width-10, 0, 10, monitors[0].height, BLACK);
 }
 
 void bleskos_main_window_redraw(void) {
@@ -141,13 +141,13 @@ void bleskos_main_window_redraw(void) {
  
  //RIGHT COLUMN
  bleskos_main_window_drawing_line = 40;
- bleskos_main_window_drawing_column = screen_x_center;
+ bleskos_main_window_drawing_column = monitors[0].x_center;
 
  //monitor backlight control
- if(is_driver_for_graphic_card==STATUS_TRUE && can_graphic_card_driver_change_backlight==STATUS_TRUE) {
+ if(monitors[0].change_backlight != 0) {
   bleskos_main_window_print_item("Monitor backlight");
   add_zone_to_click_board(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20, MW_MONITOR_BACKLIGHT);
-  draw_full_square(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295*percent_of_backlight/100, 20, WHITE);
+  draw_full_square(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295*monitors[0].backlight/100, 20, WHITE);
   draw_empty_square(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20, BLACK);
   for(dword_t i=1; i<10; i++) {
    draw_straigth_column(bleskos_main_window_drawing_column+(295*i/10), bleskos_main_window_drawing_line, 20, BLACK);
@@ -232,12 +232,12 @@ void bleskos_main_window_redraw(void) {
   }
  }
  
- print("Keyboard layout:", 20, screen_height-30, BLACK);
+ print("Keyboard layout:", 20, monitors[0].height-30, BLACK);
  if(((dword_t)keyboard_layout_ptr)==((dword_t)english_keyboard_layout)) {
-  print("English", 20+17*8, screen_height-30, BLACK);
+  print("English", 20+17*8, monitors[0].height-30, BLACK);
  }
  else if(((dword_t)keyboard_layout_ptr)==((dword_t)slovak_keyboard_layout)) {
-  print("Slovak", 20+17*8, screen_height-30, BLACK);
+  print("Slovak", 20+17*8, monitors[0].height-30, BLACK);
  }
  
  bleskos_main_window_redraw_time();
@@ -401,17 +401,17 @@ void bleskos_main_window(void) {
                 bleskos_main_window_shutdown();
             }
             else if(click_value==MW_MONITOR_BACKLIGHT) {
-                monitor_change_backlight((100*(mouse_cursor_x-screen_x_center)/295)/10*10+10);
+                monitors[0].change_backlight(0, (100*(mouse_cursor_x-monitors[0].x_center)/295)/10*10+10);
             }
             else if(click_value==MW_SOUND_VOLUME) {
-                if(mouse_cursor_x<=screen_x_center+5) {
+                if(mouse_cursor_x<=monitors[0].x_center+5) {
                     sound_set_volume(0);
                 }
-                else if(mouse_cursor_x>=screen_x_center+290) {
+                else if(mouse_cursor_x>=monitors[0].x_center+290) {
                     sound_set_volume(100);
                 }
                 else {
-                    sound_set_volume((100*(mouse_cursor_x-screen_x_center-5)/285));
+                    sound_set_volume((100*(mouse_cursor_x-monitors[0].x_center-5)/285));
                 }
             }
             else if(click_value==MW_ENABLE_DISABLE_TOUCHPAD) {
@@ -431,14 +431,14 @@ void bleskos_main_window(void) {
                 continue;
             }
             else if(click_value==MW_SOUND_VOLUME) {
-                if(mouse_cursor_x<=screen_x_center+5) {
+                if(mouse_cursor_x<=monitors[0].x_center+5) {
                     sound_set_volume(0);
                 }
-                else if(mouse_cursor_x>=screen_x_center+290) {
+                else if(mouse_cursor_x>=monitors[0].x_center+290) {
                     sound_set_volume(100);
                 }
                 else {
-                    sound_set_volume((100*(mouse_cursor_x-screen_x_center-5)/285));
+                    sound_set_volume((100*(mouse_cursor_x-monitors[0].x_center-5)/285));
                 }
                 bleskos_main_window_redraw_sound_volume();
             }
@@ -457,7 +457,7 @@ void bleskos_main_window_change_keyboard_layout(void) {
  bleskos_main_window_draw_item("[e] English", 0x00FF00, MW_KEYBOARD_LAYOUT_ENGLISH);
  bleskos_main_window_draw_item("[s] Slovak", 0x00FF00, MW_KEYBOARD_LAYOUT_SLOVAK);
 
- print("You can go back with ESC", 20, screen_height-30, BLACK);
+ print("You can go back with ESC", 20, monitors[0].height-30, BLACK);
 
  bleskos_main_window_redraw_time();
 

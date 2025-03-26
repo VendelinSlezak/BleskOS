@@ -9,47 +9,47 @@
 */
 
 void vga_text_mode_clear_screen(byte_t color) {
- byte_t *vga_mem = (byte_t *) (0xB8000);
+    byte_t *vga_mem = (byte_t *) (0xB8000);
 
- for(dword_t i=0; i<(80*25); i++) {
-  vga_mem[0] = 0;
-  vga_mem[1] = color;
-  vga_mem += 2;
- }
+    for(dword_t i=0; i<(80*25); i++) {
+        vga_mem[0] = 0;
+        vga_mem[1] = color;
+        vga_mem += 2;
+    }
 }
 
 void vga_text_mode_put_char(byte_t line, byte_t column, byte_t character) {
- byte_t *vga_mem = (byte_t *) (0xB8000 + (line*80*2) + (column*2));
- vga_mem[0] = character;
+    byte_t *vga_mem = (byte_t *) (0xB8000 + (line*80*2) + (column*2));
+    vga_mem[0] = character;
 }
 
 void vga_text_mode_print(byte_t line, byte_t column, byte_t *string) {
- byte_t *vga_mem = (byte_t *) (0xB8000 + (line*80*2) + (column*2));
+    byte_t *vga_mem = (byte_t *) (0xB8000 + (line*80*2) + (column*2));
 
- while(*string != 0 && (dword_t)vga_mem < (0xB8000 + 80*25*2)) {
-  vga_mem[0] = *string;
-  vga_mem += 2;
-  string++;
- }
+    while(*string != 0 && (dword_t)vga_mem < (0xB8000 + 80*25*2)) {
+        vga_mem[0] = *string;
+        vga_mem += 2;
+        string++;
+    }
 }
 
 void vga_text_mode_draw_square(byte_t line, byte_t column, byte_t width, byte_t height, byte_t color) {
- if((column+width) >= 80 || (line+height) >= 25) {
-  return;
- }
+    if((column+width) >= 80 || (line+height) >= 25) {
+        return;
+    }
 
- byte_t *vga_mem = (byte_t *) (0xB8000 + (line*80*2) + (column*2));
+    byte_t *vga_mem = (byte_t *) (0xB8000 + (line*80*2) + (column*2));
 
- for(dword_t i=0; i<height; i++) {
-  for(dword_t j=0; j<width; j++) {
-   vga_mem[0] = 0;
-   vga_mem[1] = color;
-   vga_mem += 2;
-  }
+    for(dword_t i=0; i<height; i++) {
+        for(dword_t j=0; j<width; j++) {
+            vga_mem[0] = 0;
+            vga_mem[1] = color;
+            vga_mem += 2;
+        }
 
-  line++;
-  vga_mem = (byte_t *) (0xB8000 + (line*80*2) + (column*2));
- }
+        line++;
+        vga_mem = (byte_t *) (0xB8000 + (line*80*2) + (column*2));
+    }
 }
 
 void vga_text_mode_move_cursor(byte_t line, byte_t column) {

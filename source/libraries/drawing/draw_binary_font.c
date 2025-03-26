@@ -10,7 +10,7 @@
 
 void draw_char(word_t char_val, dword_t x, dword_t y, dword_t color) {
  byte_t *char_data_ptr = (byte_t *) (binary_font_memory + (char_val*8)); //char position
- dword_t first_line_pixel_pointer = ((dword_t)screen_double_buffer_memory_pointer + (y*screen_double_buffer_bytes_per_line) + (x<<2));
+ dword_t first_line_pixel_pointer = ((dword_t)monitors[0].double_buffer + (y*monitors[0].double_buffer_bpl) + (x<<2));
  dword_t *screen = (dword_t *) first_line_pixel_pointer;
 
  for(int i=0; i<8; i++) {
@@ -21,7 +21,7 @@ void draw_char(word_t char_val, dword_t x, dword_t y, dword_t color) {
    screen++;
   }
   
-  first_line_pixel_pointer += screen_double_buffer_bytes_per_line;
+  first_line_pixel_pointer += monitors[0].double_buffer_bpl;
   screen = (dword_t *) first_line_pixel_pointer;
   char_data_ptr++;
  }
@@ -30,7 +30,7 @@ void draw_char(word_t char_val, dword_t x, dword_t y, dword_t color) {
 
 void draw_part_of_char(word_t char_val, dword_t x, dword_t y, dword_t first_char_column, dword_t last_char_column, dword_t first_char_line, dword_t last_char_line, dword_t color) {
  byte_t *char_data_ptr = (byte_t *) (binary_font_memory + (char_val*8) + first_char_line); //char position
- dword_t first_line_pixel_pointer = ((dword_t)screen_double_buffer_memory_pointer + (y*screen_double_buffer_bytes_per_line) + (x<<2));
+ dword_t first_line_pixel_pointer = ((dword_t)monitors[0].double_buffer + (y*monitors[0].double_buffer_bpl) + (x<<2));
  dword_t *screen = (dword_t *) first_line_pixel_pointer;
 
  for(int i=first_char_line; i<last_char_line; i++) {
@@ -41,7 +41,7 @@ void draw_part_of_char(word_t char_val, dword_t x, dword_t y, dword_t first_char
    screen++;
   }
   
-  first_line_pixel_pointer += screen_double_buffer_bytes_per_line;
+  first_line_pixel_pointer += monitors[0].double_buffer_bpl;
   screen = (dword_t *) first_line_pixel_pointer;
   char_data_ptr++;
  }
@@ -51,7 +51,7 @@ void draw_part_of_char(word_t char_val, dword_t x, dword_t y, dword_t first_char
 void print(byte_t *string, dword_t x, dword_t y, dword_t color) {
  word_t unicode_char=0, original_x = x;
 
- while(*string!=0 && x<screen_width) {
+ while(*string!=0 && x<monitors[0].width) {
   unicode_char = (word_t) *string;
   if(unicode_char=='\n') {
    y += 10;
@@ -76,7 +76,7 @@ void print(byte_t *string, dword_t x, dword_t y, dword_t color) {
 }
 
 void print_ascii(byte_t *string, dword_t x, dword_t y, dword_t color) {
- while(*string!=0 && x<screen_width) {
+ while(*string!=0 && x<monitors[0].width) {
   draw_char((word_t) *string, x, y, color);
   x += 8;
   string++;
@@ -84,7 +84,7 @@ void print_ascii(byte_t *string, dword_t x, dword_t y, dword_t color) {
 }
 
 void print_unicode(word_t *string, dword_t x, dword_t y, dword_t color) {
- while(*string!=0 && x<screen_width) {
+ while(*string!=0 && x<monitors[0].width) {
   draw_char(*string, x, y, color);
   x += 8;
   string++;
@@ -131,20 +131,20 @@ void print_hex(dword_t value, dword_t x, dword_t y, dword_t color) {
 void pstr(byte_t *string) {
  print(string, 0, debug_line, 0x888888);
  debug_line+=10;
- debug_line%=screen_height;
+ debug_line%=monitors[0].height;
  redraw_screen();
 }
 
 void pvar(dword_t value) {
  print_var(value, 0, debug_line, 0x888888);
  debug_line+=10;
- debug_line%=screen_height;
+ debug_line%=monitors[0].height;
  redraw_screen();
 }
 
 void phex(dword_t value) {
  print_hex(value, 0, debug_line, 0x888888);
  debug_line+=10;
- debug_line%=screen_height;
+ debug_line%=monitors[0].height;
  redraw_screen();
 }

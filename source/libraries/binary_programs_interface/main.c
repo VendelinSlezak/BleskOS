@@ -10,8 +10,8 @@
 
 void initalize_binary_programs_interface(void) {
  //set variables for text mode
- text_mode_screen_columns = (screen_width/8);
- text_mode_screen_lines = (screen_height/10);
+ text_mode_screen_columns = (monitors[0].width/8);
+ text_mode_screen_lines = (monitors[0].height/10);
  text_mode_screen_pixels = (text_mode_screen_lines*text_mode_screen_columns);
 
  text_mode_x_on_screen = 0;

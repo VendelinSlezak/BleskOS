@@ -8,6 +8,17 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+struct pci_supported_devices_list_t vmware_graphic_card_supported_pci_devices[] = {
+    { 0x15AD, 0x0405 },
+    { 0, 0 }
+};
+
+#define MAX_NUMBER_OF_VMWARE_GRAPHIC_CARDS 4
+struct vmware_graphic_card_info_t {
+    struct pci_device_info_t pci;
+    word_t base;
+};
+
 #define VMWARE_GRAPHIC_CARD_REGISTER_INDEX 0
 #define VMWARE_GRAPHIC_CARD_REGISTER_DATA 1
 
@@ -28,6 +39,7 @@
 #define VMWARE_GRAPHIC_CARD_FIFO_REGISTER_NEXT_CMD 2*4
 #define VMWARE_GRAPHIC_CARD_FIFO_REGISTER_STOP 3*4
 
-dword_t vmware_graphic_card_read(byte_t graphic_card_number, byte_t index);
-void vmware_graphic_card_write(byte_t graphic_card_number, byte_t index, dword_t value);
-void initalize_vmware_graphic_card(byte_t graphic_card_number);
+void vmware_graphic_card_add_new_pci_device(struct pci_device_info_t device);
+dword_t vmware_graphic_card_read(dword_t graphic_card_number, byte_t index);
+void vmware_graphic_card_write(dword_t graphic_card_number, byte_t index, dword_t value);
+void initalize_vmware_graphic_card(dword_t graphic_card_number);

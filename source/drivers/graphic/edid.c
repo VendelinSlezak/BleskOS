@@ -9,7 +9,7 @@
 */
 
 byte_t parse_edid_data(dword_t edid_data_memory) {
- struct edid *edid_data = (struct edid *) (edid_data_memory);
+ struct edid_t *edid_data = (struct edid_t *) (edid_data_memory);
  
  //check signature
  if(edid_data->signature!=EDID_SIGNATURE) {
