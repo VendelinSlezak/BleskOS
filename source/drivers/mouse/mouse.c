@@ -9,25 +9,29 @@
 */
 
 void initalize_mouse(void) {
- mouse_click_button_state = MOUSE_NO_EVENT;
- mouse_buttons = 0;
- mouse_movement_x = 0;
- mouse_movement_y = 0;
- mouse_wheel_movement = 0;
+    mouse_click_button_state = MOUSE_NO_EVENT;
+    mouse_buttons = 0;
+    mouse_movement_x = 0;
+    mouse_movement_y = 0;
+    mouse_wheel_movement = 0;
+}
+
+void mouse_prepare_for_next_event(void) {
+    mouse_event = STATUS_FALSE;
 }
 
 void mouse_update_click_button_state(void) {
- if((mouse_buttons & 0x1)==0x0) {
-  mouse_click_button_state = MOUSE_NO_DRAG;
- }
- else {
-  if(mouse_click_button_state==MOUSE_NO_DRAG) {
-   mouse_click_button_state = MOUSE_CLICK;
-   mouse_cursor_x_click = mouse_cursor_x;
-   mouse_cursor_y_click = mouse_cursor_y;
-  }
-  else {
-   mouse_click_button_state = MOUSE_DRAG;
-  }
- }
+    if((mouse_buttons & 0x1)==0x0) {
+        mouse_click_button_state = MOUSE_NO_DRAG;
+    }
+    else {
+        if(mouse_click_button_state==MOUSE_NO_DRAG) {
+            mouse_click_button_state = MOUSE_CLICK;
+            mouse_cursor_x_click = mouse_cursor_x;
+            mouse_cursor_y_click = mouse_cursor_y;
+        }
+        else {
+            mouse_click_button_state = MOUSE_DRAG;
+        }
+    }
 }

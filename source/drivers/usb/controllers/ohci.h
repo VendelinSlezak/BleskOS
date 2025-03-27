@@ -8,6 +8,17 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#define MAX_NUMBER_OF_OHCI_CONTROLLERS 10
+struct ohci_info_t {
+    struct pci_device_info_t pci;
+
+    dword_t base;
+    byte_t number_of_ports;
+
+    struct ohci_hcca_t *hcca;
+    struct ohci_endpoint_descriptor_t *interrupt_endpoint_descriptor;
+};
+
 #define OHCI_NUMBER_OF_POINTERS_IN_INTERRUPT_TABLE 32
 struct ohci_hcca_t {
  dword_t interrupt_table[OHCI_NUMBER_OF_POINTERS_IN_INTERRUPT_TABLE];
@@ -54,21 +65,7 @@ struct ohci_transfer_descriptor_t {
  dword_t buffer_end;
 }__attribute__((packed));
 
-#define MAX_NUMBER_OF_OHCI_CONTROLLERS 10
-struct ohci_controller_info_t {
- byte_t bus;
- byte_t device;
- byte_t function;
-
- dword_t base;
- byte_t irq;
- byte_t number_of_ports;
-
- struct ohci_hcca_t *hcca;
- struct ohci_endpoint_descriptor_t *interrupt_endpoint_descriptor;
-}__attribute__((packed));
-struct ohci_controller_info_t ohci_controllers[MAX_NUMBER_OF_OHCI_CONTROLLERS];
-dword_t number_of_ohci_controllers;
+void ohci_add_new_pci_device(struct pci_device_info_t device);
 
 void initalize_ohci_controller(byte_t controller_number);
 

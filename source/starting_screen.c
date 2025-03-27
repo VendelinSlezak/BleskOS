@@ -13,7 +13,7 @@ void draw_starting_screen_background(void) {
 
     set_scalable_char_size(64);
     scalable_font_print("BleskOS", monitors[0].x_center-(64*7/2), monitors[0].y_center-92, BLACK);
-    print_to_message_window("Version 2025 update 8", monitors[0].y_center);
+    print_to_message_window("Version 2025 update 9", monitors[0].y_center);
 
     draw_empty_square(monitors[0].x_center-161, monitors[0].y_center+30, 322, 15, BLACK);
 

@@ -161,7 +161,7 @@ void usb_mouse_interrupt_transfer_successfull(byte_t device_address) {
  }
 
  //inform method wait_for_user_input() from source/drivers/system/user_wait.c that there was received packet from mouse
- usb_mouse_packet_received = STATUS_TRUE;
+ mouse_event = STATUS_TRUE;
 }
 
 /* errors */

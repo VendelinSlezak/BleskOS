@@ -61,5 +61,14 @@ struct components_info_t {
     struct realtek_8139_info_t realtek_8139[MAX_NUMBER_OF_REALTEK_8139_CARDS];
     dword_t n_realtek_8169;
     struct realtek_8169_info_t realtek_8169[MAX_NUMBER_OF_REALTEK_8169_CARDS];
+
+    dword_t n_uhci;
+    struct uhci_info_t uhci[MAX_NUMBER_OF_UHCI_CONTROLLERS];
+    dword_t n_ohci;
+    struct ohci_info_t ohci[MAX_NUMBER_OF_OHCI_CONTROLLERS];
+    dword_t n_ehci;
+    struct ehci_info_t ehci[MAX_NUMBER_OF_EHCI_CONTROLLERS];
+    dword_t n_xhci;
+    struct xhci_info_t xhci[MAX_NUMBER_OF_XHCI_CONTROLLERS];
 };
 struct components_info_t *components;

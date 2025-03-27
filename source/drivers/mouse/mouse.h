@@ -13,7 +13,9 @@
 #define MOUSE_CLICK 1
 #define MOUSE_DRAG 2
 
+dword_t mouse_event;
 dword_t mouse_click_button_state, mouse_buttons, mouse_movement_x, mouse_movement_y, mouse_wheel_movement;
 
 void initalize_mouse(void);
+void mouse_prepare_for_next_event(void);
 void mouse_update_click_button_state(void);

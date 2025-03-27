@@ -90,7 +90,7 @@ void ec_realtek_8139_initalize(dword_t number_of_card) {
     outd(components->realtek_8139[number_of_card].base+0x40, (0x7 << 8) | (0x3 << 24)); //max packet size is 2048 bytes, interframe gap time (0x3 is only allowed value)
 
     //enable interrupts
-    pci_device_install_interrupt_handler(components->amd_pcnet[number_of_card].pci, network_irq);
+    pci_device_install_interrupt_handler(components->realtek_8139[number_of_card].pci, network_irq);
     outw(components->realtek_8139[number_of_card].base+0x3C, 0xFFFF); //enable all interrupts
 }
 

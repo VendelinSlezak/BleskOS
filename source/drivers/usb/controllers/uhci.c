@@ -8,16 +8,45 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+void uhci_add_new_pci_device(struct pci_device_info_t device) {
+    // check number of already connected cards
+    if(components->n_uhci >= MAX_NUMBER_OF_UHCI_CONTROLLERS) {
+        return;
+    }
+
+    // log driver
+    logf("%s", __FILE__);
+
+    // save basic device informations
+    copy_memory((dword_t)&device, (dword_t)&components->uhci[components->n_uhci].pci, sizeof(struct pci_device_info_t));
+
+    // read other device informations
+    components->uhci[components->n_uhci].base = pci_get_io(device, PCI_BAR4);
+
+    // configure PCI
+    pci_set_bits(device, 0x04, PCI_STATUS_BUSMASTERING | PCI_STATUS_IO);
+
+    // disable BIOS
+    pci_outw(device, 0xC0, (1 << 13));
+
+    // update number of devices
+    components->n_uhci++;
+}
+
 /* initalization of UHCI controller at boot */
 
 void initalize_uhci_controller(dword_t number_of_controller) {
- //log
- logf("\n\nUHCI controller ");
+ // log
+    logf("\n\nDriver: UHCI Controller\nDevice: PCI bus %d:%d:%d:%d\n",
+        components->uhci[number_of_controller].pci.segment,
+        components->uhci[number_of_controller].pci.bus,
+        components->uhci[number_of_controller].pci.device,
+        components->uhci[number_of_controller].pci.function);
 
  //Host Controller Reset
- outw(uhci_controllers[number_of_controller].base+0x0, (1 << 1));
+ outw(components->uhci[number_of_controller].base+0x0, (1 << 1));
  volatile dword_t timeout = (time_of_system_running+50);
- while((inw(uhci_controllers[number_of_controller].base+0x0) & (1 << 1))==(1 << 1)) {
+ while((inw(components->uhci[number_of_controller].base+0x0) & (1 << 1))==(1 << 1)) {
   asm("nop");
   if(time_of_system_running >= timeout) {
    logf("Host Controller Reset error");
@@ -27,70 +56,70 @@ void initalize_uhci_controller(dword_t number_of_controller) {
  logf("reset in %d", 50-(timeout-time_of_system_running));
 
  //Global Reset
- outw(uhci_controllers[number_of_controller].base+0x0, (1 << 2));
+ outw(components->uhci[number_of_controller].base+0x0, (1 << 2));
  wait(20); //specification says we need to wait at least 10ms
- outw(uhci_controllers[number_of_controller].base+0x0, 0);
+ outw(components->uhci[number_of_controller].base+0x0, 0);
 
  //create main transfer Queue Heads
- uhci_controllers[number_of_controller].queue_head = (struct uhci_queue_head_t *) aligned_calloc(sizeof(struct uhci_queue_head_t)*6, 0xF);
+ components->uhci[number_of_controller].queue_head = (struct uhci_queue_head_t *) aligned_calloc(sizeof(struct uhci_queue_head_t)*6, 0xF);
  for(dword_t i=0; i<6; i++) {
-  uhci_controllers[number_of_controller].queue_head[i].head_pointer = ((dword_t)&uhci_controllers[number_of_controller].queue_head[i+1] | UHCI_QH_POINTS_TO_QH);
-  uhci_controllers[number_of_controller].queue_head[i].element_pointer = UHCI_INVALID_QH_POINTER;
+  components->uhci[number_of_controller].queue_head[i].head_pointer = ((dword_t)&components->uhci[number_of_controller].queue_head[i+1] | UHCI_QH_POINTS_TO_QH);
+  components->uhci[number_of_controller].queue_head[i].element_pointer = UHCI_INVALID_QH_POINTER;
  }
- uhci_controllers[number_of_controller].queue_head[5].head_pointer = UHCI_INVALID_QH_POINTER;
+ components->uhci[number_of_controller].queue_head[5].head_pointer = UHCI_INVALID_QH_POINTER;
 
  //initalize frame list
- uhci_controllers[number_of_controller].frame_list = (dword_t *) aligned_malloc(UHCI_NUMBER_OF_FRAMES_IN_FRAME_LIST*4, 0xFFF);
+ components->uhci[number_of_controller].frame_list = (dword_t *) aligned_malloc(UHCI_NUMBER_OF_FRAMES_IN_FRAME_LIST*4, 0xFFF);
  for(dword_t i = 0; i < UHCI_NUMBER_OF_FRAMES_IN_FRAME_LIST; i++) {
   if((i % 32) == 0) {
-   uhci_controllers[number_of_controller].frame_list[i] = ((dword_t)&uhci_controllers[number_of_controller].queue_head[0] | UHCI_FRAME_POINTS_TO_QH);
+   components->uhci[number_of_controller].frame_list[i] = ((dword_t)&components->uhci[number_of_controller].queue_head[0] | UHCI_FRAME_POINTS_TO_QH);
   }
   else if((i % 16) == 0) {
-   uhci_controllers[number_of_controller].frame_list[i] = ((dword_t)&uhci_controllers[number_of_controller].queue_head[1] | UHCI_FRAME_POINTS_TO_QH);
+   components->uhci[number_of_controller].frame_list[i] = ((dword_t)&components->uhci[number_of_controller].queue_head[1] | UHCI_FRAME_POINTS_TO_QH);
   }
   else if((i % 8) == 0) {
-   uhci_controllers[number_of_controller].frame_list[i] = ((dword_t)&uhci_controllers[number_of_controller].queue_head[2] | UHCI_FRAME_POINTS_TO_QH);
+   components->uhci[number_of_controller].frame_list[i] = ((dword_t)&components->uhci[number_of_controller].queue_head[2] | UHCI_FRAME_POINTS_TO_QH);
   }
   else if((i % 4) == 0) {
-   uhci_controllers[number_of_controller].frame_list[i] = ((dword_t)&uhci_controllers[number_of_controller].queue_head[3] | UHCI_FRAME_POINTS_TO_QH);
+   components->uhci[number_of_controller].frame_list[i] = ((dword_t)&components->uhci[number_of_controller].queue_head[3] | UHCI_FRAME_POINTS_TO_QH);
   }
   else if((i % 2) == 0) {
-   uhci_controllers[number_of_controller].frame_list[i] = ((dword_t)&uhci_controllers[number_of_controller].queue_head[4] | UHCI_FRAME_POINTS_TO_QH);
+   components->uhci[number_of_controller].frame_list[i] = ((dword_t)&components->uhci[number_of_controller].queue_head[4] | UHCI_FRAME_POINTS_TO_QH);
   }
   else {
-   uhci_controllers[number_of_controller].frame_list[i] = ((dword_t)&uhci_controllers[number_of_controller].queue_head[5] | UHCI_FRAME_POINTS_TO_QH);
+   components->uhci[number_of_controller].frame_list[i] = ((dword_t)&components->uhci[number_of_controller].queue_head[5] | UHCI_FRAME_POINTS_TO_QH);
   }
  }
- outd(uhci_controllers[number_of_controller].base+0x8, (dword_t)uhci_controllers[number_of_controller].frame_list);
+ outd(components->uhci[number_of_controller].base+0x8, (dword_t)components->uhci[number_of_controller].frame_list);
 
  //set Start Of Frame
- outb(uhci_controllers[number_of_controller].base+0xC, 0x40);
+ outb(components->uhci[number_of_controller].base+0xC, 0x40);
  
  //find number of ports
- uhci_controllers[number_of_controller].number_of_ports = 0;
+ components->uhci[number_of_controller].number_of_ports = 0;
  for(dword_t i=0, port_number=0x10; i<16; i++, port_number+=0x2) {
   //check if this is valid port register
-  if(inw(uhci_controllers[number_of_controller].base+port_number)==0xFFFF || (inw(uhci_controllers[number_of_controller].base+port_number) & 0x80)!=0x80) {
+  if(inw(components->uhci[number_of_controller].base+port_number)==0xFFFF || (inw(components->uhci[number_of_controller].base+port_number) & 0x80)!=0x80) {
    break;
   }
   
   //if it is, we found port
-  uhci_controllers[number_of_controller].number_of_ports++;
+  components->uhci[number_of_controller].number_of_ports++;
  }
 
  //enable interrupts
- set_irq_handler(uhci_controllers[number_of_controller].irq, (dword_t)usb_irq);
- outw(uhci_controllers[number_of_controller].base+0x4, 0x000C);
+ pci_device_install_interrupt_handler(components->uhci[number_of_controller].pci, usb_irq);
+ outw(components->uhci[number_of_controller].base+0x4, 0x000C);
  
  //start controller
- outw(uhci_controllers[number_of_controller].base+0x0, (1 << 0) | (1 << 7)); //run execution of frame list, max packet size is 64 bytes
+ outw(components->uhci[number_of_controller].base+0x0, (1 << 0) | (1 << 7)); //run execution of frame list, max packet size is 64 bytes
 }
 
 /* irq handler */
 
 byte_t uhci_acknowledge_interrupt(dword_t number_of_controller) {
  //read interrupt status
- volatile word_t irq_status = inw(uhci_controllers[number_of_controller].base+0x2);
+ volatile word_t irq_status = inw(components->uhci[number_of_controller].base+0x2);
 
  //return if nothing happend
  if(irq_status == 0) {
@@ -98,7 +127,7 @@ byte_t uhci_acknowledge_interrupt(dword_t number_of_controller) {
  }
 
  //clear interrupt status
- outw(uhci_controllers[number_of_controller].base+0x2, irq_status);
+ outw(components->uhci[number_of_controller].base+0x2, irq_status);
  return STATUS_TRUE;
 }
 
@@ -106,7 +135,7 @@ byte_t uhci_acknowledge_interrupt(dword_t number_of_controller) {
 
 byte_t uhci_check_port(dword_t number_of_controller, dword_t number_of_port) {
  //calculate register of port
- word_t uhci_port = (uhci_controllers[number_of_controller].base+0x10+(number_of_port*2));
+ word_t uhci_port = (components->uhci[number_of_controller].base+0x10+(number_of_port*2));
  word_t uhci_port_value = inw(uhci_port);
 
  //is status change bit clear?
@@ -163,7 +192,7 @@ byte_t uhci_check_port(dword_t number_of_controller, dword_t number_of_port) {
 
 void uhci_stop_port_reset(void) {
  //calculate register of port
- word_t uhci_port = (uhci_controllers[usb_devices[0].controller_number].base+0x10+(usb_devices[0].port_number*2));
+ word_t uhci_port = (components->uhci[usb_devices[0].controller_number].base+0x10+(usb_devices[0].port_number*2));
 
  //stop reset of port
  outw(uhci_port, 0x0);
@@ -177,7 +206,7 @@ void uhci_stop_port_reset(void) {
 
 void uhci_enable_port(void) {
  //calculate register of port
- word_t uhci_port = (uhci_controllers[usb_devices[0].controller_number].base+0x10+(usb_devices[0].port_number*2));
+ word_t uhci_port = (components->uhci[usb_devices[0].controller_number].base+0x10+(usb_devices[0].port_number*2));
 
  //clear status change
  outw(uhci_port, (1 << 1));
@@ -195,7 +224,7 @@ void uhci_enable_port(void) {
 
 void uhci_check_if_port_is_enabled(void) {
  //calculate register of port
- word_t uhci_port = (uhci_controllers[usb_devices[0].controller_number].base+0x10+(usb_devices[0].port_number*2));
+ word_t uhci_port = (components->uhci[usb_devices[0].controller_number].base+0x10+(usb_devices[0].port_number*2));
  word_t uhci_port_value = inw(uhci_port);
 
  //check if port is enabled
@@ -248,7 +277,7 @@ void uhci_check_if_port_is_enabled(void) {
 
 void uhci_disable_device_on_port(dword_t number_of_controller, dword_t number_of_port) {
  //calculate register of port
- word_t uhci_port = (uhci_controllers[number_of_controller].base+0x10+(number_of_port*2));
+ word_t uhci_port = (components->uhci[number_of_controller].base+0x10+(number_of_port*2));
 
  //disable device
  outw(uhci_port, inw(uhci_port) & ~(1 << 2));
@@ -323,22 +352,22 @@ void uhci_insert_queue_head(dword_t number_of_controller, struct uhci_queue_head
  //select correct Queue Head
  struct uhci_queue_head_t *interval_queue_head;
  if(interval == 32) {
-  interval_queue_head = &uhci_controllers[number_of_controller].queue_head[0];
+  interval_queue_head = &components->uhci[number_of_controller].queue_head[0];
  }
  else if(interval == 16) {
-  interval_queue_head = &uhci_controllers[number_of_controller].queue_head[1];
+  interval_queue_head = &components->uhci[number_of_controller].queue_head[1];
  }
  else if(interval == 8) {
-  interval_queue_head = &uhci_controllers[number_of_controller].queue_head[2];
+  interval_queue_head = &components->uhci[number_of_controller].queue_head[2];
  }
  else if(interval == 4) {
-  interval_queue_head = &uhci_controllers[number_of_controller].queue_head[3];
+  interval_queue_head = &components->uhci[number_of_controller].queue_head[3];
  }
  else if(interval == 2) {
-  interval_queue_head = &uhci_controllers[number_of_controller].queue_head[4];
+  interval_queue_head = &components->uhci[number_of_controller].queue_head[4];
  }
  else {
-  interval_queue_head = &uhci_controllers[number_of_controller].queue_head[5];
+  interval_queue_head = &components->uhci[number_of_controller].queue_head[5];
  }
 
  //insert our Queue Head
@@ -370,7 +399,7 @@ void uhci_remove_queue_head(dword_t number_of_controller, struct uhci_queue_head
  }
 
  //go through all Queue Heads to find our Queue Head
- struct uhci_queue_head_t *queue_head_in_list = &uhci_controllers[number_of_controller].queue_head[0];
+ struct uhci_queue_head_t *queue_head_in_list = &components->uhci[number_of_controller].queue_head[0];
  while(1) {
   //end of list, our Queue Head was not inserted here
   if(queue_head_in_list->head_pointer == UHCI_INVALID_QH_POINTER) {
@@ -814,31 +843,31 @@ void uhci_close_bulk_transfer(byte_t device_address, struct usb_bulk_transfer_in
 /* deep debugger */
 
 void ddbg_show_devregs_uhci(dword_t number_of_controller) {
- if(number_of_controller >= number_of_uhci_controllers) {
+ if(number_of_controller >= components->n_uhci) {
   ddbg_printf("Invalid UHCI controller number");
   return;
  }
 
  ddbg_printf("UHCI controller %d registers", number_of_controller);
- ddbg_printf("\n\nBase: %04x", uhci_controllers[number_of_controller].base);
+ ddbg_printf("\n\nBase: %04x", components->uhci[number_of_controller].base);
 
- ddbg_print_parsed_mem("USBCMD", ddbg_uhci_reg_usbcmd, inw(uhci_controllers[number_of_controller].base + 0x00));
+ ddbg_print_parsed_mem("USBCMD", ddbg_uhci_reg_usbcmd, inw(components->uhci[number_of_controller].base + 0x00));
 
- ddbg_print_parsed_mem("USBSTS", ddbg_uhci_reg_usbsts, inw(uhci_controllers[number_of_controller].base + 0x02));
+ ddbg_print_parsed_mem("USBSTS", ddbg_uhci_reg_usbsts, inw(components->uhci[number_of_controller].base + 0x02));
 
- ddbg_print_parsed_mem("USBINTR", ddbg_uhci_reg_usbintr, inw(uhci_controllers[number_of_controller].base + 0x04));
+ ddbg_print_parsed_mem("USBINTR", ddbg_uhci_reg_usbintr, inw(components->uhci[number_of_controller].base + 0x04));
 
- word_t frame = inw(uhci_controllers[number_of_controller].base + 0x06);
+ word_t frame = inw(components->uhci[number_of_controller].base + 0x06);
  ddbg_printf("\n\nFrame Number: %d\nProcessed Frame List: %d", frame, (frame & 0x3FF));
 
- ddbg_printf("\n\nFrame List Base Address: %x", ind(uhci_controllers[number_of_controller].base + 0x08));
+ ddbg_printf("\n\nFrame List Base Address: %x", ind(components->uhci[number_of_controller].base + 0x08));
 
- ddbg_printf("\n\nStart Of Frame Modify: %d", inb(uhci_controllers[number_of_controller].base + 0x0C));
+ ddbg_printf("\n\nStart Of Frame Modify: %d", inb(components->uhci[number_of_controller].base + 0x0C));
 
- for(dword_t i=0; i<uhci_controllers[number_of_controller].number_of_ports; i++) {
+ for(dword_t i=0; i<components->uhci[number_of_controller].number_of_ports; i++) {
   ddbg_printf("\n\nUSB Port %d", i+1);
-  ddbg_print_parsed_mem(0, ddbg_uhci_reg_port, inw(uhci_controllers[number_of_controller].base + 0x10 + i*2));
+  ddbg_print_parsed_mem(0, ddbg_uhci_reg_port, inw(components->uhci[number_of_controller].base + 0x10 + i*2));
  }
 
- ddbg_printf("\n\nRegister After Ports: %04x", inw(uhci_controllers[number_of_controller].base + 0x10 + uhci_controllers[number_of_controller].number_of_ports*2 + 0x02));
+ ddbg_printf("\n\nRegister After Ports: %04x", inw(components->uhci[number_of_controller].base + 0x10 + components->uhci[number_of_controller].number_of_ports*2 + 0x02));
 }

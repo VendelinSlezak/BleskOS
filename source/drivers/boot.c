@@ -47,7 +47,7 @@ void boot_drivers(void) {
     /* DETECT DEVICES */
 
     // detect devices connected to PCI bus
-    pci_new_scan();
+    scan_pci();
 
     // detect devices connected to fixed ports
     check_presence_of_bga();

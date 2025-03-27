@@ -8,83 +8,116 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+void ohci_add_new_pci_device(struct pci_device_info_t device) {
+    // check number of already connected cards
+    if(components->n_ohci >= MAX_NUMBER_OF_OHCI_CONTROLLERS) {
+        return;
+    }
+
+    // log driver
+    logf("%s", __FILE__);
+
+    // save basic device informations
+    copy_memory((dword_t)&device, (dword_t)&components->ohci[components->n_ohci].pci, sizeof(struct pci_device_info_t));
+
+    // read other device informations
+    components->ohci[components->n_ohci].base = pci_get_mmio(device, PCI_BAR0);
+
+    // configure PCI
+    pci_set_bits(device, 0x04, PCI_STATUS_BUSMASTERING | PCI_STATUS_MMIO);
+
+    // disable BIOS legacy emulation
+    if((mmio_ind(components->ohci[components->n_ohci].base+0x0) & (1 << 8)) == (1 << 8)) {
+        mmio_outd(components->ohci[components->n_ohci].base+0x100, 0x00);
+    }
+
+    // update number of devices
+    components->n_ohci++;
+}
+
 void initalize_ohci_controller(byte_t controller_number) {
- //log
- logf("\n\nOHCI controller %d.%d", (mmio_ind(ohci_controllers[controller_number].base+0x00) >> 4) & 0xF, mmio_ind(ohci_controllers[controller_number].base+0x00) & 0xF);
+    // log
+    logf("\n\nDriver: OHCI Controller\nDevice: PCI bus %d:%d:%d:%d\nVersion: %d.%d",
+        components->ohci[controller_number].pci.segment,
+        components->ohci[controller_number].pci.bus,
+        components->ohci[controller_number].pci.device,
+        components->ohci[controller_number].pci.function,
+        ((mmio_ind(components->ohci[controller_number].base+0x00) >> 4) & 0xF),
+        (mmio_ind(components->ohci[controller_number].base+0x00) & 0xF));
 
  //Host Controller Reset
- mmio_outd(ohci_controllers[controller_number].base+0x08, (1 << 0));
+ mmio_outd(components->ohci[controller_number].base+0x08, (1 << 0));
  wait(10);
- if((mmio_ind(ohci_controllers[controller_number].base+0x08) & (1 << 0)) != 0) {
+ if((mmio_ind(components->ohci[controller_number].base+0x08) & (1 << 0)) != 0) {
   logf("Host Controller Reset error");
   return;
  }
 
  //Global Reset
- mmio_outd(ohci_controllers[controller_number].base+0x04, 0x00);
+ mmio_outd(components->ohci[controller_number].base+0x04, 0x00);
  wait(50);
- mmio_outd(ohci_controllers[controller_number].base+0x04, (0b11 << 6)); //suspended state
+ mmio_outd(components->ohci[controller_number].base+0x04, (0b11 << 6)); //suspended state
  
  //set FM interval
- mmio_outd(ohci_controllers[controller_number].base+0x34, 0xA7782EDF);
+ mmio_outd(components->ohci[controller_number].base+0x34, 0xA7782EDF);
  
  //set periodic start
- mmio_outd(ohci_controllers[controller_number].base+0x40, 0x00002A2F);
+ mmio_outd(components->ohci[controller_number].base+0x40, 0x00002A2F);
  
  //power all ports
- mmio_outd(ohci_controllers[controller_number].base+0x48, ((mmio_ind(ohci_controllers[controller_number].base+0x48) & 0xFFFFE000) | (1 << 9)));
- mmio_outd(ohci_controllers[controller_number].base+0x4C, 0);
- mmio_outd(ohci_controllers[controller_number].base+0x50, 0x10000); //set global power
+ mmio_outd(components->ohci[controller_number].base+0x48, ((mmio_ind(components->ohci[controller_number].base+0x48) & 0xFFFFE000) | (1 << 9)));
+ mmio_outd(components->ohci[controller_number].base+0x4C, 0);
+ mmio_outd(components->ohci[controller_number].base+0x50, 0x10000); //set global power
  
  //read number of ports
- ohci_controllers[controller_number].number_of_ports = (mmio_ind(ohci_controllers[controller_number].base+0x48) & 0xF);
+ components->ohci[controller_number].number_of_ports = (mmio_ind(components->ohci[controller_number].base+0x48) & 0xF);
  
  //allocate memory for HCCA
- ohci_controllers[controller_number].hcca = (struct ohci_hcca_t *) aligned_calloc(256, 0xFF);
- mmio_outd(ohci_controllers[controller_number].base+0x18, (dword_t)ohci_controllers[controller_number].hcca);
+ components->ohci[controller_number].hcca = (struct ohci_hcca_t *) aligned_calloc(256, 0xFF);
+ mmio_outd(components->ohci[controller_number].base+0x18, (dword_t)components->ohci[controller_number].hcca);
  
  //set interrupt Endpoint Descriptors
- ohci_controllers[controller_number].interrupt_endpoint_descriptor = (struct ohci_endpoint_descriptor_t *) aligned_calloc(sizeof(struct ohci_endpoint_descriptor_t)*6, 0xF);
+ components->ohci[controller_number].interrupt_endpoint_descriptor = (struct ohci_endpoint_descriptor_t *) aligned_calloc(sizeof(struct ohci_endpoint_descriptor_t)*6, 0xF);
  for(dword_t i=0; i<6; i++) {
-  ohci_controllers[controller_number].interrupt_endpoint_descriptor[i].next_ed_pointer = (dword_t)&ohci_controllers[controller_number].interrupt_endpoint_descriptor[i+1];
-  ohci_controllers[controller_number].interrupt_endpoint_descriptor[i].skip = 1;
+  components->ohci[controller_number].interrupt_endpoint_descriptor[i].next_ed_pointer = (dword_t)&components->ohci[controller_number].interrupt_endpoint_descriptor[i+1];
+  components->ohci[controller_number].interrupt_endpoint_descriptor[i].skip = 1;
  }
- ohci_controllers[controller_number].interrupt_endpoint_descriptor[5].next_ed_pointer = 0;
+ components->ohci[controller_number].interrupt_endpoint_descriptor[5].next_ed_pointer = 0;
  for(dword_t i = 0; i < OHCI_NUMBER_OF_POINTERS_IN_INTERRUPT_TABLE; i++) {
   if((i % 32) == 0) {
-   ohci_controllers[controller_number].hcca->interrupt_table[i] = (dword_t)&ohci_controllers[controller_number].interrupt_endpoint_descriptor[0];
+   components->ohci[controller_number].hcca->interrupt_table[i] = (dword_t)&components->ohci[controller_number].interrupt_endpoint_descriptor[0];
   }
   else if((i % 16) == 0) {
-   ohci_controllers[controller_number].hcca->interrupt_table[i] = (dword_t)&ohci_controllers[controller_number].interrupt_endpoint_descriptor[1];
+   components->ohci[controller_number].hcca->interrupt_table[i] = (dword_t)&components->ohci[controller_number].interrupt_endpoint_descriptor[1];
   }
   else if((i % 8) == 0) {
-   ohci_controllers[controller_number].hcca->interrupt_table[i] = (dword_t)&ohci_controllers[controller_number].interrupt_endpoint_descriptor[2];
+   components->ohci[controller_number].hcca->interrupt_table[i] = (dword_t)&components->ohci[controller_number].interrupt_endpoint_descriptor[2];
   }
   else if((i % 4) == 0) {
-   ohci_controllers[controller_number].hcca->interrupt_table[i] = (dword_t)&ohci_controllers[controller_number].interrupt_endpoint_descriptor[3];
+   components->ohci[controller_number].hcca->interrupt_table[i] = (dword_t)&components->ohci[controller_number].interrupt_endpoint_descriptor[3];
   }
   else if((i % 2) == 0) {
-   ohci_controllers[controller_number].hcca->interrupt_table[i] = (dword_t)&ohci_controllers[controller_number].interrupt_endpoint_descriptor[4];
+   components->ohci[controller_number].hcca->interrupt_table[i] = (dword_t)&components->ohci[controller_number].interrupt_endpoint_descriptor[4];
   }
   else {
-   ohci_controllers[controller_number].hcca->interrupt_table[i] = (dword_t)&ohci_controllers[controller_number].interrupt_endpoint_descriptor[5];
+   components->ohci[controller_number].hcca->interrupt_table[i] = (dword_t)&components->ohci[controller_number].interrupt_endpoint_descriptor[5];
   }
  }
 
  //set Control ED
- mmio_outd(ohci_controllers[controller_number].base+0x24, 0);
- mmio_outd(ohci_controllers[controller_number].base+0x20, 0);
+ mmio_outd(components->ohci[controller_number].base+0x24, 0);
+ mmio_outd(components->ohci[controller_number].base+0x20, 0);
 
  //set Bulk ED
- mmio_outd(ohci_controllers[controller_number].base+0x2C, 0);
- mmio_outd(ohci_controllers[controller_number].base+0x28, 0);
+ mmio_outd(components->ohci[controller_number].base+0x2C, 0);
+ mmio_outd(components->ohci[controller_number].base+0x28, 0);
 
  //enable interrupts
- set_irq_handler(ohci_controllers[controller_number].irq, (dword_t)usb_irq);
- mmio_outd(ohci_controllers[controller_number].base+0x10, (1 << 1) | (1 << 31));
+ pci_device_install_interrupt_handler(components->ohci[controller_number].pci, usb_irq);
+ mmio_outd(components->ohci[controller_number].base+0x10, (1 << 1) | (1 << 31));
 
  //start controller
- mmio_outd(ohci_controllers[controller_number].base+0x04, (1 << 2) | (0b10 << 6));
+ mmio_outd(components->ohci[controller_number].base+0x04, (1 << 2) | (0b10 << 6));
  wait(50);
 }
 
@@ -92,7 +125,7 @@ void initalize_ohci_controller(byte_t controller_number) {
 
 byte_t ohci_acknowledge_interrupt(dword_t number_of_controller) {
  //read interrupt status
- volatile dword_t irq_status = mmio_ind(ohci_controllers[number_of_controller].base+0x0C);
+ volatile dword_t irq_status = mmio_ind(components->ohci[number_of_controller].base+0x0C);
 
  //return if nothing happend
  if(irq_status == 0) {
@@ -105,7 +138,7 @@ byte_t ohci_acknowledge_interrupt(dword_t number_of_controller) {
  }
 
  //clear interrupt status
- mmio_outd(ohci_controllers[number_of_controller].base+0x0C, irq_status);
+ mmio_outd(components->ohci[number_of_controller].base+0x0C, irq_status);
  return STATUS_TRUE;
 }
 
@@ -113,7 +146,7 @@ byte_t ohci_acknowledge_interrupt(dword_t number_of_controller) {
 
 byte_t ohci_check_port(dword_t number_of_controller, dword_t number_of_port) {
  //calculate register of port
- dword_t ohci_port = (ohci_controllers[number_of_controller].base+0x54+(number_of_port*4));
+ dword_t ohci_port = (components->ohci[number_of_controller].base+0x54+(number_of_port*4));
  dword_t ohci_port_value = mmio_ind(ohci_port);
 
  //is status change bit clear?
@@ -170,7 +203,7 @@ byte_t ohci_check_port(dword_t number_of_controller, dword_t number_of_port) {
 
 void ohci_enable_port(void) {
  //calculate register of port
- dword_t ohci_port = (ohci_controllers[usb_devices[0].controller_number].base+0x54+(usb_devices[0].port_number*4));
+ dword_t ohci_port = (components->ohci[usb_devices[0].controller_number].base+0x54+(usb_devices[0].port_number*4));
 
  //start enabling of port
  mmio_outd(ohci_port, (1 << 1));
@@ -185,7 +218,7 @@ void ohci_enable_port(void) {
 
 void ohci_check_if_port_is_enabled(void) {
  //calculate register of port
- dword_t ohci_port = (ohci_controllers[usb_devices[0].controller_number].base+0x54+(usb_devices[0].port_number*4));
+ dword_t ohci_port = (components->ohci[usb_devices[0].controller_number].base+0x54+(usb_devices[0].port_number*4));
  dword_t ohci_port_value = mmio_ind(ohci_port);
 
  //check if port is enabled
@@ -238,7 +271,7 @@ void ohci_check_if_port_is_enabled(void) {
 
 void ohci_disable_device_on_port(dword_t number_of_controller, dword_t number_of_port) {
  //calculate register of port
- dword_t ohci_port = (ohci_controllers[number_of_controller].base+0x54+(usb_devices[0].port_number*4));
+ dword_t ohci_port = (components->ohci[number_of_controller].base+0x54+(usb_devices[0].port_number*4));
 
  //disable device
  mmio_outd(ohci_port, (1 << 0));
@@ -323,18 +356,18 @@ void ohci_insert_endpoint_descriptor(dword_t number_of_controller, dword_t type_
  cli();
  
  if(type_of_transfer == USB_CONTROL_TRANSFER) {
-  ed->next_ed_pointer = mmio_ind(ohci_controllers[number_of_controller].base+0x20);
-  mmio_outd(ohci_controllers[number_of_controller].base+0x04, mmio_ind(ohci_controllers[number_of_controller].base+0x04) & ~(1 << 4));
-  mmio_outd(ohci_controllers[number_of_controller].base+0x20, (dword_t)ed);
-  mmio_outd(ohci_controllers[number_of_controller].base+0x04, mmio_ind(ohci_controllers[number_of_controller].base+0x04) | (1 << 4));
-  mmio_outd(ohci_controllers[number_of_controller].base+0x08, (1 << 1));
+  ed->next_ed_pointer = mmio_ind(components->ohci[number_of_controller].base+0x20);
+  mmio_outd(components->ohci[number_of_controller].base+0x04, mmio_ind(components->ohci[number_of_controller].base+0x04) & ~(1 << 4));
+  mmio_outd(components->ohci[number_of_controller].base+0x20, (dword_t)ed);
+  mmio_outd(components->ohci[number_of_controller].base+0x04, mmio_ind(components->ohci[number_of_controller].base+0x04) | (1 << 4));
+  mmio_outd(components->ohci[number_of_controller].base+0x08, (1 << 1));
  }
  else if(type_of_transfer == USB_BULK_TRANSFER) {
-  ed->next_ed_pointer = mmio_ind(ohci_controllers[number_of_controller].base+0x28);
-  mmio_outd(ohci_controllers[number_of_controller].base+0x04, mmio_ind(ohci_controllers[number_of_controller].base+0x04) & ~(1 << 5));
-  mmio_outd(ohci_controllers[number_of_controller].base+0x28, (dword_t)ed);
-  mmio_outd(ohci_controllers[number_of_controller].base+0x04, mmio_ind(ohci_controllers[number_of_controller].base+0x04) | (1 << 5));
-  mmio_outd(ohci_controllers[number_of_controller].base+0x08, (1 << 2));
+  ed->next_ed_pointer = mmio_ind(components->ohci[number_of_controller].base+0x28);
+  mmio_outd(components->ohci[number_of_controller].base+0x04, mmio_ind(components->ohci[number_of_controller].base+0x04) & ~(1 << 5));
+  mmio_outd(components->ohci[number_of_controller].base+0x28, (dword_t)ed);
+  mmio_outd(components->ohci[number_of_controller].base+0x04, mmio_ind(components->ohci[number_of_controller].base+0x04) | (1 << 5));
+  mmio_outd(components->ohci[number_of_controller].base+0x08, (1 << 2));
  }
 
  sti();
@@ -346,12 +379,12 @@ void ohci_remove_endpoint_descriptor(dword_t number_of_controller, dword_t type_
  //stop transfer
  dword_t first_endpoint_descriptor = 0;
  if(type_of_transfer == USB_CONTROL_TRANSFER) {
-  mmio_outd(ohci_controllers[number_of_controller].base+0x04, mmio_ind(ohci_controllers[number_of_controller].base+0x04) & ~(1 << 4));
-  first_endpoint_descriptor = mmio_ind(ohci_controllers[number_of_controller].base+0x20);
+  mmio_outd(components->ohci[number_of_controller].base+0x04, mmio_ind(components->ohci[number_of_controller].base+0x04) & ~(1 << 4));
+  first_endpoint_descriptor = mmio_ind(components->ohci[number_of_controller].base+0x20);
  }
  else if(type_of_transfer == USB_BULK_TRANSFER) {
-  mmio_outd(ohci_controllers[number_of_controller].base+0x04, mmio_ind(ohci_controllers[number_of_controller].base+0x04) & ~(1 << 5));
-  first_endpoint_descriptor = mmio_ind(ohci_controllers[number_of_controller].base+0x28);
+  mmio_outd(components->ohci[number_of_controller].base+0x04, mmio_ind(components->ohci[number_of_controller].base+0x04) & ~(1 << 5));
+  first_endpoint_descriptor = mmio_ind(components->ohci[number_of_controller].base+0x28);
  }
 
  //check if Endpoint Descriptor is first in list
@@ -360,10 +393,10 @@ void ohci_remove_endpoint_descriptor(dword_t number_of_controller, dword_t type_
   if(ed->next_ed_pointer == 0) {
    //clear pointer
    if(type_of_transfer == USB_CONTROL_TRANSFER) {
-    mmio_outd(ohci_controllers[number_of_controller].base+0x20, 0);
+    mmio_outd(components->ohci[number_of_controller].base+0x20, 0);
    }
    else if(type_of_transfer == USB_BULK_TRANSFER) {
-    mmio_outd(ohci_controllers[number_of_controller].base+0x28, 0);
+    mmio_outd(components->ohci[number_of_controller].base+0x28, 0);
    }
 
    //list is already stopped, so there is nothing more to do
@@ -373,10 +406,10 @@ void ohci_remove_endpoint_descriptor(dword_t number_of_controller, dword_t type_
   else {
    //set pointer to next Endpoint Descriptor
    if(type_of_transfer == USB_CONTROL_TRANSFER) {
-    mmio_outd(ohci_controllers[number_of_controller].base+0x20, ed->next_ed_pointer);
+    mmio_outd(components->ohci[number_of_controller].base+0x20, ed->next_ed_pointer);
    }
    else if(type_of_transfer == USB_BULK_TRANSFER) {
-    mmio_outd(ohci_controllers[number_of_controller].base+0x28, ed->next_ed_pointer);
+    mmio_outd(components->ohci[number_of_controller].base+0x28, ed->next_ed_pointer);
    }
   }
  }
@@ -404,10 +437,10 @@ void ohci_remove_endpoint_descriptor(dword_t number_of_controller, dword_t type_
 
  //start transfer
  if(type_of_transfer == USB_CONTROL_TRANSFER) {
-  mmio_outd(ohci_controllers[number_of_controller].base+0x04, mmio_ind(ohci_controllers[number_of_controller].base+0x04) | (1 << 4));
+  mmio_outd(components->ohci[number_of_controller].base+0x04, mmio_ind(components->ohci[number_of_controller].base+0x04) | (1 << 4));
  }
  else if(type_of_transfer == USB_BULK_TRANSFER) {
-  mmio_outd(ohci_controllers[number_of_controller].base+0x04, mmio_ind(ohci_controllers[number_of_controller].base+0x04) | (1 << 5));
+  mmio_outd(components->ohci[number_of_controller].base+0x04, mmio_ind(components->ohci[number_of_controller].base+0x04) | (1 << 5));
  }
 
  sti();
@@ -679,22 +712,22 @@ void ohci_interrupt_transfer(byte_t device_address, byte_t transfer_direction, s
 
  struct ohci_endpoint_descriptor_t *interrupt_endpoint_descriptor;
  if(interval == 32) {
-  interrupt_endpoint_descriptor = &ohci_controllers[usb_devices[device_address].controller_number].interrupt_endpoint_descriptor[0];
+  interrupt_endpoint_descriptor = &components->ohci[usb_devices[device_address].controller_number].interrupt_endpoint_descriptor[0];
  }
  else if(interval == 16) {
-  interrupt_endpoint_descriptor = &ohci_controllers[usb_devices[device_address].controller_number].interrupt_endpoint_descriptor[1];
+  interrupt_endpoint_descriptor = &components->ohci[usb_devices[device_address].controller_number].interrupt_endpoint_descriptor[1];
  }
  else if(interval == 8) {
-  interrupt_endpoint_descriptor = &ohci_controllers[usb_devices[device_address].controller_number].interrupt_endpoint_descriptor[2];
+  interrupt_endpoint_descriptor = &components->ohci[usb_devices[device_address].controller_number].interrupt_endpoint_descriptor[2];
  }
  else if(interval == 4) {
-  interrupt_endpoint_descriptor = &ohci_controllers[usb_devices[device_address].controller_number].interrupt_endpoint_descriptor[3];
+  interrupt_endpoint_descriptor = &components->ohci[usb_devices[device_address].controller_number].interrupt_endpoint_descriptor[3];
  }
  else if(interval == 2) {
-  interrupt_endpoint_descriptor = &ohci_controllers[usb_devices[device_address].controller_number].interrupt_endpoint_descriptor[4];
+  interrupt_endpoint_descriptor = &components->ohci[usb_devices[device_address].controller_number].interrupt_endpoint_descriptor[4];
  }
  else {
-  interrupt_endpoint_descriptor = &ohci_controllers[usb_devices[device_address].controller_number].interrupt_endpoint_descriptor[5];
+  interrupt_endpoint_descriptor = &components->ohci[usb_devices[device_address].controller_number].interrupt_endpoint_descriptor[5];
  }
 
  //insert our Queue Head
@@ -732,7 +765,7 @@ void ohci_close_interrupt_transfer(byte_t device_address, struct usb_interrupt_t
  cli();
 
  //go through all Endpoint Descriptors to find our Endpoint Descriptor
- struct ohci_endpoint_descriptor_t *interrupt_endpoint_descriptor = &ohci_controllers[usb_devices[device_address].controller_number].interrupt_endpoint_descriptor[0];
+ struct ohci_endpoint_descriptor_t *interrupt_endpoint_descriptor = &components->ohci[usb_devices[device_address].controller_number].interrupt_endpoint_descriptor[0];
  while(1) {
   //end of list, our Endpoint Descriptor was not inserted here
   if(interrupt_endpoint_descriptor->next_ed_pointer == 0) {

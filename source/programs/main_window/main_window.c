@@ -73,6 +73,10 @@ void bleskos_main_window_redraw_time(void) {
 }
 
 void bleskos_main_window_redraw_sound_volume(void) {
+    if(components->p_sound_card == 0) {
+        return;
+    }
+
     if(monitors[0].change_backlight != 0) {
         bleskos_main_window_drawing_line = 40+15+35;
     }
@@ -155,27 +159,28 @@ void bleskos_main_window_redraw(void) {
   bleskos_main_window_drawing_line += 35;
  }
 
- //sound volume control
- bleskos_main_window_print_item("Sound volume");
- add_zone_to_click_board(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20, MW_SOUND_VOLUME);
- draw_full_square(bleskos_main_window_drawing_column+5, bleskos_main_window_drawing_line, 285*sound_volume/100, 20, WHITE);
- draw_full_square(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 5, 20, BLACK);
- draw_full_square(bleskos_main_window_drawing_column+290, bleskos_main_window_drawing_line, 5, 20, BLACK);
- draw_empty_square(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20, BLACK);
- if(sound_volume<10) {
-  print_var(sound_volume, bleskos_main_window_drawing_column+295/2-4, bleskos_main_window_drawing_line+6, BLACK);
- }
- else if(sound_volume<100) {
-  print_var(sound_volume, bleskos_main_window_drawing_column+295/2-8, bleskos_main_window_drawing_line+6, BLACK);
- }
- else {
-  print("100", bleskos_main_window_drawing_column+295/2-12, bleskos_main_window_drawing_line+6, BLACK);
- }
- bleskos_main_window_drawing_line += 25;
+    //sound volume control
+    if(components->p_sound_card == 1) {
+        bleskos_main_window_print_item("Sound volume");
+        add_zone_to_click_board(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20, MW_SOUND_VOLUME);
+        draw_full_square(bleskos_main_window_drawing_column+5, bleskos_main_window_drawing_line, 285*sound_volume/100, 20, WHITE);
+        draw_full_square(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 5, 20, BLACK);
+        draw_full_square(bleskos_main_window_drawing_column+290, bleskos_main_window_drawing_line, 5, 20, BLACK);
+        draw_empty_square(bleskos_main_window_drawing_column, bleskos_main_window_drawing_line, 295, 20, BLACK);
+        if(sound_volume<10) {
+            print_var(sound_volume, bleskos_main_window_drawing_column+295/2-4, bleskos_main_window_drawing_line+6, BLACK);
+        }
+        else if(sound_volume<100) {
+            print_var(sound_volume, bleskos_main_window_drawing_column+295/2-8, bleskos_main_window_drawing_line+6, BLACK);
+        }
+        else {
+            print("100", bleskos_main_window_drawing_column+295/2-12, bleskos_main_window_drawing_line+6, BLACK);
+        }
+        bleskos_main_window_drawing_line += 35;
+    }
 
  //network state
- if(number_of_ethernet_cards!=0xFF) {
-  bleskos_main_window_drawing_line += 10;
+ if(number_of_ethernet_cards != 0) {
   bleskos_main_window_print_item("Internet");
   if(internet.status==INTERNET_STATUS_DISCONNECTED) {
    bleskos_main_window_draw_item("Not connected", 0x00C000, 0);

@@ -79,7 +79,7 @@ void initalize_ahci_controller(byte_t number_of_controller) {
                     break;
                 }
             }
-            if(time_of_system_running >= components->ahci[components->n_ahci].pci.bios_handoff_timeout) {
+            if(((mmio_ind(base + 0x28) & 0x3) != 0x2) || time_of_system_running >= components->ahci[components->n_ahci].pci.bios_handoff_timeout) {
                 logf("\nAHCI ERROR: BIOS did not released ownership");
                 return;
             }
