@@ -9,15 +9,12 @@
 */
 
 #define MAX_NUMBER_OF_XHCI_CONTROLLERS 10
-struct xhci_controller_info_t {
- byte_t bus;
- byte_t device;
- byte_t function;
+struct xhci_info_t {
+    struct pci_device_info_t pci;
 
- dword_t base;
- dword_t irq;
+    dword_t base;
 }__attribute__((packed));
-struct xhci_controller_info_t xhci_controllers[MAX_NUMBER_OF_XHCI_CONTROLLERS];
-dword_t number_of_xhci_controllers;
+
+void xhci_add_new_pci_device(struct pci_device_info_t device);
 
 void initalize_xhci_controller(dword_t number_of_controller);

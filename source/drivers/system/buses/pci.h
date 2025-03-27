@@ -140,6 +140,11 @@ extern struct pci_supported_devices_list_t realtek_8139_supported_pci_devices[];
 extern void realtek_8169_add_new_pci_device(struct pci_device_info_t device);
 extern struct pci_supported_devices_list_t realtek_8169_supported_pci_devices[];
 
+extern void uhci_add_new_pci_device(struct pci_device_info_t device);
+extern void ohci_add_new_pci_device(struct pci_device_info_t device);
+extern void ehci_add_new_pci_device(struct pci_device_info_t device);
+extern void xhci_add_new_pci_device(struct pci_device_info_t device);
+
 struct pci_device_type_list_t pci_device_type_list[] = {
     // Unclassified
     {0x00000000, "Non-VGA-Compatible Unclassified Device", 0, 0},
@@ -262,10 +267,10 @@ struct pci_device_type_list_t pci_device_type_list[] = {
     {0x0C001000, "FireWire (IEEE 1394) Controller (OpenHCI)", 0, 0},
     {0x0C010000, "ACCESS Bus Controller", 0, 0},
     {0x0C020000, "Serial Storage Architecture Controller", 0, 0},
-    {0x0C030000, "UHCI USB Controller", 0, 0},
-    {0x0C031000, "OHCI USB Controller", 0, 0},
-    {0x0C032000, "EHCI USB Controller", 0, 0},
-    {0x0C033000, "xHCI USB Controller", 0, 0},
+    {0x0C030000, "UHCI USB Controller", uhci_add_new_pci_device, 0},
+    {0x0C031000, "OHCI USB Controller", ohci_add_new_pci_device, 0},
+    {0x0C032000, "EHCI USB Controller", ehci_add_new_pci_device, 0},
+    {0x0C033000, "xHCI USB Controller", xhci_add_new_pci_device, 0},
     {0x0C038000, "USB Miscellaneous Controller", 0, 0},
     {0x0C03FE00, "USB Device Controller", 0, 0},
     {0x0C040000, "Fibre Channel Controller", 0, 0},
@@ -325,25 +330,6 @@ struct pci_device_type_list_t pci_device_type_list[] = {
 #define PCI_STATUS_BUSMASTERING (1 << 2)
 #define PCI_STATUS_DISABLE_INTERRUPTS (1 << 10)
 
-dword_t pci_ind(struct pci_device_info_t device, dword_t offset);
-word_t pci_inw(struct pci_device_info_t device, dword_t offset);
-byte_t pci_inb(struct pci_device_info_t device, dword_t offset);
-void pci_outd(struct pci_device_info_t device, dword_t offset, dword_t value);
-void pci_set_bits(struct pci_device_info_t device, dword_t offset, dword_t bits);
-void pci_clear_bits(struct pci_device_info_t device, dword_t offset, dword_t bits);
-void pci_outw(struct pci_device_info_t device, dword_t offset, word_t value);
-void pci_outb(struct pci_device_info_t device, dword_t offset, byte_t value);
-byte_t *pci_get_vendor_name(word_t vendor_id);
-byte_t *pci_get_device_type_string(dword_t type);
-dword_t pci_is_device_in_list(word_t vendor_id, word_t device_id, struct pci_supported_devices_list_t *device_list);
-void pci_new_scan(void);
-void pci_new_scan_device(struct pci_device_info_t device);
-dword_t pci_get_bar_type(struct pci_device_info_t device, dword_t bar);
-word_t pci_get_io(struct pci_device_info_t device, dword_t bar);
-dword_t pci_get_mmio(struct pci_device_info_t device, dword_t bar);
-dword_t pci_get_64_bit_mmio(struct pci_device_info_t device, dword_t bar);
-void pci_device_install_interrupt_handler(struct pci_device_info_t device, void (*handler)(void));
-
 #define PCI_BAR0 0x10
 #define PCI_BAR1 0x14
 #define PCI_BAR2 0x18
@@ -354,32 +340,27 @@ void pci_device_install_interrupt_handler(struct pci_device_info_t device, void 
 #define PCI_MMIO_BAR 0x0
 #define PCI_IO_BAR 0x1
 
+// TODO: move to PS/2
 #define DEVICE_PRESENCE_IS_NOT_KNOWN 0xFF
 #define DEVICE_NOT_PRESENT 0
 #define DEVICE_PRESENT 1
 #define DEVICE_PRESENT_BUT_ERROR_STATE 2
 
-#define VENDOR_INTEL 0x8086
-#define VENDOR_AMD_1 0x1022
-#define VENDOR_AMD_2 0x1002
-#define VENDOR_BROADCOM 0x14E4
-#define VENDOR_REALTEK 0x10EC
-#define VENDOR_QUALCOMM_ATHEROS_1 0x168C
-#define VENDOR_QUALCOMM_ATHEROS_2 0x1969
-#define VENDOR_NVIDIA 0x10DE
-#define VENDOR_TEXAS_INSTUMENTS 0x104C
-#define VENDOR_CONEXANT_SYSTEMS 0x14F1
-#define VENDOR_SIGMATEL 0x8384
-#define VENDOR_RED_HAT 0x1AF4
-
-dword_t pci_read(dword_t segment_memory, dword_t bus, dword_t device, dword_t function, dword_t offset);
-void pci_write(dword_t bus, dword_t device, dword_t function, dword_t offset, dword_t value);
-void pci_writeb(dword_t bus, dword_t device, dword_t function, dword_t offset, dword_t value);
-dword_t pci_read_bar_type(dword_t bus, dword_t device, dword_t function, dword_t bar);
-word_t pci_read_io_bar(dword_t bus, dword_t device, dword_t function, dword_t bar);
-dword_t pci_read_mmio_bar(dword_t bus, dword_t device, dword_t function, dword_t bar);
-void pci_enable_io_busmastering(dword_t bus, dword_t device, dword_t function);
-void pci_enable_mmio_busmastering(dword_t bus, dword_t device, dword_t function);
-void pci_disable_interrupts(dword_t bus, dword_t device, dword_t function);
+dword_t pci_ind(struct pci_device_info_t device, dword_t offset);
+word_t pci_inw(struct pci_device_info_t device, dword_t offset);
+byte_t pci_inb(struct pci_device_info_t device, dword_t offset);
+void pci_outd(struct pci_device_info_t device, dword_t offset, dword_t value);
+dword_t pci_get_bar_type(struct pci_device_info_t device, dword_t bar);
+word_t pci_get_io(struct pci_device_info_t device, dword_t bar);
+dword_t pci_get_mmio(struct pci_device_info_t device, dword_t bar);
+dword_t pci_get_64_bit_mmio(struct pci_device_info_t device, dword_t bar);
+void pci_device_install_interrupt_handler(struct pci_device_info_t device, void (*handler)(void));
+void pci_set_bits(struct pci_device_info_t device, dword_t offset, dword_t bits);
+void pci_clear_bits(struct pci_device_info_t device, dword_t offset, dword_t bits);
+void pci_outw(struct pci_device_info_t device, dword_t offset, word_t value);
+void pci_outb(struct pci_device_info_t device, dword_t offset, byte_t value);
+byte_t *pci_get_vendor_name(word_t vendor_id);
+byte_t *pci_get_device_type_string(dword_t type);
+dword_t pci_is_device_in_list(word_t vendor_id, word_t device_id, struct pci_supported_devices_list_t *device_list);
 void scan_pci(void);
-void scan_pci_device(dword_t bus, dword_t device, dword_t function);
+void scan_pci_device(struct pci_device_info_t device);

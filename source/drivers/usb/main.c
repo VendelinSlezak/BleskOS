@@ -9,68 +9,68 @@
 */
 
 void initalize_usb_controllers(void) {
- //allocate memory for USB devices
- usb_devices = (struct usb_device_t *) calloc(sizeof(struct usb_device_t)*MAX_NUMBER_OF_USB_DEVICES);
- number_of_usb_devices = 0;
- usb_device_change_event = STATUS_FALSE;
+    //allocate memory for USB devices
+    usb_devices = (struct usb_device_t *) calloc(sizeof(struct usb_device_t)*MAX_NUMBER_OF_USB_DEVICES);
+    number_of_usb_devices = 0;
+    usb_device_change_event = STATUS_FALSE;
 
- //initalize all detected xHCI controllers
- for(dword_t i=0; i<number_of_xhci_controllers; i++) {
-  initalize_xhci_controller(i);
- }
+    //initalize all detected xHCI controllers
+    for(dword_t i = 0; i < components->n_xhci; i++) {
+        initalize_xhci_controller(i);
+    }
 
- //initalize all detected EHCI controllers
- for(dword_t i=0; i<number_of_ehci_controllers; i++) {
-  initalize_ehci_controller(i);
- }
+    //initalize all detected EHCI controllers
+    for(dword_t i = 0; i < components->n_ehci; i++) {
+        initalize_ehci_controller(i);
+    }
 
- //initalize all detected UHCI controllers
- for(dword_t i=0; i<number_of_uhci_controllers; i++) {
-  initalize_uhci_controller(i);
- }
+    //initalize all detected UHCI controllers
+    for(dword_t i = 0; i < components->n_uhci; i++) {
+        initalize_uhci_controller(i);
+    }
 
- //initalize all detected OHCI controllers
- for(dword_t i=0; i<number_of_ohci_controllers; i++) {
-  initalize_ohci_controller(i);
- }
+    //initalize all detected OHCI controllers
+    for(dword_t i = 0; i < components->n_ohci; i++) {
+        initalize_ohci_controller(i);
+    }
 
- //check actual state of USB ports and start initalization of connected devices
- check_usb_ports();
+    //check actual state of USB ports and start initalization of connected devices
+    check_usb_ports();
 
- //create task to check status of ports four times per second
- create_task(check_usb_ports, TASK_TYPE_PERIODIC_INTERRUPT, 250);
+    //create task to check status of ports four times per second
+    create_task(check_usb_ports, TASK_TYPE_PERIODIC_INTERRUPT, 250);
 
- //create task to check initalization status of interfaces four times per second that will initalize all uninitalized interfaces
- create_task(check_usb_interface_initalization, TASK_TYPE_PERIODIC_INTERRUPT, 250);
+    //create task to check initalization status of interfaces four times per second that will initalize all uninitalized interfaces
+    create_task(check_usb_interface_initalization, TASK_TYPE_PERIODIC_INTERRUPT, 250);
 
- //create task that will check pressing keys that are holded by user
- create_task(usb_keyboards_check_pressed_keys, TASK_TYPE_PERIODIC_INTERRUPT, 50);
+    //create task that will check pressing keys that are holded by user
+    create_task(usb_keyboards_check_pressed_keys, TASK_TYPE_PERIODIC_INTERRUPT, 50);
 
- //create task that will check USB hub ports
- create_task(usb_hub_check_connections, TASK_TYPE_PERIODIC_INTERRUPT, 200);
+    //create task that will check USB hub ports
+    create_task(usb_hub_check_connections, TASK_TYPE_PERIODIC_INTERRUPT, 200);
 
- //create task that will monitor unit state of USB MSD
- create_task(usb_msd_monitor_unit_state, TASK_TYPE_USER_INPUT, 1000);
+    //create task that will monitor unit state of USB MSD
+    create_task(usb_msd_monitor_unit_state, TASK_TYPE_USER_INPUT, 1000);
 }
 
 void check_usb_ports(void) {
  //check all EHCI ports
- for(dword_t controller=0; controller<number_of_ehci_controllers; controller++) {
-  for(dword_t port=0; port<ehci_controllers[controller].number_of_ports; port++) {
+ for(dword_t controller=0; controller<components->n_ehci; controller++) {
+  for(dword_t port=0; port<components->ehci[controller].number_of_ports; port++) {
    usb_process_port_status(ehci_check_port(controller, port), USB_EHCI, controller, port);
   }
  }
 
  //check all UHCI ports
- for(dword_t controller=0; controller<number_of_uhci_controllers; controller++) {
-  for(dword_t port=0; port<uhci_controllers[controller].number_of_ports; port++) {
+ for(dword_t controller=0; controller<components->n_uhci; controller++) {
+  for(dword_t port=0; port<components->uhci[controller].number_of_ports; port++) {
    usb_process_port_status(uhci_check_port(controller, port), USB_UHCI, controller, port);
   }
  }
 
  //check all OHCI ports
- for(dword_t controller=0; controller<number_of_ohci_controllers; controller++) {
-  for(dword_t port=0; port<ohci_controllers[controller].number_of_ports; port++) {
+ for(dword_t controller=0; controller<components->n_ohci; controller++) {
+  for(dword_t port=0; port<components->ohci[controller].number_of_ports; port++) {
    usb_process_port_status(ohci_check_port(controller, port), USB_OHCI, controller, port);
   }
  }
@@ -238,13 +238,13 @@ void usb_remove_hub_device(byte_t hub_address, byte_t hub_port_number) {
 void usb_irq(void) {
  //acknowledge interrupt on all controllers
  byte_t is_usb_interrupt = STATUS_FALSE;
- for(dword_t i=0; i<number_of_uhci_controllers; i++) {
+ for(dword_t i=0; i<components->n_uhci; i++) {
   is_usb_interrupt |= uhci_acknowledge_interrupt(i);
  }
- for(dword_t i=0; i<number_of_ohci_controllers; i++) {
+ for(dword_t i=0; i<components->n_ohci; i++) {
   is_usb_interrupt |= ohci_acknowledge_interrupt(i);
  }
- for(dword_t i=0; i<number_of_ehci_controllers; i++) {
+ for(dword_t i=0; i<components->n_ehci; i++) {
   is_usb_interrupt |= ehci_acknowledge_interrupt(i);
  }
  if(is_usb_interrupt == STATUS_FALSE) {

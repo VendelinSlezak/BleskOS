@@ -49,7 +49,7 @@ void initalize_hpet(void) {
     hpet_write(0x10, 1);
 
     // log
-    logf("\n\nHPET INFO\n Number of timers: %d \n Nanoseconds per tick %d", components->hpet.number_of_timers, components->hpet.one_tick_nanoseconds);
+    logf("\n\nHPET INFO\n Number of timers: %d \n Nanoseconds per tick: %d", components->hpet.number_of_timers, components->hpet.one_tick_nanoseconds);
 }
 
 void hpet_reset_counter(void) {

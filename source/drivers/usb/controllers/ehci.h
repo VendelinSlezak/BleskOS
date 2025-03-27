@@ -9,23 +9,18 @@
 */
 
 #define MAX_NUMBER_OF_EHCI_CONTROLLERS 10
-struct ehci_controller_info_t {
- byte_t bus;
- byte_t device;
- byte_t function;
+struct ehci_info_t {
+    struct pci_device_info_t pci;
 
- dword_t base;
- dword_t operational_registers_base;
- byte_t irq;
- byte_t number_of_ports;
+    dword_t base;
+    dword_t operational_registers_base;
+    byte_t number_of_ports;
 
- dword_t *periodic_list;
- struct ehci_empty_queue_head_t *periodic_qh;
- struct ehci_queue_head_t *asychronous_start_qh;
- struct ehci_queue_head_t *asychronous_end_qh;
-}__attribute__((packed));
-struct ehci_controller_info_t ehci_controllers[MAX_NUMBER_OF_EHCI_CONTROLLERS];
-dword_t number_of_ehci_controllers;
+    dword_t *periodic_list;
+    struct ehci_empty_queue_head_t *periodic_qh;
+    struct ehci_queue_head_t *asychronous_start_qh;
+    struct ehci_queue_head_t *asychronous_end_qh;
+};
 
 #define EHCI_NUMBER_OF_POINTERS_IN_PERIODIC_LIST 1024
 #define EHCI_INVALID_PERIODIC_POINTER (1 << 0)
@@ -125,6 +120,8 @@ struct ehci_empty_queue_head_t {
 
  byte_t padding[256-16-sizeof(struct ehci_queue_transfer_descriptor_t)];
 }__attribute__((packed));
+
+void ehci_add_new_pci_device(struct pci_device_info_t device);
 
 void initalize_ehci_controller(dword_t number_of_controller);
 

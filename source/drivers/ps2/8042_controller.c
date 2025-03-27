@@ -122,7 +122,7 @@ void initalize_ps2_controller(void) {
   return;
  }
  else {
-  logf("\n\nPS/2 controller ");
+  logf("\n\nDriver: 8042 controller");
  }
 
  //initalize variables
@@ -147,7 +147,7 @@ void initalize_ps2_controller(void) {
   }
  }
  if((inb(0x64) & 0x1)==0x1) { //error: data port was not cleared
-  logf("has locked data port");
+  logf("\nERROR: locked data port");
   return;
  }
 
@@ -169,11 +169,11 @@ void initalize_ps2_controller(void) {
  write_ps2_command(0xAA);
  if(read_ps2_data()==0x55) {
   //self-test succesfull
-  logf("self-test succesfull");
+  logf("\nSelf-test succesfull");
  }
  else {
   //self-test failed
-  logf("self-test failed");
+  logf("\nERROR: Self-test failed");
   ps2_first_channel_present = DEVICE_NOT_PRESENT;
   ps2_second_channel_present = DEVICE_NOT_PRESENT;
   return;
@@ -211,10 +211,10 @@ void initalize_ps2_controller(void) {
  if(ps2_first_channel_present==DEVICE_PRESENT) {
   write_ps2_command(0xAB);
   if(read_ps2_data()==0x00) { //test successfull
-   logf("\nfirst channel test successfull");
+   logf("\nFirst channel test successfull");
   }
   else { //test failed
-   logf("\nfirst channel test failed");
+   logf("\nFirst channel test failed");
    ps2_first_channel_present = DEVICE_PRESENT_BUT_ERROR_STATE;
   }
  }
@@ -223,10 +223,10 @@ void initalize_ps2_controller(void) {
  if(ps2_second_channel_present==DEVICE_PRESENT) {
   write_ps2_command(0xA9);
   if(read_ps2_data()==0x00) { //test successfull
-   logf("\nsecond channel test successfull");
+   logf("\nSecond channel test successfull");
   }
   else { //test failed
-   logf("\nsecond channel test failed");
+   logf("\nSecond channel test failed");
    ps2_second_channel_present = DEVICE_PRESENT_BUT_ERROR_STATE;
   }
  }
@@ -250,20 +250,20 @@ void initalize_ps2_controller(void) {
   write_ps2_command(0xAE);
   write_to_first_ps2_channel(0xFF); //reset
   if(ps2_first_channel_wait_for_ack()==STATUS_ERROR) {
-   logf("\nfirst channel no ACK after reset");
+   logf("\nFirst channel no ACK after reset");
   }
   if(ps2_first_channel_wait_for_response()==STATUS_ERROR) {
-   logf("\nfirst channel no response after reset");
+   logf("\nFirst channel no response after reset");
   }
  }
  if(ps2_second_channel_present==DEVICE_PRESENT) {
   write_ps2_command(0xA8);
   write_to_second_ps2_channel(0xFF); //reset
   if(ps2_second_channel_wait_for_ack()==STATUS_ERROR) {
-   logf("\nsecond channel no ACK after reset");
+   logf("\nSecond channel no ACK after reset");
   }
   if(ps2_second_channel_wait_for_response()==STATUS_ERROR) {
-   logf("\nsecond channel no response after reset");
+   logf("\nSecond channel no response after reset");
   }
  }
 
@@ -272,7 +272,7 @@ void initalize_ps2_controller(void) {
   //after reset device should not be in streaming mode, but to be sure disable streaming
   write_to_first_ps2_channel(0xF5);
   if(ps2_first_channel_wait_for_ack()==STATUS_ERROR) {
-   logf("\nfirst channel no ACK after 0xF5");
+   logf("\nFirst channel no ACK after 0xF5");
   }
 
   //read device ID
@@ -288,17 +288,17 @@ void initalize_ps2_controller(void) {
      ps2_first_channel_device = ps2_first_channel_buffer[1]; //unknown device
     }
 
-    logf("first channel device ID: ");
+    logf("First channel device ID: ");
     for(dword_t i=1; i<ps2_first_channel_buffer_pointer; i++) {
      logf("0x%02x ", ps2_first_channel_buffer[i]);
     }
    }
    else {
-    logf("first channel device did not send ID data");
+    logf("First channel device did not send ID data");
    }
   }
   else {
-   logf("first channel device did not send ID ack");
+   logf("First channel device did not send ID ack");
   }
  }
 
@@ -307,7 +307,7 @@ void initalize_ps2_controller(void) {
   //after reset device should not be in streaming mode, but to be sure disable streaming
   write_to_second_ps2_channel(0xF5);
   if(ps2_second_channel_wait_for_ack()==STATUS_ERROR) {
-   logf("\nsecond channel no ACK after 0xF5");
+   logf("\nSecond channel no ACK after 0xF5");
   }
 
   //read device ID
@@ -323,17 +323,17 @@ void initalize_ps2_controller(void) {
      ps2_second_channel_device = ps2_second_channel_buffer[1]; //unknown device
     }
    
-    logf("second channel device ID: ");
+    logf("Second channel device ID: ");
     for(dword_t i=1; i<ps2_second_channel_buffer_pointer; i++) {
      logf("0x%02x ", ps2_second_channel_buffer[i]);
     }
    }
    else {
-    logf("second channel device did not send ID data");
+    logf("Second channel device did not send ID data");
    }
   }
   else {
-   logf("second channel device did not send ID ack");
+   logf("Second channel device did not send ID ack");
   }
  }
 }
@@ -401,18 +401,46 @@ void ps2_second_channel_irq_handler(void) {
  }
 
  //process data
- if(ps2_second_channel_device==PS2_CHANNEL_MOUSE_INITALIZED && ps2_mouse_enable==STATUS_TRUE) {
-  if(ps2_second_channel_buffer_pointer >= ps2_second_channel_mouse_data_bytes) {
-   //if code waits for data from mouse, copy them
-   if(ps2_mouse_wait==1) {
-    for(dword_t i=0; i<ps2_second_channel_mouse_data_bytes; i++) {
-     ps2_mouse_data[i] = ps2_second_channel_buffer[i];
-    }
+ if(ps2_second_channel_device==PS2_CHANNEL_MOUSE_INITALIZED && ps2_second_channel_buffer_pointer >= ps2_second_channel_mouse_data_bytes) {
+   //if program waits for data from mouse, process it
+   if(ps2_mouse_enable == STATUS_TRUE) {
+        //buttons
+        mouse_buttons = ps2_second_channel_buffer[0];
+
+        //X movement
+        if(ps2_second_channel_buffer[1]<0x80) {
+            mouse_movement_x = ps2_second_channel_buffer[1];
+        }
+        else {
+            mouse_movement_x = (0xFFFFFFFF - (0xFF-ps2_second_channel_buffer[1]));
+        }
+
+        //Y movement
+        if(ps2_second_channel_buffer[2]<0x80) {
+            mouse_movement_y = (0xFFFFFFFF - ps2_second_channel_buffer[2] + 1);
+        }
+        else {
+            mouse_movement_y = (0x100-ps2_second_channel_buffer[2]);
+        }
+
+        //wheel
+        if(ps2_second_channel_buffer_pointer >= 3 && ps2_second_channel_buffer[3] != 0) {
+            if(ps2_second_channel_buffer[3]<0x80) {
+                mouse_wheel_movement = (0xFFFFFFFF - ps2_second_channel_buffer[3]);
+            }
+            else {
+                mouse_wheel_movement = (0xFF-ps2_second_channel_buffer[3]+1);
+            }
+        }
+
+        //click button state
+        mouse_update_click_button_state();
+
+        // inform method wait_for_user_input() from source/drivers/system/user_wait.c that there was received packet from mouse
+        mouse_event = STATUS_TRUE;
    }
 
-   //set variables
+   //reset variable
    ps2_second_channel_buffer_pointer = 0;
-   ps2_mouse_wait = 0;
-  }
  }
 }

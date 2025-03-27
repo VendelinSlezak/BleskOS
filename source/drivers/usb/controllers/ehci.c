@@ -8,33 +8,71 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+void ehci_add_new_pci_device(struct pci_device_info_t device) {
+    // check number of already connected cards
+    if(components->n_ehci >= MAX_NUMBER_OF_EHCI_CONTROLLERS) {
+        return;
+    }
+
+    // log driver
+    logf("%s", __FILE__);
+
+    // save basic device informations
+    copy_memory((dword_t)&device, (dword_t)&components->ehci[components->n_ehci].pci, sizeof(struct pci_device_info_t));
+
+    // read other device informations
+    components->ehci[components->n_ehci].base = pci_get_mmio(device, PCI_BAR0);
+
+    // configure PCI
+    pci_set_bits(device, 0x04, PCI_STATUS_BUSMASTERING | PCI_STATUS_MMIO);
+
+    // disable BIOS legacy emulation
+    dword_t pci_ehci_bios_register_offset = ((mmio_ind(components->ehci[components->n_ehci].base+0x08)>>8) & 0xFF);
+    if(pci_ehci_bios_register_offset >= 0x40 && (pci_ind(device, pci_ehci_bios_register_offset) & 0xFF)==0x01) {
+        pci_outd(device, pci_ehci_bios_register_offset, (1 << 24)); // set OS ownership
+        components->ehci[components->n_ehci].pci.bios_handoff_timeout = (time_of_system_running + 200); // set timeout
+    }
+
+    // update number of devices
+    components->n_ehci++;
+}
+
 /* initalization of EHCI controller at boot */
 
 void initalize_ehci_controller(dword_t number_of_controller) {
- //log
- logf("\n\nEHCI controller ");
+    // log
+    logf("\n\nDriver: EHCI Controller\nDevice: PCI bus %d:%d:%d:%d",
+        components->ehci[number_of_controller].pci.segment,
+        components->ehci[number_of_controller].pci.bus,
+        components->ehci[number_of_controller].pci.device,
+        components->ehci[number_of_controller].pci.function);
 
- //disable BIOS ownership
- dword_t pci_ehci_bios_register_offset = ((mmio_ind(ehci_controllers[number_of_controller].base+0x08)>>8) & 0xFF);
- if(pci_ehci_bios_register_offset >= 0x40 && (pci_read(0, ehci_controllers[number_of_controller].bus, ehci_controllers[number_of_controller].device, ehci_controllers[number_of_controller].function, pci_ehci_bios_register_offset) & 0xFF)==0x01) {
-  //check if BIOS released ownership
-  if((pci_read(0, ehci_controllers[number_of_controller].bus, ehci_controllers[number_of_controller].device, ehci_controllers[number_of_controller].function, pci_ehci_bios_register_offset) & 0x01010000)!=0x01000000) {
-   //BIOS did not released ownership
-   logf("\nERROR: EHCI controller is still in BIOS ownership 0x%x", pci_read(0, ehci_controllers[number_of_controller].bus, ehci_controllers[number_of_controller].device, ehci_controllers[number_of_controller].function, pci_ehci_bios_register_offset));
-   ehci_controllers[number_of_controller].number_of_ports = 0;
-   return;
-  }
-  else {
-   logf("\nBIOS ownership released");
-  }
- }
+    //disable BIOS ownership
+    dword_t pci_ehci_bios_register_offset = ((mmio_ind(components->ehci[number_of_controller].base+0x08)>>8) & 0xFF);
+    if(pci_ehci_bios_register_offset >= 0x40 && (pci_ind(components->ehci[number_of_controller].pci, pci_ehci_bios_register_offset) & 0xFF)==0x01) {
+        // wait for BIOS handoff
+        while(time_of_system_running < components->ehci[components->n_ehci].pci.bios_handoff_timeout) {
+            asm("nop");
+
+            if((pci_ind(components->ehci[number_of_controller].pci, pci_ehci_bios_register_offset) & 0x01010000)==0x01000000) {
+                logf("\nBIOS ownership released successfully");
+                break;
+            }
+        }
+        if(((pci_ind(components->ehci[number_of_controller].pci, pci_ehci_bios_register_offset) & 0x01010000)!=0x01000000)
+            || time_of_system_running >= components->xhci[components->n_xhci].pci.bios_handoff_timeout) {
+            logf("\nERROR: EHCI controller is still in BIOS ownership 0x%x", pci_ind(components->ehci[number_of_controller].pci, pci_ehci_bios_register_offset));
+            components->ehci[number_of_controller].number_of_ports = 0;
+            return;
+        }
+    }
 
  //calculate base of operational registers
- ehci_controllers[number_of_controller].operational_registers_base = (ehci_controllers[number_of_controller].base + mmio_inb(ehci_controllers[number_of_controller].base+0x00));
- dword_t oper_base = ehci_controllers[number_of_controller].operational_registers_base;
+ components->ehci[number_of_controller].operational_registers_base = (components->ehci[number_of_controller].base + mmio_inb(components->ehci[number_of_controller].base+0x00));
+ dword_t oper_base = components->ehci[number_of_controller].operational_registers_base;
  
  //read number of ports
- ehci_controllers[number_of_controller].number_of_ports = (mmio_ind(ehci_controllers[number_of_controller].base+0x04) & 0xF);
+ components->ehci[number_of_controller].number_of_ports = (mmio_ind(components->ehci[number_of_controller].base+0x04) & 0xF);
 
  //stop controller
  logf("\n");
@@ -69,43 +107,43 @@ void initalize_ehci_controller(dword_t number_of_controller) {
  mmio_outd(oper_base+0x0C, 0);
 
  //create main Queue Heads
- ehci_controllers[number_of_controller].periodic_qh = (struct ehci_empty_queue_head_t *) aligned_calloc(sizeof(struct ehci_empty_queue_head_t)*6, 0x1F);
+ components->ehci[number_of_controller].periodic_qh = (struct ehci_empty_queue_head_t *) aligned_calloc(sizeof(struct ehci_empty_queue_head_t)*6, 0x1F);
  for(dword_t i=0; i<6; i++) {
-  ehci_controllers[number_of_controller].periodic_qh[i].horizontal_pointer = ((dword_t)&ehci_controllers[number_of_controller].periodic_qh[i+1] | EHCI_QH_POINTS_TO_QH);
-  ehci_controllers[number_of_controller].periodic_qh[i].current_qtd_pointer = ((dword_t)&ehci_controllers[number_of_controller].periodic_qh[i] + 128);
-  ehci_controllers[number_of_controller].periodic_qh[i].maximum_packet_length = 8;
-  ehci_controllers[number_of_controller].periodic_qh[i].high_bandwidth_pipe_multiplier = 0b01;
-  ehci_controllers[number_of_controller].periodic_qh[i].td.next_qtd_pointer = EHCI_INVALID_QTD_POINTER;
-  ehci_controllers[number_of_controller].periodic_qh[i].td.alternate_next_qtd_pointer = EHCI_INVALID_QTD_POINTER;
+  components->ehci[number_of_controller].periodic_qh[i].horizontal_pointer = ((dword_t)&components->ehci[number_of_controller].periodic_qh[i+1] | EHCI_QH_POINTS_TO_QH);
+  components->ehci[number_of_controller].periodic_qh[i].current_qtd_pointer = ((dword_t)&components->ehci[number_of_controller].periodic_qh[i] + 128);
+  components->ehci[number_of_controller].periodic_qh[i].maximum_packet_length = 8;
+  components->ehci[number_of_controller].periodic_qh[i].high_bandwidth_pipe_multiplier = 0b01;
+  components->ehci[number_of_controller].periodic_qh[i].td.next_qtd_pointer = EHCI_INVALID_QTD_POINTER;
+  components->ehci[number_of_controller].periodic_qh[i].td.alternate_next_qtd_pointer = EHCI_INVALID_QTD_POINTER;
  }
- ehci_controllers[number_of_controller].periodic_qh[5].horizontal_pointer = EHCI_INVALID_QH_POINTER;
+ components->ehci[number_of_controller].periodic_qh[5].horizontal_pointer = EHCI_INVALID_QH_POINTER;
  
  //periodic list
- ehci_controllers[number_of_controller].periodic_list = (dword_t *) aligned_malloc(EHCI_NUMBER_OF_POINTERS_IN_PERIODIC_LIST*4, 0xFFF);
+ components->ehci[number_of_controller].periodic_list = (dword_t *) aligned_malloc(EHCI_NUMBER_OF_POINTERS_IN_PERIODIC_LIST*4, 0xFFF);
  for(dword_t i=0; i<EHCI_NUMBER_OF_POINTERS_IN_PERIODIC_LIST; i++) {
-  ehci_controllers[number_of_controller].periodic_list[i] = EHCI_INVALID_PERIODIC_POINTER;
+  components->ehci[number_of_controller].periodic_list[i] = EHCI_INVALID_PERIODIC_POINTER;
  }
  for(dword_t i = 0; i < EHCI_NUMBER_OF_POINTERS_IN_PERIODIC_LIST; i++) {
   if((i % 32) == 0) {
-   ehci_controllers[number_of_controller].periodic_list[i] = ((dword_t)&ehci_controllers[number_of_controller].periodic_qh[0] | EHCI_PERIODIC_POINTER_TO_QH);
+   components->ehci[number_of_controller].periodic_list[i] = ((dword_t)&components->ehci[number_of_controller].periodic_qh[0] | EHCI_PERIODIC_POINTER_TO_QH);
   }
   else if((i % 16) == 0) {
-   ehci_controllers[number_of_controller].periodic_list[i] = ((dword_t)&ehci_controllers[number_of_controller].periodic_qh[1] | EHCI_PERIODIC_POINTER_TO_QH);
+   components->ehci[number_of_controller].periodic_list[i] = ((dword_t)&components->ehci[number_of_controller].periodic_qh[1] | EHCI_PERIODIC_POINTER_TO_QH);
   }
   else if((i % 8) == 0) {
-   ehci_controllers[number_of_controller].periodic_list[i] = ((dword_t)&ehci_controllers[number_of_controller].periodic_qh[2] | EHCI_PERIODIC_POINTER_TO_QH);
+   components->ehci[number_of_controller].periodic_list[i] = ((dword_t)&components->ehci[number_of_controller].periodic_qh[2] | EHCI_PERIODIC_POINTER_TO_QH);
   }
   else if((i % 4) == 0) {
-   ehci_controllers[number_of_controller].periodic_list[i] = ((dword_t)&ehci_controllers[number_of_controller].periodic_qh[3] | EHCI_PERIODIC_POINTER_TO_QH);
+   components->ehci[number_of_controller].periodic_list[i] = ((dword_t)&components->ehci[number_of_controller].periodic_qh[3] | EHCI_PERIODIC_POINTER_TO_QH);
   }
   else if((i % 2) == 0) {
-   ehci_controllers[number_of_controller].periodic_list[i] = ((dword_t)&ehci_controllers[number_of_controller].periodic_qh[4] | EHCI_PERIODIC_POINTER_TO_QH);
+   components->ehci[number_of_controller].periodic_list[i] = ((dword_t)&components->ehci[number_of_controller].periodic_qh[4] | EHCI_PERIODIC_POINTER_TO_QH);
   }
   else {
-   ehci_controllers[number_of_controller].periodic_list[i] = ((dword_t)&ehci_controllers[number_of_controller].periodic_qh[5] | EHCI_PERIODIC_POINTER_TO_QH);
+   components->ehci[number_of_controller].periodic_list[i] = ((dword_t)&components->ehci[number_of_controller].periodic_qh[5] | EHCI_PERIODIC_POINTER_TO_QH);
   }
  }
- mmio_outd(oper_base+0x14, (dword_t)ehci_controllers[number_of_controller].periodic_list);
+ mmio_outd(oper_base+0x14, (dword_t)components->ehci[number_of_controller].periodic_list);
  
  //create empty Queue Head for asynchronous list
  struct ehci_queue_head_t *empty_queue_head = (struct ehci_queue_head_t *) aligned_calloc(256, 0x1F);
@@ -116,22 +154,22 @@ void initalize_ehci_controller(dword_t number_of_controller) {
  empty_queue_head->current_qtd_pointer = ((dword_t)empty_queue_head)+128;
  empty_queue_head->td.next_qtd_pointer = EHCI_INVALID_QTD_POINTER;
  empty_queue_head->td.alternate_next_qtd_pointer = EHCI_INVALID_QTD_POINTER;
- ehci_controllers[number_of_controller].asychronous_start_qh = empty_queue_head;
- ehci_controllers[number_of_controller].asychronous_end_qh = empty_queue_head;
+ components->ehci[number_of_controller].asychronous_start_qh = empty_queue_head;
+ components->ehci[number_of_controller].asychronous_end_qh = empty_queue_head;
  mmio_outd(oper_base+0x18, (dword_t)empty_queue_head);
  
  //run controller with asychronous and periodic schedule
  mmio_outd(oper_base+0x00, (1 << 0) | (1 << 4) | (1 << 5) | (1 << 16));
 
  //enable interrupts for transfers
- set_irq_handler(ehci_controllers[number_of_controller].irq, (dword_t)usb_irq);
+ pci_device_install_interrupt_handler(components->ehci[number_of_controller].pci, usb_irq);
  mmio_outd(oper_base+0x08, 0x23);
  
  //set flag to indicate that we initalized controller
  mmio_outd(oper_base+0x40, 0x1);
  
  //power all ports
- for(int i=0, port_base=(oper_base+0x44); i<ehci_controllers[number_of_controller].number_of_ports; i++, port_base+=0x04) {
+ for(dword_t i=0, port_base=(oper_base+0x44); i<components->ehci[number_of_controller].number_of_ports; i++, port_base+=0x04) {
   mmio_outd(port_base, (1 << 12));
  }
  wait(50);
@@ -141,7 +179,7 @@ void initalize_ehci_controller(dword_t number_of_controller) {
 
 byte_t ehci_acknowledge_interrupt(dword_t number_of_controller) {
  //read interrupt status
- volatile dword_t irq_status = mmio_ind(ehci_controllers[number_of_controller].operational_registers_base+0x04);
+ volatile dword_t irq_status = mmio_ind(components->ehci[number_of_controller].operational_registers_base+0x04);
 
  //return if nothing happend
  if((irq_status & 0x3F) == 0) {
@@ -149,7 +187,7 @@ byte_t ehci_acknowledge_interrupt(dword_t number_of_controller) {
  }
 
  //clear interrupt status
- mmio_outd(ehci_controllers[number_of_controller].operational_registers_base+0x04, irq_status);
+ mmio_outd(components->ehci[number_of_controller].operational_registers_base+0x04, irq_status);
  return STATUS_TRUE;
 }
 
@@ -157,7 +195,7 @@ byte_t ehci_acknowledge_interrupt(dword_t number_of_controller) {
 
 byte_t ehci_check_port(dword_t number_of_controller, dword_t number_of_port) {
  //calculate register of port
- dword_t ehci_port = (ehci_controllers[number_of_controller].operational_registers_base+0x44+(number_of_port*4));
+ dword_t ehci_port = (components->ehci[number_of_controller].operational_registers_base+0x44+(number_of_port*4));
  dword_t ehci_port_value = mmio_ind(ehci_port);
 
  //is status change bit clear?
@@ -212,7 +250,7 @@ byte_t ehci_check_port(dword_t number_of_controller, dword_t number_of_port) {
 
 void ehci_stop_port_reset(void) {
  //calculate register of port
- dword_t ehci_port = (ehci_controllers[usb_devices[0].controller_number].operational_registers_base+0x44+(usb_devices[0].port_number*4));
+ dword_t ehci_port = (components->ehci[usb_devices[0].controller_number].operational_registers_base+0x44+(usb_devices[0].port_number*4));
 
  //stop reset of port and clear status change
  mmio_outd(ehci_port, (1 << 1) | (1 << 12));
@@ -226,7 +264,7 @@ void ehci_stop_port_reset(void) {
 
 void ehci_check_if_port_is_enabled(void) {
  //calculate register of port
- dword_t ehci_port = (ehci_controllers[usb_devices[0].controller_number].operational_registers_base+0x44+(usb_devices[0].port_number*4));
+ dword_t ehci_port = (components->ehci[usb_devices[0].controller_number].operational_registers_base+0x44+(usb_devices[0].port_number*4));
  dword_t ehci_port_value = mmio_ind(ehci_port);
 
  //check if port is enabled
@@ -268,7 +306,7 @@ void ehci_check_if_port_is_enabled(void) {
 
 void ehci_check_if_port_passed_device(void) {
  //calculate register of port
- dword_t ehci_port = (ehci_controllers[usb_devices[0].controller_number].operational_registers_base+0x44+(usb_devices[0].port_number*4));
+ dword_t ehci_port = (components->ehci[usb_devices[0].controller_number].operational_registers_base+0x44+(usb_devices[0].port_number*4));
  dword_t ehci_port_value = mmio_ind(ehci_port);
 
  //check device status
@@ -289,7 +327,7 @@ void ehci_check_if_port_passed_device(void) {
 
 void ehci_disable_device_on_port(dword_t number_of_controller, dword_t number_of_port) {
  //calculate register of port
- dword_t ehci_port = (ehci_controllers[usb_devices[0].controller_number].operational_registers_base+0x44+(usb_devices[0].port_number*4));
+ dword_t ehci_port = (components->ehci[usb_devices[0].controller_number].operational_registers_base+0x44+(usb_devices[0].port_number*4));
 
  //disable device
  mmio_outd(ehci_port, mmio_ind(ehci_port) & ~(1 << 2));
@@ -422,9 +460,9 @@ void ehci_insert_asychronous_queue_head(dword_t number_of_controller, struct ehc
  cli();
 
  //insert Queue Head to end of list
- queue_head->horizontal_pointer = ((dword_t)ehci_controllers[number_of_controller].asychronous_start_qh | EHCI_QH_POINTS_TO_QH); //Queue Head at end needs to point to start of list
- ehci_controllers[number_of_controller].asychronous_end_qh->horizontal_pointer = ((dword_t)queue_head | EHCI_QH_POINTS_TO_QH); //insert Queue Head
- ehci_controllers[number_of_controller].asychronous_end_qh = queue_head; //update of last Queue Head pointer
+ queue_head->horizontal_pointer = ((dword_t)components->ehci[number_of_controller].asychronous_start_qh | EHCI_QH_POINTS_TO_QH); //Queue Head at end needs to point to start of list
+ components->ehci[number_of_controller].asychronous_end_qh->horizontal_pointer = ((dword_t)queue_head | EHCI_QH_POINTS_TO_QH); //insert Queue Head
+ components->ehci[number_of_controller].asychronous_end_qh = queue_head; //update of last Queue Head pointer
  asm("wbinvd");
 
  sti();
@@ -442,28 +480,28 @@ void ehci_remove_asychronous_queue_head(dword_t number_of_controller, struct ehc
 //  queue_head->td.status_bits.active = 0;
 
  //we need to find where is Queue Head in list
- struct ehci_queue_head_t *previous_queue_head = ehci_controllers[number_of_controller].asychronous_start_qh;
- struct ehci_queue_head_t *actual_queue_head = (struct ehci_queue_head_t *) (ehci_controllers[number_of_controller].asychronous_start_qh->horizontal_pointer & 0xFFFFFFE0);
- while((dword_t)actual_queue_head != (dword_t)ehci_controllers[number_of_controller].asychronous_start_qh) {
+ struct ehci_queue_head_t *previous_queue_head = components->ehci[number_of_controller].asychronous_start_qh;
+ struct ehci_queue_head_t *actual_queue_head = (struct ehci_queue_head_t *) (components->ehci[number_of_controller].asychronous_start_qh->horizontal_pointer & 0xFFFFFFE0);
+ while((dword_t)actual_queue_head != (dword_t)components->ehci[number_of_controller].asychronous_start_qh) {
   //check if this is our Queue Head
   if((dword_t)actual_queue_head == (dword_t)queue_head) {
    //remove Queue Head
    previous_queue_head->horizontal_pointer = actual_queue_head->horizontal_pointer;
 
    //update last Queue Head pointer if needed
-   if((dword_t)queue_head == (dword_t)ehci_controllers[number_of_controller].asychronous_end_qh) {
-    ehci_controllers[number_of_controller].asychronous_end_qh = previous_queue_head;
+   if((dword_t)queue_head == (dword_t)components->ehci[number_of_controller].asychronous_end_qh) {
+    components->ehci[number_of_controller].asychronous_end_qh = previous_queue_head;
    }
 
    //make sure that all changes are written directly to memory
    asm("wbinvd");
 
    //doorbell EHCI that something was removed from asychronous schedule
-   mmio_outd(ehci_controllers[number_of_controller].operational_registers_base+0x04, (1 << 5));
-   mmio_outd(ehci_controllers[number_of_controller].operational_registers_base+0x00, mmio_ind(ehci_controllers[number_of_controller].operational_registers_base+0x00) | (1 << 6));
+   mmio_outd(components->ehci[number_of_controller].operational_registers_base+0x04, (1 << 5));
+   mmio_outd(components->ehci[number_of_controller].operational_registers_base+0x00, mmio_ind(components->ehci[number_of_controller].operational_registers_base+0x00) | (1 << 6));
    for(dword_t i = 0; i < 1000000; i++) {
-    if((mmio_ind(ehci_controllers[number_of_controller].operational_registers_base+0x04) & (1 << 5)) == (1 << 5)) {
-     mmio_outd(ehci_controllers[number_of_controller].operational_registers_base+0x04, (1 << 5));
+    if((mmio_ind(components->ehci[number_of_controller].operational_registers_base+0x04) & (1 << 5)) == (1 << 5)) {
+     mmio_outd(components->ehci[number_of_controller].operational_registers_base+0x04, (1 << 5));
      sti();
      return;
     }
@@ -719,22 +757,22 @@ void ehci_interrupt_transfer(byte_t device_address, byte_t transfer_direction, s
  //select correct Queue Head
  struct ehci_empty_queue_head_t *interval_queue_head;
  if(interval == 32) {
-  interval_queue_head = &ehci_controllers[usb_devices[device_address].controller_number].periodic_qh[0];
+  interval_queue_head = &components->ehci[usb_devices[device_address].controller_number].periodic_qh[0];
  }
  else if(interval == 16) {
-  interval_queue_head = &ehci_controllers[usb_devices[device_address].controller_number].periodic_qh[1];
+  interval_queue_head = &components->ehci[usb_devices[device_address].controller_number].periodic_qh[1];
  }
  else if(interval == 8) {
-  interval_queue_head = &ehci_controllers[usb_devices[device_address].controller_number].periodic_qh[2];
+  interval_queue_head = &components->ehci[usb_devices[device_address].controller_number].periodic_qh[2];
  }
  else if(interval == 4) {
-  interval_queue_head = &ehci_controllers[usb_devices[device_address].controller_number].periodic_qh[3];
+  interval_queue_head = &components->ehci[usb_devices[device_address].controller_number].periodic_qh[3];
  }
  else if(interval == 2) {
-  interval_queue_head = &ehci_controllers[usb_devices[device_address].controller_number].periodic_qh[4];
+  interval_queue_head = &components->ehci[usb_devices[device_address].controller_number].periodic_qh[4];
  }
  else {
-  interval_queue_head = &ehci_controllers[usb_devices[device_address].controller_number].periodic_qh[5];
+  interval_queue_head = &components->ehci[usb_devices[device_address].controller_number].periodic_qh[5];
  }
 
  //insert our Queue Head
@@ -800,7 +838,7 @@ void ehci_close_interrupt_transfer(byte_t device_address, struct usb_interrupt_t
 //  }
 
  //go through all Queue Heads to find our Queue Head
- struct ehci_empty_queue_head_t *queue_head_in_list = &ehci_controllers[usb_devices[device_address].controller_number].periodic_qh[0];
+ struct ehci_empty_queue_head_t *queue_head_in_list = &components->ehci[usb_devices[device_address].controller_number].periodic_qh[0];
  while(1) {
   //end of list, our Queue Head was not inserted here
   if(queue_head_in_list->horizontal_pointer == EHCI_INVALID_QH_POINTER) {

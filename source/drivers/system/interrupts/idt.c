@@ -12,7 +12,7 @@ void set_irq_handler(dword_t irq, dword_t handler) {
     extern dword_t irq_handlers[16][8];
     extern dword_t irq_handlers_number_of_methods[16];
 
-    logf("\nRequest to connect handler to IRQ %d 0x%x", irq, handler);
+    logf("\n[IDT] Request to connect handler to IRQ %d 0x%x", irq, handler);
 
     //refuse invalid irq number
     if(irq>15) {
@@ -21,14 +21,14 @@ void set_irq_handler(dword_t irq, dword_t handler) {
 
     //there can be max 8 methods on one IRQ
     if(irq_handlers_number_of_methods[irq] >= 8) {
-        logf("\nERROR: IRQ handler methods are full");
+        logf("\n[IDT] ERROR: IRQ handler methods are full");
         return;
     }
 
     //check if this method is not already connected
-    for(dword_t i=0; i<irq_handlers_number_of_methods[irq]; i++) {
+    for(dword_t i = 0; i < irq_handlers_number_of_methods[irq]; i++) {
         if(irq_handlers[irq][i] == handler) {
-            logf("\nAlready connected handler");
+            logf(" Already connected handler");
             return;
         }
     }

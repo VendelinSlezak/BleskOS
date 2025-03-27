@@ -8,6 +8,17 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#define MAX_NUMBER_OF_UHCI_CONTROLLERS 10
+struct uhci_info_t {
+    struct pci_device_info_t pci;
+
+    word_t base;
+    byte_t number_of_ports;
+
+    dword_t *frame_list;
+    struct uhci_queue_head_t *queue_head;
+};
+
 #define UHCI_INVALID_QH_POINTER (1 << 0)
 #define UHCI_QH_POINTS_TO_QH (1 << 1)
 struct uhci_queue_head_t {
@@ -18,22 +29,6 @@ struct uhci_queue_head_t {
  byte_t interrupt_interval;
  byte_t software_use[23];
 }__attribute__((packed));
-
-#define MAX_NUMBER_OF_UHCI_CONTROLLERS 10
-struct uhci_controller_info_t {
- byte_t bus;
- byte_t device;
- byte_t function;
-
- word_t base;
- byte_t irq;
- byte_t number_of_ports;
-
- dword_t *frame_list;
- struct uhci_queue_head_t *queue_head;
-}__attribute__((packed));
-struct uhci_controller_info_t uhci_controllers[MAX_NUMBER_OF_UHCI_CONTROLLERS];
-dword_t number_of_uhci_controllers;
 
 #define UHCI_NUMBER_OF_FRAMES_IN_FRAME_LIST 1024
 #define UHCI_VALID_FRAME (0 << 0)
@@ -88,6 +83,8 @@ struct uhci_transfer_memory_structure_t {
  struct uhci_queue_head_t queue_head;
  struct uhci_transfer_descriptor_t transfer_descriptor[];
 }__attribute__((packed));
+
+void uhci_add_new_pci_device(struct pci_device_info_t device);
 
 void initalize_uhci_controller(dword_t number_of_controller);
 

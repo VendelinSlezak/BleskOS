@@ -82,6 +82,36 @@ void pci_outb(struct pci_device_info_t device, dword_t offset, byte_t value) {
     }
 }
 
+dword_t pci_get_bar_type(struct pci_device_info_t device, dword_t bar) {
+    return (pci_ind(device, bar) & 0x1);
+}
+
+word_t pci_get_io(struct pci_device_info_t device, dword_t bar) {
+    return (pci_inw(device, bar) & 0xFFFC);
+}
+
+dword_t pci_get_mmio(struct pci_device_info_t device, dword_t bar) {
+    return (pci_ind(device, bar) & 0xFFFFFFF0);
+}
+
+dword_t pci_get_64_bit_mmio(struct pci_device_info_t device, dword_t bar) {
+    if((pci_ind(device, bar+0x04) & 0xFFFFFFF0) != 0) {
+        return 0;
+    }
+    else {
+        return (pci_ind(device, bar) & 0xFFFFFFF0);
+    }
+}
+
+void pci_device_install_interrupt_handler(struct pci_device_info_t device, void (*handler)(void)) {
+    // TODO: add support for MSI and MSI-X
+
+    // TODO: add support for ACPI
+
+    // set handler for PCI IRQ
+    set_irq_handler(device.interrupt_line, (dword_t)handler);
+}
+
 byte_t *pci_get_vendor_name(word_t vendor_id) {
     for(dword_t i = 0; pci_vendor_list[i].vendor_name != 0; i++) {
         if(pci_vendor_list[i].vendor_id == vendor_id) {
@@ -112,7 +142,7 @@ dword_t pci_is_device_in_list(word_t vendor_id, word_t device_id, struct pci_sup
     return STATUS_FALSE;
 }
 
-void pci_new_scan(void) {
+void scan_pci(void) {
     logf("\n\nPCI INFO\nAccess: ");
 
     if(components->pci.is_memory_access_supported == STATUS_TRUE) {
@@ -135,7 +165,7 @@ void pci_new_scan(void) {
 
                     // read informations about device on primary function
                     if(pci_inw(pci_device, 0x00) != 0xFFFF) {
-                        pci_new_scan_device(pci_device);
+                        scan_pci_device(pci_device);
 
                         // check if this is multifunctional device
                         if((pci_inb(pci_device, 0x0E) & (1 << 7)) == (1 << 7)) {
@@ -144,7 +174,7 @@ void pci_new_scan(void) {
 
                                 // read informations about device on other functions
                                 if(pci_inw(pci_device, 0x00) != 0xFFFF) {
-                                    pci_new_scan_device(pci_device);
+                                    scan_pci_device(pci_device);
                                 }
                             }
                         }
@@ -171,7 +201,7 @@ void pci_new_scan(void) {
 
                 // read informations about device on primary function
                 if(pci_inw(pci_device, 0x00) != 0xFFFF) {
-                    pci_new_scan_device(pci_device);
+                    scan_pci_device(pci_device);
 
                     // if it is PCI-to-PCI bridge, read secondary bus
                     if(pci_inw(pci_device, 0x0A) == 0x0604 && number_of_buses < 256) {
@@ -186,7 +216,7 @@ void pci_new_scan(void) {
 
                             // read informations about device on other functions
                             if(pci_inw(pci_device, 0x00) != 0xFFFF) {
-                                pci_new_scan_device(pci_device);
+                                scan_pci_device(pci_device);
 
                                 // if it is PCI-to-PCI bridge, read secondary bus
                                 if(pci_inw(pci_device, 0x0A) == 0x0604 && number_of_buses < 256) {
@@ -202,7 +232,7 @@ void pci_new_scan(void) {
     }
 }
 
-void pci_new_scan_device(struct pci_device_info_t device) {
+void scan_pci_device(struct pci_device_info_t device) {
     // read basic device informations
     device.vendor_id = pci_inw(device, 0x00);
     device.device_id = pci_inw(device, 0x02);
@@ -273,274 +303,4 @@ void pci_new_scan_device(struct pci_device_info_t device) {
     }
 
     // TODO: initalize PCI-to-PCI bridges
-}
-
-dword_t pci_get_bar_type(struct pci_device_info_t device, dword_t bar) {
-    return (pci_ind(device, bar) & 0x1);
-}
-
-word_t pci_get_io(struct pci_device_info_t device, dword_t bar) {
-    return (pci_inw(device, bar) & 0xFFFC);
-}
-
-dword_t pci_get_mmio(struct pci_device_info_t device, dword_t bar) {
-    return (pci_ind(device, bar) & 0xFFFFFFF0);
-}
-
-dword_t pci_get_64_bit_mmio(struct pci_device_info_t device, dword_t bar) {
-    if((pci_ind(device, bar+0x04) & 0xFFFFFFF0) != 0) {
-        return 0;
-    }
-    else {
-        return (pci_ind(device, bar) & 0xFFFFFFF0);
-    }
-}
-
-void pci_device_install_interrupt_handler(struct pci_device_info_t device, void (*handler)(void)) {
-    // TODO: add support for MSI and MSI-X
-
-    // TODO: add support for ACPI
-
-    // set handler for PCI IRQ
-    set_irq_handler(device.interrupt_line, (dword_t)handler);
-}
-
-dword_t pci_read(dword_t segment_memory, dword_t bus, dword_t device, dword_t function, dword_t offset) {
- outd(0xCF8, (0x80000000 | (bus << 16) | (device << 11) | (function << 8) | (offset)));
- return ind(0xCFC);
-}
-
-void pci_write(dword_t bus, dword_t device, dword_t function, dword_t offset, dword_t value) {
- outd(0xCF8, (0x80000000 | (bus << 16) | (device << 11) | (function << 8) | (offset)));
- outd(0xCFC, value);
-}
-
-void pci_writeb(dword_t bus, dword_t device, dword_t function, dword_t offset, dword_t value) {
- outd(0xCF8, (0x80000000 | (bus << 16) | (device << 11) | (function << 8) | (offset & 0xFC)));
- outb(0xCFF, value);
-}
-
-dword_t pci_read_bar_type(dword_t bus, dword_t device, dword_t function, dword_t bar) {
- outd(0xCF8, (0x80000000 | (bus << 16) | (device << 11) | (function << 8) | (bar)));
- return (word_t) (ind(0xCFC) & 0x1);
-}
-
-word_t pci_read_io_bar(dword_t bus, dword_t device, dword_t function, dword_t bar) {
- outd(0xCF8, (0x80000000 | (bus << 16) | (device << 11) | (function << 8) | (bar)));
- return (word_t) (ind(0xCFC) & 0xFFFC);
-}
-
-dword_t pci_read_mmio_bar(dword_t bus, dword_t device, dword_t function, dword_t bar) {
- outd(0xCF8, (0x80000000 | (bus << 16) | (device << 11) | (function << 8) | (bar)));
- return (ind(0xCFC) & 0xFFFFFFF0);
-}
-
-void pci_enable_io_busmastering(dword_t bus, dword_t device, dword_t function) {
- pci_write(bus, device, function, 0x04, ((pci_read(0, bus, device, function, 0x04) & ~(1<<10)) | (1<<2) | (1<<0))); //enable interrupts, enable bus mastering, enable IO space
-}
-
-void pci_enable_mmio_busmastering(dword_t bus, dword_t device, dword_t function) {
- pci_write(bus, device, function, 0x04, ((pci_read(0, bus, device, function, 0x04) & ~(1<<10)) | (1<<2) | (1<<1))); //enable interrupts, enable bus mastering, enable MMIO space
-}
-
-void pci_disable_interrupts(dword_t bus, dword_t device, dword_t function) {
- pci_write(bus, device, function, 0x04, (pci_read(0, bus, device, function, 0x04) | (1<<10))); //disable interrupts
-}
-
-void scan_pci(void) {
- //initalize values that are used to determine presence of devices
- number_of_ethernet_cards = 0;
- number_of_uhci_controllers = 0;
- number_of_ohci_controllers = 0;
- number_of_ehci_controllers = 0;
- 
- for(dword_t bus=0; bus<256; bus++) {
-  for(dword_t device=0; device<32; device++) {
-   scan_pci_device(bus, device, 0);
-   
-   //multifunctional device
-   if((pci_read(0, bus, device, 0, 0x0C) & 0x00800000)==0x00800000) {
-    for(dword_t function=1; function<8; function++) {
-     scan_pci_device(bus, device, function);
-    }
-   }
-  }
- }
-}
-
-void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
- dword_t full_device_id, vendor_id, device_id, type_of_device, class, subclass, progif, device_irq, mmio_port_base;
- word_t io_port_base;
-
- //read base informations about device
- vendor_id = (pci_read(0, bus, device, function, 0) & 0xFFFF);
- device_id = (pci_read(0, bus, device, function, 0) >> 16);
- full_device_id = pci_read(0, bus, device, function, 0);
- if(full_device_id==0xFFFFFFFF) {
-  return; //no device
- }
- type_of_device = (pci_read(0, bus, device, function, 0x08) >> 8);
- class = (type_of_device >> 16);
- subclass = ((type_of_device >> 8) & 0xFF);
- progif = (type_of_device & 0xFF);
- device_irq = (pci_read(0, bus, device, function, 0x3C) & 0xFF);
- 
- //Ethernet card
- if(type_of_device==0x020000) {
-  if(number_of_ethernet_cards>=MAX_NUMBER_OF_ETHERNET_CARDS) {
-   return;
-  }
-  
-  //read basic values
-  ethernet_cards[number_of_ethernet_cards].id = full_device_id;
-  ethernet_cards[number_of_ethernet_cards].irq = (pci_read(0, bus, device, function, 0x3C) & 0xFF);
-  ethernet_cards[number_of_ethernet_cards].bus = bus;
-  ethernet_cards[number_of_ethernet_cards].dev = device;
-  ethernet_cards[number_of_ethernet_cards].func = function;
-  ethernet_cards[number_of_ethernet_cards].initalize = 0; //by default card has no driver
-  
-  //Realtek
-  if(vendor_id==VENDOR_REALTEK) {
-   if(device_id==0x8136 || device_id==0x8161 || device_id==0x8168 || device_id==0x8169) {
-    //connect to driver for Realtek 8169
-    ethernet_cards[number_of_ethernet_cards].initalize = ec_realtek_8169_initalize;
-
-    ethernet_cards[number_of_ethernet_cards].bar_type = pci_read_bar_type(bus, device, function, PCI_BAR0);
-    if(ethernet_cards[number_of_ethernet_cards].bar_type==PCI_MMIO_BAR) {
-     ethernet_cards[number_of_ethernet_cards].base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
-     pci_enable_mmio_busmastering(bus, device, function);
-    }
-    else {
-     ethernet_cards[number_of_ethernet_cards].base = pci_read_io_bar(bus, device, function, PCI_BAR0);
-     pci_enable_io_busmastering(bus, device, function);
-    }
-   }
-  }
-  
-  number_of_ethernet_cards++;
-  return;
- }
-
- //Ethernet card
- if(type_of_device==0x028000) {
-  return;
- }
- 
- //Universal Host Controller Interface
- if(type_of_device==0x0C0300) {
-  if(number_of_uhci_controllers >= MAX_NUMBER_OF_UHCI_CONTROLLERS) {
-   return;
-  }
-
-  pci_enable_io_busmastering(bus, device, function);
-
-  //save UHCI controller info
-  uhci_controllers[number_of_uhci_controllers].bus = bus;
-  uhci_controllers[number_of_uhci_controllers].device = device;
-  uhci_controllers[number_of_uhci_controllers].function = function;
-  uhci_controllers[number_of_uhci_controllers].irq = device_irq;
-  uhci_controllers[number_of_uhci_controllers].base = pci_read_io_bar(bus, device, function, PCI_BAR4);
-
-  //disable BIOS legacy support and enable normal IRQ to be called
-  pci_write(bus, device, function, 0xC0, (1 << 13));
-
-  number_of_uhci_controllers++;
-
-  return;
- }
- 
- //Open Host Controller Interface
- if(type_of_device==0x0C0310) {
-  if(number_of_ohci_controllers >= MAX_NUMBER_OF_UHCI_CONTROLLERS) {
-   return;
-  }
-
-  pci_enable_mmio_busmastering(bus, device, function);
-
-  //save OHCI controller info
-  ohci_controllers[number_of_ohci_controllers].bus = bus;
-  ohci_controllers[number_of_ohci_controllers].device = device;
-  ohci_controllers[number_of_ohci_controllers].function = function;
-  ohci_controllers[number_of_ohci_controllers].irq = device_irq;
-  ohci_controllers[number_of_ohci_controllers].base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
-
-  //disable BIOS legacy support
-  if((mmio_ind(ohci_controllers[number_of_ohci_controllers].base+0x0) & (1 << 8)) == (1 << 8)) {
-   mmio_outd(ohci_controllers[number_of_ohci_controllers].base+0x100, 0x00);
-  }
-
-  number_of_ohci_controllers++;
-
-  return;
- }
- 
- //Enhanced Host Controller Interface
- if(type_of_device==0x0C0320) {
-  pci_enable_mmio_busmastering(bus, device, function);
-
-  //save EHCI controller info
-  ehci_controllers[number_of_ehci_controllers].bus = bus;
-  ehci_controllers[number_of_ehci_controllers].device = device;
-  ehci_controllers[number_of_ehci_controllers].function = function;
-  ehci_controllers[number_of_ehci_controllers].irq = device_irq;
-  ehci_controllers[number_of_ehci_controllers].base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
-
-  //disable BIOS ownership
-  dword_t pci_ehci_bios_register_offset = ((mmio_ind(ehci_controllers[number_of_ehci_controllers].base+0x08)>>8) & 0xFF);
-  if(pci_ehci_bios_register_offset >= 0x40 && (pci_read(0, bus, device, function, pci_ehci_bios_register_offset) & 0xFF)==0x01) {
-   pci_write(bus, device, function, pci_ehci_bios_register_offset, (1 << 24)); //set OS ownership
-  }
-
-  number_of_ehci_controllers++;
-
-  return;
- }
- 
- //eXtensible Host Controller Interface
- if(type_of_device==0x0C0330) {
-  pci_enable_mmio_busmastering(bus, device, function);
-
-  //save xHCI controller
-  xhci_controllers[number_of_xhci_controllers].bus = bus;
-  xhci_controllers[number_of_xhci_controllers].device = device;
-  xhci_controllers[number_of_xhci_controllers].function = function;
-  xhci_controllers[number_of_xhci_controllers].irq = device_irq;
-  xhci_controllers[number_of_xhci_controllers].base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
-
-  //disable BIOS ownership
-  dword_t xhci_bios_register_offset = ((mmio_ind(xhci_controllers[number_of_xhci_controllers].base+0x10)>>16)*4);
-  logf("%x %x", xhci_bios_register_offset, mmio_ind(xhci_controllers[number_of_xhci_controllers].base+xhci_bios_register_offset));
-  if(xhci_bios_register_offset != 0 && (mmio_ind(xhci_controllers[number_of_xhci_controllers].base+xhci_bios_register_offset) & 0xFF)==0x01) {
-   mmio_outd(xhci_controllers[number_of_xhci_controllers].base+xhci_bios_register_offset, (mmio_ind(xhci_controllers[number_of_xhci_controllers].base+xhci_bios_register_offset) & ~(1 << 16)) | (1 << 24)); //set OS ownership
-  }
-
-  number_of_xhci_controllers++;
-  
-  return;
- }
-
- //Host bridge
- if(type_of_device==0x060000) {
-  return;
- }
-
- //ISA bridge
- if(type_of_device==0x060100) {
-  return;
- }
-
- //PCI-to-PCI bridge
- if((type_of_device & 0xFFFF00)==0x060400) {
-  return;
- }
-
- //PCI-to-PCI bridge
- if((type_of_device & 0xFFFF00)==0x060900) {
-  return;
- }
-
- //Other bridge
- if(type_of_device==0x068000) {
-  return;
- }
 }
