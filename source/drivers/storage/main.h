@@ -18,18 +18,6 @@
 #define NO_CONTROLLER 0
 #define IDE_CONTROLLER 1
 #define AHCI_CONTROLLER 2
-struct storage_controller_info {
- byte_t controller_type;
- dword_t base_1;
- dword_t base_2;
-
- byte_t bus;
- byte_t device;
- byte_t function;
-}__attribute__((packed));
-#define MAX_NUMBER_OF_STORAGE_CONTROLLERS 10
-struct storage_controller_info storage_controllers[MAX_NUMBER_OF_STORAGE_CONTROLLERS];
-dword_t number_of_storage_controllers;
 
 struct storage_device_info {
  byte_t controller_type;

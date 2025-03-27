@@ -320,6 +320,13 @@ void media_viewer_open_file(void) {
    error_window("Error during decoding file, more info in system log");
    return;
   }
+  struct audio_file_t *audio_info = (struct audio_file_t *) (get_file_value(MEDIA_VIEWER_FILE_AUDIO_INFO_MEMORY));
+  if(is_supported_sound_format(2, 16, audio_info->sample_rate)==STATUS_ERROR) {
+   remove_file(get_program_value(PROGRAM_INTERFACE_SELECTED_FILE));
+   set_program_value(PROGRAM_INTERFACE_SELECTED_FILE, get_program_value(PROGRAM_INTERFACE_SELECTED_FILE_SAVE_VALUE));
+   error_window("ERROR: Hardware do not support this sound format, more info in system log");
+   return;
+  }
   
   //set other values of file info
   set_file_value(MEDIA_VIEWER_FILE_TYPE, MEDIA_VIEWER_FILE_SOUND);

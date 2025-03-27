@@ -20,7 +20,7 @@ void intel_graphic_card_add_new_pci_device(struct pci_device_info_t device) {
     // save basic device informations
     copy_memory((dword_t)&device, (dword_t)&components->intel_graphic_card[components->n_intel_graphic_card].pci, sizeof(struct pci_device_info_t));
 
-    // read other device infromations
+    // read other device informations
     components->intel_graphic_card[components->n_intel_graphic_card].base = pci_get_mmio(device, PCI_BAR0);
     components->intel_graphic_card[components->n_intel_graphic_card].linear_frame_buffer = (byte_t *) pci_get_mmio(device, PCI_BAR2);
 
@@ -33,6 +33,11 @@ void intel_graphic_card_add_new_pci_device(struct pci_device_info_t device) {
 }
 
 void initalize_intel_graphic_card(dword_t graphic_card_number) {
+    logf("\n\nDriver: Intel Graphic Card\nDevice: PCI bus %d:%d:%d:%d",
+        components->intel_graphic_card[graphic_card_number].pci.segment,
+        components->intel_graphic_card[graphic_card_number].pci.bus,
+        components->intel_graphic_card[graphic_card_number].pci.device,
+        components->intel_graphic_card[graphic_card_number].pci.function);
     dword_t base = components->intel_graphic_card[graphic_card_number].base;
 
     // this driver now can not change video mode
@@ -40,10 +45,10 @@ void initalize_intel_graphic_card(dword_t graphic_card_number) {
     // read EDID loaded by bootloader TODO: try read EDID from card
     is_bootloader_edid_present = parse_edid_data(0x2000);
     if(is_bootloader_edid_present == STATUS_FALSE) {
-        logf("\n\nBootloader did not load EDID");
+        logf("\nBootloader did not load EDID");
     }
     else {
-        logf("\n\nBOOTLOADER EDID");
+        logf("\nBootloader EDID");
         log_edid_data();
     }
 

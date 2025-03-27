@@ -8,6 +8,27 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#define MAX_NUMBER_OF_AC97_SOUND_CARDS 4
+struct ac97_info_t {
+    struct pci_device_info_t pci;
+
+    word_t nam_base;
+    word_t nabm_base;
+    word_t extended_capabilities;
+
+    dword_t headphone_output_present;
+    dword_t free_entry;
+    dword_t selected_output;
+    dword_t aux_out_number_of_volume_steps;
+
+    struct ac97_buffer_entry_t *buffer_memory_pointer;
+    dword_t sound_memory;
+    dword_t number_of_samples_in_one_channel;
+};
+
+// TODO: rewrite this
+dword_t selected_ac97_card;
+
 #define AC97_BUFFER_NOT_FILLED 1
 #define AC97_BUFFER_FILLED 0
 
@@ -42,7 +63,7 @@
 
 #define AC97_SPEAKER_OUTPUT_NUMBER_OF_VOLUME_STEPS 31
 
-struct ac97_buffer_entry {
+struct ac97_buffer_entry_t {
  dword_t sample_memory;
  word_t number_of_samples;
  word_t reserved: 14;
@@ -50,12 +71,9 @@ struct ac97_buffer_entry {
  byte_t interrupt_on_completion: 1;
 }__attribute__((packed));
 
-struct ac97_buffer_entry *ac97_buffer_memory_pointer;
-byte_t ac97_headphone_output_present, ac97_free_entry, ac97_selected_output, ac97_aux_out_number_of_volume_steps;
-word_t ac97_nam_base, ac97_nabm_base, ac97_extended_capabilities;
-dword_t ac97_sound_memory, ac97_number_of_samples_in_one_channel;
+void ac97_add_new_pci_device(struct pci_device_info_t device);
 
-void initalize_ac97_sound_card(byte_t sound_card_number);
+void initalize_ac97_sound_card(dword_t sound_card_number);
 byte_t ac97_is_headphone_connected(void);
 void ac97_set_volume_in_register(dword_t offset, byte_t number_of_volume_steps, byte_t volume);
 void ac97_set_output(byte_t output);

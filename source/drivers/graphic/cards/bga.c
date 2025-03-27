@@ -8,6 +8,14 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+void bga_add_new_pci_device(struct pci_device_info_t device) {
+    // log driver
+    logf("%s", __FILE__);
+
+    // read linear frame buffer
+    components->bga.linear_frame_buffer = (byte_t *) pci_get_mmio(device, PCI_BAR0);
+}
+
 word_t bga_read(byte_t index) {
     outw(BGA_REGISTER_INDEX, index);
     return inw(BGA_REGISTER_DATA);
@@ -34,7 +42,7 @@ void check_presence_of_bga(void) {
 
 void initalize_bga(void) {
     // log
-    logf("\n\nBochs Graphic Adapter\nVersion: %d", components->bga.id);
+    logf("\n\nDriver: Bochs Graphic Adapter\nVersion: %d", components->bga.id);
 
     // disable BGA
     bga_write(BGA_INDEX_ENABLE, 0x0000);
@@ -49,6 +57,12 @@ void initalize_bga(void) {
     monitors[0].width = 1024;
     monitors[0].height = 768;
     monitors[0].bpp = 32;
+    if(components->bga.linear_frame_buffer == 0) {
+        monitors[0].linear_frame_buffer = (byte_t *) 0xE0000000;
+    }
+    else {
+        monitors[0].linear_frame_buffer = components->bga.linear_frame_buffer;
+    }
     monitors[0].linear_frame_buffer_bpl = 1024*4;
 
     // enable BGA with Linear Frame Buffer

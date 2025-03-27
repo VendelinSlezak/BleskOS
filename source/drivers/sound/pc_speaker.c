@@ -9,20 +9,20 @@
 */
 
 void pc_speaker_beep(word_t frequency) {
- //divide
- frequency = (1193182 / frequency);
+    // divide
+    frequency = (1193182 / frequency);
 
- //program PIT to frequency
- outb(0x43, 0xB6);
- outb(0x42, (frequency & 0xFF));
- outb(0x42, (frequency >> 8));
+    // program PIT to frequency
+    outb(0x43, 0xB6);
+    outb(0x42, (frequency & 0xFF));
+    outb(0x42, (frequency >> 8));
 
- //turn on PC speaker
- if((inb(0x61) & 0x3)!=0x3) {
-  outb(0x61, (inb(0x61) | 0x3));
- }
+    // turn on PC speaker
+    if((inb(0x61) & 0x3) != 0x3) {
+        outb(0x61, (inb(0x61) | 0x3));
+    }
 }
 
 void pc_speaker_mute(void) {
- outb(0x61, (inb(0x61) & ~0x3));
+    outb(0x61, (inb(0x61) & ~0x3));
 }

@@ -8,6 +8,30 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+/* TODO: rewrite drivers to add output and input sources to these structures */
+struct audio_output_t {
+    dword_t output_number;
+    dword_t device_number;
+    void (*activate_audio_output)(dword_t device_number, dword_t output_number);
+
+    dword_t gain;
+
+    dword_t present;
+    dword_t removable;
+    byte_t (*check_presence)(dword_t device_number, dword_t output_number);
+};
+struct audio_input_t {
+    dword_t input_number;
+    dword_t device_number;
+    void (*activate_audio_input)(dword_t device_number, dword_t input_number);
+
+    dword_t gain;
+
+    dword_t present;
+    dword_t removable;
+    byte_t (*check_presence)(dword_t device_number, dword_t output_number);
+};
+
 #define SOUND_CARD_DRIVER_AC97 0
 #define SOUND_CARD_DRIVER_HDA 1
 
@@ -24,6 +48,7 @@ struct sound_card_info_t sound_cards_info[MAX_NUMBER_OF_SOUND_CARDS];
 byte_t number_of_sound_cards;
 #define NO_SOUND_CARD 0xFF
 byte_t selected_sound_card;
+byte_t selected_sound_card_driver_type;
 
 byte_t sound_volume = 0;
 dword_t sound_sample_rate = 0, sound_memory = 0, sound_length = 0, sound_position = 0;

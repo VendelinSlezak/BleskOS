@@ -73,7 +73,7 @@ void draw_dllmf(dword_t dllmf_mem) {
  dword_t *page_entries = (dword_t *) (dllmf_mem);
  dword_t *document_data = (dword_t *) (dllmf_mem+DLLMF_NUM_OF_PAGE_ENTRIES*DLLMF_PAGE_ENTRY_SIZE);
  byte_t *document_data8 = (byte_t *) (dllmf_mem+DLLMF_NUM_OF_PAGE_ENTRIES*DLLMF_PAGE_ENTRY_SIZE);
- dword_t page_first_column = 0, page_first_line = DLLMF_SPACE_BETWEEN_DOCUMENTS, page_monitors[0].width = 0, page_monitors[0].height = 0;
+ dword_t page_first_column = 0, page_first_line = DLLMF_SPACE_BETWEEN_DOCUMENTS, page_screen_width = 0, page_screen_height = 0;
 
  //draw pages
  for(dword_t i=0; i<DLLMF_NUM_OF_PAGE_ENTRIES; i++, page_entries+=2) {

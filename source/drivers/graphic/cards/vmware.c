@@ -20,7 +20,7 @@ void vmware_graphic_card_add_new_pci_device(struct pci_device_info_t device) {
     // save basic device informations
     copy_memory((dword_t)&device, (dword_t)&components->vmware_graphic_card[components->n_vmware_graphic_card].pci, sizeof(struct pci_device_info_t));
 
-    // read other device infromations
+    // read other device informations
     components->vmware_graphic_card[components->n_vmware_graphic_card].base = pci_get_io(device, PCI_BAR0);
 
     // configure PCI
@@ -45,7 +45,11 @@ void vmware_graphic_card_write(dword_t graphic_card_number, byte_t index, dword_
 
 void initalize_vmware_graphic_card(dword_t graphic_card_number) {
     // try all possible IDs from newest to oldest version
-    logf("\n\nVMWare SVGA ");
+    logf("\n\nDriver: VMware SVGA Graphic Card\nDevice: PCI bus %d:%d:%d:%d",
+        components->vmware_graphic_card[graphic_card_number].pci.segment,
+        components->vmware_graphic_card[graphic_card_number].pci.bus,
+        components->vmware_graphic_card[graphic_card_number].pci.device,
+        components->vmware_graphic_card[graphic_card_number].pci.function);
     byte_t initalized = STATUS_FALSE;
     for(dword_t i = 0x90000002; i >= 0x90000000; i--) {
         vmware_graphic_card_write(graphic_card_number, VMWARE_GRAPHIC_CARD_INDEX_ID, i);
