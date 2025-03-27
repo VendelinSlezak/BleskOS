@@ -102,6 +102,16 @@ byte_t *pci_get_device_type_string(dword_t type) {
     return "Unknown Device";
 }
 
+dword_t pci_is_device_in_list(word_t vendor_id, word_t device_id, struct pci_supported_devices_list_t *device_list) {
+    for(dword_t i = 0; device_list[i].vendor_id != 0; i++) {
+        if(vendor_id == device_list[i].vendor_id && device_id == device_list[i].device_id) {
+            return STATUS_TRUE;
+        }
+    }
+
+    return STATUS_FALSE;
+}
+
 void pci_new_scan(void) {
     logf("\n\nPCI INFO\nAccess: ");
 
@@ -252,20 +262,11 @@ void pci_new_scan_device(struct pci_device_info_t device) {
             // check if we have driver for it
             if(pci_device_type_list[i].driver_add_new_pci_device != 0) {
                 // check if this device is supported by driver
-                if(pci_device_type_list[i].supported_devices == 0) {
+                if(pci_device_type_list[i].supported_devices == 0
+                    || pci_is_device_in_list(device.vendor_id, device.device_id, pci_device_type_list[i].supported_devices) == STATUS_TRUE) {
                     logf("\n Driver: ");
                     pci_device_type_list[i].driver_add_new_pci_device(device);
                     return;
-                }
-                else {
-                    for(dword_t j = 0; pci_device_type_list[i].supported_devices[j].vendor_id != 0; j++) {
-                        if(device.vendor_id == pci_device_type_list[i].supported_devices[j].vendor_id
-                           && device.device_id == pci_device_type_list[i].supported_devices[j].device_id) {
-                            logf("\n Driver: ");
-                            pci_device_type_list[i].driver_add_new_pci_device(device);
-                            return;
-                        }
-                    }
                 }
             }
         }
@@ -274,12 +275,25 @@ void pci_new_scan_device(struct pci_device_info_t device) {
     // TODO: initalize PCI-to-PCI bridges
 }
 
+dword_t pci_get_bar_type(struct pci_device_info_t device, dword_t bar) {
+    return (pci_ind(device, bar) & 0x1);
+}
+
 word_t pci_get_io(struct pci_device_info_t device, dword_t bar) {
     return (pci_inw(device, bar) & 0xFFFC);
 }
 
 dword_t pci_get_mmio(struct pci_device_info_t device, dword_t bar) {
     return (pci_ind(device, bar) & 0xFFFFFFF0);
+}
+
+dword_t pci_get_64_bit_mmio(struct pci_device_info_t device, dword_t bar) {
+    if((pci_ind(device, bar+0x04) & 0xFFFFFFF0) != 0) {
+        return 0;
+    }
+    else {
+        return (pci_ind(device, bar) & 0xFFFFFFF0);
+    }
 }
 
 void pci_device_install_interrupt_handler(struct pci_device_info_t device, void (*handler)(void)) {
@@ -335,12 +349,9 @@ void pci_disable_interrupts(dword_t bus, dword_t device, dword_t function) {
 
 void scan_pci(void) {
  //initalize values that are used to determine presence of devices
- ide_0x1F0_controller_present = STATUS_FALSE;
- ide_0x170_controller_present = STATUS_FALSE;
- number_of_sound_cards = 0;
- number_of_storage_controllers = 0;
  number_of_ethernet_cards = 0;
  number_of_uhci_controllers = 0;
+ number_of_ohci_controllers = 0;
  number_of_ehci_controllers = 0;
  
  for(dword_t bus=0; bus<256; bus++) {
@@ -374,77 +385,6 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  progif = (type_of_device & 0xFF);
  device_irq = (pci_read(0, bus, device, function, 0x3C) & 0xFF);
  
- //IDE controller
- if((type_of_device & 0xFFFF00)==0x010100 && number_of_storage_controllers<MAX_NUMBER_OF_STORAGE_CONTROLLERS) { 
-  pci_device_ide_controller:
-  pci_enable_io_busmastering(bus, device, function);
-  pci_disable_interrupts(bus, device, function);
-
-  storage_controllers[number_of_storage_controllers].bus = bus;
-  storage_controllers[number_of_storage_controllers].device = device;
-  storage_controllers[number_of_storage_controllers].function = function;
-
-  //first controller
-  storage_controllers[number_of_storage_controllers].controller_type = IDE_CONTROLLER;
-  io_port_base = pci_read_io_bar(bus, device, function, PCI_BAR0);
-  if(io_port_base==0 || ide_is_bus_floating(io_port_base)==STATUS_FALSE) {
-   if(io_port_base==0 || io_port_base==0x1F0) {
-    if(ide_0x1F0_controller_present==STATUS_FALSE) {
-     ide_0x1F0_controller_present = STATUS_TRUE;
-     storage_controllers[number_of_storage_controllers].base_1 = 0x1F0;
-     storage_controllers[number_of_storage_controllers].base_2 = 0x3F4;
-     number_of_storage_controllers++;
-    }
-   }
-   else {
-    storage_controllers[number_of_storage_controllers].base_1 = io_port_base;
-    storage_controllers[number_of_storage_controllers].base_2 = pci_read_io_bar(bus, device, function, PCI_BAR1);
-    number_of_storage_controllers++;
-   }
-  }
-  if(number_of_storage_controllers>=MAX_NUMBER_OF_STORAGE_CONTROLLERS) {
-   return;
-  }
-
-  //second controller
-  storage_controllers[number_of_storage_controllers].controller_type = IDE_CONTROLLER;
-  io_port_base = pci_read_io_bar(bus, device, function, PCI_BAR2);
-  if(io_port_base==0 || ide_is_bus_floating(io_port_base)==STATUS_FALSE) {
-   if(io_port_base==0 || io_port_base==0x170) {
-    if(ide_0x170_controller_present==STATUS_FALSE) {
-     ide_0x170_controller_present = STATUS_TRUE;
-     storage_controllers[number_of_storage_controllers].base_1 = 0x170;
-     storage_controllers[number_of_storage_controllers].base_2 = 0x374;
-     number_of_storage_controllers++;
-    }
-   }
-   else {
-    storage_controllers[number_of_storage_controllers].base_1 = io_port_base;
-    storage_controllers[number_of_storage_controllers].base_2 = pci_read_io_bar(bus, device, function, PCI_BAR3);
-    number_of_storage_controllers++;
-   }
-  }
-  
-  return;
- }
- 
- //SATA controller
- if(type_of_device==0x010601 && number_of_storage_controllers<MAX_NUMBER_OF_STORAGE_CONTROLLERS) {
-  pci_enable_mmio_busmastering(bus, device, function);
-  pci_disable_interrupts(bus, device, function);
-  
-  //test presence of AHCI interface
-  if((mmio_ind(pci_read_mmio_bar(bus, device, function, PCI_BAR5) + 0x04) & 0x80000000)==0x00000000) {
-   goto pci_device_ide_controller; //IDE interface
-  }
-  
-  //save device
-  storage_controllers[number_of_storage_controllers].controller_type = AHCI_CONTROLLER;
-  storage_controllers[number_of_storage_controllers].base_1 = pci_read_mmio_bar(bus, device, function, PCI_BAR5);
-  number_of_storage_controllers++;
-  return;
- }
- 
  //Ethernet card
  if(type_of_device==0x020000) {
   if(number_of_ethernet_cards>=MAX_NUMBER_OF_ETHERNET_CARDS) {
@@ -459,64 +399,9 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
   ethernet_cards[number_of_ethernet_cards].func = function;
   ethernet_cards[number_of_ethernet_cards].initalize = 0; //by default card has no driver
   
-  //Intel E1000
-  if(vendor_id==VENDOR_INTEL) {
-   //connect to driver for Intel e1000
-   ethernet_cards[number_of_ethernet_cards].initalize = ec_intel_e1000_initalize;
-
-   ethernet_cards[number_of_ethernet_cards].bar_type = pci_read_bar_type(bus, device, function, PCI_BAR0);
-   if(ethernet_cards[number_of_ethernet_cards].bar_type==PCI_MMIO_BAR) {
-    ethernet_cards[number_of_ethernet_cards].base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
-    pci_enable_mmio_busmastering(bus, device, function);
-   }
-   else {
-    ethernet_cards[number_of_ethernet_cards].base = pci_read_io_bar(bus, device, function, PCI_BAR0);
-    pci_enable_io_busmastering(bus, device, function);
-   }
-  }
-  
-  //AMD PC-net
-  else if(vendor_id==VENDOR_AMD_1 || vendor_id==VENDOR_AMD_2) {
-   //connect to driver for Amd PCNET
-   ethernet_cards[number_of_ethernet_cards].initalize = ec_amd_pcnet_initalize;
-
-   pci_enable_io_busmastering(bus, device, function);
-   ethernet_cards[number_of_ethernet_cards].bar_type = PCI_IO_BAR;
-   ethernet_cards[number_of_ethernet_cards].base = pci_read_io_bar(bus, device, function, PCI_BAR0);
-  }
-  
-  //Broadcom NetXtreme
-  else if(vendor_id==VENDOR_BROADCOM) {
-   //connect to driver for Broadcom NetXtreme
-   ethernet_cards[number_of_ethernet_cards].initalize = ec_broadcom_netxtreme_initalize;
-
-   pci_enable_mmio_busmastering(bus, device, function);
-   ethernet_cards[number_of_ethernet_cards].bar_type = PCI_MMIO_BAR;
-   ethernet_cards[number_of_ethernet_cards].base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
-  }
-
-  //Qualcomm Atheros
-  else if(vendor_id==VENDOR_QUALCOMM_ATHEROS_1 || vendor_id==VENDOR_QUALCOMM_ATHEROS_2) {
-   //connect to driver for Qualcomm Atheros
-   ethernet_cards[number_of_ethernet_cards].initalize = ec_atheros_initalize;
-
-   pci_enable_io_busmastering(bus, device, function);
-   pci_enable_mmio_busmastering(bus, device, function);
-   ethernet_cards[number_of_ethernet_cards].bar_type = PCI_MMIO_BAR;
-   ethernet_cards[number_of_ethernet_cards].base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
-  }
-  
   //Realtek
-  else if(vendor_id==VENDOR_REALTEK) {
-   if(device_id==0x8139) {
-    //connect to driver for Realtek 8139
-    ethernet_cards[number_of_ethernet_cards].initalize = ec_realtek_8139_initalize;
-
-    pci_enable_io_busmastering(bus, device, function);
-    ethernet_cards[number_of_ethernet_cards].bar_type = PCI_IO_BAR;
-    ethernet_cards[number_of_ethernet_cards].base = pci_read_io_bar(bus, device, function, PCI_BAR0);
-   }
-   else if(device_id==0x8136 || device_id==0x8161 || device_id==0x8168 || device_id==0x8169) {
+  if(vendor_id==VENDOR_REALTEK) {
+   if(device_id==0x8136 || device_id==0x8161 || device_id==0x8168 || device_id==0x8169) {
     //connect to driver for Realtek 8169
     ethernet_cards[number_of_ethernet_cards].initalize = ec_realtek_8169_initalize;
 
@@ -538,41 +423,6 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
 
  //Ethernet card
  if(type_of_device==0x028000) {
-  return;
- }
- 
- //AC97 sound card
- if(type_of_device==0x040100 && number_of_sound_cards<MAX_NUMBER_OF_SOUND_CARDS) {
-  if(number_of_sound_cards>=MAX_NUMBER_OF_SOUND_CARDS) {
-   return;
-  }
-
-  pci_enable_io_busmastering(bus, device, function);
-
-  sound_cards_info[number_of_sound_cards].driver = SOUND_CARD_DRIVER_AC97;
-  sound_cards_info[number_of_sound_cards].vendor_id = vendor_id;
-  sound_cards_info[number_of_sound_cards].device_id = device_id;
-  sound_cards_info[number_of_sound_cards].io_base = pci_read_io_bar(bus, device, function, PCI_BAR0);
-  sound_cards_info[number_of_sound_cards].io_base_2 = pci_read_io_bar(bus, device, function, PCI_BAR1);
-  number_of_sound_cards++;
-
-  return;
- }
- 
- //HD Audio sound card
- if(type_of_device==0x040300 && number_of_sound_cards<MAX_NUMBER_OF_SOUND_CARDS) {
-  if(number_of_sound_cards>=MAX_NUMBER_OF_SOUND_CARDS) {
-   return;
-  }
-
-  pci_enable_mmio_busmastering(bus, device, function);
-
-  sound_cards_info[number_of_sound_cards].driver = SOUND_CARD_DRIVER_HDA;
-  sound_cards_info[number_of_sound_cards].vendor_id = vendor_id;
-  sound_cards_info[number_of_sound_cards].device_id = device_id;
-  sound_cards_info[number_of_sound_cards].mmio_base = pci_read_mmio_bar(bus, device, function, PCI_BAR0);
-  number_of_sound_cards++;
-
   return;
  }
  
@@ -693,19 +543,4 @@ void scan_pci_device(dword_t bus, dword_t device, dword_t function) {
  if(type_of_device==0x068000) {
   return;
  }
-}
-
-byte_t *get_pci_vendor_string(dword_t vendor_id) {
- extern dword_t pci_vendor_id_string_array[256];
-
- for(dword_t i=0; i<256; i+=2) {
-  if(pci_vendor_id_string_array[i]==0) {
-   break;
-  }
-  else if(pci_vendor_id_string_array[i]==vendor_id) {
-   return (byte_t *)(pci_vendor_id_string_array[i+1]);
-  }
- }
-
- return ""; //this vendor id is not in list
 }

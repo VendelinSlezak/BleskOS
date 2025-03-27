@@ -16,16 +16,15 @@ void initalize_storage_controllers(void) {
  //allocate memory for IDENTIFY command data
  device_info = (struct ata_identify_command_device_info *) (malloc(512));
 
- //detect all storage devices
- logf("\n");
- for(dword_t i=0; i<number_of_storage_controllers; i++) {
-  if(storage_controllers[i].controller_type==IDE_CONTROLLER) {
-   initalize_ide_controller(i);
-  }
-  else if(storage_controllers[i].controller_type==AHCI_CONTROLLER) {
-   initalize_ahci_controller(i);
-  }
- }
+    // run IDE driver
+    for(dword_t i = 0; i < components->n_ide; i++) {
+        initalize_ide_controller(i);
+    }
+
+    // run AHCI driver
+    for(dword_t i = 0; i < components->n_ahci; i++) {
+        initalize_ahci_controller(i);
+    }
 
  //free memory
  free((void *)device_info);

@@ -9,13 +9,15 @@
 */
 
 void vesa_read_graphic_mode_info(void) {
+    logf("\n\nDriver: VESA BIOS Extension");
+
     //bootloader loaded VESA information block on 0x3000 and VESA mode info on 0x3800
     struct vesa_info_block *vesa_info_block_data = (struct vesa_info_block *) (0x3000);
     struct vesa_mode_info_block *vesa_mode_info_block_data = (struct vesa_mode_info_block *) (0x3800);
 
     //check signature
     if(vesa_info_block_data->signature!=VESA_SIGNATURE) {
-        logf("\n\nInvalid VBE info block");
+        logf("\nInvalid VBE info block");
         return;
     }
 
@@ -33,6 +35,6 @@ void vesa_read_graphic_mode_info(void) {
     monitors[0].bpp = vesa_mode_info_block_data->bits_per_pixel;
 
     //log
-    logf("\n\nVBE %d.%d", vesa_info_block_data->major_version, vesa_info_block_data->minor_version);
+    logf("\nVBE version: %d.%d", vesa_info_block_data->major_version, vesa_info_block_data->minor_version);
     logf("\nOEM string: %s", (vesa_info_block_data->oem_string_segment*0x10 + vesa_info_block_data->oem_string_offset));
 }

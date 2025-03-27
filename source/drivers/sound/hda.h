@@ -8,6 +8,55 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#define MAX_NUMBER_OF_HDA_SOUND_CARDS 4
+struct hda_info_t {
+    struct pci_device_info_t pci;
+
+    dword_t base;
+    dword_t input_stream_base;
+    dword_t output_stream_base;
+    dword_t communication_type;
+    dword_t codec_number;
+    dword_t is_initalized_useful_output;
+    dword_t selected_output_node;
+
+    dword_t *corb_mem;
+    dword_t corb_pointer;
+    dword_t corb_number_of_entries;
+    dword_t *rirb_mem;
+    dword_t rirb_pointer;
+    dword_t rirb_number_of_entries;
+
+    dword_t *output_buffer_list;
+    dword_t sound_length;
+    dword_t bytes_on_output_for_stopping_sound;
+    dword_t length_of_node_path;
+
+    dword_t afg_node_sample_capabilities;
+    dword_t afg_node_stream_format_capabilities;
+    dword_t afg_node_input_amp_capabilities;
+    dword_t afg_node_output_amp_capabilities;
+
+    dword_t audio_output_node_number;
+    dword_t audio_output_node_sample_capabilities;
+    dword_t audio_output_node_stream_format_capabilities;
+
+    dword_t output_amp_node_number;
+    dword_t output_amp_node_capabilities;
+
+    dword_t second_audio_output_node_number;
+    dword_t second_audio_output_node_sample_capabilities;
+    dword_t second_audio_output_node_stream_format_capabilities;
+    dword_t second_output_amp_node_number;
+    dword_t second_output_amp_node_capabilities;
+
+    dword_t pin_output_node_number;
+    dword_t pin_headphone_node_number;
+};
+
+// TODO: rewrite this
+dword_t selected_hda_card;
+
 #define HDA_UNINITALIZED 0
 #define HDA_CORB_RIRB 1
 #define HDA_PIO 2
@@ -42,22 +91,7 @@
 #define HDA_OUTPUT_NODE 0x1
 #define HDA_INPUT_NODE 0x2
 
-byte_t hda_selected_output_node;
-dword_t *hda_corb_mem;
-dword_t hda_corb_pointer, hda_corb_number_of_entries;
-dword_t *hda_rirb_mem;
-dword_t hda_rirb_pointer, hda_rirb_number_of_entries;
-dword_t *hda_output_buffer_list;
-dword_t hda_sound_length, hda_bytes_on_output_for_stopping_sound;
-byte_t hda_length_of_node_path;
-
-dword_t hda_base, hda_input_stream_base, hda_output_stream_base;
-byte_t hda_communication_type, hda_codec_number, hda_is_initalized_useful_output;
-dword_t hda_afg_node_sample_capabilities, hda_afg_node_stream_format_capabilities, hda_afg_node_input_amp_capabilities, hda_afg_node_output_amp_capabilities;
-
-dword_t hda_audio_output_node_number, hda_audio_output_node_sample_capabilities, hda_audio_output_node_stream_format_capabilities, hda_output_amp_node_number, hda_output_amp_node_capabilities;
-dword_t hda_second_audio_output_node_number, hda_second_audio_output_node_sample_capabilities, hda_second_audio_output_node_stream_format_capabilities, hda_second_output_amp_node_number, hda_second_output_amp_node_capabilities;
-dword_t hda_pin_output_node_number, hda_pin_headphone_node_number;
+void hda_add_new_pci_device(struct pci_device_info_t device);
 
 void hda_initalize_sound_card(dword_t sound_card_number);
 dword_t hda_send_verb(dword_t codec, dword_t node, dword_t verb, dword_t command);

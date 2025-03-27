@@ -41,5 +41,25 @@ struct components_info_t {
     struct vmware_graphic_card_info_t vmware_graphic_card[MAX_NUMBER_OF_VMWARE_GRAPHIC_CARDS];
     dword_t n_intel_graphic_card;
     struct intel_graphic_card_info_t intel_graphic_card[MAX_NUMBER_OF_INTEL_GRAPHIC_CARDS];
+
+    dword_t p_sound_card;
+    dword_t n_ac97;
+    struct ac97_info_t ac97[MAX_NUMBER_OF_AC97_SOUND_CARDS];
+    dword_t n_hda;
+    struct hda_info_t hda[MAX_NUMBER_OF_HDA_SOUND_CARDS];
+
+    dword_t n_ide;
+    struct ide_info_t ide[MAX_NUMBER_OF_IDE_CONTROLLERS];
+    dword_t n_ahci;
+    struct ahci_info_t ahci[MAX_NUMBER_OF_AHCI_CONTROLLERS];
+
+    dword_t n_intel_e1000;
+    struct intel_e1000_info_t intel_e1000[MAX_NUMBER_OF_INTEL_E1000_CARDS];
+    dword_t n_amd_pcnet;
+    struct amd_pcnet_info_t amd_pcnet[MAX_NUMBER_OF_AMD_PCNET_CARDS];
+    dword_t n_realtek_8139;
+    struct realtek_8139_info_t realtek_8139[MAX_NUMBER_OF_REALTEK_8139_CARDS];
+    dword_t n_realtek_8169;
+    struct realtek_8169_info_t realtek_8169[MAX_NUMBER_OF_REALTEK_8169_CARDS];
 };
 struct components_info_t *components;

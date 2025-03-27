@@ -103,6 +103,10 @@ struct pci_vendor_id_list_t pci_vendor_list[] = {
     {0x80EE, "InnoTek Systemberatung GmbH"},
     {0x11C1, "LSI Corporation"},
     {0x15AD, "VMware"},
+    {0x8384, "SigmaTel"},
+    {0x1AF4, "Red Hat, Inc."},
+    {0x1000, "Broadcom / LSI"},
+    {0x10EC, "Realtek Semiconductor Co., Ltd."},
     {0, 0},
 };
 
@@ -113,37 +117,64 @@ struct pci_device_type_list_t {
     struct pci_supported_devices_list_t *supported_devices;
 };
 
+extern void bga_add_new_pci_device(struct pci_device_info_t device);
+extern struct pci_supported_devices_list_t bga_supported_pci_devices[];
 extern void intel_graphic_card_add_new_pci_device(struct pci_device_info_t device);
 extern struct pci_supported_devices_list_t intel_graphic_card_supported_pci_devices[];
 extern void vmware_graphic_card_add_new_pci_device(struct pci_device_info_t device);
 extern struct pci_supported_devices_list_t vmware_graphic_card_supported_pci_devices[];
 
+extern void ac97_add_new_pci_device(struct pci_device_info_t device);
+extern void hda_add_new_pci_device(struct pci_device_info_t device);
+
+extern void ide_add_new_pci_device(struct pci_device_info_t device);
+extern void ahci_add_new_pci_device(struct pci_device_info_t device);
+
+extern void intel_e1000_add_new_pci_device(struct pci_device_info_t device);
+extern struct pci_supported_devices_list_t intel_e1000_supported_pci_devices[];
+extern struct pci_supported_devices_list_t intel_e1000e_supported_pci_devices[];
+extern void amd_pcnet_add_new_pci_device(struct pci_device_info_t device);
+extern struct pci_supported_devices_list_t amd_pcnet_supported_pci_devices[];
+extern void realtek_8139_add_new_pci_device(struct pci_device_info_t device);
+extern struct pci_supported_devices_list_t realtek_8139_supported_pci_devices[];
+extern void realtek_8169_add_new_pci_device(struct pci_device_info_t device);
+extern struct pci_supported_devices_list_t realtek_8169_supported_pci_devices[];
+
 struct pci_device_type_list_t pci_device_type_list[] = {
-    {0x00000000, "Unclassified device", 0, 0},
+    // Unclassified
+    {0x00000000, "Non-VGA-Compatible Unclassified Device", 0, 0},
     {0x00010000, "VGA-compatible unclassified device", 0, 0},
 
     // Mass Storage Controller
     {0x01000000, "SCSI Bus Controller", 0, 0},
-    {0x01010000, "IDE Controller (ISA mode-only)", 0, 0},
-    {0x01010500, "IDE Controller (PCI mode-only)", 0, 0},
-    {0x01010A00, "IDE Controller (ISA mode, both channels switched to PCI mode)", 0, 0},
-    {0x01010F00, "IDE Controller (PCI mode, both channels switched to ISA mode)", 0, 0},
-    {0x01018000, "IDE Controller (ISA mode-only, bus mastering)", 0, 0},
-    {0x01018500, "IDE Controller (PCI mode-only, bus mastering)", 0, 0},
-    {0x01018A00, "IDE Controller (ISA mode, both channels switched to PCI mode, bus mastering)", 0, 0},
-    {0x01018F00, "IDE Controller (PCI mode, both channels switched to ISA mode, bus mastering)", 0, 0},
+    {0x01010000, "IDE Controller (ISA mode-only)", ide_add_new_pci_device, 0},
+    {0x01010500, "IDE Controller (PCI mode-only)", ide_add_new_pci_device, 0},
+    {0x01010A00, "IDE Controller (ISA mode, both channels switched to PCI mode)", ide_add_new_pci_device, 0},
+    {0x01010F00, "IDE Controller (PCI mode, both channels switched to ISA mode)", ide_add_new_pci_device, 0},
+    {0x01018000, "IDE Controller (ISA mode-only, bus mastering)", ide_add_new_pci_device, 0},
+    {0x01018500, "IDE Controller (PCI mode-only, bus mastering)", ide_add_new_pci_device, 0},
+    {0x01018A00, "IDE Controller (ISA mode, both channels switched to PCI mode, bus mastering)", ide_add_new_pci_device, 0},
+    {0x01018F00, "IDE Controller (PCI mode, both channels switched to ISA mode, bus mastering)", ide_add_new_pci_device, 0},
     {0x01020000, "Floppy Disk Controller", 0, 0},
     {0x01030000, "IPI Bus Controller", 0, 0},
     {0x01040000, "RAID Controller", 0, 0},
     {0x01052000, "ATA Controller (single DMA)", 0, 0},
-    {0x01058000, "ATA Controller (vendor specific)", 0, 0},
-    {0x01060000, "Serial ATA Controller", 0, 0},
-    {0x01060100, "Serial ATA Controller (AHCI 1.0)", 0, 0},
-    {0x01070000, "Serial Attached SCSI (SAS) Controller", 0, 0},
-    {0x01080000, "Non-volatile Memory Controller", 0, 0},
+    {0x01053000, "ATA Controller (chained DMA)", 0, 0},
+    {0x01060000, "Serial ATA Controller (Vendor Specific)", 0, 0},
+    {0x01060100, "Serial ATA Controller (AHCI 1.0)", ahci_add_new_pci_device, 0},
+    {0x01060200, "Serial ATA Controller (SSB)", 0, 0},
+    {0x01070000, "Serial Attached SCSI Controller (SAS)", 0, 0},
+    {0x01070100, "Serial Attached SCSI Controller (SSB)", 0, 0},
+    {0x01080100, "Non-volatile Memory Controller (NVMHCI)", 0, 0},
+    {0x01080200, "Non-volatile Memory Controller (NVM Express)", 0, 0},
+    {0x01800000, "Other Mass Storage Controller", 0, 0},
 
     // Network Controller
-    {0x02000000, "Ethernet Controller", 0, 0},
+    {0x02000000, "Ethernet Controller", intel_e1000_add_new_pci_device, intel_e1000_supported_pci_devices},
+    {0x02000000, "", intel_e1000_add_new_pci_device, intel_e1000e_supported_pci_devices},
+    {0x02000000, "", amd_pcnet_add_new_pci_device, amd_pcnet_supported_pci_devices},
+    {0x02000000, "", realtek_8139_add_new_pci_device, realtek_8139_supported_pci_devices},
+    {0x02000000, "", realtek_8169_add_new_pci_device, realtek_8169_supported_pci_devices},
     {0x02010000, "Token Ring Controller", 0, 0},
     {0x02020000, "FDDI Controller", 0, 0},
     {0x02030000, "ATM Controller", 0, 0},
@@ -157,15 +188,16 @@ struct pci_device_type_list_t pci_device_type_list[] = {
     // Display Controller
     {0x03000000, "VGA Compatible Graphic Controller", intel_graphic_card_add_new_pci_device, intel_graphic_card_supported_pci_devices},
     {0x03000000, "", vmware_graphic_card_add_new_pci_device, vmware_graphic_card_supported_pci_devices},
+    {0x03000000, "", bga_add_new_pci_device, bga_supported_pci_devices},
     {0x03000100, "8514 Compatible Graphic Controller", 0, 0},
     {0x03010000, "XGA Graphic Controller", 0, 0},
     {0x03020000, "3D Graphic Controller", 0, 0},
 
     // Multimedia Controller
     {0x04000000, "Multimedia Video Controller", 0, 0},
-    {0x04010000, "Multimedia Audio Controller", 0, 0},
+    {0x04010000, "Multimedia Audio Controller", ac97_add_new_pci_device, 0},
     {0x04020000, "Computer Telephony Device", 0, 0},
-    {0x04030000, "Audio Device", 0, 0},
+    {0x04030000, "Audio Device", hda_add_new_pci_device, 0},
 
     // Memory Controller
     {0x05000000, "RAM Controller", 0, 0},
@@ -202,41 +234,81 @@ struct pci_device_type_list_t pci_device_type_list[] = {
     {0x08040000, "PCI Hot-Plug Controller", 0, 0},
     {0x08050000, "SD Host Controller", 0, 0},
     {0x08060000, "IOMMU", 0, 0},
+    {0x08800000, "Other Base System Peripheral", 0, 0},
 
     // Input Devices
     {0x09000000, "Keyboard Controller", 0, 0},
     {0x09010000, "Digitizer Pen", 0, 0},
     {0x09020000, "Mouse Controller", 0, 0},
+    {0x09030000, "Scanner Controller", 0, 0},
+    {0x09040000, "Gameport Controller (Legacy)", 0, 0},
+    {0x09040100, "Gameport Controller (Standard)", 0, 0},
 
     // Docking Stations
     {0x0A000000, "Generic Docking Station", 0, 0},
+    {0x0A010000, "Docking Station with Expansion Bus", 0, 0},
 
     // Processors
     {0x0B000000, "386 Processor", 0, 0},
     {0x0B010000, "486 Processor", 0, 0},
     {0x0B020000, "Pentium Processor", 0, 0},
+    {0x0B100000, "Alpha Processor", 0, 0},
+    {0x0B200000, "PowerPC Processor", 0, 0},
+    {0x0B300000, "MIPS Processor", 0, 0},
+    {0x0B400000, "Co-Processor", 0, 0},
 
     // Serial Bus Controllers
     {0x0C000000, "FireWire (IEEE 1394) Controller", 0, 0},
+    {0x0C001000, "FireWire (IEEE 1394) Controller (OpenHCI)", 0, 0},
     {0x0C010000, "ACCESS Bus Controller", 0, 0},
+    {0x0C020000, "Serial Storage Architecture Controller", 0, 0},
+    {0x0C030000, "UHCI USB Controller", 0, 0},
+    {0x0C031000, "OHCI USB Controller", 0, 0},
+    {0x0C032000, "EHCI USB Controller", 0, 0},
+    {0x0C033000, "xHCI USB Controller", 0, 0},
+    {0x0C038000, "USB Miscellaneous Controller", 0, 0},
+    {0x0C03FE00, "USB Device Controller", 0, 0},
+    {0x0C040000, "Fibre Channel Controller", 0, 0},
+    {0x0C050000, "SMBus Controller", 0, 0},
+    {0x0C060000, "InfiniBand Controller", 0, 0},
+    {0x0C070000, "IPMI Interface (SMIC)", 0, 0},
+    {0x0C070100, "IPMI Interface (Keyboard Controller Style)", 0, 0},
+    {0x0C070200, "IPMI Interface (Block Transfer)", 0, 0},
+    {0x0C080000, "SERCOS Interface (Serial Real-time Communication System)", 0, 0},
+    {0x0C090000, "CANbus Controller", 0, 0},
+    {0x0C090000, "Other Serial Bus Controller", 0, 0},
 
     // Wireless Controllers
     {0x0D000000, "iRDA Controller", 0, 0},
+    {0x0D010000, "Consumer IR Controller", 0, 0},
+    {0x0D020000, "RF Controller", 0, 0},
+    {0x0D030000, "Bluetooth Controller", 0, 0},
+    {0x0D040000, "Broadband Controller", 0, 0},
+    {0x0D050000, "Ethernet Wireless Controller", 0, 0},
+    {0x0D060000, "Wireless Network Controller", 0, 0},
 
     // Intelligent I/O Controllers
     {0x0E000000, "I2O Controller", 0, 0},
 
     // Satellite Communication Controllers
     {0x0F000000, "Satellite TV Controller", 0, 0},
+    {0x0F010000, "Satellite Audio Communication Controller", 0, 0},
+    {0x0F020000, "Satellite Voice Communication Controller", 0, 0},
+    {0x0F030000, "Satellite Data Communication Controller", 0, 0},
 
     // Encryption/Decryption Controllers
     {0x10000000, "Network and Computing Encryption/Decryption Controller", 0, 0},
+    {0x10010000, "Entertainment Encryption/Decryption Controller", 0, 0},
 
     // Data Acquisition and Signal Processing Controllers
     {0x11000000, "DPIO Module", 0, 0},
+    {0x11010000, "Performance Counters", 0, 0},
+    {0x11020000, "Communications Synchronization Controller", 0, 0},
+    {0x11030000, "Signal Processing Controller", 0, 0},
 
     // Processing Accelerators
     {0x12000000, "Processing Accelerator", 0, 0},
+    {0x12010000, "AI Accelerator", 0, 0},
 
     // Non-Essential Instrumentation
     {0x13000000, "Instrumentation Device", 0, 0},
@@ -251,6 +323,7 @@ struct pci_device_type_list_t pci_device_type_list[] = {
 #define PCI_STATUS_IO (1 << 0)
 #define PCI_STATUS_MMIO (1 << 1)
 #define PCI_STATUS_BUSMASTERING (1 << 2)
+#define PCI_STATUS_DISABLE_INTERRUPTS (1 << 10)
 
 dword_t pci_ind(struct pci_device_info_t device, dword_t offset);
 word_t pci_inw(struct pci_device_info_t device, dword_t offset);
@@ -262,10 +335,13 @@ void pci_outw(struct pci_device_info_t device, dword_t offset, word_t value);
 void pci_outb(struct pci_device_info_t device, dword_t offset, byte_t value);
 byte_t *pci_get_vendor_name(word_t vendor_id);
 byte_t *pci_get_device_type_string(dword_t type);
+dword_t pci_is_device_in_list(word_t vendor_id, word_t device_id, struct pci_supported_devices_list_t *device_list);
 void pci_new_scan(void);
 void pci_new_scan_device(struct pci_device_info_t device);
+dword_t pci_get_bar_type(struct pci_device_info_t device, dword_t bar);
 word_t pci_get_io(struct pci_device_info_t device, dword_t bar);
 dword_t pci_get_mmio(struct pci_device_info_t device, dword_t bar);
+dword_t pci_get_64_bit_mmio(struct pci_device_info_t device, dword_t bar);
 void pci_device_install_interrupt_handler(struct pci_device_info_t device, void (*handler)(void));
 
 #define PCI_BAR0 0x10
@@ -307,4 +383,3 @@ void pci_enable_mmio_busmastering(dword_t bus, dword_t device, dword_t function)
 void pci_disable_interrupts(dword_t bus, dword_t device, dword_t function);
 void scan_pci(void);
 void scan_pci_device(dword_t bus, dword_t device, dword_t function);
-byte_t *get_pci_vendor_string(dword_t vendor_id);
