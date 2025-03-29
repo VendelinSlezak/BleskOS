@@ -263,6 +263,9 @@ void scan_pci_device(struct pci_device_info_t device) {
         dword_t pointer = pci_inb(device, 0x34);
         for(dword_t i = 0; i < 255; i++) {
             byte_t capability_id = pci_inb(device, pointer+0x00);
+            if(capability_id == 0x00) {
+                break;
+            }
             logf("\n  ID: ");
             switch(capability_id) {
                 case(0x05):

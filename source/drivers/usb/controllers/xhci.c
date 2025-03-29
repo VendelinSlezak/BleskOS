@@ -50,16 +50,16 @@ void initalize_xhci_controller(dword_t number_of_controller) {
     dword_t xhci_bios_register_offset = ((mmio_ind(components->xhci[number_of_controller].base+0x10)>>16)*4);
     if(xhci_bios_register_offset != 0 && (mmio_ind(components->xhci[number_of_controller].base+xhci_bios_register_offset) & 0xFF)==0x01) {
         // wait for BIOS handoff
-        while(time_of_system_running < components->xhci[number_of_controller].pci.bios_handoff_timeout) {
+        do {
             asm("nop");
 
             if(((mmio_ind(components->xhci[number_of_controller].base+xhci_bios_register_offset) & ((1 << 16) | (1 << 24))) == (1 << 24))) {
                 logf("\nBIOS ownership released successfully");
                 break;
             }
-        }
+        } while(time_of_system_running < components->xhci[number_of_controller].pci.bios_handoff_timeout);
         if(((mmio_ind(components->xhci[number_of_controller].base+xhci_bios_register_offset) & ((1 << 16) | (1 << 24))) != (1 << 24))
-            || time_of_system_running >= components->xhci[number_of_controller].pci.bios_handoff_timeout) {
+            && time_of_system_running >= components->xhci[number_of_controller].pci.bios_handoff_timeout) {
             logf("\nERROR: xHCI controller is still in BIOS ownership %x", mmio_ind(components->xhci[number_of_controller].base+xhci_bios_register_offset));
             return;
         }

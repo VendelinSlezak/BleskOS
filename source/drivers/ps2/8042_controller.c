@@ -277,8 +277,8 @@ void initalize_ps2_controller(void) {
 
   //read device ID
   ps2_first_channel_buffer[1] = 0xFF;
+  logf("\nWriting 0xF2 first channel");
   write_to_first_ps2_channel(0xF2);
-  logf("\n");
   if(ps2_first_channel_wait_for_ack()==STATUS_GOOD) {
    if(ps2_first_channel_wait_for_response()==STATUS_GOOD) {
     if(ps2_first_channel_buffer[1]==0xAB || ps2_first_channel_buffer[1]==0xAC) {
@@ -339,12 +339,17 @@ void initalize_ps2_controller(void) {
 }
 
 void ps2_first_channel_irq_handler(void) {
+    // check if there are data
+    if((inb(0x64) & 0x1) != 0x1) {
+        return;
+    }
+
  //read data
  ps2_first_channel_buffer[ps2_first_channel_buffer_pointer] = inb(0x60);
 
  //move pointer
  ps2_first_channel_buffer_pointer++;
- if(ps2_first_channel_buffer_pointer>=10) {
+ if(ps2_first_channel_buffer_pointer >= 10) {
   logf("\nERROR: PS/2 first channel buffer is full");
   ps2_first_channel_buffer_pointer = 0;
  }
@@ -384,63 +389,66 @@ void ps2_first_channel_irq_handler(void) {
 
   //clear variables
   ps2_first_channel_buffer_pointer = 0;
-
-  return;
  }
 }
 
 void ps2_second_channel_irq_handler(void) {
- //read data
- ps2_second_channel_buffer[ps2_second_channel_buffer_pointer] = inb(0x60);
+    // check if there are data
+    if((inb(0x64) & 0x1) != 0x1) {
+        return;
+    }
 
- //move pointer
- ps2_second_channel_buffer_pointer++;
- if(ps2_second_channel_buffer_pointer>=10) {
-  logf("\nERROR: PS/2 second channel buffer is full");
-  ps2_second_channel_buffer_pointer = 0;
- }
+    //read data
+    ps2_second_channel_buffer[ps2_second_channel_buffer_pointer] = inb(0x60);
 
- //process data
- if(ps2_second_channel_device==PS2_CHANNEL_MOUSE_INITALIZED && ps2_second_channel_buffer_pointer >= ps2_second_channel_mouse_data_bytes) {
-   //if program waits for data from mouse, process it
-   if(ps2_mouse_enable == STATUS_TRUE) {
-        //buttons
-        mouse_buttons = ps2_second_channel_buffer[0];
+    //move pointer
+    ps2_second_channel_buffer_pointer++;
+    if(ps2_second_channel_buffer_pointer >= 10) {
+        logf("\nERROR: PS/2 second channel buffer is full");
+        ps2_second_channel_buffer_pointer = 0;
+    }
 
-        //X movement
-        if(ps2_second_channel_buffer[1]<0x80) {
-            mouse_movement_x = ps2_second_channel_buffer[1];
-        }
-        else {
-            mouse_movement_x = (0xFFFFFFFF - (0xFF-ps2_second_channel_buffer[1]));
-        }
+    //process data
+    if(ps2_second_channel_device==PS2_CHANNEL_MOUSE_INITALIZED && ps2_second_channel_buffer_pointer >= ps2_second_channel_mouse_data_bytes) {
+        //if program waits for data from mouse, process it
+        if(ps2_mouse_enable == STATUS_TRUE) {
+            //buttons
+            mouse_buttons = ps2_second_channel_buffer[0];
 
-        //Y movement
-        if(ps2_second_channel_buffer[2]<0x80) {
-            mouse_movement_y = (0xFFFFFFFF - ps2_second_channel_buffer[2] + 1);
-        }
-        else {
-            mouse_movement_y = (0x100-ps2_second_channel_buffer[2]);
-        }
-
-        //wheel
-        if(ps2_second_channel_buffer_pointer >= 3 && ps2_second_channel_buffer[3] != 0) {
-            if(ps2_second_channel_buffer[3]<0x80) {
-                mouse_wheel_movement = (0xFFFFFFFF - ps2_second_channel_buffer[3]);
+            //X movement
+            if(ps2_second_channel_buffer[1]<0x80) {
+                mouse_movement_x = ps2_second_channel_buffer[1];
             }
             else {
-                mouse_wheel_movement = (0xFF-ps2_second_channel_buffer[3]+1);
+                mouse_movement_x = (0xFFFFFFFF - (0xFF-ps2_second_channel_buffer[1]));
             }
+
+            //Y movement
+            if(ps2_second_channel_buffer[2]<0x80) {
+                mouse_movement_y = (0xFFFFFFFF - ps2_second_channel_buffer[2] + 1);
+            }
+            else {
+                mouse_movement_y = (0x100-ps2_second_channel_buffer[2]);
+            }
+
+            //wheel
+            if(ps2_second_channel_mouse_data_bytes == 4 && ps2_second_channel_buffer[3] != 0) {
+                if(ps2_second_channel_buffer[3]<0x80) {
+                    mouse_wheel_movement = (0xFFFFFFFF - ps2_second_channel_buffer[3]);
+                }
+                else {
+                    mouse_wheel_movement = (0x100-ps2_second_channel_buffer[3]);
+                }
+            }
+
+            //click button state
+            mouse_update_click_button_state();
+
+            // inform method wait_for_user_input() from source/drivers/system/user_wait.c that there was received packet from mouse
+            mouse_event = STATUS_TRUE;
         }
 
-        //click button state
-        mouse_update_click_button_state();
-
-        // inform method wait_for_user_input() from source/drivers/system/user_wait.c that there was received packet from mouse
-        mouse_event = STATUS_TRUE;
-   }
-
-   //reset variable
-   ps2_second_channel_buffer_pointer = 0;
- }
+        //reset variable
+        ps2_second_channel_buffer_pointer = 0;
+    }
 }

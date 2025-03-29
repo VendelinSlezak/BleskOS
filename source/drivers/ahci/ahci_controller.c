@@ -71,15 +71,15 @@ void initalize_ahci_controller(byte_t number_of_controller) {
         // check if BIOS ownership is supported
         if((mmio_ind(base + 0x24) & 0x1)==0x1) {
             // wait for BIOS handoff
-            while(time_of_system_running < components->ahci[components->n_ahci].pci.bios_handoff_timeout) {
+            do {
                 asm("nop");
 
                 if((mmio_ind(base + 0x28) & 0x3) == 0x2) {
                     logf("\nBIOS ownership released successfully");
                     break;
                 }
-            }
-            if(((mmio_ind(base + 0x28) & 0x3) != 0x2) || time_of_system_running >= components->ahci[components->n_ahci].pci.bios_handoff_timeout) {
+            } while(time_of_system_running < components->ahci[number_of_controller].pci.bios_handoff_timeout);
+            if(((mmio_ind(base + 0x28) & 0x3) != 0x2) && time_of_system_running >= components->ahci[number_of_controller].pci.bios_handoff_timeout) {
                 logf("\nAHCI ERROR: BIOS did not released ownership");
                 return;
             }
@@ -317,6 +317,10 @@ byte_t ahci_send_command(dword_t port_base_address, dword_t command_list_memory,
         ahci_command_and_prd_table->data_base_low_memory = memory;
         ahci_command_and_prd_table->data_byte_count = (byte_count-1);
     }
+    else {
+        ahci_command_and_prd_table->data_base_low_memory = (command_list_memory+0x1FF0);
+        ahci_command_and_prd_table->data_byte_count = 0;
+    }
 
     //wait to be possible to send command list entry 0
     if(ahci_wait(port_base_address + 0x38, 0x01, 0x0, 100) == STATUS_ERROR) {
@@ -339,9 +343,12 @@ byte_t ahci_send_command(dword_t port_base_address, dword_t command_list_memory,
             if((mmio_ind(port_base_address + 0x10) & 0x40000000)==0x0) { //check for error
                 return STATUS_GOOD;
             }
+            else {
+                return STATUS_ERROR;
+            }
         }
         
-        if((mmio_ind(port_base_address + 0x10) & 0x40000000)==0x40000000) { //error
+        if((mmio_ind(port_base_address + 0x10) & 0x40000000)==0x40000000) { //error before command
             //we need to clear COMMAND_ISSUE register to be able to send commands again, to do so we will restart command list
             mmio_outd(port_base_address + 0x18, mmio_ind(port_base_address + 0x18) & ~0x01); //clear start bit
             if(ahci_wait(port_base_address + 0x18, 0x1, 0x0, 100)==STATUS_ERROR) {

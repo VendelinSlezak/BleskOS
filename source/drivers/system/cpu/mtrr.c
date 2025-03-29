@@ -57,13 +57,8 @@ void initalize_mtrr(void) {
             byte_t mtrr_entry_memory_type = (read_msr(MTRR_REG_BASE + i*2) & 0xFF);
             logf("%s ", get_mtrr_memory_type_string(mtrr_entry_memory_type));
 
-            // log start of memory
-            if((read_msr(MTRR_REG_BASE + i*2) >> 32) != 0) {
-                logf("0x%x ", (dword_t)(read_msr(MTRR_REG_BASE + i*2) >> 32));
-            }
-
-            // log size of memory
-            logf("0x%x %d Kb", (dword_t)(read_msr(MTRR_REG_BASE + i*2) & 0xFFFFF000), (dword_t)((~(read_msr(MTRR_REG_MASK + i*2) & 0xFFFFF000))+1)/1024);
+            // log memory position and size
+            logf("0x%x%x %d Kb", (dword_t)(read_msr(MTRR_REG_BASE + i*2) >> 32), (dword_t)(read_msr(MTRR_REG_BASE + i*2) & 0xFFFFF000), (dword_t)((~(read_msr(MTRR_REG_MASK + i*2) & 0xFFFFF000))+1)/1024);
         }
         else {
             logf("Free");

@@ -9,7 +9,7 @@
 */
 
 #define BLESKOS_VERSION 2025
-#define BLESKOS_UPDATE 9
+#define BLESKOS_UPDATE 10
 
 #define STATUS_GOOD 1
 #define STATUS_ERROR 0
