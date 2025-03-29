@@ -240,9 +240,6 @@ void usb_hub_get_port_status_again_success(byte_t device_address) {
   //device was removed from this port
   logf("\nRemoving device from HUB %d port %d", device_address, (usb_devices[device_address].hub.actual_port+1));
   for(dword_t i = 0; i < MAX_NUMBER_OF_USB_DEVICES; i++) {
-    if(usb_devices[i].is_used == STATUS_TRUE && usb_devices[i].hub_address != 0) {
-     logf("\nHUB device in list: %d %d %d", i, usb_devices[i].hub_address, usb_devices[i].hub_port_number);
-    }
    if(usb_devices[i].is_used == STATUS_TRUE && usb_devices[i].hub_address == device_address && usb_devices[i].hub_port_number == (usb_devices[device_address].hub.actual_port+1)) {
     usb_remove_device(i);
    }

@@ -18,6 +18,7 @@ void initalize_mouse(void) {
 
 void mouse_prepare_for_next_event(void) {
     mouse_event = STATUS_FALSE;
+    mouse_wheel_movement = 0;
 }
 
 void mouse_update_click_button_state(void) {

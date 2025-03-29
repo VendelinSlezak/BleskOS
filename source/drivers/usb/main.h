@@ -80,7 +80,6 @@ void check_usb_ports(void);
 void usb_process_port_status(byte_t port_status, byte_t type_of_controller, byte_t controller_number, byte_t port_number);
 void check_usb_interface_initalization(void);
 void usb_remove_device(byte_t device_address);
-void usb_remove_hub_device(byte_t hub_address, byte_t hub_port_number);
 
 void usb_irq(void);
 void usb_check_interrupt_transfer(byte_t device_address, struct usb_interrupt_transfer_info_t *interrupt_transfer);

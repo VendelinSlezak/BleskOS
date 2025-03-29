@@ -51,16 +51,16 @@ void initalize_ehci_controller(dword_t number_of_controller) {
     dword_t pci_ehci_bios_register_offset = ((mmio_ind(components->ehci[number_of_controller].base+0x08)>>8) & 0xFF);
     if(pci_ehci_bios_register_offset >= 0x40 && (pci_ind(components->ehci[number_of_controller].pci, pci_ehci_bios_register_offset) & 0xFF)==0x01) {
         // wait for BIOS handoff
-        while(time_of_system_running < components->ehci[components->n_ehci].pci.bios_handoff_timeout) {
+        do {
             asm("nop");
 
             if((pci_ind(components->ehci[number_of_controller].pci, pci_ehci_bios_register_offset) & 0x01010000)==0x01000000) {
                 logf("\nBIOS ownership released successfully");
                 break;
             }
-        }
+        } while(time_of_system_running < components->ehci[number_of_controller].pci.bios_handoff_timeout);
         if(((pci_ind(components->ehci[number_of_controller].pci, pci_ehci_bios_register_offset) & 0x01010000)!=0x01000000)
-            || time_of_system_running >= components->xhci[components->n_xhci].pci.bios_handoff_timeout) {
+            && time_of_system_running >= components->ehci[number_of_controller].pci.bios_handoff_timeout) {
             logf("\nERROR: EHCI controller is still in BIOS ownership 0x%x", pci_ind(components->ehci[number_of_controller].pci, pci_ehci_bios_register_offset));
             components->ehci[number_of_controller].number_of_ports = 0;
             return;

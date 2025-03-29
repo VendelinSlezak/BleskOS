@@ -71,7 +71,7 @@ void keyboard_process_code(dword_t code) {
   keyboard_diacritic_char_for_next_key = 0;
  }
 
- //inform wait_for_user() from source/drivers/system/user_input.c that there were key pressed on keyboard
+ //inform wait_for_user() from source/drivers/system/user_input.c that there was key pressed on keyboard
  keyboard_event = STATUS_TRUE;
 }
 

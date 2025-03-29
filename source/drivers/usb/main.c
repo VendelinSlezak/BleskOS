@@ -84,7 +84,7 @@ void usb_process_port_status(byte_t port_status, byte_t type_of_controller, byte
  else if(port_status == CONTROLLER_PORT_REMOVED_DEVICE) {
   //remove all devices connected through this port
   for(dword_t i=0; i<MAX_NUMBER_OF_USB_DEVICES; i++) {
-   if(usb_devices[i].controller_type == type_of_controller && usb_devices[i].controller_number == controller_number && usb_devices[i].port_number == port_number) {
+   if(usb_devices[i].is_used == STATUS_TRUE && usb_devices[i].controller_type == type_of_controller && usb_devices[i].controller_number == controller_number && usb_devices[i].port_number == port_number) {
     usb_remove_device(i);
    }
   }
@@ -213,7 +213,7 @@ void usb_remove_device(byte_t device_address) {
   //go through all USB devices
   for(dword_t i=0; i<MAX_NUMBER_OF_USB_DEVICES; i++) {
    //check if this is device we are looking for
-   if(usb_devices[i].is_used == STATUS_TRUE && usb_devices[i].hub_address == device_address) {
+   if(usb_devices[i].is_used == STATUS_TRUE && usb_devices[i].is_used == STATUS_TRUE && usb_devices[i].hub_address == device_address) {
     usb_remove_device(i);
    }
   }
@@ -227,10 +227,6 @@ void usb_remove_device(byte_t device_address) {
   number_of_usb_devices--;
  }
  usb_device_change_event = STATUS_TRUE;
-}
-
-void usb_remove_hub_device(byte_t hub_address, byte_t hub_port_number) {
- 
 }
 
 /* interrupt routine */

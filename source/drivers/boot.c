@@ -11,6 +11,8 @@
 void boot_drivers(void) {
     /* PREPARE FUNDAMENTAL INTERFACE */
 
+    cli();
+
     // RAM memory
     create_physical_memory_allocator();
     components = (struct components_info_t *) calloc(sizeof(struct components_info_t));

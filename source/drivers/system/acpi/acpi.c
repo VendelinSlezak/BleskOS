@@ -152,10 +152,11 @@ void read_acpi_table(void *table) {
         components->acpi.pm1a_control_reg = fadp->pm1a_cnt_blk;
         components->acpi.pm1b_control_reg = fadp->pm1b_cnt_blk;
 
-        // detect 8042 controller
-        if(header->revision >= 3 && (fadp->iapc_boot_arch & (1 << 1)) == 0) {
-            components->p_8042_controller = STATUS_FALSE;
-        }
+        // TODO: this do not always work
+        // // detect 8042 controller
+        // if(header->revision >= 3 && (fadp->iapc_boot_arch & (1 << 1)) == 0) {
+        //     components->p_8042_controller = STATUS_FALSE;
+        // }
 
         logf("\n SCI interrupt: %d", fadp->sci_int);
         logf("\n ACPI control reg: 0x%04x", fadp->smi_cmd);
