@@ -190,9 +190,16 @@ void log_char(word_t character) {
         return;
     }
 
-    // send character to debug device
-    if(components->p_e9_debug_device == STATUS_TRUE && character < 0x100) {
-        e9_debug_device_send_char((byte_t)character);
+    // send character to debug devices
+    if(character < 0x100) {
+        if(components->p_e9_debug_device == STATUS_TRUE) {
+            e9_debug_device_send_char((byte_t)character);
+        }
+        for(dword_t i = 0; i < components->n_serial_port; i++) {
+            if(components->serial_port[i].device_type == SERIAL_PORT_DEBUG_DEVICE) {
+                serial_port_send_byte(i, (byte_t)character);
+            }
+        }
     }
 
     // save character to memory

@@ -8,7 +8,7 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-// #define NO_PROGRAMS
+#define NO_PROGRAMS
 
 #include "bleskos.h"
 #include "starting_screen.h"
@@ -24,6 +24,7 @@
 #include "drivers/sound/include.h"
 #include "drivers/network/include.h"
 #include "drivers/usb/include.h"
+#include "drivers/simple_communication/include.h"
 #include "drivers/components.h"
 #include "drivers/boot.h"
 
@@ -67,6 +68,7 @@
 #include "drivers/sound/include.c"
 #include "drivers/network/include.c"
 #include "drivers/usb/include.c"
+#include "drivers/simple_communication/include.c"
 #include "drivers/boot.c"
 
 #include "libraries/basic/include.c"

@@ -10,7 +10,6 @@
 
 void boot_drivers(void) {
     /* PREPARE FUNDAMENTAL INTERFACE */
-
     cli();
 
     // RAM memory
@@ -53,6 +52,7 @@ void boot_drivers(void) {
 
     // detect devices connected to fixed ports
     check_presence_of_bga();
+    check_presence_of_serial_ports();
 
     /* INITALIZE DEVICES */
  /* this code is not rewritten yet */
@@ -72,6 +72,8 @@ void boot_drivers(void) {
  initalize_ps2_keyboard();
  initalize_ps2_mouse();
  bleskos_boot_debug_log_message();
+
+ initalize_serial_ports();
 
  bleskos_show_message_on_starting_screen("Initalizing storage controllers...");
  initalize_list_of_connected_partitions();

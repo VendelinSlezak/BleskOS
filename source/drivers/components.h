@@ -70,5 +70,8 @@ struct components_info_t {
     struct ehci_info_t ehci[MAX_NUMBER_OF_EHCI_CONTROLLERS];
     dword_t n_xhci;
     struct xhci_info_t xhci[MAX_NUMBER_OF_XHCI_CONTROLLERS];
+
+    dword_t n_serial_port;
+    struct serial_port_info_t serial_port[MAX_NUMBER_OF_SERIAL_PORTS];
 };
 struct components_info_t *components;
