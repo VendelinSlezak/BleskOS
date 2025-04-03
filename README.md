@@ -52,12 +52,13 @@ Drivers
 
 - Graphic: VBE, BGA
 - Sound: AC97, Intel HD Audio
-- Inbuilt hardware: PS/2 keyboard, PS/2 mouse, PATA hard disk, PATAPI optical disk drive, AHCI hard disk, AHCI optical disk drive
-- Filesystems: FAT12/16/32, ext2 (read-only), ISO9660 (read-only), CDDA (read-only)
+- Inbuilt hardware: 8042 controller, PATA hard disk, PATAPI optical disk drive, AHCI hard disk, AHCI optical disk drive, Serial port
+- Simple devices: PS/2 keyboard, PS/2 mouse, Serial mouse
 - USB controllers: UHCI, OHCI, EHCI
 - USB devices: USB mouse, USB keyboard, USB mass storage device, USB hub
 - Ethernet cards: Realtek 8139/8169, Intel e1000(e), AMD PC-net
 - Network stack: IPv4, ARP, UDP, TCP, DHCP, DNS, HTTP
+- Filesystems: FAT12/16/32, ext2 (read-only), ISO9660 (read-only), CDDA (read-only)
 
 [List of working hardware](https://github.com/VendelinSlezak/BleskOS/wiki/List-of-working-hardware) contain list of real hardware that was already tested and is working.
 

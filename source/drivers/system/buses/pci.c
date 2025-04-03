@@ -129,7 +129,17 @@ byte_t *pci_get_device_type_string(dword_t type) {
         }
     }
 
-    return "Unknown Device";
+    byte_t *type_string = "      ";
+    for(dword_t i = 0, shift=28; i < 6; i++, shift-=4) {
+        if(((type>>shift) & 0xF) < 10) {
+            type_string[i] = (((type>>shift) & 0xF)+'0');
+        }
+        else {
+            type_string[i] = (((type>>shift) & 0xF)+'A'-10);
+        }
+    }
+
+    return type_string;
 }
 
 dword_t pci_is_device_in_list(word_t vendor_id, word_t device_id, struct pci_supported_devices_list_t *device_list) {

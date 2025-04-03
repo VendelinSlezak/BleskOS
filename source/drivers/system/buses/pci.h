@@ -107,6 +107,7 @@ struct pci_vendor_id_list_t pci_vendor_list[] = {
     {0x1AF4, "Red Hat, Inc."},
     {0x1000, "Broadcom / LSI"},
     {0x10EC, "Realtek Semiconductor Co., Ltd."},
+    {0x1B36, "Red Hat, Inc."},
     {0, 0},
 };
 
@@ -123,6 +124,8 @@ extern void intel_graphic_card_add_new_pci_device(struct pci_device_info_t devic
 extern struct pci_supported_devices_list_t intel_graphic_card_supported_pci_devices[];
 extern void vmware_graphic_card_add_new_pci_device(struct pci_device_info_t device);
 extern struct pci_supported_devices_list_t vmware_graphic_card_supported_pci_devices[];
+
+extern void serial_port_add_new_pci_device(struct pci_device_info_t device);
 
 extern void ac97_add_new_pci_device(struct pci_device_info_t device);
 extern void hda_add_new_pci_device(struct pci_device_info_t device);
@@ -224,7 +227,13 @@ struct pci_device_type_list_t pci_device_type_list[] = {
     {0x06800000, "Other Bridge", 0, 0},
 
     // Simple Communication Controllers
-    {0x07000000, "Serial Controller", 0, 0},
+    {0x07000000, "Serial Controller 8250-Compatible (Generic XT)", serial_port_add_new_pci_device, 0},
+    {0x07000100, "Serial Controller 16450-Compatible", serial_port_add_new_pci_device, 0},
+    {0x07000200, "Serial Controller 16550-Compatible", serial_port_add_new_pci_device, 0},
+    {0x07000300, "Serial Controller 16650-Compatible", serial_port_add_new_pci_device, 0},
+    {0x07000400, "Serial Controller 16750-Compatible", serial_port_add_new_pci_device, 0},
+    {0x07000500, "Serial Controller 16850-Compatible", serial_port_add_new_pci_device, 0},
+    {0x07000600, "Serial Controller 16950-Compatible", serial_port_add_new_pci_device, 0},
     {0x07010000, "Parallel Controller", 0, 0},
     {0x07020000, "Multiport Serial Controller", 0, 0},
     {0x07030000, "Modem", 0, 0},

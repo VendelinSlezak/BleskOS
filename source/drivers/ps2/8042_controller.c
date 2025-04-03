@@ -277,8 +277,8 @@ void initalize_ps2_controller(void) {
 
   //read device ID
   ps2_first_channel_buffer[1] = 0xFF;
-  logf("\nWriting 0xF2 first channel");
   write_to_first_ps2_channel(0xF2);
+  logf("\n");
   if(ps2_first_channel_wait_for_ack()==STATUS_GOOD) {
    if(ps2_first_channel_wait_for_response()==STATUS_GOOD) {
     if(ps2_first_channel_buffer[1]==0xAB || ps2_first_channel_buffer[1]==0xAC) {

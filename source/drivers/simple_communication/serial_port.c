@@ -10,7 +10,28 @@
 
 /* detect presence of serial ports */
 
-// TODO: add serial ports on PCI bus
+void serial_port_add_new_pci_device(struct pci_device_info_t device) {
+    // check number of already connected ports
+    if(components->n_serial_port >= MAX_NUMBER_OF_SERIAL_PORTS) {
+        return;
+    }
+
+    // log driver
+    logf("%s", __FILE__);
+
+    // save basic device informations
+    copy_memory((dword_t)&device, (dword_t)&components->serial_port[components->n_serial_port].pci, sizeof(struct pci_device_info_t));
+
+    // read other device informations
+    components->serial_port[components->n_serial_port].base = pci_get_io(device, PCI_BAR0);
+    components->serial_port[components->n_serial_port].is_pci_device = STATUS_TRUE;
+
+    // configure PCI
+    pci_set_bits(device, 0x04, PCI_STATUS_BUSMASTERING | PCI_STATUS_IO);
+
+    // update number of devices
+    components->n_serial_port++;
+}
 
 void check_presence_of_serial_ports(void) {
     // check presence of ports on fixed addresses
@@ -26,9 +47,16 @@ void check_presence_of_serial_port(word_t base, dword_t irq) {
         return;
     }
 
-    // TODO: what all is needed to detect serial port?
-    if(inb(base + 5) == 0xFF || inb(base + 5) == 0x00) {
+    // TODO: is there better detection method?
+    if(inb(base + 1) == 0xFF) {
         return;
+    }
+    if(inb(base + 1) == 0x00) {
+        outb(base + 1, 0x04);
+        if(inb(base + 1) != 0x04) {
+            return;
+        }
+        outb(base + 1, 0x00);
     }
 
     // add serial port
@@ -49,31 +77,80 @@ void initalize_serial_port(dword_t number_of_port) {
     word_t base = components->serial_port[number_of_port].base;
 
     // log
-    logf("\n\nDriver: Serial Port\nDevice: IO 0x%04x", base);
+    logf("\n\nDriver: Serial Port\nDevice: ");
+    if(components->serial_port[number_of_port].is_pci_device == STATUS_TRUE) {
+        logf("PCI bus %d:%d:%d:%d",
+            components->serial_port[number_of_port].pci.segment,
+            components->serial_port[number_of_port].pci.bus,
+            components->serial_port[number_of_port].pci.device,
+            components->serial_port[number_of_port].pci.function);
+    }
+    else {
+        logf("IO 0x%04x", base);
+    }
 
     // disable interrupts
     outb(base + 1, 0x00);
 
-    // TODO: detect PnP devices
+    // disable line
+    outb(base + 3, 0x00);
 
-    // try to estabilish connection
+    // TODO: detect PnP devices in proper way
+
+    // estabilish connection on port
     serial_port_estabilish_connection(number_of_port, 0, 8, 0, 0, 0);
 
+    // set method to detect device type
+    components->serial_port[number_of_port].process_data = detect_serial_device;
+
     // enable interrupts
-    set_irq_handler(components->serial_port[number_of_port].irq, (dword_t)serial_port_irq);
+    if(components->serial_port[number_of_port].is_pci_device == STATUS_TRUE) {
+        pci_device_install_interrupt_handler(components->serial_port[number_of_port].pci, serial_port_irq);
+    }
+    else {
+        set_irq_handler(components->serial_port[number_of_port].irq, (dword_t)serial_port_irq);
+    }
     outb(base + 1, 0x01);
 
-    // wait if device on port sends identification, otherwise assume that this is used as debugging port
-    wait(20);
-    if(components->serial_port[number_of_port].device_type == SERIAL_PORT_NO_DEVICE) {
-        components->serial_port[number_of_port].device_type = SERIAL_PORT_DEBUG_DEVICE;
-        
-        // send all log data up to this point
-        for(dword_t i = 0; i < logging_memory_chars; i++) {
-            if(logging_memory[i] < 0x80) {
-                serial_port_send_byte(number_of_port, logging_memory[i]);
-            }
+    // if there is device, it should now send data catched by detect_serial_device(), wait 20ms for it to happen
+    volatile dword_t timeout = (time_of_system_running+20);
+    while(time_of_system_running < timeout) {
+        if(components->serial_port[number_of_port].is_device_connected == STATUS_TRUE) {
+            return;
         }
+    }
+
+    // otherwise assume that this is used as debugging port
+    components->serial_port[number_of_port].device_type = SERIAL_PORT_DEBUG_DEVICE;
+    components->serial_port[number_of_port].process_data = 0; // TODO: write debug commands interface
+    
+    // send all log data up to this point
+    for(dword_t i = 0; i < logging_memory_chars; i++) {
+        if(logging_memory[i] < 0x80) {
+            if(logging_memory[i] == 0xA) {
+                serial_port_send_byte(number_of_port, 0xD);
+            }
+            serial_port_send_byte(number_of_port, logging_memory[i]);
+        }
+    }
+}
+
+void detect_serial_device(dword_t number_of_port, void *data, byte_t data_length) {
+    byte_t *buffer = data;
+
+    // log
+    logf("\nSerial port %d device detected");
+
+    // there is some device
+    components->serial_port[number_of_port].is_device_connected = STATUS_TRUE;
+
+    // detect mouse
+    if(detect_and_initalize_serial_mouse(number_of_port, data, data_length) == STATUS_TRUE) {
+        return;
+    }
+    // unknown device
+    else {
+        components->serial_port[number_of_port].device_type = SERIAL_PORT_UNKNOWN_DEVICE;
     }
 }
 
@@ -84,11 +161,11 @@ void serial_port_estabilish_connection(dword_t number_of_port, word_t baud_rate,
 
     // find fastest working baud rate
     if(baud_rate == 0) {
-        // set 8 bit mode
-        outb(base + 3, 0x03);
-
         // set loopback mode
         outb(base + 4, 0x1E);
+
+        // set 8 bit transfer mode, 1 stop bit, no parity bit, no break enable bit
+        outb(base + 3, 0x03);
 
         // try all baud rates from 115200 to 300
         for(word_t divisor = 1; divisor <= 384; divisor++) {
@@ -96,10 +173,10 @@ void serial_port_estabilish_connection(dword_t number_of_port, word_t baud_rate,
             serial_port_set_baud_rate(number_of_port, divisor);
 
             // send data
-            outb(base + 0, 0xAE);
+            outb(base + 0, 0xAA);
 
             // test if same data was returned
-            if(inb(base + 0) == 0xAE) {
+            if(inb(base + 0) == 0xAA) {
                 baud_rate = (115200/divisor);
                 break;
             }
@@ -120,6 +197,9 @@ void serial_port_estabilish_connection(dword_t number_of_port, word_t baud_rate,
 
     // set transmission type
     outb(base + 3, (number_of_bits_per_transfer-5) | (stop_bit_setting << 2) | (parity_bit_setting << 3) | (break_enable_bit << 6));
+    components->serial_port[number_of_port].stop_bit = stop_bit_setting;
+    components->serial_port[number_of_port].parity_bit = parity_bit_setting;
+    components->serial_port[number_of_port].break_enable_bit = break_enable_bit;
 
     // enable FIFO, clear receive and transmit FIFO, enable interrupts for port
     outb(base + 2, 0xC7);
@@ -150,10 +230,10 @@ void serial_port_detect_device(dword_t number_of_port) {
 
     // TODO: what is proper method to detect device on serial port?
     // if( ??? ) {
-    //     components->serial_port[number_of_port].is_connected = STATUS_TRUE;
+    //     components->serial_port[number_of_port].is_device_connected = STATUS_TRUE;
     // }
     // else {
-    //     components->serial_port[number_of_port].is_connected = STATUS_FALSE;
+    //     components->serial_port[number_of_port].is_device_connected = STATUS_FALSE;
     // }
 }
 
@@ -169,9 +249,7 @@ void serial_port_irq(void) {
             dword_t buffer_p = 0;
             for(dword_t j = 0; j < 256; j++) {
                 if((inb(components->serial_port[i].base + 5) & 0x1) == 0x1) {
-                    // read data to buffer
-                    buffer[buffer_p] = inb(components->serial_port[i].base + 0);
-                    buffer_p++;
+                    buffer[buffer_p++] = inb(components->serial_port[i].base + 0);
                 }
                 else {
                     break;
@@ -182,76 +260,8 @@ void serial_port_irq(void) {
             if(buffer_p == 0) {
                 continue;
             }
-            if(components->serial_port[i].device_type == SERIAL_PORT_NO_DEVICE) {
-                // mouse detected
-                if(buffer[0] == 'M') {
-                    logf("\nSerial port %d device detected\n Type: Mouse\n Protocol: ", i);
-                    if(buffer_p == 1) {
-                        logf("Microsoft protocol, 2 buttons");
-                        components->serial_port[i].device_type = SERIAL_PORT_MOUSE_2_BUTTONS;
-                    }
-                    else if(buffer[1] == '3') {
-                        logf("Extended Microsoft protocol, 3 buttons");
-                        components->serial_port[i].device_type = SERIAL_PORT_MOUSE_3_BUTTONS;
-                    }
-                    else if(buffer[1] == 'Z') {
-                        logf("Extended Microsoft protocol, mouse wheel mode");
-                        components->serial_port[i].device_type = SERIAL_PORT_MOUSE_WHEEL;
-                    }
-
-                    // TODO: move Plug'n'Play identification string parsing to special file and parse it all
-                    if(buffer_p >= 12) {
-                        logf("\n PnP Revision: %d.%d", (byte_t)buffer[3], buffer[4]-0x24);
-                        logf("\n EISA ID: %03s", &buffer[5]);
-                        logf("\n Product ID: 0x");
-                        for(dword_t j = 8; j < 12; j++) {
-                            if(buffer[j] < 0x10) {
-                                logf("%c", buffer[j]+'0');
-                            }
-                            else {
-                                logf("%c", buffer[j]+'A'-0x10);
-                            }
-                        }
-                    }
-                }
-            }
-            else if(components->serial_port[i].device_type == SERIAL_PORT_MOUSE_2_BUTTONS
-                    || components->serial_port[i].device_type == SERIAL_PORT_MOUSE_3_BUTTONS
-                    || components->serial_port[i].device_type == SERIAL_PORT_MOUSE_WHEEL) {
-                // check if whole packet was transferred
-                if(buffer_p >= 3) {
-                    // parse first three bytes
-                    mouse_buttons = (((buffer[0] >> 5) & 0x1) | ((buffer[0] >> 3) & 0x2));
-                    mouse_movement_x = (buffer[1] | ((buffer[0] & 0x3) << 6));
-                    if((mouse_movement_x & 0x80) == 0x80) {
-                        mouse_movement_x = (0-(0x100-mouse_movement_x));
-                    }
-                    mouse_movement_y = (buffer[2] | ((buffer[0] & 0xC) << 4));
-                    if((mouse_movement_y & 0x80) == 0x80) {
-                        mouse_movement_y = (0-(0x100-mouse_movement_y));
-                    }
-
-                    // parse fourth byte
-                    if(buffer_p >= 4) {
-                        if(components->serial_port[i].device_type != SERIAL_PORT_MOUSE_2_BUTTONS) {
-                            mouse_buttons |= ((buffer[3] >> 3) & 0x4);
-                        }
-
-                        if(components->serial_port[i].device_type == SERIAL_PORT_MOUSE_WHEEL && (buffer[3] & 0xF) != 0) {
-                            mouse_wheel_movement = (buffer[3] & 0xF);
-                            if((mouse_wheel_movement & 0x8) == 0x8) {
-                                mouse_wheel_movement = (0-(0x10-mouse_wheel_movement));
-                            }
-                            mouse_wheel_movement *= -1;
-                        }
-                    }
-
-                    // update button state
-                    mouse_update_click_button_state();
-
-                    // inform method wait_for_user_input() from source/drivers/system/user_wait.c that there was received packet from mouse
-                    mouse_event = STATUS_TRUE;
-                }
+            else if(components->serial_port[i].process_data != 0) {
+                components->serial_port[i].process_data(i, buffer, buffer_p);
             }
         }
     }
