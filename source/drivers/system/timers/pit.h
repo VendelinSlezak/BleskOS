@@ -10,7 +10,5 @@
 
 #define MILISECONDS_PER_ONE_PIT_TICK 2
 
-volatile dword_t ticks, time_of_system_running;
-
 void initalize_pit(void);
 void pit_handler(void);

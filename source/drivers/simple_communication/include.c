@@ -9,4 +9,5 @@
 */
 
 #include "serial_port.c"
+#include "parallel_port.c"
 #include "serial_mouse.c"

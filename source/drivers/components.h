@@ -73,5 +73,7 @@ struct components_info_t {
 
     dword_t n_serial_port;
     struct serial_port_info_t serial_port[MAX_NUMBER_OF_SERIAL_PORTS];
+    dword_t n_parallel_port;
+    struct parallel_port_info_t parallel_port[MAX_NUMBER_OF_PARALLEL_PORTS];
 };
 struct components_info_t *components;

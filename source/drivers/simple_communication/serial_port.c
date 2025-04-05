@@ -265,7 +265,6 @@ void serial_port_irq(void) {
             }
         }
     }
-    
 }
 
 /* sending data */

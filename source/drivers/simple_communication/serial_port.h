@@ -36,7 +36,6 @@ enum {
     SERIAL_PORT_UNKNOWN_DEVICE,
 };
 
-
 void serial_port_add_new_pci_device(struct pci_device_info_t device);
 void check_presence_of_serial_ports(void);
 void check_presence_of_serial_port(word_t base, dword_t irq);

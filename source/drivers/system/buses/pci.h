@@ -126,6 +126,7 @@ extern void vmware_graphic_card_add_new_pci_device(struct pci_device_info_t devi
 extern struct pci_supported_devices_list_t vmware_graphic_card_supported_pci_devices[];
 
 extern void serial_port_add_new_pci_device(struct pci_device_info_t device);
+extern void parallel_port_add_new_pci_device(struct pci_device_info_t device);
 
 extern void ac97_add_new_pci_device(struct pci_device_info_t device);
 extern void hda_add_new_pci_device(struct pci_device_info_t device);
@@ -234,7 +235,11 @@ struct pci_device_type_list_t pci_device_type_list[] = {
     {0x07000400, "Serial Controller 16750-Compatible", serial_port_add_new_pci_device, 0},
     {0x07000500, "Serial Controller 16850-Compatible", serial_port_add_new_pci_device, 0},
     {0x07000600, "Serial Controller 16950-Compatible", serial_port_add_new_pci_device, 0},
-    {0x07010000, "Parallel Controller", 0, 0},
+    {0x07010000, "Standard Parallel Controller", parallel_port_add_new_pci_device, 0},
+    {0x07010100, "Bi-Directional Parallel Controller", parallel_port_add_new_pci_device, 0},
+    {0x07010200, "ECP 1.X Compliant Parallel Controller", parallel_port_add_new_pci_device, 0},
+    {0x07010300, "IEEE 1284 Parallel Controller", parallel_port_add_new_pci_device, 0},
+    {0x0701FE00, "IEEE 1284 Target Device Parallel Controller", parallel_port_add_new_pci_device, 0},
     {0x07020000, "Multiport Serial Controller", 0, 0},
     {0x07030000, "Modem", 0, 0},
     {0x07040000, "GPIB (IEEE 488.1/2) Controller", 0, 0},
