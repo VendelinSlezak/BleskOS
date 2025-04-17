@@ -32,7 +32,7 @@ void dump_aml_objects(byte_t *aml_code, dword_t length) {
     while(aml_code < end_of_code) {
         switch(*aml_code) {
             // ScopeOp
-            case(0x10):
+            case(0x10): {
                 byte_t *local_aml_code = aml_code;
                 local_aml_code++;
 
@@ -44,6 +44,7 @@ void dump_aml_objects(byte_t *aml_code, dword_t length) {
 
                 aml_code += length+1;
                 break;
+            }
             default:
                 logf("\n  Uknown AML opcode %02x", *aml_code);
                 return;            
