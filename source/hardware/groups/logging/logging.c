@@ -56,7 +56,8 @@ void log_char(dword_t character) {
     }
 }
 
-void log(byte_t *string, ...) {    
+void log(byte_t *string, ...) {   
+    LOCK_MUTEX(&logging_attr->logging_to_output);
     lock_core();
 
     va_list args;
@@ -187,4 +188,5 @@ void log(byte_t *string, ...) {
     }
 
     unlock_core();
+    UNLOCK_MUTEX(&logging_attr->logging_to_output);
 }

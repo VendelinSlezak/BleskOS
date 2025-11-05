@@ -8,9 +8,6 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef KERNEL_H
-#define KERNEL_H
-
 #include <kernel/x86/libc/stdio.h>
 
 typedef struct {
@@ -59,15 +56,8 @@ typedef struct {
     dword_t lapic_base;
 
     dword_t number_of_cores;
+    dword_t bootstrap_core_id;
     dword_t core_id[32];
 } e_kernel_attr_t;
 
 extern e_kernel_attr_t *kernel_attr;
-extern dword_t kernel_funcs[2];
-
-typedef struct {
-    byte_t *str;
-    dword_t count;
-} a_command_communication_area_t;
-
-#endif

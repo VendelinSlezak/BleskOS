@@ -12,6 +12,8 @@
 #include <kernel/x86/kernel.h>
 #include <hardware/groups/logging/logging.h>
 #include <kernel/x86/cpu/commands.h>
+#include <kernel/x86/cpu/gdt.h>
+#include <kernel/x86/cpu/lapic.h>
 #include <kernel/x86/acpi/madt.h>
 #include <kernel/x86/memory/vm_allocator.h>
 #include <kernel/x86/entities/entities.h>
@@ -150,7 +152,7 @@ void initialize_cpu(void) {
 
     // read useful features
     if((cpuid.edx & (1 << 9)) == (1 << 9)) {
-        kernel_attr->lapic_present = 1;
+        kernel_attr->lapic_present = TRUE;
     }
     if((cpuid.edx & (1 << 12)) == (1 << 12)) {
         kernel_attr->cpu_p_mtrr = TRUE;
@@ -252,7 +254,7 @@ void initialize_cpu(void) {
 
     // initialize processor cores
     kernel_attr->number_of_cores = 0;
-    if(kernel_attr->lapic_present == 1 && kernel_attr->pm_madt != INVALID) {
+    if(kernel_attr->lapic_present == TRUE && kernel_attr->pm_madt != INVALID) {
         void *vm_of_madt_table = kpalloc(kernel_attr->pm_madt, kernel_attr->size_of_madt, VM_FLAG_WRITE_BACK);
         madt_table_t *madt = (madt_table_t *) (vm_of_madt_table + (kernel_attr->pm_madt & 0xFFF));
 
@@ -356,5 +358,84 @@ void initialize_cpu(void) {
     log("\n[CPU] Number of cores: %d", kernel_attr->number_of_cores);
     for(int i = 0; i < kernel_attr->number_of_cores; i++) {
         log("\n[CPU] Core %d ID: 0x%02x", i, kernel_attr->core_id[i]);
+    }
+
+    // initialize LAPIC
+    if(kernel_attr->lapic_present == FALSE) {
+        return;
+    }
+
+    // enable LAPIC
+    write_msr(0x1B, read_msr(0x1B) | (1 << 11));
+
+    // map LAPIC registers
+    vm_map_page(P_MEM_LAPIC, kernel_attr->lapic_base, VM_MMIO);
+
+    // read bootstrap ID
+    kernel_attr->bootstrap_core_id = ((mmio_ind(P_MEM_LAPIC + 0x20) >> 24) & 0xFF);
+}
+
+void cpu_initialize_all_cores(void) {
+    if(kernel_attr->lapic_present == FALSE || kernel_attr->number_of_cores < 2) {
+        return;
+    }
+
+    // allocate stacks for application cores
+    dword_t core_stack_base = (dword_t) kmalloc((kernel_attr->number_of_cores - 1) * PAGE_SIZE);
+
+    // copy initialization sequence to physical memory 0x1000
+    vm_map_page(0x1000, 0x1000, VM_FLAGS_KERNEL_RW);
+    extern void core_initialization_sequence(void);
+    memcpy((void *)0x1000, core_initialization_sequence, PAGE_SIZE);
+
+    // copy GDT table for initialization
+    extern byte_t *init_core_protected_mode_gdt;
+    extern byte_t *init_core_protected_mode_gdt_end;
+    dword_t gdt_size = ((dword_t)&init_core_protected_mode_gdt_end - (dword_t)&init_core_protected_mode_gdt);
+    memcpy((void *)0x1F00, &init_core_protected_mode_gdt, gdt_size);
+    gdt_wrap_t *gdt_wrap = (gdt_wrap_t *) 0x1FF0;
+    gdt_wrap->size = (gdt_size - 1);
+    gdt_wrap->address = 0x1F00;
+
+    // be sure that initialization sequence is in memory and visible for all cores
+    asm volatile("mfence" ::: "memory");
+
+    // send INIT IPI to all cores
+    for(int i = 0; i < kernel_attr->number_of_cores; i++) {
+        if(kernel_attr->core_id[i] == kernel_attr->bootstrap_core_id) {
+            continue;
+        }
+        lapic_send_ipi(kernel_attr->core_id[i], LAPIC_INT_INIT, 0);
+    }
+    SC_SLEEP(10000);
+
+    // send STARTUP IPI to all cores
+    dword_t *core_stack = (dword_t *) 0x1E00;
+    dword_t *core_execution_entry = (dword_t *) 0x1E04;
+    dword_t *core_initialized = (dword_t *) 0x1E08;
+    for(int i = 0, stack_ptr = (core_stack_base + PAGE_SIZE); i < kernel_attr->number_of_cores; i++) {
+        if(kernel_attr->core_id[i] == kernel_attr->bootstrap_core_id) {
+            continue;
+        }
+
+        // set variables
+        *core_stack = stack_ptr;
+        stack_ptr += PAGE_SIZE;
+        *core_execution_entry = (dword_t)&kernel_core_entry;
+        *core_initialized = 0;
+
+        // start execution of code on 0x1000 in core
+        // according to Intel Documentation startup signal should be send twice for compatibility reasons
+        lapic_send_ipi(kernel_attr->core_id[i], LAPIC_INT_STARTUP, (0x1000 >> 12));
+        SC_SLEEP(200);
+        lapic_send_ipi(kernel_attr->core_id[i], LAPIC_INT_STARTUP, (0x1000 >> 12));
+        SC_SLEEP(200);
+
+        // wait until core initialization sequence is done
+        // TODO: timeout
+        while(*core_initialized == 0) {}
+
+        // log
+        log("\n[CPU] Application core 0x%02x was successfully started", kernel_attr->core_id[i]);
     }
 }

@@ -36,11 +36,6 @@ void log_physical_memory_map(void) {
         log(" Start: 0x%x%x Size: 0x%x%x", (dword_t)(phy_mem_map->entry[i].memory_start >> 32), (dword_t)phy_mem_map->entry[i].memory_start, (dword_t)(phy_mem_map->entry[i].memory_size >> 32), (dword_t)phy_mem_map->entry[i].memory_size);
         unlock_core();
     }
-
-    // log("\nFree physical memory map");
-    // for(int i = 0; i < free_phy_mem_map->number_of_entries; i++) {
-    //     log("\n From 0x%x to 0x%x", (dword_t)free_phy_mem_map->entry[i].memory_start, (dword_t)(free_phy_mem_map->entry[i].memory_start + free_phy_mem_map->entry[i].memory_size));
-    // }
 }
 
 void initialize_physical_memory(void) {
@@ -82,10 +77,6 @@ void initialize_physical_memory(void) {
     stack->pte_stack_page_for_allocation = (dword_t *) (P_MEM_PAGE_TABLE + (P_MEM_PM_STACK >> 10) + 4 + (((stack->pointer_alloc_stack_page * 4) >> 12) * 4) + 4);
     stack->pointer_dealloc_stack_page = (stack->pointer_alloc_stack_page - 0x400); // when pointer equals to this value, stack page above will be deallocated
     stack->pte_stack_page_for_deallocation = (dword_t *) ((dword_t)stack->pte_stack_page_for_allocation - 4);
-
-    // deallocate identity mapping
-    page_table = (dword_t *) (P_MEM_PAGE_TABLE + 4); // page 0x1000 with code of bootloader
-    *page_table = 0x00000000;
 
     // count number of already allocated pages
     number_of_allocated_pages = 0;

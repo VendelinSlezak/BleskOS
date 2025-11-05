@@ -392,7 +392,6 @@ void *prepare_alloc(dword_t aligned_size) {
     return allocation_start;
 }
 
-// TODO: clear rest of PAGE_SIZE that is not used - prevent leak of data
 void *kmalloc(dword_t size) {
     // prepare allocation
     void *allocation_start = prepare_alloc(size);

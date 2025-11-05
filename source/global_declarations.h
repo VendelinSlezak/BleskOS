@@ -54,6 +54,7 @@ typedef unsigned long long qword_t;
     #define P_MEM_FLOATING_STACK (PT_MEM_KERNEL + 0x00105000) // 1 page
     #define P_MEM_ABOVE_COMMAND_LIST (PT_MEM_KERNEL + 0x00106000) // 1 page
     #define P_MEM_COMMAND_KERNEL_STACK (PT_MEM_KERNEL + 0x00107000) // 1 page
+    #define P_MEM_LAPIC (PT_MEM_KERNEL + 0x00108000) // 1 page
 #define PT_MEM_SHARED 0xFF400000
     #define P_MEM_GDT (PT_MEM_SHARED + 0x00000000) // 1 page
     #define P_MEM_IDT (PT_MEM_SHARED + 0x00001000) // 1 page

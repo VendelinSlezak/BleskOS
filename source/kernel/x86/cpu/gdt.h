@@ -8,13 +8,7 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <kernel/x86/libc/stdio.h>
-#include <kernel/x86/scheduler/lock.h>
-
-#define MAX_NUMBER_OF_LOGGING_DEVICES 8
 typedef struct {
-    dword_t number_of_devices;
-    void (*send_character[MAX_NUMBER_OF_LOGGING_DEVICES])(dword_t character);
-    STREAM_t logs;
-    mutex_t logging_to_output;
-} e_logging_group_t;
+    word_t size;
+    dword_t address;
+}__attribute__((packed)) gdt_wrap_t;

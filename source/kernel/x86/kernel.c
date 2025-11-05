@@ -11,6 +11,7 @@
 /* includes */
 #include <kernel/x86/cpu/commands.h>
 #include <kernel/x86/cpu/cpu.h>
+#include <kernel/x86/cpu/lapic.h>
 #include <kernel/x86/cpu/isr.h>
 #include <kernel/x86/cmos/cmos.h>
 #include <kernel/x86/acpi/main.h>
@@ -51,6 +52,7 @@ void initialize_kernel(void) {
     read_cmos();
     initialize_interrupt_controller();
     initialize_timer();
+    cpu_initialize_all_cores();
 
     // INITIALIZATION OF CONNECTED HARDWARE
     initialize_hardware();
@@ -72,4 +74,8 @@ void kernel_panic(byte_t *str) {
     while(1) {
         asm volatile ("hlt");
     }
+}
+
+void kernel_core_entry(void) {
+    log("\n[CPU] Message from core 0x%02x: Entry point", lapic_get_core_id());
 }
