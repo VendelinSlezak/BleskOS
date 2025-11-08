@@ -8,8 +8,8 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-struct fadp_table_t {
-    struct acpi_table_header_t header;
+typedef struct {
+    acpi_table_header_t header;
     dword_t firmware_ctrl;
     dword_t dsdt;
     byte_t reserved;
@@ -61,4 +61,4 @@ struct fadp_table_t {
     byte_t x_pm_tmr_blk[12];
     byte_t x_gpe0_blk[12];
     byte_t x_gpe1_blk[12];
-}__attribute__((packed));
+}__attribute__((packed)) fadp_table_t;

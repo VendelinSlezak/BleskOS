@@ -11,3 +11,26 @@
 #include <hardware/controllers/pci/device.h>
 
 extern void (*connect_legacy_interrupt_to_handler)(dword_t irq, void (*handler)(void));
+
+typedef struct {
+    byte_t bus;
+    byte_t devfunc;
+    byte_t link[4];
+    word_t bitmap[4];
+    byte_t slot;
+    byte_t reserved;
+} __attribute__((packed)) pir_table_entry_t;
+
+typedef struct {
+    dword_t signature;
+    word_t version;
+    word_t table_size;
+    byte_t router_bus;
+    byte_t router_devfunc;
+    word_t exclusive_irqs;
+    dword_t compat_router;
+    dword_t miniport_data;
+    byte_t reserved[11];
+    byte_t checksum;
+    pir_table_entry_t entries[];
+}__attribute__((packed)) pir_table_t;

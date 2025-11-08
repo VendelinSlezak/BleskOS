@@ -32,10 +32,10 @@ void initialize_logging_group(void) {
     if(is_e9_hack_present() == TRUE) {
         logging_attr->send_character[logging_attr->number_of_devices++] = e9_hack_send_char;
     }
-    if(is_vga_text_mode_present() == TRUE) {
-        initialize_vga_text_mode();
-        logging_attr->send_character[logging_attr->number_of_devices++] = vga_text_mode_send_character;
-    }
+    // if(is_vga_text_mode_present() == TRUE) {
+    //     initialize_vga_text_mode();
+    //     logging_attr->send_character[logging_attr->number_of_devices++] = vga_text_mode_send_character;
+    // }
 
     logging_attr->logs = open_rwstream();
 }

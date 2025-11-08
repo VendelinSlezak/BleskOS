@@ -45,3 +45,8 @@ int toupper(int c) {
     }
     return c;
 }
+
+// TODO:
+int isprint(int c) {
+    return isalnum(c);
+}

@@ -10,12 +10,13 @@
 
 /* includes */
 #include <kernel/x86/kernel.h>
-#include <hardware/groups/logging/logging.h>
 #include <kernel/x86/cpu/commands.h>
 #include <kernel/x86/acpi/main.h>
 #include <kernel/x86/acpi/mcfg.h>
 #include <kernel/x86/memory/vm_allocator.h>
 #include <kernel/x86/libc/stdlib.h>
+#include <kernel/x86/interrupt_controllers/main.h>
+#include <hardware/groups/logging/logging.h>
 #include <hardware/controllers/pci/device.h>
 #include <hardware/controllers/pci/vendors.h>
 #include <hardware/controllers/pci/supported_devices.h>
@@ -271,41 +272,55 @@ void scan_pci_device(pci_device_info_t device) {
     dword_t type = (pci_ind(device, 0x08) & 0xFFFFFF00);
 
     // log basic device informations
-    log("\n[PCI] Device at %d:%d:%d:%d | Type: %s | Vendor: %s | Device ID: 0x%04x | Subsystem Vendor: %s | Subsystem ID: 0x%04x",
+    log("\n[PCI] Device at %d:%d:%d:%d | Type: %s | Vendor: %s | Device ID: 0x%04x | Subsystem Vendor: %s | Subsystem ID: 0x%04x | ",
         device.segment, device.bus, device.device, device.function,
         pci_get_device_type_string(type),
         pci_get_vendor_name(device.vendor_id),
         device.device_id,
         pci_get_vendor_name(device.subsystem_vendor_id),
         device.subsystem_id);
+    dump_pci_device_gsi(device);
 
     // run driver of device
     for(dword_t i = 0; pci_device_type_list[i].description != 0; i++) {
         if(pci_device_type_list[i].type == type) {
+            if(pci_device_type_list[i].drivers == NULL) {
+                break;
+            }
+
             pci_drivers_for_type_t *device_drivers = pci_device_type_list[i].drivers;
 
-            if((dword_t)device_drivers->driver_subsystem_devices != NULL) {
-                pci_supported_subsystem_devices_by_driver_t *driver_subsystem_devices = device_drivers->driver_subsystem_devices;
-                for(int j = 0; driver_subsystem_devices[j].vendor_id != NULL; j++) {
-                    if(device.vendor_id == driver_subsystem_devices[j].vendor_id
-                        && device.device_id == driver_subsystem_devices[j].device_id
-                        && device.subsystem_vendor_id == driver_subsystem_devices[j].subsystem_vendor_id
-                        && device.subsystem_id == driver_subsystem_devices[j].subsystem_id) {
-                            device_drivers->initialize(device);
-                        }
+            for(int j = 0; device_drivers[j].initialize != NULL; j++) {
+                if( (dword_t)device_drivers->driver_subsystem_devices == NULL
+                    && (dword_t)device_drivers->driver_classic_devices == NULL) {
+                    device_drivers->initialize(device);
+                    break;
+                }
+
+                if((dword_t)device_drivers->driver_subsystem_devices != NULL) {
+                    pci_supported_subsystem_devices_by_driver_t *driver_subsystem_devices = device_drivers->driver_subsystem_devices;
+                    for(int j = 0; driver_subsystem_devices[j].vendor_id != NULL; j++) {
+                        if( device.vendor_id == driver_subsystem_devices[j].vendor_id
+                            && device.device_id == driver_subsystem_devices[j].device_id
+                            && device.subsystem_vendor_id == driver_subsystem_devices[j].subsystem_vendor_id
+                            && device.subsystem_id == driver_subsystem_devices[j].subsystem_id) {
+                                device_drivers->initialize(device);
+                                break;
+                            }
+                    }
+                }
+
+                if((dword_t)device_drivers->driver_classic_devices != NULL) {
+                    pci_supported_classic_devices_by_driver_t *driver_classic_devices = device_drivers->driver_classic_devices;
+                    for(int j = 0; driver_classic_devices[j].vendor_id != NULL; j++) {
+                        if( device.vendor_id == driver_classic_devices[j].vendor_id
+                            && device.device_id == driver_classic_devices[j].device_id) {
+                                device_drivers->initialize(device);
+                                break;
+                            }
+                    }
                 }
             }
-
-            if((dword_t)device_drivers->driver_classic_devices != NULL) {
-                pci_supported_classic_devices_by_driver_t *driver_classic_devices = device_drivers->driver_classic_devices;
-                for(int j = 0; driver_classic_devices[j].vendor_id != NULL; j++) {
-                    if(device.vendor_id == driver_classic_devices[j].vendor_id
-                        && device.device_id == driver_classic_devices[j].device_id) {
-                            device_drivers->initialize(device);
-                        }
-                }
-            }
-
         }
     }
 }

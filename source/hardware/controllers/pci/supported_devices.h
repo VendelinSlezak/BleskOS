@@ -8,9 +8,6 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef PCI_SUPPORTED_DEVICES_H
-#define PCI_SUPPORTED_DEVICES_H
-
 #include <hardware/controllers/pci/device.h>
 #include <hardware/controllers/graphic/bga/bga.h>
 
@@ -90,7 +87,7 @@ pci_device_type_list_t pci_device_type_list[] = {
 
     // Bridge Devices
     { 0x06000000, "Host Bridge", NULL},
-    { 0x06010000, "ISA Bridge", NULL},
+    { 0x06010000, "ISA Bridge", NULL },
     { 0x06020000, "EISA Bridge", NULL},
     { 0x06030000, "MCA Bridge", NULL},
     { 0x06040000, "PCI-to-PCI Bridge", NULL},
@@ -214,5 +211,3 @@ pci_device_type_list_t pci_device_type_list[] = {
     // end of list
     { 0, NULL, NULL}
 };
-
-#endif

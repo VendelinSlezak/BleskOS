@@ -12,6 +12,8 @@
 #include <kernel/x86/kernel.h>
 #include <hardware/groups/logging/logging.h>
 #include <kernel/x86/memory/vm_allocator.h>
+#include <kernel/x86/acpi/fadp.h>
+#include <kernel/x86/acpi/aml.h>
 
 /* functions */
 void read_acpi(void) {
@@ -26,7 +28,7 @@ void read_acpi(void) {
 
     // search for RSDP / XSDP table in BIOS memory
     xsdp_table_t *xsdp = (xsdp_table_t *) ((dword_t)first_mb_of_phy_mem + 0xE0000);
-    for(dword_t i = 0; i < 0x1FFF; i++, xsdp = (xsdp_table_t *) ((dword_t)xsdp + 0x10)) {
+    for(int i = 0; i < 0x1FFF; i++, xsdp = (xsdp_table_t *) ((dword_t)xsdp + 0x10)) {
         if(xsdp->signature == ACPI_SIGNATURE_64("RSD PTR ") && acpi_table_is_checksum_valid(xsdp, 20) == TRUE) {
             if(xsdp->revision >= 2 && acpi_table_is_checksum_valid(xsdp, 36) == FALSE) {
                 continue;
@@ -45,7 +47,7 @@ void read_acpi(void) {
             xsdp = (xsdp_table_t *) ((dword_t)first_mb_of_phy_mem +  (*ebda_memory_start * 0x10));
 
             // check first KB od EBDA
-            for(dword_t i = 0; i < 0x3F; i++, xsdp = (xsdp_table_t *) ((dword_t)xsdp + 0x10)) {
+            for(int i = 0; i < 0x3F; i++, xsdp = (xsdp_table_t *) ((dword_t)xsdp + 0x10)) {
                 if(xsdp->signature == ACPI_SIGNATURE_64("RSD PTR ") && acpi_table_is_checksum_valid(xsdp, 20) == TRUE) {
                     if(xsdp->revision >= 2 && acpi_table_is_checksum_valid(xsdp, 36) == FALSE) {
                         continue;
@@ -208,5 +210,21 @@ void acpi_check_table(dword_t table_start, acpi_table_header_t *acpi_table) {
     else if(acpi_table->signature == ACPI_SIGNATURE_32("MCFG")) {
         kernel_attr->pm_mcfg = table_start;
         kernel_attr->size_of_mcfg = acpi_table->length;
+    }
+    else if(acpi_table->signature == ACPI_SIGNATURE_32("FACP")) {
+        fadp_table_t *fadp = (fadp_table_t *) acpi_table;
+        void *vm_of_table = kpalloc(fadp->dsdt, sizeof(acpi_table_header_t), VM_FLAG_WRITE_BACK);
+        acpi_table_header_t *dsdt_header = (acpi_table_header_t *) (vm_of_table + (fadp->dsdt & 0xFFF));
+        dword_t dsdt_size = dsdt_header->length;
+        log("\n[ACPI] DSDT table found at 0x%x | Revision: %d | OEM ID: %06s | OEM table ID: %08s",
+            fadp->dsdt,
+            dsdt_header->revision,
+            &dsdt_header->oem_id,
+            &dsdt_header->oem_table_id);
+        unmap(vm_of_table);
+        vm_of_table = kpalloc(fadp->dsdt, dsdt_size, VM_FLAG_WRITE_BACK);
+        dsdt_header = (acpi_table_header_t *) (vm_of_table + (fadp->dsdt & 0xFFF));
+        dump_aml_code((byte_t *)dsdt_header, dsdt_header->length);
+        unmap(vm_of_table);
     }
 }
