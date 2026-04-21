@@ -198,6 +198,18 @@ inline uint32_t ind(uint16_t port) {
     return value;
 }
 
+inline void insw(uint16_t port, void* addr, uint32_t count) {
+    __asm__ __volatile__ ("rep insw"
+                            : "+D"(addr), "+c"(count)
+                            : "d"(port));
+}
+
+inline void outsw(uint16_t port, const void* addr, uint32_t count) {
+    __asm__ __volatile__ ("rep outsw"
+                            : "+S"(addr), "+c"(count)
+                        : "d"(port));
+}
+
 inline void mmio_outb(uint32_t base, uint8_t value) {
     *(volatile uint8_t *) base = value;
 }
