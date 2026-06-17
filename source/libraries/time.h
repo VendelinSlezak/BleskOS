@@ -10,4 +10,4 @@
 
 #include <kernel/hardware/main.h>
 
-extern hardware_list_entry_t *timer;
+extern uint32_t does_timer_exist;

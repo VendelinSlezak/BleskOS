@@ -10,6 +10,7 @@
 
 #include <kernel/cpu/mutex.h>
 #include <kernel/cpu/interrupt.h>
+#include <kernel/hardware/main.h>
 
 #define CONTROLLER_8042_CHANNEL_INTERRUPT_MAX_DATA 10
 #define CONTROLLER_8042_BUFFER_SIZE 100
@@ -25,21 +26,29 @@ typedef struct {
     mutex_t sending_command;
 
     ps2_channel_state_t channel_1;
-    void *channel_1_device_structure;
+    hardware_t *channel_1_device_structure;
     uint32_t channel_1_buffer_num_of_bytes;
     uint8_t channel_1_buffer[CONTROLLER_8042_CHANNEL_INTERRUPT_MAX_DATA];
-    void (*channel_1_process_data)(void *device, uint8_t *buffer, uint32_t size);
+    void (*channel_1_process_data)(hardware_t *device, uint8_t *buffer, uint32_t size);
     uint32_t channel_1_device_response_state;
     uint32_t channel_1_device_response_data;
 
     ps2_channel_state_t channel_2;
-    void *channel_2_device_structure;
+    hardware_t *channel_2_device_structure;
     uint32_t channel_2_buffer_num_of_bytes;
     uint8_t channel_2_buffer[CONTROLLER_8042_CHANNEL_INTERRUPT_MAX_DATA];
-    void (*channel_2_process_data)(void *device, uint8_t *buffer, uint32_t size);
+    void (*channel_2_process_data)(hardware_t *device, uint8_t *buffer, uint32_t size);
     uint32_t channel_2_device_response_state;
     uint32_t channel_2_device_response_data;
 
     uint32_t buffer_ptr;
     uint8_t buffer[CONTROLLER_8042_BUFFER_SIZE];
-} controller_8042_t;
+} controller_8042_data_t;
+
+typedef struct {
+    void (*set_receive_function)(hardware_t *, void (*)(hardware_t *, uint8_t *, uint32_t));
+    uint32_t (*send_command)(uint8_t command);
+    uint32_t (*send_command_with_payload)(uint8_t command, uint8_t payload);
+    uint32_t (*send_command_with_return)(uint8_t command);
+    uint32_t (*send_command_with_payload_and_return)(uint8_t command, uint8_t payload);
+} controller_8042_communication_functions_t;

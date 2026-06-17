@@ -30,6 +30,7 @@
 #include <kernel/software/ramdisk.h>
 #include <kernel/software/syscall.h>
 #include <kernel/software/exceptions.h>
+#include <kernel/software/syslib.h>
 
 /* functions */
 void initialize_kernel(void) {
@@ -39,6 +40,7 @@ void initialize_kernel(void) {
     initialize_allocators();
 
     // initialize logging
+    initialize_hardware_structs();
     initialize_logging();
     logging_enabled = true;
 
@@ -66,16 +68,16 @@ void initialize_kernel(void) {
     show_starting_screen();
 
     log("\nKernel initialized successfully");
-    
+
     // initialize user space
     initialize_user_space_allocation();
     initialize_exceptions();
     initialize_syscalls();
     initialize_syslib();
 
-    // create_kernel_thread((uint32_t)kthread_test, (uint32_t []) { 1000, 3000 }, 2);
-    // create_kernel_thread((uint32_t)kthread_test, (uint32_t []) { 300, 3000 }, 2);
-    // create_kernel_thread((uint32_t)kthread_test, (uint32_t []) { 100, 3000 }, 2);
+    // create_kernel_thread((uint32_t)kthread_test, (uint32_t []) { 1000 * 1000, 3000 * 1000 }, 2);
+    // create_kernel_thread((uint32_t)kthread_test, (uint32_t []) { 300 * 1000, 3000 * 1000 }, 2);
+    // create_kernel_thread((uint32_t)kthread_test, (uint32_t []) { 100 * 1000, 3000 * 1000 }, 2);
 
     // spawning_template_t template = load_elf32_to_spawning_template(get_ramdisk_file_ptr("test.elf"));
     // create_user_process_from_spawning_template(&template);
@@ -83,9 +85,7 @@ void initialize_kernel(void) {
     spawning_template_t template = load_elf32_to_spawning_template(get_ramdisk_file_ptr("dump_log.elf"), prepare_memory_for_dump_log);
     create_user_process_from_spawning_template(&template);
 
-    while(true) {
-        asm volatile("pause");
-    }
+    close_current_thread();
 }
 
 void prepare_memory_for_dump_log(void) {

@@ -8,7 +8,7 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-// TODO: add use of spinlocks everywhere
+// TODO: add synchronization of virtual spaces across multiple cores
 
 /* includes */
 #include <libc/string.h>
@@ -22,12 +22,11 @@
 #include <kernel/hardware/groups/logging/logging.h>
 
 /* global variables */
-uint32_t pm_of_page_directory;
 mutex_t creating_page_directory_mutex;
 
 /* functions */
 void initialize_virtual_memory(void) {
-    pm_of_page_directory = PM_KERNEL_PAGE_DIRECTORY;
+    //
 }
 
 /* functions for reading page entries */
@@ -53,11 +52,23 @@ int is_vm_page_mapped(uint32_t vm_page) {
     }
 }
 
+/* functions for spinlocking page entry */
+void lock_page_entry(uint32_t *page_entry) {
+    while (__atomic_fetch_or(page_entry, VM_FLAG_SPINLOCK, __ATOMIC_ACQUIRE) & VM_FLAG_SPINLOCK) {
+        asm volatile ("pause");
+    }
+}
+
+void unlock_page_entry(uint32_t *page_entry) {
+    __atomic_fetch_and(page_entry, ~VM_FLAG_SPINLOCK, __ATOMIC_RELEASE);
+}
+
 /* functions for (un)mapping pages */
 void vm_map_page(uint32_t vm_page, uint32_t pm_page, uint32_t flags) {
     vm_allocate_page_tables(vm_page, PAGE_SIZE);
     uint32_t *page_table_entry = (uint32_t *) (P_MEM_PAGE_TABLE + ((vm_page >> 12) * 4));
-    *page_table_entry = (pm_page | flags);
+    lock_page_entry(page_table_entry);
+    *page_table_entry = (pm_page | flags); // this will also clear the spinlock
 }
 
 void vm_map_phy_pages(uint32_t vm_start_page, uint32_t pm_start_page, uint32_t size, uint32_t flags) {
@@ -66,17 +77,25 @@ void vm_map_phy_pages(uint32_t vm_start_page, uint32_t pm_start_page, uint32_t s
     uint32_t *page_table_entry = (uint32_t *) (P_MEM_PAGE_TABLE + ((vm_start_page >> 12) * 4));
     uint32_t number_of_pages = (size >> 12);
     for(uint32_t i = 0; i < number_of_pages; i++, pm_start_page += PAGE_SIZE) {
-        *page_table_entry++ = (pm_start_page | flags);
+        lock_page_entry(page_table_entry);
+        if((*page_table_entry & VM_FLAG_PRESENT) == VM_FLAG_PRESENT) {
+            unlock_page_entry(page_table_entry);
+            continue;
+        }
+        *page_table_entry++ = (pm_start_page | flags); // this will also clear the spinlock
     }
 }
 
 void vm_unmap_page(uint32_t vm_page) {
     uint32_t *page_directory_entry = (uint32_t *) (P_MEM_PAGE_DIRECTORY + ((vm_page >> 22) * 4));
+    lock_page_entry(page_directory_entry);
     if((*page_directory_entry & VM_FLAG_PRESENT) == 0) {
+        unlock_page_entry(page_directory_entry);
         return;
     }
     uint32_t *page_table_entry = (uint32_t *) (P_MEM_PAGE_TABLE + ((vm_page >> 12) * 4));
-    *page_table_entry = 0;
+    lock_page_entry(page_table_entry);
+    *page_table_entry = 0; // this will also clear the spinlock
     invlpg(vm_page);
 }
 
@@ -85,7 +104,8 @@ void vm_unmap_pages(uint32_t vm_start_page, uint32_t size) {
     uint32_t number_of_pages = (size >> 12);
     uint32_t *page_table_entry = (uint32_t *) (P_MEM_PAGE_TABLE + (vm_start_page >> 10));
     for(uint32_t i = 0; i < number_of_pages; i++) {
-        *page_table_entry++ = 0;
+        lock_page_entry(page_table_entry);
+        *page_table_entry++ = 0; // this will also clear the spinlock
     }
     if(number_of_pages < NUMBER_OF_PAGES_TO_FLUSH_BY_INVLPG) {
         for(uint32_t i = 0; i < number_of_pages; i++) {
@@ -103,9 +123,12 @@ void vm_allocate_page_tables(uint32_t vm_start, uint32_t size) {
     uint32_t last_page_table = ((vm_start + size - 1) >> 22);
     uint32_t *page_directory_entry = (uint32_t *) (P_MEM_PAGE_DIRECTORY + (first_page_table * 4));
     for(uint32_t i = first_page_table; i <= last_page_table; i++, page_directory_entry++) {
-        if((*page_directory_entry & VM_FLAG_PRESENT) == 0) {
-            *page_directory_entry = ((uint32_t)pm_alloc_page() | VM_PAGE_TABLE); // add page table to page directory
+        lock_page_entry(page_directory_entry);
+        if((*page_directory_entry & VM_FLAG_PRESENT) == VM_FLAG_PRESENT) {
+            unlock_page_entry(page_directory_entry);
+            continue;
         }
+        *page_directory_entry = ((uint32_t)pm_alloc_page() | VM_PAGE_TABLE); // this will also clear the spinlock
     }
 }
 
@@ -122,27 +145,39 @@ void vm_allocate_pages(uint32_t vm_start, uint32_t size, uint32_t flags) {
     uint32_t end = (vm_start + size - 1);
     uint32_t *page_table_entry = (uint32_t *) (P_MEM_PAGE_TABLE + ((vm_start >> 12) * 4));
     for(uint32_t mem = vm_start; mem <= end; mem += PAGE_SIZE, page_table_entry++) {
-        if((*page_table_entry & VM_FLAG_PRESENT) == 0) {
-            *page_table_entry = ((uint32_t)pm_alloc_page() | flags);
+        lock_page_entry(page_table_entry);
+        if((*page_table_entry & VM_FLAG_PRESENT) == VM_FLAG_PRESENT) {
+            unlock_page_entry(page_table_entry);
+            continue;
         }
+        *page_table_entry = ((uint32_t)pm_alloc_page() | flags); // this will also clear the spinlock
     }
 }
 
 void vm_deallocate_pages(uint32_t vm_start_page, uint32_t size) {
     // align size to page size
-    if(PAGE_OFFSET_MASK(size) != 0) {
-        size = PAGE_MASK(size) + PAGE_SIZE;
+    size = PAGE_MASK(size + PAGE_SIZE - 1);
+
+    // claim all pages and set them as kernel pages
+    uint32_t number_of_pages = (size >> 12);
+    uint32_t *page_table_entry = (uint32_t *) (P_MEM_PAGE_TABLE + (vm_start_page >> 10));
+    for(uint32_t i = 0; i < number_of_pages; i++, page_table_entry++) {
+        lock_page_entry(page_table_entry);
+        if((*page_table_entry & VM_FLAG_PRESENT) == 0) {
+            unlock_page_entry(page_table_entry);
+            continue;
+        }
+        *page_table_entry = ((*page_table_entry & ~VM_FLAG_USER) | VM_FLAG_SPINLOCK);
     }
 
     // clear pages
     memset((void *) vm_start_page, 0, size);
 
     // deallocate pages
-    uint32_t number_of_pages = (size >> 12);
-    uint32_t *page_table_entry = (uint32_t *) (P_MEM_PAGE_TABLE + (vm_start_page >> 10));
+    page_table_entry = (uint32_t *) (P_MEM_PAGE_TABLE + (vm_start_page >> 10));
     for(uint32_t i = 0; i < number_of_pages; i++, page_table_entry++) {
         pm_free_page((void *) PAGE_MASK(*page_table_entry));
-        *page_table_entry = 0;
+        *page_table_entry = 0; // this will also clear the spinlock
     }
 
     // flush TLB
@@ -152,7 +187,7 @@ void vm_deallocate_pages(uint32_t vm_start_page, uint32_t size) {
         }
     }
     else {
-        write_cr3(pm_of_page_directory);
+        write_cr3(read_cr3());
     }
 }
 
@@ -172,35 +207,44 @@ void vm_move_pages(int flush_tlb, uint32_t vm_old_start, uint32_t vm_new_start, 
         uint32_t *old_page_table_entry = (uint32_t *) (P_MEM_PAGE_TABLE + ((vm_old_start + size - PAGE_SIZE) >> 10));
         uint32_t *new_page_table_entry = (uint32_t *) (P_MEM_PAGE_TABLE + ((vm_new_start + size - PAGE_SIZE) >> 10));
         for(uint32_t i = size; i > 0; i -= PAGE_SIZE) {
-            *new_page_table_entry-- = *old_page_table_entry;
-            *old_page_table_entry-- = 0;
+            lock_page_entry(old_page_table_entry);
+            lock_page_entry(new_page_table_entry);
+            *new_page_table_entry = *old_page_table_entry;
+            *old_page_table_entry = 0;
+            unlock_page_entry(new_page_table_entry);
+            unlock_page_entry(old_page_table_entry);
+            old_page_table_entry--;
+            new_page_table_entry--;
         }
     }
     else {
         uint32_t *old_page_table_entry = (uint32_t *) (P_MEM_PAGE_TABLE + (vm_old_start >> 10));
         uint32_t *new_page_table_entry = (uint32_t *) (P_MEM_PAGE_TABLE + (vm_new_start >> 10));
         for(uint32_t i = 0; i < size; i += PAGE_SIZE) {
-            *new_page_table_entry++ = *old_page_table_entry;
-            *old_page_table_entry++ = 0;
+            lock_page_entry(old_page_table_entry);
+            lock_page_entry(new_page_table_entry);
+            *new_page_table_entry = *old_page_table_entry;
+            *old_page_table_entry = 0;
+            unlock_page_entry(new_page_table_entry);
+            unlock_page_entry(old_page_table_entry);
+            old_page_table_entry++;
+            new_page_table_entry++;
         }
     }
 
     // flush TLB
     if(flush_tlb == true) {
-        write_cr3(pm_of_page_directory);
+        write_cr3(read_cr3());
     }
 }
 
 /* functions for flushing TLB */
 void vm_refresh_mappings(void) {
-    write_cr3(pm_of_page_directory);
+    write_cr3(read_cr3());
 }
 
 void load_page_directory(uint32_t pm_page_directory) {
-    lock_core();
-    pm_of_page_directory = pm_page_directory;
-    write_cr3(pm_of_page_directory);
-    unlock_core();
+    write_cr3(pm_page_directory);
 }
 
 /* functions for managing userspace */
@@ -244,8 +288,6 @@ uint32_t vm_create_new_userspace(void) {
 }
 
 void map_physical_pages_to_userspace(uint32_t address, uint32_t size) {
-    LOCK_MUTEX(&get_current_logical_processor_struct()->current_process->virtual_memory_mutex);
-
     uint32_t start_vaddr = address & ~(PAGE_SIZE - 1);
     uint32_t end_vaddr = (address + size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 
@@ -255,55 +297,64 @@ void map_physical_pages_to_userspace(uint32_t address, uint32_t size) {
 
         // map page table
         uint32_t *pd_entry = (uint32_t *)(P_MEM_PAGE_DIRECTORY + (pd_index * 4));
-        if ((*pd_entry & VM_FLAG_PRESENT) == 0) {
-            *pd_entry = ((uint32_t)pm_alloc_page() | VM_PAGE_TABLE);
-            uint32_t *new_pt = (uint32_t *)(P_MEM_PAGE_TABLE + (pd_index * PAGE_SIZE));
-            for (int i = 0; i < 1024; i++) new_pt[i] = 0;
+        lock_page_entry(pd_entry);
+        if((*pd_entry & VM_FLAG_PRESENT) == 0) {
+            *pd_entry = ((uint32_t)pm_alloc_page() | VM_PAGE_TABLE); // this will also clear the spinlock
+        }
+        else {
+            unlock_page_entry(pd_entry);
         }
 
         // map page
         uint32_t *pt_entries = (uint32_t *)(P_MEM_PAGE_TABLE + (pd_index * PAGE_SIZE));
-        if ((pt_entries[pt_index] & VM_FLAG_PRESENT) == 0) {
-            pt_entries[pt_index] = ((uint32_t)pm_alloc_page() | VM_USER);
+        lock_page_entry(&pt_entries[pt_index]);
+        if((pt_entries[pt_index] & VM_FLAG_PRESENT) == 0) {
+            pt_entries[pt_index] = ((uint32_t)pm_alloc_page() | VM_USER); // this will also clear the spinlock
+        }
+        else {
+            unlock_page_entry(&pt_entries[pt_index]);
         }
     }
-
-    UNLOCK_MUTEX(&get_current_logical_processor_struct()->current_process->virtual_memory_mutex);
 }
 
 void unmap_physical_pages_from_userspace(uint32_t address, uint32_t size) {
-    LOCK_MUTEX(&get_current_logical_processor_struct()->current_process->virtual_memory_mutex);
-
     // unmap pages
     uint32_t start_vaddr = address & ~(PAGE_SIZE - 1);
     uint32_t end_vaddr = (address + size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 
-    for (uint32_t vaddr = start_vaddr; vaddr < end_vaddr; vaddr += PAGE_SIZE) {
+    for(uint32_t vaddr = start_vaddr; vaddr < end_vaddr; vaddr += PAGE_SIZE) {
         uint32_t pd_index = vaddr >> 22;
         uint32_t pt_index = (vaddr >> 12) & 0x3FF;
 
         // if table does not exist, skip it
         uint32_t *pd_entry = (uint32_t *)(P_MEM_PAGE_DIRECTORY + (pd_index * 4));
-        if ((*pd_entry & VM_FLAG_PRESENT) == 0) {
+        lock_page_entry(pd_entry);
+        if((*pd_entry & VM_FLAG_PRESENT) == 0) {
+            unlock_page_entry(pd_entry);
             vaddr = (vaddr + 0x400000) & ~0x3FFFFF; // skip right to next page table
             vaddr -= PAGE_SIZE; // compensate for vaddr += PAGE_SIZE in the loop
             continue;
         }
+        unlock_page_entry(pd_entry);
 
         uint32_t *pt_entries = (uint32_t *)(P_MEM_PAGE_TABLE + (pd_index * PAGE_SIZE));
+        lock_page_entry(&pt_entries[pt_index]);
         uint32_t pte = pt_entries[pt_index];
 
-        if ((pte & VM_FLAG_PRESENT) != 0) {
+        if((pte & VM_FLAG_PRESENT) != 0) {
             uint32_t type = (pte & VM_FLAGS_TYPE);
             
             // unmap only if it is normal page
-            if (type != VM_LAZY_ALLOCATION && type != VM_COW_ALLOCATION && type != VM_SPAWN_TEMPLATE) {
+            if(type != VM_LAZY_ALLOCATION && type != VM_COW_ALLOCATION && type != VM_SPAWN_TEMPLATE) {
                 memset((void *)vaddr, 0, PAGE_SIZE);
                 pm_free_page((void *)PAGE_MASK(pte));
             }
 
             // remove page from page table
-            pt_entries[pt_index] = 0;
+            pt_entries[pt_index] = 0; // this will also clear the spinlock
+        }
+        else {
+            unlock_page_entry(&pt_entries[pt_index]);
         }
     }
 
@@ -313,7 +364,9 @@ void unmap_physical_pages_from_userspace(uint32_t address, uint32_t size) {
 
     for (uint32_t pd_idx = first_pd; pd_idx <= last_pd; pd_idx++) {
         uint32_t *pd_entry = (uint32_t *)(P_MEM_PAGE_DIRECTORY + (pd_idx * 4));
+        lock_page_entry(pd_entry);
         if((*pd_entry & VM_FLAG_PRESENT) == 0) {
+            unlock_page_entry(pd_entry);
             continue;
         }
 
@@ -321,26 +374,30 @@ void unmap_physical_pages_from_userspace(uint32_t address, uint32_t size) {
         int is_empty = true;
 
         for(int i = 0; i < 1024; i++) {
+            lock_page_entry(&pt_entries[i]);
             if(pt_entries[i] != 0) {
+                unlock_page_entry(&pt_entries[i]);
                 is_empty = false;
                 break;
             }
+            unlock_page_entry(&pt_entries[i]);
         }
 
         if(is_empty == true) {
             pm_free_page((void *)PAGE_MASK(*pd_entry));
-            *pd_entry = 0; // remove page table from page directory
+            *pd_entry = 0; // remove page table from page directory, this will also clear the spinlock
+        }
+        else {
+            unlock_page_entry(pd_entry);
         }
     }
 
     vm_refresh_mappings();
     // TODO: for all other processors
-
-    UNLOCK_MUTEX(&get_current_logical_processor_struct()->current_process->virtual_memory_mutex);
 }
 
+// this method will be always running only on one processor at same time
 void free_virtual_space(uint32_t page_directory) {
-    lock_core();
     load_page_directory(page_directory);
     uint32_t *page_directory_entry = (uint32_t *) (P_MEM_PAGE_DIRECTORY);
     for(int i = 0; i < (1024 - number_of_shared_page_tables); i++, page_directory_entry++) {
@@ -369,7 +426,5 @@ void free_virtual_space(uint32_t page_directory) {
             *page_directory_entry = 0;
         }
     }
-    load_page_directory(PM_KERNEL_PAGE_DIRECTORY);
     // TODO: clear and free page directory itself
-    unlock_core();
 }

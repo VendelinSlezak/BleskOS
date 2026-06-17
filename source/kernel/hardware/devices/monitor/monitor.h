@@ -8,29 +8,30 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-typedef struct monitor monitor_t;
-typedef struct monitor_mode monitor_mode_t;
+#include <kernel/hardware/main.h>
 
-struct monitor_mode {
+typedef struct {
     uint32_t active_width;
     uint32_t active_height;
     uint32_t bpp;
     uint32_t bytes_per_line;
     uint32_t redraw_cycles;
     void *linear_frame_buffer;
+    void (*redraw_full_screen)(hardware_t *monitor, void *double_buffer);
+    void (*redraw_part_of_screen)(hardware_t *monitor, uint32_t monitor_x, uint32_t monitor_y, void *double_buffer, uint32_t buffer_pixels_per_line, uint32_t buffer_x, uint32_t buffer_y, uint32_t width, uint32_t height);
+} monitor_mode_t;
 
-    void (*redraw_full_screen)(monitor_t *monitor, void *double_buffer);
-    void (*redraw_part_of_screen)(monitor_t *monitor, uint32_t monitor_x, uint32_t monitor_y, void *double_buffer, uint32_t buffer_pixels_per_line, uint32_t buffer_x, uint32_t buffer_y, uint32_t width, uint32_t height);
-};
-
-struct monitor {
-    uint32_t id;
-
-    uint32_t (*change_brightness)(struct monitor *monitor, uint32_t brightness);
-    uint32_t brightness;
-
-    uint32_t (*change_resolution)(struct monitor *monitor, monitor_mode_t *mode);
+typedef struct {
     monitor_mode_t *actual_mode;
+} monitor_data_t;
+
+typedef struct {
+    uint32_t brightness;
     monitor_mode_t *best_mode;
     monitor_mode_t supported_modes[];
-};
+} monitor_controller_data_t;
+
+typedef struct {
+    uint32_t (*change_brightness)(hardware_t *monitor, uint32_t brightness);
+    uint32_t (*change_resolution)(hardware_t *monitor, monitor_mode_t *mode);
+} monitor_communication_functions_t;

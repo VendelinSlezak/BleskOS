@@ -8,25 +8,31 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <kernel/hardware/main.h>
+
 extern int logging_enabled;
 
 typedef struct {
-    uint32_t id;
-    void (*send_character)(uint32_t character);
+    void (*send_character)(hardware_t *device, uint32_t character);
+} logging_group_device_functions_t;
+typedef struct {
+    hardware_t *device;
+    logging_group_device_functions_t *functions;
 } logging_device_t;
-
 #define MAX_NUMBER_OF_LOGGING_GROUP_DEVICES 8
 typedef struct {
     uint32_t number_of_devices;
     logging_device_t devices[MAX_NUMBER_OF_LOGGING_GROUP_DEVICES];
 } logging_group_t;
 
+
+
+
 enum {
     LOGGING_GROUP_COMMAND_SEND_CHARACTER = 1,
     LOGGING_GROUP_COMMAND_SEND_STRING = 2,
     LOGGING_GROUP_COMMAND_SEND_FORMATTED_STRING = 3
 };
-
 typedef struct {
     uint32_t type;
     uint32_t argument[];

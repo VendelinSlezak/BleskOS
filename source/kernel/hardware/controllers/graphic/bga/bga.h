@@ -10,6 +10,7 @@
 
 #include <kernel/hardware/devices/monitor/monitor.h>
 #include <kernel/hardware/controllers/pci/pci.h>
+#include <kernel/hardware/main.h>
 
 #define BGA_REGISTER_INDEX 0x01CE
 #define BGA_REGISTER_DATA 0x01CF
@@ -20,4 +21,4 @@
 #define BGA_INDEX_BPP 3
 #define BGA_INDEX_ENABLE 4
 
-extern uint32_t try_to_detect_bga_on_isa;
+extern int is_bga_controller_on_pci;

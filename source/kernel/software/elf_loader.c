@@ -14,49 +14,19 @@
 #include <kernel/memory/physical_memory.h>
 #include <kernel/memory/virtual_memory.h>
 #include <kernel/memory/memory_allocators.h>
-#include <kernel/software/ramdisk.h>
 #include <kernel/software/syscall.h>
+#include <kernel/software/spawning_template.h>
+#include <kernel/software/ramdisk.h>
+#include <kernel/software/syslib.h>
+#include <kernel/cpu/commands.h>
 
 /* local variables */
-syslib_t syslib;
 uint8_t close_thread_function[] = {
     0xB8, 0x06, 0x00, 0x00, 0x00, // mov eax, 6
     0xCD, 0xD0                    // int 0xD0
 };
 
 /* functions */
-void initialize_syslib(void) {
-    syslib.version = 0x20260311;
-
-    syslib.initialize = get_elf_symbol_addr(get_ramdisk_file_ptr("libraries.elf"), "syslib_initialize");
-
-    syslib.log = get_elf_symbol_addr(get_ramdisk_file_ptr("libraries.elf"), "syslib_log");
-    syslib.logf = get_elf_symbol_addr(get_ramdisk_file_ptr("libraries.elf"), "syslib_logf");
-
-    syslib.get_time_in_microseconds = get_elf_symbol_addr(get_ramdisk_file_ptr("libraries.elf"), "syslib_get_time_in_microseconds");
-
-    syslib.malloc = get_elf_symbol_addr(get_ramdisk_file_ptr("libraries.elf"), "syslib_malloc");
-    syslib.calloc = get_elf_symbol_addr(get_ramdisk_file_ptr("libraries.elf"), "syslib_calloc");
-    syslib.realloc = get_elf_symbol_addr(get_ramdisk_file_ptr("libraries.elf"), "syslib_realloc");
-    syslib.free = get_elf_symbol_addr(get_ramdisk_file_ptr("libraries.elf"), "syslib_free");
-
-    syslib.create_window = get_elf_symbol_addr(get_ramdisk_file_ptr("libraries.elf"), "syslib_create_window");
-    syslib.redraw_window = get_elf_symbol_addr(get_ramdisk_file_ptr("libraries.elf"), "syslib_redraw_window");
-
-    syslib.create_screen_buffer = get_elf_symbol_addr(get_ramdisk_file_ptr("libraries.elf"), "syslib_create_screen_buffer");
-    syslib.destroy_screen_buffer = get_elf_symbol_addr(get_ramdisk_file_ptr("libraries.elf"), "syslib_destroy_screen_buffer");
-
-    syslib.load_bitmap_font = get_elf_symbol_addr(get_ramdisk_file_ptr("libraries.elf"), "syslib_load_bitmap_font");
-    syslib.draw_bitmap_char = get_elf_symbol_addr(get_ramdisk_file_ptr("libraries.elf"), "syslib_draw_bitmap_char");
-    syslib.draw_bitmap_string = get_elf_symbol_addr(get_ramdisk_file_ptr("libraries.elf"), "syslib_draw_bitmap_string");
-    syslib.destroy_bitmap_font = get_elf_symbol_addr(get_ramdisk_file_ptr("libraries.elf"), "syslib_destroy_bitmap_font");
-
-    syslib.initialize_gui = get_elf_symbol_addr(get_ramdisk_file_ptr("libraries.elf"), "syslib_initialize_gui");
-    syslib.add_canvas_component = get_elf_symbol_addr(get_ramdisk_file_ptr("libraries.elf"), "syslib_add_canvas_component");
-    syslib.register_pressed_key_event_handler = get_elf_symbol_addr(get_ramdisk_file_ptr("libraries.elf"), "syslib_register_pressed_key_event_handler");
-    syslib.redraw_gui = get_elf_symbol_addr(get_ramdisk_file_ptr("libraries.elf"), "syslib_redraw_gui");
-}
-
 spawning_template_t load_elf32_to_spawning_template(void *elf_data, void prepare_memory(void)) {
     spawning_template_t template = {0};
 
@@ -68,7 +38,7 @@ spawning_template_t load_elf32_to_spawning_template(void *elf_data, void prepare
     }
 
     // create new virtual address space
-    lock_core();
+    uint32_t original_page_directory = read_cr3();
     template.page_directory = vm_create_new_userspace();
 
     // read program headers
@@ -154,7 +124,7 @@ spawning_template_t load_elf32_to_spawning_template(void *elf_data, void prepare
 
     // set up syslib page
     syslib_t *template_syslib = (syslib_t *) 0x1000;
-    memcpy(template_syslib, (void *) &syslib, sizeof(syslib_t));
+    memcpy(template_syslib, (void *) &system_syslib, sizeof(syslib_t));
     template_syslib->userspace_start = highest_used_memory;
     template_syslib->userspace_size = userspace_size;
 
@@ -169,7 +139,7 @@ spawning_template_t load_elf32_to_spawning_template(void *elf_data, void prepare
     *stack_pointer = 0x2000; // pointer to function to close thread in user space
     template.user_stack = stack_pointer;
 
-    unlock_core();
+    load_page_directory(original_page_directory);
     return template;
 }
 

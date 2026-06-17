@@ -313,6 +313,7 @@ void *krealloc(void *allocation, uint32_t new_size) {
         return NULL;
     }
     else if(new_size == entry_size) { // do nothing
+        UNLOCK_MUTEX(&kheap_mutex);
         return allocation;
     }
     else if(new_size < entry_size) { // shrink allocation
@@ -474,7 +475,6 @@ void *krealloc(void *allocation, uint32_t new_size) {
         // free old block
         kfree(allocation);
 
-        UNLOCK_MUTEX(&kheap_mutex);
         return new_allocation;
     }
 }

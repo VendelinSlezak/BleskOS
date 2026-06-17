@@ -33,16 +33,17 @@ typedef struct {
     uint32_t is_sse4_2_supported;
     uint32_t is_avx_supported;
 
-
     tss_t *tss;
 
     uint32_t depth_of_lock;
 
-    interrupt_stack_t *idle_thread_stack;
+    kernel_interrupt_stack_t *idle_thread_stack;
     void *floating_stack;
 
-    process_t *current_process;
-    thread_t *current_thread;
+    scheduler_state_t scheduler_state;
+    program_t *current_program;
+    kernel_thread_t *current_kernel_thread;
+    user_thread_t *current_user_thread;
 
     void *copy_on_write_page;
 

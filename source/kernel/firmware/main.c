@@ -14,6 +14,7 @@
 #include <kernel/firmware/pir/pir.h>
 #include <kernel/firmware/mp_tables/mp_tables.h>
 #include <kernel/firmware/acpi/acpi.h>
+#include <kernel/firmware/acpi/aml/main.h>
 #include <kernel/firmware/smbios/smbios.h>
 #include <kernel/memory/virtual_memory.h>
 #include <kernel/memory/memory_allocators.h>
@@ -25,6 +26,9 @@ firmware_info_t firmware_info;
 /* functions */
 void read_firmware_data(void) {
     memset(&firmware_info, 0, sizeof(firmware_info_t));
+
+    // initialize AML interpreter
+    initialize_aml_interpreter();
 
     // load firmware data to virtual memory
     firmware_info.bda = temp_phy_alloc(0x400, 0x100, VM_KERNEL | VM_UNCACHEABLE);

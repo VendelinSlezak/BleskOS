@@ -9,7 +9,7 @@
 */
 
 typedef struct {
-    void *process;
+    void *program;
     uint32_t x;
     uint32_t y;
     uint32_t width;

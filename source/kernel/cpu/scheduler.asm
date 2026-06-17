@@ -32,10 +32,10 @@ exit_interrupt_to_thread:
     mov esp, [esp + 4] ; get pointer from first argument
 
     ; restore segment registers
-    pop ds
-    pop es
-    pop fs
     pop gs
+    pop fs
+    pop es
+    pop ds
 
     ; restore general-purpose registers
     popad

@@ -12,9 +12,12 @@
 #include <kernel/cpu/commands.h>
 #include <kernel/firmware/main.h>
 #include <kernel/firmware/acpi/madt.h>
+#include <kernel/firmware/acpi/facp.h>
 #include <kernel/memory/virtual_memory.h>
 #include <kernel/memory/memory_allocators.h>
 #include <kernel/hardware/groups/logging/logging.h>
+#include <kernel/firmware/acpi/aml/parser.h>
+#include <kernel/firmware/acpi/aml/main.h>
 
 /* functions */
 void search_for_acpi_tables(void) {
@@ -131,7 +134,16 @@ void check_acpi_table(uint32_t table_pm) {
 
     // save table pointer
     if(header->signature == ACPI_SIGNATURE_32("FACP")) {
-        firmware_info.fadt = table;
+        firmware_info.facp = table;
+        facp_table_t *facp = (facp_table_t *) table;
+        acpi_table_header_t *dsdt_header = temp_phy_alloc(facp->dsdt_pm, sizeof(acpi_table_header_t), VM_KERNEL);
+        if(dsdt_header->signature == ACPI_SIGNATURE_32("DSDT") && dsdt_header->length > sizeof(acpi_table_header_t)) {
+            firmware_info.dsdt = perm_phy_alloc(facp->dsdt_pm, dsdt_header->length, VM_KERNEL);
+            firmware_info.size_of_dsdt = dsdt_header->length;
+            log("\nDSDT | Revision: %d | OEM: %06s", dsdt_header->revision, dsdt_header->oem_id);
+            process_acpi_aml_table(firmware_info.dsdt);
+            // dump_aml_code((uint8_t *) firmware_info.dsdt + sizeof(acpi_table_header_t), dsdt_header->length - sizeof(acpi_table_header_t));
+        }
     }
     else if(header->signature == ACPI_SIGNATURE_32("APIC")) {
         firmware_info.madt = table;

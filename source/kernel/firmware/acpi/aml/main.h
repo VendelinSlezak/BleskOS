@@ -8,27 +8,15 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/* includes */
-#include <kernel/hardware/main.h>
-#include <kernel/software/syslib.h>
-#include <kernel/software/syscall.h>
+#include <kernel/firmware/acpi/aml/aml_definition.h>
 
-#include <libraries/time.h>
-#include <libraries/gui.h>
-#include <libraries/logging.h>
-#include <libraries/bleskalloc.h>
+#define SIZE_OF_AML_STATE_STACK 1024
+#define SIZE_OF_AML_MULTIPLE_STATES_STACK 1024
 
-/* global variables */
-syslib_t *syslib = NULL;
-
-/* functions */
-void syslib_initialize(syslib_t *syslib_ptr) {
-    syslib = syslib_ptr;
-
-    does_timer_exist = syscall_does_virtual_device_exist(VIRTUAL_HARDWARE_TIMER);
-    does_logger_exist = syscall_does_virtual_device_exist(VIRTUAL_HARDWARE_LOGGER);
-    does_window_subsystem_exist = syscall_does_virtual_device_exist(VIRTUAL_HARDWARE_WINDOW);
-    does_human_input_exist = syscall_does_virtual_device_exist(VIRTUAL_HARDWARE_HUMAN_INPUT_DEVICE);
-
-    syslib_initialize_bleskalloc();
-}
+#define AML_CHECK_IF_BYTES_AVAILABLE(x)                 \
+    do {                                                \
+        if((aml_code_ptr + (x)) > block->header.end) {  \
+            log("\n[AML] ERROR: Section overflow");     \
+            return ERROR;                               \
+        }                                               \
+    } while(0)

@@ -40,20 +40,32 @@ void doorbell_interrupt_handler(interrupt_stack_t *stack) {
 
     switch(stack->eax) {
         case DEMAND_TYPE_CREATE_THREAD: {
-            void *entry_point = return_validated_pointer((void *) stack->ebx, 4);
+            void *entry_point = return_validated_pointer((void *) stack->ebx, PAGE_SIZE);
             void *stack_pointer = return_validated_pointer((void *) stack->ecx, 4);
-            uint8_t *end_of_thread_signal = return_validated_pointer((void *) stack->edx, 1);
-            if(entry_point != NULL && stack_pointer != NULL && end_of_thread_signal != NULL) {
-                create_user_thread(get_current_logical_processor_struct()->current_process, entry_point, stack_pointer, end_of_thread_signal);
+            uint32_t delete_signal_handler = NULL;
+            if(stack->edx != 0) {
+                delete_signal_handler = (uint32_t) return_validated_pointer((void *) stack->edx, PAGE_SIZE);
+            }
+            if(entry_point != NULL && stack_pointer != NULL) {
+                stack->eax = create_user_thread(get_current_logical_processor_struct()->current_program, entry_point, stack_pointer, delete_signal_handler);
+            }
+            else {
+                stack->eax = 0;
             }
             break;
         }
-        case DEMAND_TYPE_RESPAWN_PROCESS: {
-            // not implemented yet
-            break;
-        }
-        case DEMAND_TYPE_SEND_FILE_TO_APPLICATION: {
-            // not implemented yet
+        case DEMAND_TYPE_SPAWN_THREAD: {
+            void *entry_point = return_validated_pointer((void *) stack->ebx, PAGE_SIZE);
+            uint32_t delete_signal_handler = NULL;
+            if(stack->ecx != 0) {
+                delete_signal_handler = (uint32_t) return_validated_pointer((void *) stack->ecx, PAGE_SIZE);
+            }
+            if(entry_point != NULL) {
+                stack->eax = spawn_user_thread(get_current_logical_processor_struct()->current_program, entry_point, delete_signal_handler);
+            }
+            else {
+                stack->eax = 0;
+            }
             break;
         }
         case DEMAND_TYPE_SWITCH_THREADS: {
@@ -61,14 +73,14 @@ void doorbell_interrupt_handler(interrupt_stack_t *stack) {
             break;
         }
         case DEMAND_TYPE_SLEEP_FOR_THREAD: {
-            uint32_t milliseconds = stack->ebx;
-            if(milliseconds == 0) {
-                break; // minimum sleep time is 1 ms
+            uint32_t microseconds = stack->ebx;
+            if(microseconds == 0) {
+                break;
             }
-            else if(milliseconds > 36000000) {
-                stack->ebx = 36000000; // maximum sleep time is 36000000 ms (3600 seconds = 1 hour)
+            else if(microseconds > 60000000) {
+                microseconds = 60000000; // maximum sleep time is 60000000 microseconds (60 seconds = 1 minute)
             }
-            sleep_for_thread(stack, stack->ebx);
+            sleep_for_thread(stack, microseconds);
             break;
         }
         case DEMAND_TYPE_CLOSE_THREAD: {
@@ -89,37 +101,29 @@ void doorbell_interrupt_handler(interrupt_stack_t *stack) {
             unmap_physical_pages_from_userspace(stack->ebx, stack->ecx);
             break;
         }
-        case DEMAND_TYPE_GET_LIST_OF_DEVICES: {
-            void *hardware_list_in_userspace = return_validated_pointer((void *) stack->ebx, stack->ecx);
-            if(hardware_list_in_userspace != NULL) {
-                uint32_t size = stack->ecx;
-                if(size > (sizeof(hardware_list_t) + (sizeof(hardware_list_entry_t) * MAX_NUMBER_OF_ENTRIES_IN_HARDWARE_LIST))) {
-                    size = sizeof(hardware_list_t) + (sizeof(hardware_list_entry_t) * MAX_NUMBER_OF_ENTRIES_IN_HARDWARE_LIST);
-                }
-                memcpy(hardware_list_in_userspace, hardware_list, size);
-            }
+        case DEMAND_TYPE_DOES_VIRTUAL_DEVICE_EXIST: {
+            stack->eax = does_virtual_device_exist(stack->ebx);
             break;
         }
-        case DEMAND_TYPE_SEND_COMMAND_TO_DEVICE: {
-            if(return_validated_pointer((void *) stack->ebx, sizeof(hardware_list_entry_t)) == NULL) {
+        case DEMAND_TYPE_SEND_COMMAND_TO_VIRTUAL_DEVICE: {
+            if(does_virtual_device_exist(stack->ebx) == false) {
                 break;
             }
-            hardware_list_entry_t *device = (hardware_list_entry_t *) stack->ebx;
-            switch(device->type) {
-                case HARDWARE_TYPE_TIMER: {
-                    timer_group_process_userspace_command(device->id, (uint64_t *) stack->ecx);
+            switch(stack->ebx) {
+                case VIRTUAL_HARDWARE_TIMER: {
+                    timer_group_process_userspace_command((uint64_t *) stack->ecx);
                     break;
                 }
-                case HARDWARE_TYPE_LOGGER: {
-                    logging_group_process_userspace_command(device->id, (logging_device_command_t *) stack->ecx);
+                case VIRTUAL_HARDWARE_LOGGER: {
+                    logging_group_process_userspace_command((logging_device_command_t *) stack->ecx);
                     break;
                 }
-                case HARDWARE_TYPE_WINDOW: {
-                    window_subsystem_process_userspace_command(device->id, (windows_subsystem_command_t *) stack->ecx);
+                case VIRTUAL_HARDWARE_WINDOW: {
+                    window_subsystem_process_userspace_command((windows_subsystem_command_t *) stack->ecx);
                     break;
                 }
-                case HARDWARE_TYPE_HUMAN_INPUT_DEVICE: {
-                    human_input_group_process_userspace_command(device->id, (human_input_group_command_t *) stack->ecx);
+                case VIRTUAL_HARDWARE_HUMAN_INPUT_DEVICE: {
+                    human_input_group_process_userspace_command((human_input_group_command_t *) stack->ecx);
                     break;
                 }
             }

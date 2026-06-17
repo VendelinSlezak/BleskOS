@@ -85,8 +85,8 @@ pci_supported_classic_devices_by_driver_t pci_bga_devices[] = {
     { NULL, NULL }
 };
 pci_drivers_for_type_t vga_compatibile_graphic_controller_drivers[] = { 
-    {  pci_bga_devices, NULL, initialize_bga_controller_on_pci },
-    {  NULL, NULL, NULL }
+    {  "BGA", pci_bga_devices, NULL, initialize_bga_controller_on_pci },
+    {  NULL, NULL, NULL, NULL }
 };
 
 pci_device_type_list_t pci_device_type_list[] = { 

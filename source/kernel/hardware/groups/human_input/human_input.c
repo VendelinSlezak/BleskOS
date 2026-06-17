@@ -57,16 +57,14 @@ const uint16_t key_to_unicode[INPUT_KEY_COUNT] = {
     [KEY_NUMPAD_ASTERISK] = L'*',
     [KEY_NUMPAD_SLASH] = L'/',
 };
-uint32_t human_input_group_id;
 
 /* functions */
 void initialize_human_input_group(void) {
     human_input_group = kalloc(sizeof(human_input_group_t));
-    human_input_group_id = get_unique_hardware_id();
-    add_device_to_hardware_list(human_input_group_id, HARDWARE_TYPE_HUMAN_INPUT_DEVICE);
+    add_virtual_device_to_hardware_list(VIRTUAL_HARDWARE_HUMAN_INPUT_DEVICE);
 }
 
-void add_human_input_group_device(uint32_t type, void *structure) {
+void add_human_input_group_device(uint32_t type, hardware_t *structure) {
     if(human_input_group->number_of_devices >= MAX_NUMBER_OF_HUMAN_INPUT_DEVICES) {
         return;
     }
@@ -99,30 +97,28 @@ void human_input_event_released_key(uint32_t key) {
 
 void human_input_end_of_event(void) {
     // load where is event stack of current window
-    process_t *process = NULL;
-    human_input_event_stack_t *event_stack = NULL;
     if(current_window == NULL) {
         human_input_group->number_of_pressed_keys = 0;
         human_input_group->number_of_released_keys = 0;
         return;
     }
-    process = current_window->process;
-    if(process == NULL) {
+    program_t *program = current_window->program;
+    if(program == NULL) {
         human_input_group->number_of_pressed_keys = 0;
         human_input_group->number_of_released_keys = 0;
         return;
     }
-    event_stack = process->human_input_event_stack;
+    human_input_event_stack_t *event_stack = program->human_input_event_stack;
     if(event_stack == NULL) {
         human_input_group->number_of_pressed_keys = 0;
         human_input_group->number_of_released_keys = 0;
         return;
     }
 
-    // switch to process virtual space
+    // switch to program virtual space
     uint32_t actual_page_directory = read_cr3();
-    if(process->page_directory_physical_address != actual_page_directory) {
-        write_cr3(process->page_directory_physical_address);
+    if(program->page_directory_for_human_input_event_stack != actual_page_directory) {
+        write_cr3(program->page_directory_for_human_input_event_stack);
     }
 
     // add events to stack
@@ -154,7 +150,7 @@ void human_input_end_of_event(void) {
     UNLOCK_MUTEX(&event_stack->spinlock);
 
     // switch back from process virtual space
-    if(process->page_directory_physical_address != actual_page_directory) {
+    if(program->page_directory_for_human_input_event_stack != actual_page_directory) {
         write_cr3(actual_page_directory);
     }
 
@@ -164,8 +160,8 @@ void human_input_end_of_event(void) {
 }
 
 /* userspace functions */
-void human_input_group_process_userspace_command(uint32_t device_id, human_input_group_command_t *command) {
-    if(device_id != human_input_group_id) {
+void human_input_group_process_userspace_command(human_input_group_command_t *command) {
+    if(return_validated_pointer(command, sizeof(human_input_group_command_t)) == NULL) {
         return;
     }
 
@@ -178,11 +174,15 @@ void human_input_group_process_userspace_command(uint32_t device_id, human_input
             if(return_validated_pointer(event_stack, sizeof(human_input_event_stack_t)) == NULL) {
                 return;
             }
-            get_current_logical_processor_struct()->current_process->human_input_event_stack = event_stack;
+            program_t *program = get_current_logical_processor_struct()->current_program;
+            program->page_directory_for_human_input_event_stack = read_cr3();
+            program->human_input_event_stack = event_stack;
             break;
         }
         case HUMAN_INPUT_GROUP_STOP_LISTENING_TO_EVENTS: {
-            get_current_logical_processor_struct()->current_process->human_input_event_stack = NULL;
+            program_t *program = get_current_logical_processor_struct()->current_program;
+            program->page_directory_for_human_input_event_stack = NULL;
+            program->human_input_event_stack = NULL;
             break;
         }
     }

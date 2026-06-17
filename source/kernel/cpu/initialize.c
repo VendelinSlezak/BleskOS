@@ -313,10 +313,6 @@ void initialize_bootstrap_processor(void) {
     
     // initialize rest
     initialize_running_logical_processor(cpuid_supported, msr_supported);
-
-    // log
-    processor_log_capabilities();
-    log("\n[CPU%d] Bootstrap processor initialized", data->index);
 }
 
 void processor_log_capabilities(void) {
@@ -360,7 +356,7 @@ void initialize_running_logical_processor(int cpuid_supported, int msr_supported
 
     // set Page Attribute Table
     if(cpuid_supported == false) {
-        data->is_running = 1;
+        data->is_running = PROCESSOR_IS_RUNNING;
         return;
     }
     cpuid_t cpuid = read_cpuid(0x00000001, 0);
@@ -452,7 +448,7 @@ void initialize_running_logical_processor(int cpuid_supported, int msr_supported
     }
 
     // allocate stack for idle thread
-    data->idle_thread_stack = perm_alloc(sizeof(interrupt_stack_t)); // 4 KB stack
+    data->idle_thread_stack = perm_alloc(PAGE_SIZE) + PAGE_SIZE - sizeof(kernel_interrupt_stack_t);
     extern void idle_thread(void);
     data->idle_thread_stack->eip = (uint32_t) &idle_thread;
     data->idle_thread_stack->cs = 0x08; // kernel code segment
@@ -467,6 +463,15 @@ void initialize_running_logical_processor(int cpuid_supported, int msr_supported
 
     // allocate page for copy-on-write memory for this processor
     data->copy_on_write_page = perm_alloc(PAGE_SIZE);
+
+    // log
+    processor_log_capabilities();
+    if(lapic_get_processor_id() == bootstrap_processor_id) {
+        log("\n[CPU%d] Bootstrap processor 0x%02x has been initialized", data->index, lapic_get_processor_id());
+    }
+    else {
+        log("\n[CPU%d] Application processor 0x%02x has been initialized", data->index, lapic_get_processor_id());
+    }
 
     // mark logical processor as running
     data->is_running = PROCESSOR_IS_RUNNING;
@@ -535,9 +540,14 @@ void initialize_all_application_processors(void) {
         }
     }
 
-    // wait max 100ms until all processors are running
-    uint64_t time = (*get_time_in_microseconds)();
-    while(((*get_time_in_microseconds)() - time) < 100000) {
+    // wait max 200ms until all processors are running
+    uint64_t start_time = (*get_time_in_microseconds)(); 
+    uint64_t current_time;
+    while (1) {
+        current_time = (uint64_t)(*get_time_in_microseconds)();
+        if((current_time - start_time) >= 200000) {
+            break;
+        }
         int all_running = true;
         for(int i = 0; i < number_of_logical_processors; i++) {
             if(logical_processors[i].hardware_id == bootstrap_processor_id) {
@@ -552,6 +562,15 @@ void initialize_all_application_processors(void) {
             break;
         }
         asm volatile("pause");
+    }
+
+    for(int i = 0; i < number_of_logical_processors; i++) {
+        if(logical_processors[i].hardware_id == bootstrap_processor_id) {
+            continue;
+        }
+        if(get_logical_processor_struct_by_hardware_id(logical_processors[i].hardware_id)->is_running == PROCESSOR_IS_NOT_RUNNING) {
+            log("\n[CPU] ERROR: Application processor with hardware ID 0x%02x did not respond", logical_processors[i].hardware_id);
+        }
     }
 
     // TODO: remove unusable processors from the list
@@ -616,8 +635,4 @@ void application_processor_entry_point(void) {
 
     // enable interrupts
     sti();
-
-    // log
-    processor_log_capabilities();
-    log("\n[CPU%d] Application processor 0x%02x has been initialized", data->index, lapic_get_processor_id());
 }

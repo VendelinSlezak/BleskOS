@@ -9,19 +9,12 @@
 */
 
 #include <kernel/hardware/groups/human_input/human_input.h>
+#include <kernel/hardware/main.h>
 
 typedef struct {
-    uint32_t device_id;
-
-    void (*set_receive_function)(void *, void (*)(void *, uint8_t *, uint32_t));
-    uint32_t (*send_command)(uint8_t command);
-    uint32_t (*send_command_with_payload)(uint8_t command, uint8_t payload);
-    uint32_t (*send_command_with_return)(uint8_t command);
-    uint32_t (*send_command_with_payload_and_return)(uint8_t command, uint8_t payload);
-
     uint32_t scancode_set;
     uint32_t *parse_map;
     uint32_t parsing_state;
     
     uint32_t key_state[INPUT_KEY_COUNT];
-} ps2_keyboard_t;
+} ps2_keyboard_data_t;

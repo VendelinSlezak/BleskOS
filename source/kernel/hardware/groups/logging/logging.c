@@ -12,6 +12,7 @@
 #include <stdarg.h>
 #include <libc/ctype.h>
 #include <libc/stdlib.h>
+#include <libc/string.h>
 #include <kernel/cpu/commands.h>
 #include <kernel/cpu/mutex.h>
 #include <kernel/cpu/interrupt.h>
@@ -24,7 +25,6 @@
 /* local variables */
 int logging_enabled = false;
 logging_group_t *logging_group;
-uint32_t logging_device_id;
 uint32_t *logging_data;
 uint32_t logging_data_size;
 uint32_t logging_data_pointer;
@@ -33,25 +33,41 @@ mutex_t logging_mutex;
 /* functions */
 void initialize_logging_group(void) {
     logging_group = (logging_group_t *) kalloc(sizeof(logging_group_t));
-    logging_device_id = get_unique_hardware_id();
-    add_device_to_hardware_list(logging_device_id, HARDWARE_TYPE_LOGGER);
+    add_virtual_device_to_hardware_list(VIRTUAL_HARDWARE_LOGGER);
 
-    logging_data = (uint32_t *) kalloc(sizeof(uint32_t) * 1024 * 10);
-    logging_data_size = 1024 * 10 - 1;
+    logging_data = (uint32_t *) kalloc(sizeof(uint32_t) * 1024 * 100);
+    logging_data_size = 1024 * 100 - 1;
     logging_data_pointer = 0;
 }
 
-void add_logging_device(void (*send_character)(uint32_t character)) {
+void add_logging_device(hardware_t *device, logging_group_device_functions_t *functions) {
     if(logging_group->number_of_devices >= MAX_NUMBER_OF_LOGGING_GROUP_DEVICES) {
         return;
     }
-    logging_group->devices[logging_group->number_of_devices].id = get_unique_hardware_id();
-    logging_group->devices[logging_group->number_of_devices].send_character = send_character;
+    logging_group->devices[logging_group->number_of_devices].device = device;
+    logging_group->devices[logging_group->number_of_devices].functions = functions;
     logging_group->number_of_devices++;
 }
 
+void remove_logging_device(hardware_t *device) {
+    for(int i = 0; i < logging_group->number_of_devices; i++) {
+        if(logging_group->devices[i].device == device) {
+            for(int j = i; j < logging_group->number_of_devices - 1; j++) {
+                logging_group->devices[j] = logging_group->devices[j + 1];
+            }
+            logging_group->number_of_devices--;
+            break;
+        }
+    }
+}
+
+void reset_logging(void) {
+    logging_data_pointer = 0;
+    memset(logging_data, 0, sizeof(uint32_t) * logging_data_size);
+}
+
 void log_char(uint32_t character) {
-    if(logging_enabled == false) {
+    if(logging_enabled == false || character == 0) {
         return;
     }
 
@@ -64,7 +80,7 @@ void log_char(uint32_t character) {
     }
 
     for(int i = 0; i < logging_group->number_of_devices; i++) {
-        logging_group->devices[i].send_character(character);
+        logging_group->devices[i].functions->send_character(logging_group->devices[i].device, character);
     }
 }
 
@@ -202,10 +218,7 @@ void log(uint8_t *string, ...) {
 }
 
 /* userspace functions */
-void logging_group_process_userspace_command(uint32_t device_id, logging_device_command_t *command) {
-    if(device_id != logging_device_id) {
-        return;
-    }
+void logging_group_process_userspace_command(logging_device_command_t *command) {
     if(return_validated_pointer(command, sizeof(logging_device_command_t) + sizeof(uint32_t)) == NULL) {
         return;
     }

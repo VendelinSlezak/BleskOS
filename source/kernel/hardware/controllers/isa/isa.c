@@ -11,9 +11,16 @@
 /* includes */
 #include <kernel/hardware/controllers/graphic/bga/bga.h>
 #include <kernel/hardware/controllers/controller_8042/controller_8042.h>
+#include <kernel/hardware/main.h>
+
+/* global variables */
+hardware_t *isa_controller;
 
 /* functions */
-void initialize_isa_controller(void) {
-    initialize_bga_controller_on_isa();
-    initialize_controller_8042();
+void initialize_isa_controller(hardware_t *self) {
+    if(is_controller_8042_present() == true) {
+        hardware_t *controller_8042 = add_hardware(isa_controller, "8042 controller", NULL, NULL, initialize_controller_8042, NULL);
+        init_hardware(controller_8042);
+    }
+    self->is_initialized = true;
 }

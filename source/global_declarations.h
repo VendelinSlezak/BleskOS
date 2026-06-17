@@ -14,6 +14,7 @@ typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
 typedef unsigned int uint32_t;
 typedef unsigned long long uint64_t;
+typedef long long int64_t;
 
 #define true 1
 #define false 0
@@ -24,8 +25,8 @@ typedef unsigned long long uint64_t;
 #define EOF -1
 
 #define offsetof(type, member) ((size_t) &(((type *)0)->member))
-#define likely(x)    __builtin_expect(!!(x), 1)
-#define unlikely(x)  __builtin_expect(!!(x), 0)
+#define very_likely(x)    __builtin_expect(!!(x), 1)
+#define very_unlikely(x)  __builtin_expect(!!(x), 0)
 
 #define PM_KERNEL_PAGE_DIRECTORY 0x4000
 

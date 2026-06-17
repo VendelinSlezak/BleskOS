@@ -47,7 +47,4 @@
 #define VM_MMIO (VM_KERNEL | VM_UNCACHEABLE)
 #define VM_USER (VM_FLAG_PRESENT | VM_FLAG_READ_WRITE | VM_FLAG_USER)
 
-extern uint32_t pm_of_page_directory;
-// extern uint32_t pm_of_lazy_allocation_page_table;
-// extern uint32_t pm_of_lazy_allocation_page;
 extern mutex_t creating_page_directory_mutex;

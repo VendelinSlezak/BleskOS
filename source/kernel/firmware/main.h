@@ -18,10 +18,12 @@ typedef struct {
     uint8_t *mpfp;
     uint8_t *mpct;
 
-    uint8_t *fadt;
+    uint8_t *facp;
     uint8_t *madt;
     uint8_t *mcfg;
     uint32_t size_of_mcfg;
     uint8_t *hpet;
+    uint8_t *dsdt;
+    uint32_t size_of_dsdt;
 } firmware_info_t;
 extern firmware_info_t firmware_info;

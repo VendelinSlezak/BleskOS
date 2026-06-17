@@ -8,14 +8,19 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-enum {
-    GRAPHIC_OUTPUT_DEVICE_TYPE_MONITOR = 1
-};
-typedef struct graphic_output_device {
-    uint32_t type;
-    void *structure;
-} graphic_output_device_t;
+#include <kernel/hardware/main.h>
 
+typedef struct {
+    void (*redraw_full_screen)(hardware_t *device, void *buffer);
+    void (*redraw_part_of_screen)(hardware_t *device, uint32_t monitor_x, uint32_t monitor_y, void *double_buffer, uint32_t buffer_pixels_per_line, uint32_t buffer_x, uint32_t buffer_y, uint32_t width, uint32_t height);
+    uint32_t (*get_size_of_output_buffer)(hardware_t *device);
+    uint32_t (*get_output_width)(hardware_t *device);
+    uint32_t (*get_output_height)(hardware_t *device);
+} graphic_output_group_device_functions_t;
+typedef struct {
+    hardware_t *device;
+    graphic_output_group_device_functions_t *functions;
+} graphic_output_device_t;
 #define MAX_NUMBER_OF_GRAPHIC_OUTPUT_DEVICES 8
 typedef struct {
     uint32_t number_of_devices;

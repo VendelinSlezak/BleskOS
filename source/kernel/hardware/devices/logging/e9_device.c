@@ -11,6 +11,12 @@
 /* includes */
 #include <kernel/cpu/commands.h>
 #include <kernel/hardware/groups/logging/logging.h>
+#include <kernel/hardware/main.h>
+
+/* local variables */
+static logging_group_device_functions_t functions = {
+    .send_character = e9_device_send_char
+};
 
 /* functions */
 uint32_t does_e9_device_exist(void) {
@@ -22,15 +28,11 @@ uint32_t does_e9_device_exist(void) {
     }
 }
 
-void initialize_e9_device(void) {
-    if(does_e9_device_exist() == false) {
-        return;
-    }
-
-    add_logging_device(e9_device_send_char);
+void initialize_e9_device(hardware_t *e9_device) {
+    add_logging_device(e9_device, &functions);
 }
 
-void e9_device_send_char(uint32_t c) {
+void e9_device_send_char(hardware_t *device, uint32_t c) {
     if(c == 0 || c > 0xFF) {
         return;
     }

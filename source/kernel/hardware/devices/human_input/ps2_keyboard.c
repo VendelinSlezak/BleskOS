@@ -13,6 +13,7 @@
 #include <kernel/hardware/groups/logging/logging.h>
 #include <kernel/hardware/groups/human_input/human_input.h>
 #include <kernel/memory/memory_allocators.h>
+#include <kernel/hardware/controllers/controller_8042/controller_8042.h>
 
 /* local variables */
 enum {
@@ -459,159 +460,154 @@ uint32_t ps2_keyboard_scancode_set3_parsing_map[] = {
 };
 
 /* functions */
-ps2_keyboard_t *initialize_ps2_keyboard(void (*set_receive_function)(void *, void (*)(void *, uint8_t *, uint32_t)), uint32_t (*send_command)(uint8_t command), uint32_t (*send_command_with_payload)(uint8_t command, uint8_t payload), uint32_t (*send_command_with_return)(uint8_t command), uint32_t (*send_command_with_payload_and_return)(uint8_t command, uint8_t payload)) {
+void initialize_ps2_keyboard(hardware_t *ps2_keyboard) {
     // create device structure
     log("\n[PS2] Initializing keyboard...");
-    new_uninitialized_device();
-    ps2_keyboard_t *ps2_keyboard = kalloc(sizeof(ps2_keyboard_t));
-    ps2_keyboard->device_id = get_unique_hardware_id();
-    ps2_keyboard->set_receive_function = set_receive_function;
-    ps2_keyboard->send_command = send_command;
-    ps2_keyboard->send_command_with_payload = send_command_with_payload;
-    ps2_keyboard->send_command_with_return = send_command_with_return;
-    ps2_keyboard->send_command_with_payload_and_return = send_command_with_payload_and_return;
+    ps2_keyboard->data = kalloc(sizeof(ps2_keyboard_data_t));
+    ps2_keyboard_data_t *data = (ps2_keyboard_data_t *) ps2_keyboard->data;
+    controller_8042_communication_functions_t *functions = (controller_8042_communication_functions_t *) ps2_keyboard->communication_functions;
 
     // set typematic rate to 500ms delay + max keys per second
-    if(ps2_keyboard->send_command_with_payload(0xF3, (0b01 << 5) | (0 << 0)) == ERROR) {
+    if(functions->send_command_with_payload(0xF3, (0b01 << 5) | (0 << 0)) == ERROR) {
         log("\n[PS2] ERROR: Keyboard did not set typematic rate");
-        device_initialized();
-        return NULL;
+        ps2_keyboard->is_initialized = true;
+        return;
     }
 
     // get scancode
-    uint32_t scancode_set = ps2_keyboard->send_command_with_payload_and_return(0xF0, 0);
+    uint32_t scancode_set = functions->send_command_with_payload_and_return(0xF0, 0);
     if(scancode_set == INVALID) {
         log("\n[PS2] ERROR: Keyboard did not send scancode set");
-        device_initialized();
-        return NULL;
+        ps2_keyboard->is_initialized = true;
+        return;
     }
     else if(scancode_set < 1 || scancode_set > 3) {
         log("\n[PS2] Unknown keyboard scancode set: %d\n[PS2] Trying to set scancode set 1", scancode_set);
-        if(ps2_keyboard->send_command_with_payload(0xF0, 1) == ERROR) {
+        if(functions->send_command_with_payload(0xF0, 1) == ERROR) {
             log("\n[PS2] ERROR: Keyboard did not set scancode set 1");
-            device_initialized();
-            return NULL;
+            ps2_keyboard->is_initialized = true;
+            return;
         }
         scancode_set = 1;
     }
     log("\n[PS2] Keyboard scancode set: %d", scancode_set);
-    ps2_keyboard->scancode_set = scancode_set;
-    if(ps2_keyboard->scancode_set == 1) {
-        ps2_keyboard->parse_map = ps2_keyboard_scancode_set1_parsing_map;
+    data->scancode_set = scancode_set;
+    if(data->scancode_set == 1) {
+        data->parse_map = ps2_keyboard_scancode_set1_parsing_map;
     }
-    else if(ps2_keyboard->scancode_set == 2) {
-        ps2_keyboard->parse_map = ps2_keyboard_scancode_set2_parsing_map;
+    else if(data->scancode_set == 2) {
+        data->parse_map = ps2_keyboard_scancode_set2_parsing_map;
     }
     else {
-        ps2_keyboard->parse_map = ps2_keyboard_scancode_set3_parsing_map;
+        data->parse_map = ps2_keyboard_scancode_set3_parsing_map;
     }
-    ps2_keyboard->parsing_state = PARSING_STATE_START;
+    data->parsing_state = PARSING_STATE_START;
 
     // start streaming
-    if(ps2_keyboard->send_command(0xF4) == ERROR) {
+    if(functions->send_command(0xF4) == ERROR) {
         log("\n[PS2] ERROR: Keyboard did not start streaming");
-        device_initialized();
-        return NULL;
+        ps2_keyboard->is_initialized = true;
+        return;
     }
-    ps2_keyboard->set_receive_function((void *)ps2_keyboard, ps2_keyboard_receive);
+    functions->set_receive_function(ps2_keyboard, ps2_keyboard_receive);
 
     // add to group
     add_human_input_group_device(HUMAN_INPUT_DEVICE_TYPE_PS2_KEYBOARD, ps2_keyboard);
     log("\n[PS2] Keyboard initialized");
 
-    device_initialized();
-    return ps2_keyboard;
+    ps2_keyboard->is_initialized = true;
 }
 
-void reset_rules(ps2_keyboard_t *ps2_keyboard) {
-    uint32_t *parse_map = ps2_keyboard->parse_map;
+void reset_rules(hardware_t *ps2_keyboard) {
+    ps2_keyboard_data_t *data = ps2_keyboard->data;
+    uint32_t *parse_map = data->parse_map;
     while(parse_map[0] != 0) {
         parse_map[1] = 2; // points to start of rule
         parse_map += parse_map[0];
     }
 }
 
-void ps2_keyboard_receive(void *structure, uint8_t *buffer, uint32_t size) {
-    ps2_keyboard_t *ps2_keyboard = structure;
+void ps2_keyboard_receive(hardware_t *ps2_keyboard, uint8_t *buffer, uint32_t size) {
+    ps2_keyboard_data_t *data = ps2_keyboard->data;
 
     // parse all received bytes
     for(int i = 0; i < size; i++, buffer++) {
         // parse one byte
-        uint32_t *parse_map = ps2_keyboard->parse_map; // start of automat states
+        uint32_t *parse_map = data->parse_map; // start of automat states
         while(true) {
             // this is rule for actual state
-            if(ps2_keyboard->parsing_state == parse_map[0]) {
+            if(data->parsing_state == parse_map[0]) {
                 // action will be taken when received byte will compare with rule byte
                 if(parse_map[1] == PARSING_STATE_IF) {
                     // received byte equals with rule byte
                     if(*buffer == parse_map[2]) {
                         // do action of this rule
                         if(parse_map[3] == PARSING_ACTION_NEW_STATE) {
-                            ps2_keyboard->parsing_state = parse_map[4];
+                            data->parsing_state = parse_map[4];
                             break;
                         }
                         else if(parse_map[3] == PARSING_ACTION_PRINT_SCREEN_PRESSED) {
-                            ps2_keyboard_put_event(ps2_keyboard, KEY_PRINT_SCREEN, 1);
-                            ps2_keyboard->parsing_state = PARSING_STATE_START;
+                            ps2_keyboard_put_event(data, KEY_PRINT_SCREEN, 1);
+                            data->parsing_state = PARSING_STATE_START;
                             break;
                         }
                         else if(parse_map[3] == PARSING_ACTION_PRINT_SCREEN_RELEASED) {
-                            ps2_keyboard_put_event(ps2_keyboard, KEY_PRINT_SCREEN, 0);
-                            ps2_keyboard->parsing_state = PARSING_STATE_START;
+                            ps2_keyboard_put_event(data, KEY_PRINT_SCREEN, 0);
+                            data->parsing_state = PARSING_STATE_START;
                             break;
                         }
                         else if(parse_map[3] == PARSING_ACTION_PAUSE_PRESSED) {
-                            ps2_keyboard_put_event(ps2_keyboard, KEY_PAUSE, 1);
-                            ps2_keyboard_put_event(ps2_keyboard, KEY_PAUSE, 0);
-                            ps2_keyboard->parsing_state = PARSING_STATE_START;
+                            ps2_keyboard_put_event(data, KEY_PAUSE, 1);
+                            ps2_keyboard_put_event(data, KEY_PAUSE, 0);
+                            data->parsing_state = PARSING_STATE_START;
                             break;
                         }
                         else if(parse_map[3] == PARSING_ACTION_PRESSED_KEY_CONVERT_BY_ARRAY) {
                             uint32_t *map = (uint32_t *) (parse_map[4]);
-                            ps2_keyboard_put_event(ps2_keyboard, map[*buffer], 1);
-                            ps2_keyboard->parsing_state = PARSING_STATE_START;
+                            ps2_keyboard_put_event(data, map[*buffer], 1);
+                            data->parsing_state = PARSING_STATE_START;
                             break;
                         }
                         else if(parse_map[3] == PARSING_ACTION_RELEASED_KEY_CONVERT_BY_ARRAY) {
                             uint32_t *map = (uint32_t *) (parse_map[4]);
-                            ps2_keyboard_put_event(ps2_keyboard, map[*buffer], 0);
-                            ps2_keyboard->parsing_state = PARSING_STATE_START;
+                            ps2_keyboard_put_event(data, map[*buffer], 0);
+                            data->parsing_state = PARSING_STATE_START;
                             break;
                         }
                         else if(parse_map[3] == PARSING_ACTION_PRESSED_OR_RELEASED_KEY_CONVERT_BY_ARRAY) {
                             uint32_t *map = (uint32_t *) (parse_map[2]);
                             if(*buffer < 0x80) {
-                                ps2_keyboard_put_event(ps2_keyboard, map[*buffer], 1);
+                                ps2_keyboard_put_event(data, map[*buffer], 1);
                             }
                             else {
-                                ps2_keyboard_put_event(ps2_keyboard, map[*buffer - 0x80], 0);
+                                ps2_keyboard_put_event(data, map[*buffer - 0x80], 0);
                             }
-                            ps2_keyboard->parsing_state = PARSING_STATE_START;
+                            data->parsing_state = PARSING_STATE_START;
                             break;
                         }
                     }
                 }
                 else if(parse_map[1] == PARSING_ACTION_PRESSED_KEY_CONVERT_BY_ARRAY) {
                     uint32_t *map = (uint32_t *) (parse_map[2]);
-                    ps2_keyboard_put_event(ps2_keyboard, map[*buffer], 1);
-                    ps2_keyboard->parsing_state = PARSING_STATE_START;
+                    ps2_keyboard_put_event(data, map[*buffer], 1);
+                    data->parsing_state = PARSING_STATE_START;
                     break;
                 }
                 else if(parse_map[1] == PARSING_ACTION_RELEASED_KEY_CONVERT_BY_ARRAY) {
                     uint32_t *map = (uint32_t *) (parse_map[2]);
-                    ps2_keyboard_put_event(ps2_keyboard, map[*buffer], 0);
-                    ps2_keyboard->parsing_state = PARSING_STATE_START;
+                    ps2_keyboard_put_event(data, map[*buffer], 0);
+                    data->parsing_state = PARSING_STATE_START;
                     break;
                 }
                 else if(parse_map[1] == PARSING_ACTION_PRESSED_OR_RELEASED_KEY_CONVERT_BY_ARRAY) {
                     uint32_t *map = (uint32_t *) (parse_map[2]);
                     if(*buffer < 0x80) {
-                        ps2_keyboard_put_event(ps2_keyboard, map[*buffer], 1);
+                        ps2_keyboard_put_event(data, map[*buffer], 1);
                     }
                     else {
-                        ps2_keyboard_put_event(ps2_keyboard, map[*buffer - 0x80], 0);
+                        ps2_keyboard_put_event(data, map[*buffer - 0x80], 0);
                     }
-                    ps2_keyboard->parsing_state = PARSING_STATE_START;
+                    data->parsing_state = PARSING_STATE_START;
                     break;
                 }
             }
@@ -621,15 +617,15 @@ void ps2_keyboard_receive(void *structure, uint8_t *buffer, uint32_t size) {
 
             // we are at end of known states, so we are at unknown state, reset
             if(parse_map[0] == 0) {
-                ps2_keyboard->parsing_state = PARSING_STATE_START;
+                data->parsing_state = PARSING_STATE_START;
                 break;
             }
         }
     }
 }
 
-void ps2_keyboard_put_event(ps2_keyboard_t *ps2_keyboard, uint32_t key, uint32_t value) {
-    ps2_keyboard->key_state[key] = value;
+void ps2_keyboard_put_event(ps2_keyboard_data_t *data, uint32_t key, uint32_t value) {
+    data->key_state[key] = value;
     switch(value) {
         case 0:
             human_input_event_released_key(key);
@@ -641,13 +637,13 @@ void ps2_keyboard_put_event(ps2_keyboard_t *ps2_keyboard, uint32_t key, uint32_t
     human_input_end_of_event();
 }
 
-uint32_t ps2_keyboard_is_key_pressed(void *structure, uint32_t key) {
-    ps2_keyboard_t *ps2_keyboard = structure;
-    return ps2_keyboard->key_state[key];
+uint32_t ps2_keyboard_is_key_pressed(hardware_t *ps2_keyboard, uint32_t key) {
+    ps2_keyboard_data_t *data = ps2_keyboard->data;
+    return data->key_state[key];
 }
 
-uint32_t ps2_keyboard_set_leds(void *structure, leds_t leds) {
-    ps2_keyboard_t *ps2_keyboard = structure;
+uint32_t ps2_keyboard_set_leds(hardware_t *ps2_keyboard, leds_t leds) {
+    ps2_keyboard_data_t *data = ps2_keyboard->data;
     // TODO:
     return false;
 }

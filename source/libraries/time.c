@@ -14,14 +14,14 @@
 #include <libraries/main.h>
 
 /* global variables */
-hardware_list_entry_t *timer = NULL;
+uint32_t does_timer_exist = false;
 
 /* functions */
 uint64_t syslib_get_time_in_microseconds(void) {
-    if(timer == NULL) {
+    if(does_timer_exist == false) {
         return 0;
     }
     uint64_t volatile time = 0;
-    syscall_send_command_to_device(timer, &time);
+    syscall_send_command_to_virtual_device(VIRTUAL_HARDWARE_TIMER, &time);
     return time;
 }

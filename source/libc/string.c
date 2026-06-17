@@ -61,7 +61,7 @@ char *strcpy(char *dest, const char *src) {
 }
 
 void strncpy(char* dest, const char *src, unsigned int n) {
-    unsigned uint16_t interrupt_polarity : 2;
+    int i;
     for (i = 0; i < n && src[i]; i++) {
         dest[i] = src[i];
     }

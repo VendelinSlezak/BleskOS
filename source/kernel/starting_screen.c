@@ -13,17 +13,24 @@
 #include <kernel/hardware/groups/logging/logging.h>
 #include <kernel/memory/memory_allocators.h>
 #include <kernel/hardware/main.h>
+#include <kernel/cpu/scheduler.h>
 
 /* functions */
 void show_starting_screen(void) {
     // starting screen will be shown only if there is at least one graphic output device
     if(is_there_graphic_output_device == false) {
+        while(how_many_devices_are_uninitalized() > 0) {
+            asm volatile("pause");
+            switch_to_another_thread();
+        }
+        dump_hardware_list();
         return;
     }
 
     // wait for at least one device to be initialized
     while(get_number_of_graphic_output_devices() == 0) {
         asm volatile("pause");
+        switch_to_another_thread();
     }
 
     // draw starting screen
@@ -35,9 +42,11 @@ void show_starting_screen(void) {
     redraw_full_screen(buffer);
 
     // wait for all devices to be initialized
-    while(number_of_unintialized_devices != 0) {
+    while(how_many_devices_are_uninitalized() > 0) {
         asm volatile("pause");
+        switch_to_another_thread();
     }
+    dump_hardware_list();
 
     // close starting screen
     kfree(buffer);

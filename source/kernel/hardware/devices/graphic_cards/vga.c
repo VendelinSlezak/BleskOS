@@ -14,6 +14,7 @@
 #include <kernel/memory/virtual_memory.h>
 #include <kernel/hardware/groups/logging/logging.h>
 #include <kernel/kernel.h>
+#include <kernel/hardware/main.h>
 
 /* local variables */
 uint8_t *buffer;
@@ -22,6 +23,9 @@ uint32_t column;
 uint32_t num_of_lines;
 uint32_t num_of_columns;
 uint32_t is_cursor_visible;
+static logging_group_device_functions_t functions = {
+    .send_character = vga_show_char
+};
 
 /* functions */
 uint32_t does_text_mode_vga_device_exist(void) {
@@ -34,11 +38,7 @@ uint32_t does_text_mode_vga_device_exist(void) {
     }
 }
 
-void initialize_text_mode_vga_device(void) {
-    if(does_text_mode_vga_device_exist() == false) {
-        return;
-    }
-
+void initialize_text_mode_vga_device(hardware_t *vga_device) {
     standardized_graphic_output_t *standardized_graphic_output = (standardized_graphic_output_t *) P_MEM_STANDARDIZED_GRAPHIC_OUTPUT_INFO;
     num_of_lines = standardized_graphic_output->height;
     num_of_columns = standardized_graphic_output->width;
@@ -50,10 +50,10 @@ void initialize_text_mode_vga_device(void) {
     is_cursor_visible = false;
     vga_enable_cursor();
 
-    add_logging_device(vga_show_char);
+    add_logging_device(vga_device, &functions);
 }
 
-void vga_show_char(uint32_t character) {
+void vga_show_char(hardware_t *device, uint32_t character) {
     if(character == '\n') {
         if(line == num_of_lines - 1) {
             // move screen content

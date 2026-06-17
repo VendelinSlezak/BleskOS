@@ -15,15 +15,15 @@
 #include <kernel/software/syscall.h>
 #include <libraries/main.h>
 #include <libraries/screen.h>
+#include <libraries/logging.h>
 
 /* global variables */
 screen_buffer_t *window_buffer = NULL;
-hardware_list_entry_t *window_subsystem = NULL;
-hardware_list_entry_t *human_input = NULL;
+uint32_t does_window_subsystem_exist = false;
+uint32_t does_human_input_exist = false;
 
 /* local variables */
 human_input_event_stack_t human_input_event_stack;
-uint8_t listener_end_signal;
 void(*pressed_key_event_handlers[INPUT_KEY_COUNT])(void) = {0};
 uint32_t number_of_areas = 0;
 gui_area_t *gui_areas = NULL;
@@ -34,15 +34,15 @@ screen_buffer_t *syslib_initialize_gui(void) {
     gui_areas = (gui_area_t *) syslib->calloc(sizeof(gui_area_t), 1);
     number_of_areas = 1;
 
-    if(human_input != NULL) {
-        syscall_create_thread(gui_event_listener, (uint32_t)syslib->malloc(4096) + 4096, &listener_end_signal);
+    if(does_human_input_exist != NULL) {
+        syscall_create_thread(gui_event_listener, (uint32_t)syslib->malloc(4096) + 4096, NULL);
     }
 
     return window_buffer;
 }
 
 screen_buffer_t *syslib_create_window(void) {
-    if(window_subsystem == NULL) {
+    if(does_window_subsystem_exist == false) {
         return NULL;
     }
     static windows_subsystem_command_t command = {
@@ -51,7 +51,7 @@ screen_buffer_t *syslib_create_window(void) {
             0, 0
         }
     };
-    syscall_send_command_to_device(window_subsystem, &command);
+    syscall_send_command_to_virtual_device(VIRTUAL_HARDWARE_WINDOW, &command);
     syslib->window_width = command.argument[0];
     syslib->window_height = command.argument[1];
     window_buffer = syslib_create_screen_buffer(syslib->window_width, syslib->window_height);
@@ -59,7 +59,7 @@ screen_buffer_t *syslib_create_window(void) {
 }
 
 void syslib_redraw_window(void) {
-    if(window_subsystem == NULL) {
+    if(does_window_subsystem_exist == false) {
         return;
     }
     static windows_subsystem_command_t command = {
@@ -69,7 +69,7 @@ void syslib_redraw_window(void) {
         }
     };
     command.argument[0] = (uint32_t) &window_buffer->buffer;
-    syscall_send_command_to_device(window_subsystem, &command);
+    syscall_send_command_to_virtual_device(VIRTUAL_HARDWARE_WINDOW, &command);
 }
 
 void syslib_add_canvas_component(uint32_t area_number, void (*redraw)(uint32_t screen_x, uint32_t screen_y, uint32_t screen_width, uint32_t screen_height, uint32_t x_offset, uint32_t y_offset)) {
@@ -119,7 +119,7 @@ void gui_event_listener(void) {
         }
     };
     command.argument[0] = (uint32_t) &human_input_event_stack;
-    syscall_send_command_to_device(human_input, &command);
+    syscall_send_command_to_virtual_device(VIRTUAL_HARDWARE_HUMAN_INPUT_DEVICE, &command);
 
     while(true) {
         asm volatile("pause");

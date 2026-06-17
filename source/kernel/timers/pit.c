@@ -16,6 +16,7 @@
 
 /* local variables */
 uint64_t pit_interrupts = 0;
+uint64_t pit_previous_time = 0;
 
 /* functions */
 void initialize_pit(void) {
@@ -71,6 +72,12 @@ uint64_t get_pit_time_in_microseconds(void) {
     // calculate microseconds
     uint64_t microseconds = interrupts * 54925; // 54925 microseconds per interrupt
     microseconds += (((uint32_t)ticks_after_interrupt * 54925) >> 16); // calculate microseconds after interrupt
+
+    // catch overflow if interrupt arrived at exact wrong time
+    if((int64_t)(microseconds - pit_previous_time) < 0) {
+        microseconds = pit_previous_time;
+    }
+    pit_previous_time = microseconds;
 
     return microseconds;
 }

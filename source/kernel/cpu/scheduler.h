@@ -19,34 +19,68 @@
 #define INTERRUPT_VECTOR_EXIT_THREAD 0xFD
 #define INTERRUPT_VECTOR_SCHEDULER 0xFE
 
-typedef struct thread_t {
-    struct thread_t *next;
-    uint32_t tid;
-    uint32_t stack_pointer;
-    uint32_t delete_me;
+typedef enum {
+    SCHEDULER_STATE_KERNEL = 0,
+    SCHEDULER_STATE_USER = 1,
+    SCHEDULER_STATE_IDLE = 2
+} scheduler_state_t;
+
+typedef struct kernel_thread_t {
+    struct kernel_thread_t *next;
+    uint32_t id;
+
+    uint32_t page_directory_physical_address;
     void *kernel_stack;
-    uint8_t *end_of_thread_signal;
-    uint32_t end_of_sleep;
-} thread_t;
+    uint32_t kernel_stack_pointer;
+
+    uint8_t kill_me;
+    uint8_t sleeping;
+
+    uint32_t time_end_of_sleep;
+} kernel_thread_t;
 
 typedef struct {
     uint32_t number_of_running_threads;
-    thread_t *current_thread;
-    thread_t *threads;
-    thread_t *sleeping_threads;
-} thread_list_t;
+    uint32_t tid_bitmap;
+    kernel_thread_t *current_thread;
+    kernel_thread_t *threads;
+} kernel_thread_list_t;
 
-typedef struct process_t {
-    struct process_t *next;
-    uint32_t pid;
-    void *window;
-    void *human_input_event_stack;
-    uint32_t delete_me;
+typedef struct user_thread_t {
+    struct user_thread_t *next;
     uint32_t page_directory_physical_address;
-    mutex_t virtual_memory_mutex;
-    uint32_t *tid_bitmap;
-    thread_t *main_thread;
-    thread_list_t threads_on_logical_processor[];
-} process_t;
+    uint32_t *number_of_threads_in_page_directory;
+    uint32_t creation_thread_id;
+    uint32_t id;
+    
+    void *kernel_stack;
+    uint32_t kernel_stack_pointer;
 
-extern process_t *kernel_process;
+    uint8_t delete_me;
+    uint8_t delete_signal_running;
+    uint8_t kill_me;
+    uint8_t sleeping;
+
+    uint32_t delete_signal_handler_address;
+
+    uint32_t time_end_of_sleep;
+} user_thread_t;
+
+typedef struct {
+    uint32_t number_of_running_threads;
+    uint32_t tid_bitmap;
+    user_thread_t *current_thread;
+    user_thread_t *threads;
+} user_thread_list_t;
+
+typedef struct program_t {
+    struct program_t *next;
+
+    void *template;
+    void *window;
+    uint32_t page_directory_for_human_input_event_stack;
+    void *human_input_event_stack;
+
+    uint32_t number_of_threads;
+    user_thread_list_t thread_list_on_logical_processor[];
+} program_t;

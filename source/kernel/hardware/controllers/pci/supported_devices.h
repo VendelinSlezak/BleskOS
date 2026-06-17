@@ -9,6 +9,7 @@
 */
 
 #include <kernel/hardware/controllers/pci/pci.h>
+#include <kernel/hardware/main.h>
 
 typedef struct {
     uint16_t vendor_id;
@@ -27,10 +28,11 @@ typedef struct {
     uint16_t subsystem_id;
 } pci_supported_subsystem_devices_by_driver_t;
 
-typedef struct { 
+typedef struct {
+    uint8_t *name;
     pci_supported_classic_devices_by_driver_t *driver_classic_devices;
     pci_supported_subsystem_devices_by_driver_t *driver_subsystem_devices;
-    void (*initialize)(pci_device_t device);
+    void (*initialize)(hardware_t *device);
 } pci_drivers_for_type_t;
 
 typedef struct { 
@@ -41,3 +43,4 @@ typedef struct {
 
 extern pci_vendor_id_list_t pci_vendor_list[];
 extern pci_device_type_list_t pci_device_type_list[];
+extern pci_supported_classic_devices_by_driver_t pci_bga_devices[];

@@ -9,6 +9,7 @@
 */
 
 #include <kernel/cpu/mutex.h>
+#include <kernel/hardware/main.h>
 
 typedef enum {
     KEY_A = 1, KEY_B, KEY_C, KEY_D, KEY_E, KEY_F, KEY_G,

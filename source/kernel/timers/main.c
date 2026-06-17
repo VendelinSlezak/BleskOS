@@ -18,7 +18,6 @@
 #include <kernel/software/syscall.h>
 
 /* global variables */
-uint32_t timer_group_id;
 uint64_t (*get_time_in_microseconds)(void);
 
 /* functions */
@@ -42,8 +41,7 @@ void initialize_timers(void) {
     lapic_calibrate_timer();
 
     // add timer to hardware list
-    timer_group_id = get_unique_hardware_id();
-    add_device_to_hardware_list(timer_group_id, HARDWARE_TYPE_TIMER);
+    add_virtual_device_to_hardware_list(VIRTUAL_HARDWARE_TIMER);
 }
 
 void wait_microseconds(uint32_t microseconds) {
@@ -54,10 +52,7 @@ void wait_microseconds(uint32_t microseconds) {
 }
 
 /* userspace functions */
-void timer_group_process_userspace_command(uint32_t id, uint64_t *pointer) {
-    if(id != timer_group_id) {
-        return;
-    }
+void timer_group_process_userspace_command(uint64_t *pointer) {
     if(return_validated_pointer(pointer, sizeof(uint64_t)) == NULL) {
         return;
     }

@@ -17,34 +17,31 @@
 #include <kernel/hardware/groups/graphic_output/graphic_output.h>
 #include <kernel/hardware/groups/logging/logging.h>
 
+/* local variables */
+static graphic_output_group_device_functions_t monitor_functions = {
+    .get_output_width = get_monitor_width,
+    .get_output_height = get_monitor_height,
+    .get_size_of_output_buffer = get_monitor_size_of_output_buffer,
+    .redraw_full_screen = monitor_redraw_full_screen,
+    .redraw_part_of_screen = monitor_redraw_part_of_screen
+};
+
 /* functions */
-monitor_t *add_monitor_device(uint32_t brightness, uint32_t (*monitor_change_brightness)(monitor_t *monitor, uint32_t brightness), uint32_t actual_mode, uint32_t best_mode, uint32_t number_of_modes, monitor_mode_t supported_modes[], uint32_t (*monitor_change_resolution)(monitor_t *monitor, monitor_mode_t *mode)) {
-    new_uninitialized_device();
-    monitor_t *monitor = (monitor_t *) kalloc(sizeof(monitor_t) + (sizeof(monitor_mode_t) * number_of_modes));
-    monitor->id = get_unique_hardware_id();
-    monitor->brightness = brightness;
-    monitor->actual_mode = &monitor->supported_modes[actual_mode - 1];
-    monitor->best_mode = &monitor->supported_modes[best_mode - 1];
-    monitor->change_brightness = monitor_change_brightness;
-    monitor->change_resolution = monitor_change_resolution;
-    memcpy(monitor->supported_modes, supported_modes, sizeof(monitor_mode_t) * number_of_modes);
-
-    if(actual_mode == NULL) {
-        (*monitor_change_resolution)(monitor, monitor->best_mode);
-        monitor->actual_mode = monitor->best_mode;
-    }
-
-    add_graphic_output_device(GRAPHIC_OUTPUT_DEVICE_TYPE_MONITOR, monitor);
-
+void initialize_monitor_device(hardware_t *monitor) {
+    monitor_data_t *data = kalloc(sizeof(monitor_data_t));
+    monitor->data = data;
+    monitor_controller_data_t *data_from_controller = (monitor_controller_data_t *) monitor->data_from_controller;
+    monitor_communication_functions_t *functions = (monitor_communication_functions_t *) monitor->communication_functions;
+    functions->change_resolution(monitor, data_from_controller->best_mode);
+    data->actual_mode = data_from_controller->best_mode;
+    add_graphic_output_device(monitor, &monitor_functions);
     log("\n[MONITOR] Monitor %d has been added", monitor->id);
-
-    device_initialized();
-    return monitor;
+    monitor->is_initialized = true;
 }
 
 void monitor_mode_add_functions(monitor_mode_t *mode) {
-    void (*redraw_full_screen)(monitor_t *monitor, void *double_buffer) = NULL;
-    void (*redraw_part_of_screen)(monitor_t *monitor, uint32_t monitor_x, uint32_t monitor_y, void *double_buffer, uint32_t buffer_pixels_per_line, uint32_t buffer_x, uint32_t buffer_y, uint32_t width, uint32_t height) = NULL;
+    void (*redraw_full_screen)(hardware_t *monitor, void *double_buffer) = NULL;
+    void (*redraw_part_of_screen)(hardware_t *monitor, uint32_t monitor_x, uint32_t monitor_y, void *double_buffer, uint32_t buffer_pixels_per_line, uint32_t buffer_x, uint32_t buffer_y, uint32_t width, uint32_t height) = NULL;
     uint32_t bpp = mode->bpp;
     uint32_t width = mode->active_width;
     uint32_t height = mode->active_height;
@@ -114,12 +111,37 @@ void monitor_mode_add_functions(monitor_mode_t *mode) {
     mode->redraw_part_of_screen = redraw_part_of_screen;
 }
 
+uint32_t get_monitor_width(hardware_t *monitor) {
+    monitor_data_t *data = monitor->data;
+    return data->actual_mode->active_width;
+}
+
+uint32_t get_monitor_height(hardware_t *monitor) {
+    monitor_data_t *data = monitor->data;
+    return data->actual_mode->active_height;
+}
+
+uint32_t get_monitor_size_of_output_buffer(hardware_t *monitor) {
+    monitor_data_t *data = monitor->data;
+    return data->actual_mode->active_width * data->actual_mode->active_height * 4;
+}
+
+void monitor_redraw_full_screen(hardware_t *monitor, void *double_buffer) {
+    monitor_data_t *data = monitor->data;
+    data->actual_mode->redraw_full_screen(monitor, double_buffer);
+}
+
+void monitor_redraw_part_of_screen(hardware_t *monitor, uint32_t monitor_x, uint32_t monitor_y, void *double_buffer, uint32_t buffer_pixels_per_line, uint32_t buffer_x, uint32_t buffer_y, uint32_t width, uint32_t height) {
+    monitor_data_t *data = monitor->data;
+    data->actual_mode->redraw_part_of_screen(monitor, monitor_x, monitor_y, double_buffer, buffer_pixels_per_line, buffer_x, buffer_y, width, height);
+}
+
 /* functions for redrawing full screen */
-void monitor_redraw_screen_32bpp_no_padding(monitor_t *monitor, void *double_buffer) {
-    // load variables
-    void *dst = monitor->actual_mode->linear_frame_buffer;
+void monitor_redraw_screen_32bpp_no_padding(hardware_t *monitor, void *double_buffer) {
+    monitor_data_t *data = monitor->data;
+    void *dst = data->actual_mode->linear_frame_buffer;
     void *src = double_buffer;
-    uint32_t pixels = (uint32_t) monitor->actual_mode->redraw_cycles;
+    uint32_t pixels = (uint32_t) data->actual_mode->redraw_cycles;
 
     // copy all pixels
     asm volatile (
@@ -130,11 +152,12 @@ void monitor_redraw_screen_32bpp_no_padding(monitor_t *monitor, void *double_buf
     );
 }
 
-void monitor_redraw_screen_32bpp_no_padding_sse2(monitor_t *monitor, void *double_buffer) {
-    void *dst = monitor->actual_mode->linear_frame_buffer;
+void monitor_redraw_screen_32bpp_no_padding_sse2(hardware_t *monitor, void *double_buffer) {
+    monitor_data_t *data = monitor->data;
+    void *dst = data->actual_mode->linear_frame_buffer;
     void *src = double_buffer;
     
-    uint32_t total_pixels = (uint32_t) monitor->actual_mode->redraw_cycles;
+    uint32_t total_pixels = (uint32_t) data->actual_mode->redraw_cycles;
     uint32_t unrolled_loops = total_pixels / 16;
     uint32_t remaining_pixels = total_pixels % 16;
 
@@ -182,16 +205,17 @@ void monitor_redraw_screen_32bpp_no_padding_sse2(monitor_t *monitor, void *doubl
     );
 }
 
-void monitor_redraw_screen_32bpp_with_padding(monitor_t *monitor, void *double_buffer) {
-    uint32_t *dst = monitor->actual_mode->linear_frame_buffer;
+void monitor_redraw_screen_32bpp_with_padding(hardware_t *monitor, void *double_buffer) {
+    monitor_data_t *data = monitor->data;
+    uint32_t *dst = data->actual_mode->linear_frame_buffer;
     uint32_t *src = double_buffer;
 
-    uint32_t rows = monitor->actual_mode->redraw_cycles;
-    uint32_t pixels_per_line = monitor->actual_mode->active_width;
-    uint32_t padding_bytes = monitor->actual_mode->bytes_per_line - (pixels_per_line * monitor->actual_mode->bpp);
+    uint32_t rows = data->actual_mode->redraw_cycles;
+    uint32_t pixels_per_line = data->actual_mode->active_width;
+    uint32_t padding_bytes = data->actual_mode->bytes_per_line - (pixels_per_line * 4);
 
-    // copy all lines and skip padding at the end of every line
     asm volatile (
+        "cld\n\t"
         "1:\n\t"
             "mov %[pixels_per_line], %%ecx\n\t"
             "rep movsl\n\t"
@@ -199,16 +223,16 @@ void monitor_redraw_screen_32bpp_with_padding(monitor_t *monitor, void *double_b
             "dec %%ebx\n\t"
         "jnz 1b\n\t"
         : "+S"(src), "+D"(dst), "+b"(rows)
-        : [pixels_per_line] "r"(pixels_per_line), [padding_bytes] "r"(padding_bytes)
+        : [pixels_per_line] "g"(pixels_per_line), [padding_bytes] "g"(padding_bytes)
         : "ecx", "memory"
     );
 }
 
-void monitor_redraw_screen_24bpp_no_padding(monitor_t *monitor, void *double_buffer) {
-    // load variables
-    uint32_t *dst = monitor->actual_mode->linear_frame_buffer;
+void monitor_redraw_screen_24bpp_no_padding(hardware_t *monitor, void *double_buffer) {
+    monitor_data_t *data = monitor->data;
+    uint32_t *dst = data->actual_mode->linear_frame_buffer;
     uint32_t *src = double_buffer;
-    uint32_t pixels = (uint32_t) monitor->actual_mode->redraw_cycles;
+    uint32_t pixels = (uint32_t) data->actual_mode->redraw_cycles;
 
     // copy whole screen except for last pixel
     for(int i = 0; i < (pixels - 1); i++) {
@@ -222,15 +246,16 @@ void monitor_redraw_screen_24bpp_no_padding(monitor_t *monitor, void *double_buf
     *dst = ((*src & 0xFFFFFF) << 8) | (*dst & 0xFF);
 }
 
-void monitor_redraw_screen_24bpp_with_padding(monitor_t *monitor, void *double_buffer) {
-    // load variables
-    uint32_t *dst = monitor->actual_mode->linear_frame_buffer;
+// TODO: this is probably not correct
+void monitor_redraw_screen_24bpp_with_padding(hardware_t *monitor, void *double_buffer) {
+    monitor_data_t *data = monitor->data;
+    uint32_t *dst = data->actual_mode->linear_frame_buffer;
     uint32_t *src = double_buffer;
-    uint32_t pixels = (uint32_t) monitor->actual_mode->redraw_cycles;
+    uint32_t pixels = (uint32_t) data->actual_mode->redraw_cycles;
 
-    uint32_t rows = monitor->actual_mode->redraw_cycles;
-    uint32_t pixels_per_line = monitor->actual_mode->active_width;
-    uint32_t padding_bytes = monitor->actual_mode->bytes_per_line - (pixels_per_line * monitor->actual_mode->bpp);
+    uint32_t rows = data->actual_mode->redraw_cycles;
+    uint32_t pixels_per_line = data->actual_mode->active_width;
+    uint32_t padding_bytes = data->actual_mode->bytes_per_line - (pixels_per_line * data->actual_mode->bpp);
 
     // copy whole screen
     for(int i = 0; i < rows; i++) {
@@ -250,11 +275,11 @@ void monitor_redraw_screen_24bpp_with_padding(monitor_t *monitor, void *double_b
     }
 }
 
-void monitor_redraw_screen_16bpp_no_padding(monitor_t *monitor, void *double_buffer) {
-    // load variables
-    uint16_t *dst = monitor->actual_mode->linear_frame_buffer;
+void monitor_redraw_screen_16bpp_no_padding(hardware_t *monitor, void *double_buffer) {
+    monitor_data_t *data = monitor->data;
+    uint16_t *dst = data->actual_mode->linear_frame_buffer;
     uint32_t *src = double_buffer;
-    uint32_t pixels = (uint32_t) monitor->actual_mode->redraw_cycles;
+    uint32_t pixels = (uint32_t) data->actual_mode->redraw_cycles;
 
     // copy all pixels
     for(int i = 0; i < pixels; i++) {
@@ -264,15 +289,15 @@ void monitor_redraw_screen_16bpp_no_padding(monitor_t *monitor, void *double_buf
     }
 }
 
-void monitor_redraw_screen_16bpp_with_padding(monitor_t *monitor, void *double_buffer) {
-    // load variables
-    uint16_t *dst = monitor->actual_mode->linear_frame_buffer;
+void monitor_redraw_screen_16bpp_with_padding(hardware_t *monitor, void *double_buffer) {
+    monitor_data_t *data = monitor->data;
+    uint16_t *dst = data->actual_mode->linear_frame_buffer;
     uint32_t *src = double_buffer;
-    uint32_t pixels = (uint32_t) monitor->actual_mode->redraw_cycles;
+    uint32_t pixels = (uint32_t) data->actual_mode->redraw_cycles;
 
-    uint32_t rows = monitor->actual_mode->redraw_cycles;
-    uint32_t pixels_per_line = monitor->actual_mode->active_width;
-    uint32_t padding_bytes = monitor->actual_mode->bytes_per_line - (pixels_per_line * monitor->actual_mode->bpp);
+    uint32_t rows = data->actual_mode->redraw_cycles;
+    uint32_t pixels_per_line = data->actual_mode->active_width;
+    uint32_t padding_bytes = data->actual_mode->bytes_per_line - (pixels_per_line * data->actual_mode->bpp);
 
     // copy whole screen
     for(int i = 0; i < rows; i++) {
@@ -288,11 +313,11 @@ void monitor_redraw_screen_16bpp_with_padding(monitor_t *monitor, void *double_b
     }
 }
 
-void monitor_redraw_screen_15bpp_no_padding(monitor_t *monitor, void *double_buffer) {
-    // load variables
-    uint16_t *dst = monitor->actual_mode->linear_frame_buffer;
+void monitor_redraw_screen_15bpp_no_padding(hardware_t *monitor, void *double_buffer) {
+    monitor_data_t *data = monitor->data;
+    uint16_t *dst = data->actual_mode->linear_frame_buffer;
     uint32_t *src = double_buffer;
-    uint32_t pixels = (uint32_t) monitor->actual_mode->redraw_cycles;
+    uint32_t pixels = (uint32_t) data->actual_mode->redraw_cycles;
 
     // copy all pixels
     for(int i = 0; i < pixels; i++) {
@@ -302,15 +327,15 @@ void monitor_redraw_screen_15bpp_no_padding(monitor_t *monitor, void *double_buf
     }
 }
 
-void monitor_redraw_screen_15bpp_with_padding(monitor_t *monitor, void *double_buffer) {
-    // load variables
-    uint16_t *dst = monitor->actual_mode->linear_frame_buffer;
+void monitor_redraw_screen_15bpp_with_padding(hardware_t *monitor, void *double_buffer) {
+    monitor_data_t *data = monitor->data;
+    uint16_t *dst = data->actual_mode->linear_frame_buffer;
     uint32_t *src = double_buffer;
-    uint32_t pixels = (uint32_t) monitor->actual_mode->redraw_cycles;
+    uint32_t pixels = (uint32_t) data->actual_mode->redraw_cycles;
 
-    uint32_t rows = monitor->actual_mode->redraw_cycles;
-    uint32_t pixels_per_line = monitor->actual_mode->active_width;
-    uint32_t padding_bytes = monitor->actual_mode->bytes_per_line - (pixels_per_line * monitor->actual_mode->bpp);
+    uint32_t rows = data->actual_mode->redraw_cycles;
+    uint32_t pixels_per_line = data->actual_mode->active_width;
+    uint32_t padding_bytes = data->actual_mode->bytes_per_line - (pixels_per_line * data->actual_mode->bpp);
 
     // copy whole screen
     for(int i = 0; i < rows; i++) {
@@ -326,11 +351,11 @@ void monitor_redraw_screen_15bpp_with_padding(monitor_t *monitor, void *double_b
     }
 }
 
-void monitor_redraw_screen_8bpp_no_padding(monitor_t *monitor, void *double_buffer) {
-    // load variables
-    uint8_t *dst = monitor->actual_mode->linear_frame_buffer;
+void monitor_redraw_screen_8bpp_no_padding(hardware_t *monitor, void *double_buffer) {
+    monitor_data_t *data = monitor->data;
+    uint8_t *dst = data->actual_mode->linear_frame_buffer;
     uint32_t *src = double_buffer;
-    uint32_t pixels = (uint32_t) monitor->actual_mode->redraw_cycles;
+    uint32_t pixels = (uint32_t) data->actual_mode->redraw_cycles;
 
     // copy all pixels
     for(int i = 0; i < pixels; i++) {
@@ -340,15 +365,15 @@ void monitor_redraw_screen_8bpp_no_padding(monitor_t *monitor, void *double_buff
     }
 }
 
-void monitor_redraw_screen_8bpp_with_padding(monitor_t *monitor, void *double_buffer) {
-    // load variables
-    uint8_t *dst = monitor->actual_mode->linear_frame_buffer;
+void monitor_redraw_screen_8bpp_with_padding(hardware_t *monitor, void *double_buffer) {
+    monitor_data_t *data = monitor->data;
+    uint8_t *dst = data->actual_mode->linear_frame_buffer;
     uint32_t *src = double_buffer;
-    uint32_t pixels = (uint32_t) monitor->actual_mode->redraw_cycles;
+    uint32_t pixels = (uint32_t) data->actual_mode->redraw_cycles;
 
-    uint32_t rows = monitor->actual_mode->redraw_cycles;
-    uint32_t pixels_per_line = monitor->actual_mode->active_width;
-    uint32_t padding_bytes = monitor->actual_mode->bytes_per_line - (pixels_per_line * monitor->actual_mode->bpp);
+    uint32_t rows = data->actual_mode->redraw_cycles;
+    uint32_t pixels_per_line = data->actual_mode->active_width;
+    uint32_t padding_bytes = data->actual_mode->bytes_per_line - (pixels_per_line * data->actual_mode->bpp);
 
     // copy whole screen
     for(int i = 0; i < rows; i++) {
@@ -365,20 +390,22 @@ void monitor_redraw_screen_8bpp_with_padding(monitor_t *monitor, void *double_bu
 }
 
 /* functions for redrawing part of screen */
-void monitor_redraw_part_of_screen_32bpp(monitor_t *monitor, uint32_t monitor_x, uint32_t monitor_y, void *double_buffer, uint32_t buffer_pixels_per_line, uint32_t buffer_x, uint32_t buffer_y, uint32_t width, uint32_t height) {
-    uint32_t *dst = (uint32_t *) ((uint32_t)monitor->actual_mode->linear_frame_buffer + (monitor_y * monitor->actual_mode->bytes_per_line) + (monitor_x * 4));
+void monitor_redraw_part_of_screen_32bpp(hardware_t *monitor, uint32_t monitor_x, uint32_t monitor_y, void *double_buffer, uint32_t buffer_pixels_per_line, uint32_t buffer_x, uint32_t buffer_y, uint32_t width, uint32_t height) {
+    monitor_data_t *data = monitor->data;
+    uint32_t *dst = (uint32_t *) ((uint32_t)data->actual_mode->linear_frame_buffer + (monitor_y * data->actual_mode->bytes_per_line) + (monitor_x * 4));
     uint32_t *src = (uint32_t *) ((uint32_t)double_buffer + (buffer_y * buffer_pixels_per_line * 4) + (buffer_x * 4));
     for(uint32_t i = 0; i < height; i++) {
         for(uint32_t j = 0; j < width; j++) {
             dst[j] = src[j];
         }
-        dst = (uint32_t *) ((uint32_t)dst + monitor->actual_mode->bytes_per_line);
+        dst = (uint32_t *) ((uint32_t)dst + data->actual_mode->bytes_per_line);
         src += buffer_pixels_per_line;
     }
 }
 
-void monitor_redraw_part_of_screen_24bpp(monitor_t *monitor, uint32_t monitor_x, uint32_t monitor_y, void *double_buffer, uint32_t buffer_pixels_per_line, uint32_t buffer_x, uint32_t buffer_y, uint32_t width, uint32_t height) {
-    uint8_t *dst = (uint8_t *) ((uint32_t)monitor->actual_mode->linear_frame_buffer + (monitor_y * monitor->actual_mode->bytes_per_line) + (monitor_x * 3));
+void monitor_redraw_part_of_screen_24bpp(hardware_t *monitor, uint32_t monitor_x, uint32_t monitor_y, void *double_buffer, uint32_t buffer_pixels_per_line, uint32_t buffer_x, uint32_t buffer_y, uint32_t width, uint32_t height) {
+    monitor_data_t *data = monitor->data;
+    uint8_t *dst = (uint8_t *) ((uint32_t)data->actual_mode->linear_frame_buffer + (monitor_y * data->actual_mode->bytes_per_line) + (monitor_x * 3));
     uint32_t *src = (uint32_t *) ((uint32_t)double_buffer + (buffer_y * buffer_pixels_per_line * 4) + (buffer_x * 4));
     for(uint32_t i = 0; i < height; i++) {
         for(uint32_t j = 0; j < width; j++) {
@@ -386,43 +413,46 @@ void monitor_redraw_part_of_screen_24bpp(monitor_t *monitor, uint32_t monitor_x,
             dst[j * 3 + 1] = (src[j] >> 8) & 0xFF;
             dst[j * 3 + 2] = (src[j] >> 0) & 0xFF;
         }
-        dst += monitor->actual_mode->bytes_per_line;
+        dst += data->actual_mode->bytes_per_line;
         src += buffer_pixels_per_line;
     }
 }
 
-void monitor_redraw_part_of_screen_16bpp(monitor_t *monitor, uint32_t monitor_x, uint32_t monitor_y, void *double_buffer, uint32_t buffer_pixels_per_line, uint32_t buffer_x, uint32_t buffer_y, uint32_t width, uint32_t height) {
-    uint16_t *dst = (uint16_t *) ((uint32_t)monitor->actual_mode->linear_frame_buffer + (monitor_y * monitor->actual_mode->bytes_per_line) + (monitor_x * 2));
+void monitor_redraw_part_of_screen_16bpp(hardware_t *monitor, uint32_t monitor_x, uint32_t monitor_y, void *double_buffer, uint32_t buffer_pixels_per_line, uint32_t buffer_x, uint32_t buffer_y, uint32_t width, uint32_t height) {
+    monitor_data_t *data = monitor->data;
+    uint16_t *dst = (uint16_t *) ((uint32_t)data->actual_mode->linear_frame_buffer + (monitor_y * data->actual_mode->bytes_per_line) + (monitor_x * 2));
     uint32_t *src = (uint32_t *) ((uint32_t)double_buffer + (buffer_y * buffer_pixels_per_line * 4) + (buffer_x * 4));
     for(uint32_t i = 0; i < height; i++) {
         for(uint32_t j = 0; j < width; j++) {
             dst[j] = (((src[j] >> 19) & 0x1F) << 11 | ((src[j] >> 10) & 0x3F) << 5 | ((src[j] >> 3) & 0x1F) << 0);
         }
-        dst = (uint16_t *) ((uint32_t)dst + monitor->actual_mode->bytes_per_line);
+        dst = (uint16_t *) ((uint32_t)dst + data->actual_mode->bytes_per_line);
         src += buffer_pixels_per_line;
     }
 }
 
-void monitor_redraw_part_of_screen_15bpp(monitor_t *monitor, uint32_t monitor_x, uint32_t monitor_y, void *double_buffer, uint32_t buffer_pixels_per_line, uint32_t buffer_x, uint32_t buffer_y, uint32_t width, uint32_t height) {
-    uint16_t *dst = (uint16_t *) ((uint32_t)monitor->actual_mode->linear_frame_buffer + (monitor_y * monitor->actual_mode->bytes_per_line) + (monitor_x * 2));
+void monitor_redraw_part_of_screen_15bpp(hardware_t *monitor, uint32_t monitor_x, uint32_t monitor_y, void *double_buffer, uint32_t buffer_pixels_per_line, uint32_t buffer_x, uint32_t buffer_y, uint32_t width, uint32_t height) {
+    monitor_data_t *data = monitor->data;
+    uint16_t *dst = (uint16_t *) ((uint32_t)data->actual_mode->linear_frame_buffer + (monitor_y * data->actual_mode->bytes_per_line) + (monitor_x * 2));
     uint32_t *src = (uint32_t *) ((uint32_t)double_buffer + (buffer_y * buffer_pixels_per_line * 4) + (buffer_x * 4));
     for(uint32_t i = 0; i < height; i++) {
         for(uint32_t j = 0; j < width; j++) {
             dst[j] = (((src[j] >> 19) & 0x1F) << 10 | ((src[j] >> 11) & 0x1F) << 5 | ((src[j] >> 3) & 0x1F) << 0);
         }
-        dst = (uint16_t *) ((uint32_t)dst + monitor->actual_mode->bytes_per_line);
+        dst = (uint16_t *) ((uint32_t)dst + data->actual_mode->bytes_per_line);
         src += buffer_pixels_per_line;
     }
 }
 
-void monitor_redraw_part_of_screen_8bpp(monitor_t *monitor, uint32_t monitor_x, uint32_t monitor_y, void *double_buffer, uint32_t buffer_pixels_per_line, uint32_t buffer_x, uint32_t buffer_y, uint32_t width, uint32_t height) {
-    uint8_t *dst = (uint8_t *) ((uint32_t)monitor->actual_mode->linear_frame_buffer + (monitor_y * monitor->actual_mode->bytes_per_line) + (monitor_x * 1));
+void monitor_redraw_part_of_screen_8bpp(hardware_t *monitor, uint32_t monitor_x, uint32_t monitor_y, void *double_buffer, uint32_t buffer_pixels_per_line, uint32_t buffer_x, uint32_t buffer_y, uint32_t width, uint32_t height) {
+    monitor_data_t *data = monitor->data;
+    uint8_t *dst = (uint8_t *) ((uint32_t)data->actual_mode->linear_frame_buffer + (monitor_y * data->actual_mode->bytes_per_line) + (monitor_x * 1));
     uint32_t *src = (uint32_t *) ((uint32_t)double_buffer + (buffer_y * buffer_pixels_per_line * 4) + (buffer_x * 4));
     for(uint32_t i = 0; i < height; i++) {
         for(uint32_t j = 0; j < width; j++) {
             dst[j] = (((src[j] >> 21) & 0x7) << 5 | ((src[j] >> 12) & 0x7) << 2 | ((src[j] >> 6) & 0x3) << 0);
         }
-        dst = (uint8_t *) ((uint32_t)dst + monitor->actual_mode->bytes_per_line);
+        dst = (uint8_t *) ((uint32_t)dst + data->actual_mode->bytes_per_line);
         src += buffer_pixels_per_line;
     }
 }

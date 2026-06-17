@@ -16,11 +16,11 @@
 #include <libraries/main.h>
 
 /* global variables */
-hardware_list_entry_t *logger = NULL;
+uint32_t does_logger_exist = false;
 
 /* functions */
 void syslib_log(char *string) {
-    if(logger == NULL) {
+    if(does_logger_exist == false) {
         return;
     }
     static logging_device_command_t command = {
@@ -30,11 +30,11 @@ void syslib_log(char *string) {
         }
     };
     command.argument[0] = (uint32_t) string;
-    syscall_send_command_to_device(logger, &command);
+    syscall_send_command_to_virtual_device(VIRTUAL_HARDWARE_LOGGER, &command);
 }
 
 void syslib_logf(char *string, ...) {
-    if(logger == NULL) {
+    if(does_logger_exist == false) {
         return;
     }
     static uint32_t free_memory[2 + 1000];
@@ -65,5 +65,5 @@ void syslib_logf(char *string, ...) {
         }
     }
     va_end(args);
-    syscall_send_command_to_device(logger, command);
+    syscall_send_command_to_virtual_device(VIRTUAL_HARDWARE_LOGGER, command);
 }

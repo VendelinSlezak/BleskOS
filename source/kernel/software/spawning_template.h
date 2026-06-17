@@ -8,27 +8,8 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/* includes */
-#include <kernel/hardware/main.h>
-#include <kernel/software/syslib.h>
-#include <kernel/software/syscall.h>
-
-#include <libraries/time.h>
-#include <libraries/gui.h>
-#include <libraries/logging.h>
-#include <libraries/bleskalloc.h>
-
-/* global variables */
-syslib_t *syslib = NULL;
-
-/* functions */
-void syslib_initialize(syslib_t *syslib_ptr) {
-    syslib = syslib_ptr;
-
-    does_timer_exist = syscall_does_virtual_device_exist(VIRTUAL_HARDWARE_TIMER);
-    does_logger_exist = syscall_does_virtual_device_exist(VIRTUAL_HARDWARE_LOGGER);
-    does_window_subsystem_exist = syscall_does_virtual_device_exist(VIRTUAL_HARDWARE_WINDOW);
-    does_human_input_exist = syscall_does_virtual_device_exist(VIRTUAL_HARDWARE_HUMAN_INPUT_DEVICE);
-
-    syslib_initialize_bleskalloc();
-}
+typedef struct {
+    uint32_t page_directory;
+    uint32_t entry_point;
+    void *user_stack;
+} spawning_template_t;

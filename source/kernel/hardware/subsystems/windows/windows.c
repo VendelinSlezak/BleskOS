@@ -20,22 +20,15 @@
 screen_layout_t *screen_layout;
 window_t *current_window;
 
-/* local variables */
-uint32_t windows_subsystem_id;
-
 /* functions */
 void initialize_windows_subsystem(void) {
     // TODO: support for more windows
     screen_layout = kalloc(sizeof(screen_layout_t));
-    windows_subsystem_id = get_unique_hardware_id();
-    add_device_to_hardware_list(windows_subsystem_id, HARDWARE_TYPE_WINDOW);
+    add_virtual_device_to_hardware_list(VIRTUAL_HARDWARE_WINDOW);
 }
 
 /* userspace functions */
-void window_subsystem_process_userspace_command(uint32_t device_id, windows_subsystem_command_t *command) {
-    if(device_id != windows_subsystem_id) {
-        return;
-    }
+void window_subsystem_process_userspace_command(windows_subsystem_command_t *command) {
     if(return_validated_pointer(command, sizeof(windows_subsystem_command_t) + sizeof(uint32_t)) == NULL) {
         return;
     }
@@ -45,18 +38,18 @@ void window_subsystem_process_userspace_command(uint32_t device_id, windows_subs
             if(return_validated_pointer(command, sizeof(windows_subsystem_command_t) + sizeof(uint32_t) * 3) == NULL) {
                 break;
             }
-            if(get_current_logical_processor_struct()->current_process->window != NULL) {
+            if(get_current_logical_processor_struct()->current_program->window != NULL) {
                 return;
             }
             window_t *window = kalloc(sizeof(window_t));
-            window->process = get_current_logical_processor_struct()->current_process;
+            window->program = get_current_logical_processor_struct()->current_program;
             window->width = get_output_width();
             window->height = get_output_height();
             window->x = 0;
             window->y = 0;
             window->real_inside_width = command->argument[0];
             window->real_inside_height = command->argument[1];
-            get_current_logical_processor_struct()->current_process->window = (void *) window;
+            get_current_logical_processor_struct()->current_program->window = (void *) window;
             screen_layout->window[0] = window;
             screen_layout->num_of_windows = 1;
             current_window = window;
@@ -70,12 +63,12 @@ void window_subsystem_process_userspace_command(uint32_t device_id, windows_subs
             if(return_validated_pointer(command, sizeof(windows_subsystem_command_t) + sizeof(uint32_t) * 2) == NULL) {
                 return;
             }
-            window_t *process_window = (window_t *) get_current_logical_processor_struct()->current_process->window;
+            window_t *process_window = (window_t *) get_current_logical_processor_struct()->current_program->window;
             for(int i = 0; i < screen_layout->num_of_windows; i++) {
                 if(screen_layout->window[i] == process_window) {
                     // TODO: support other sizes of window not only fullscreen mode
                     void *double_buffer = (void *) command->argument[0];
-                    if(return_validated_pointer(double_buffer, get_output_width() * get_output_height() * 4) == NULL) {
+                    if(return_validated_pointer(double_buffer, get_size_of_double_buffer()) == NULL) {
                         return;
                     }
                     redraw_full_screen(double_buffer);

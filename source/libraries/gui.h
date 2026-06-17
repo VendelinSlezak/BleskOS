@@ -37,5 +37,5 @@ typedef struct {
 } gui_area_t;
 
 extern screen_buffer_t *window_buffer;
-extern hardware_list_entry_t *window_subsystem;
-extern hardware_list_entry_t *human_input;
+extern uint32_t does_window_subsystem_exist;
+extern uint32_t does_human_input_exist;
