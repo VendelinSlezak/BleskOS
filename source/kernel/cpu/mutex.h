@@ -14,6 +14,9 @@ typedef struct {
     uint32_t lock;
 }__attribute__((packed)) mutex_t;
 
+#define CORE_MUTEX_UNLOCKED -1
+typedef _Atomic int core_mutex_t;
+
 #define LOCK_MUTEX(memory)                                              \
     do {                                                                \
         int expected;                                                   \

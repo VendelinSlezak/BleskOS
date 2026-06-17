@@ -17,11 +17,16 @@
 #include <kernel/cpu/info.h>
 #include <kernel/kernel.h>
 
+/* global variables */
+int in_interrupt = false;
+
 /* local variables */
 void (*interrupt_handlers[256])(interrupt_stack_t *stack_of_interrupt);
 
 /* functions */
 void global_interrupt_handler(uint32_t interrupt_number, interrupt_stack_t *stack_of_interrupt) {
+    in_interrupt = true;
+
     // log("\n[INTERRUPT] Interrupt number: %x %x handler: %x", interrupt_number, stack_of_interrupt, interrupt_handlers[interrupt_number]);
 
     // call specific interrupt handler
@@ -39,6 +44,8 @@ void global_interrupt_handler(uint32_t interrupt_number, interrupt_stack_t *stac
     else if(interrupt_mode == INTERRUPTS_THROUGH_APIC && ((interrupt_number >= 0x20 && interrupt_number <= 0x80) || interrupt_number == 0xD0)) {
         lapic_send_eoi();
     }
+
+    in_interrupt = false;
 }
 
 void register_interrupt_handler(uint32_t interrupt_number, void (*handler)(interrupt_stack_t *stack_of_interrupt)) {
@@ -55,8 +62,10 @@ void set_isa_interrupt_handler(uint32_t isa_interrupt_number, void (*handler)(in
     interrupt_controller_enable_isa_interrupt(isa_interrupt_number);
 }
 
-// TODO: add locking for interrupts
 void lock_core(void) {
+    if(in_interrupt == true) {
+        return;
+    }
     logical_processor_t *lpdata = get_current_logical_processor_struct();
     if(lpdata->depth_of_lock == 0) {
         asm volatile("cli");
@@ -65,6 +74,9 @@ void lock_core(void) {
 }
 
 void unlock_core(void) {
+    if(in_interrupt == true) {
+        return;
+    }
     logical_processor_t *lpdata = get_current_logical_processor_struct();
     if(lpdata->depth_of_lock > 0) {
         lpdata->depth_of_lock--;

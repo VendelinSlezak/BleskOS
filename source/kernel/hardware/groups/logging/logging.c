@@ -28,7 +28,7 @@ logging_group_t *logging_group;
 uint32_t *logging_data;
 uint32_t logging_data_size;
 uint32_t logging_data_pointer;
-mutex_t logging_mutex;
+core_mutex_t logging_mutex;
 
 /* functions */
 void initialize_logging_group(void) {
@@ -71,13 +71,10 @@ void log_char(uint32_t character) {
         return;
     }
 
-    if(logging_data_pointer < 1024 * 1024 * 5) {
-        if(logging_data_pointer >= logging_data_size) {
-            logging_data = (uint32_t *) krealloc(logging_data, sizeof(uint32_t) * (logging_data_size + 1024 * 10));
-            logging_data_size += 1024 * 10;
-        }
-        logging_data[logging_data_pointer++] = character;
+    if(logging_data_pointer >= logging_data_size) {
+        logging_data_pointer = 0;
     }
+    logging_data[logging_data_pointer++] = character;
 
     for(int i = 0; i < logging_group->number_of_devices; i++) {
         logging_group->devices[i].functions->send_character(logging_group->devices[i].device, character);
@@ -85,7 +82,7 @@ void log_char(uint32_t character) {
 }
 
 void log(uint8_t *string, ...) {
-    LOCK_MUTEX(&logging_mutex);
+    core_mutex_lock(&logging_mutex);
     va_list args;
     va_start(args, string);
 
@@ -214,7 +211,7 @@ void log(uint8_t *string, ...) {
     }
 
     va_end(args);
-    UNLOCK_MUTEX(&logging_mutex);
+    core_mutex_unlock(&logging_mutex);
 }
 
 /* userspace functions */

@@ -573,6 +573,8 @@ uint32_t send_signal_to_current_user_thread(interrupt_stack_t *stack_of_interrup
 
 /* switch between threads */
 void preemptive_scheduling_interrupt(interrupt_stack_t *stack_of_interrupt) {
+    in_interrupt = true;
+
     // this interrupt can be invoked only by LAPIC timer, or IPI so acknowledge interrupt on LAPIC
     lapic_send_eoi();
 
@@ -777,6 +779,7 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                     }
                     lpdata->tss->esp0 = (uint32_t) current_thread->kernel_stack + KERNEL_STACK_SIZE; // set kernel stack for next thread
                     lapic_set_oneshot_interrupt(10, INTERRUPT_PREEMPETIVE_SCHEDULING); // set preempetive scheduler interrupt
+                    in_interrupt = false;
                     exit_interrupt_to_thread(current_thread->kernel_stack_pointer);
                 }
 
@@ -865,6 +868,7 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                     if(current_thread->page_directory_physical_address != NULL && current_thread->page_directory_physical_address != read_cr3()) {
                         load_page_directory(current_thread->page_directory_physical_address);
                     }
+                    in_interrupt = false;
                     exit_interrupt_to_thread(current_thread->kernel_stack_pointer);
                 }
 
@@ -881,6 +885,7 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
     lpdata->scheduler_state = SCHEDULER_STATE_IDLE;
     lapic_set_oneshot_interrupt(10, INTERRUPT_PREEMPETIVE_SCHEDULING); // TODO: wake from sleep exactly when it is needed for next sleeping thread
     extern void exit_interrupt_to_thread(uint32_t stack_pointer);
+    in_interrupt = false;
     exit_interrupt_to_thread((uint32_t)lpdata->idle_thread_stack);
 }
 
