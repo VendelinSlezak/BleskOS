@@ -17,6 +17,7 @@
 #include <kernel/hardware/devices/timers/main.h>
 #include <kernel/hardware/main.h>
 #include <kernel/hardware/devices/human_input/ps2_keyboard.h>
+#include <kernel/hardware/devices/human_input/ps2_mouse.h>
 #include <kernel/hardware/devices/cpu/mutex.h>
 
 /* local variables */
@@ -291,7 +292,15 @@ void controller_8042_initialize_channel(hardware_t **device_structure, uint32_t 
             || data->buffer[1] == 0x03
             || data->buffer[1] == 0x04) {
         log("Mouse");
-        // TODO:
+        *device_structure = add_hardware(
+            controller_8042,
+            "PS/2 mouse",
+            communication_functions,
+            NULL,
+            initialize_ps2_mouse,
+            NULL
+        );
+        synchronous_init_hardware(*device_structure);
     }
     else {
         log("Unknown");

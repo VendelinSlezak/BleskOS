@@ -154,7 +154,7 @@ build_live: $(TARGET_BOOTLOADER_LIVE) $(C_GEN_HDRS) $(HDR_ONLY_BUILD) $(TARGET_B
 # Run qemu
 run_qemu: $(IMAGE)
 	@echo "[RUN] Starting QEMU..."
-	@qemu-system-i386 -drive file=$(IMAGE),format=raw,if=floppy -debugcon stdio -no-reboot -smp 2
+	@qemu-system-i386 -drive file=$(IMAGE),format=raw,if=floppy -debugcon stdio -no-reboot -smp 1
 	@echo "\n\n[RUN] QEMU exited"
 
 # Run bochs

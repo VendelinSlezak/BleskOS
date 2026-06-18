@@ -67,13 +67,13 @@ void initialize_kernel(void) {
     initialize_hardware_list();
     show_starting_screen();
 
-    log("\nKernel initialized successfully");
-
     // initialize user space
     initialize_user_space_allocation();
     initialize_exceptions();
     initialize_syscalls();
     initialize_syslib();
+
+    log("\nKernel initialized successfully");
 
     // create_kernel_thread((uint32_t)kthread_test, (uint32_t []) { 1000 * 1000, 3000 * 1000 }, 2);
     // create_kernel_thread((uint32_t)kthread_test, (uint32_t []) { 300 * 1000, 3000 * 1000 }, 2);

@@ -124,8 +124,8 @@ typedef enum {
     MOUSE_BUTTON_LEFT,
     MOUSE_BUTTON_RIGHT,
     MOUSE_BUTTON_MIDDLE,
-    MOUSE_BUTTON_X1,
-    MOUSE_BUTTON_X2,
+    MOUSE_BUTTON_4,
+    MOUSE_BUTTON_5,
 
     INPUT_KEY_COUNT
 } human_input_keys_t;
@@ -137,7 +137,8 @@ typedef struct {
 } leds_t;
 
 enum {
-    HUMAN_INPUT_DEVICE_TYPE_PS2_KEYBOARD = 1
+    HUMAN_INPUT_DEVICE_TYPE_PS2_KEYBOARD = 1,
+    HUMAN_INPUT_DEVICE_TYPE_PS2_MOUSE
 };
 typedef struct {
     uint32_t type;
