@@ -14,6 +14,7 @@
 #include <kernel/hardware/devices/memory/memory_allocators.h>
 #include <kernel/hardware/main.h>
 #include <kernel/hardware/devices/cpu/scheduler.h>
+#include <kernel/hardware/subsystems/screen/screen.h>
 
 /* functions */
 void show_starting_screen(void) {
@@ -36,7 +37,7 @@ void show_starting_screen(void) {
     // draw starting screen
     uint32_t *buffer = kalloc(get_size_of_double_buffer());
     for(uint32_t i = 0; i < get_size_of_double_buffer() / 4; i++) {
-        buffer[i] = 0x888888;
+        buffer[i] = 0x000000;
     }
     // TODO: add logo
     redraw_full_screen(buffer);

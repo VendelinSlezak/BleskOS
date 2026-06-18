@@ -47,6 +47,20 @@ void remove_graphic_output_device(hardware_t *device) {
     }
 }
 
+hardware_t *get_graphic_output_first_monitor_device(void) {
+    if(graphic_output_group->number_of_devices == 0) {
+        return NULL;
+    }
+    return graphic_output_group->devices[0].device;
+}
+
+void *get_output_linear_frame_buffer(void) {
+    if(graphic_output_group->number_of_devices == 0) {
+        return NULL;
+    }
+    return graphic_output_group->devices[0].functions->get_linear_frame_buffer(graphic_output_group->devices[0].device);
+}
+
 uint32_t get_number_of_graphic_output_devices(void) {
     return graphic_output_group->number_of_devices;
 }
@@ -61,6 +75,15 @@ void redraw_full_screen(void *double_buffer) {
 void redraw_part_of_screen(uint32_t monitor_x, uint32_t monitor_y, void *double_buffer, uint32_t buffer_pixels_per_line, uint32_t buffer_x, uint32_t buffer_y, uint32_t width, uint32_t height) {
     if(graphic_output_group->number_of_devices == 0) {
         return;
+    }
+    if(monitor_x >= get_output_width() || monitor_y >= get_output_height()) {
+        return;
+    }
+    if((monitor_x + width) > get_output_width()) {
+        width = get_output_width() - monitor_x;
+    }
+    if((monitor_y + height) > get_output_height()) {
+        height = get_output_height() - monitor_y;
     }
     graphic_output_group->devices[0].functions->redraw_part_of_screen(graphic_output_group->devices[0].device, monitor_x, monitor_y, double_buffer, buffer_pixels_per_line, buffer_x, buffer_y, width, height);
 }
@@ -84,4 +107,18 @@ uint32_t get_output_height(void) {
         return 0;
     }
     return graphic_output_group->devices[0].functions->get_output_height(graphic_output_group->devices[0].device);
+}
+
+uint32_t get_output_bpp(void) {
+    if(graphic_output_group->number_of_devices == 0) {
+        return 0;
+    }
+    return graphic_output_group->devices[0].functions->get_output_bpp(graphic_output_group->devices[0].device);
+}
+
+uint32_t get_output_bytes_per_line(void) {
+    if(graphic_output_group->number_of_devices == 0) {
+        return 0;
+    }
+    return graphic_output_group->devices[0].functions->get_bytes_per_line(graphic_output_group->devices[0].device);
 }

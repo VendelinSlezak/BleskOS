@@ -19,6 +19,7 @@
 #include <kernel/hardware/devices/cpu/commands.h>
 #include <kernel/hardware/devices/cpu/info.h>
 #include <kernel/software/syscall.h>
+#include <kernel/hardware/subsystems/screen/screen.h>
 
 /* local variables */
 human_input_group_t *human_input_group;
@@ -71,6 +72,10 @@ void add_human_input_group_device(uint32_t type, hardware_t *structure) {
     human_input_group->devices[human_input_group->number_of_devices].type = type;
     human_input_group->devices[human_input_group->number_of_devices].structure = structure;
     human_input_group->number_of_devices++;
+}
+
+void human_input_movement_event(int x_movement, int y_movement, int wheel_vertical_movement, int wheel_horizontal_movement) {
+    move_mouse_cursor(x_movement, y_movement);
 }
 
 void human_input_event_pressed_key(uint32_t key) {

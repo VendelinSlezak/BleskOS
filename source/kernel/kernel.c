@@ -26,6 +26,7 @@
 #include <kernel/hardware/main.h>
 #include <kernel/hardware/groups/logging/logging.h>
 #include <kernel/hardware/groups/graphic_output/graphic_output.h>
+#include <kernel/hardware/subsystems/screen/screen.h>
 #include <kernel/software/elf_loader.h>
 #include <kernel/software/ramdisk.h>
 #include <kernel/software/syscall.h>
@@ -84,6 +85,8 @@ void initialize_kernel(void) {
 
     // spawning_template_t template = load_elf32_to_spawning_template(get_ramdisk_file_ptr("dump_log.elf"), prepare_memory_for_dump_log);
     // create_user_process_from_spawning_template(&template);
+
+    initialize_screen_subsystem();
 
     close_current_thread();
 }

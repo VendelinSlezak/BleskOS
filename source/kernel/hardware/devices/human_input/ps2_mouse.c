@@ -14,6 +14,7 @@
 #include <kernel/hardware/groups/human_input/human_input.h>
 #include <kernel/hardware/devices/memory/memory_allocators.h>
 #include <kernel/hardware/controllers/controller_8042/controller_8042.h>
+#include <kernel/hardware/subsystems/screen/screen.h>
 
 /* functions */
 void initialize_ps2_mouse(hardware_t *ps2_mouse) {
@@ -92,26 +93,26 @@ void initialize_ps2_mouse(hardware_t *ps2_mouse) {
     }
     log("\n[PS2] Mouse ID: 0x%02x", mouse_id);
 
-    // set scaling 1:1
-    if(functions->send_command(0xE6) == ERROR) {
-        log("\n[PS2] ERROR: Mouse did not set scaling");
-        ps2_mouse->is_initialized = true;
-        return;        
-    }
+    // // set scaling 1:1
+    // if(functions->send_command(0xE6) == ERROR) {
+    //     log("\n[PS2] ERROR: Mouse did not set scaling");
+    //     ps2_mouse->is_initialized = true;
+    //     return;        
+    // }
 
-    // set resolution 4 count / mm
-    if(functions->send_command_with_payload(0xE8, 0x02) == ERROR) {
-        log("\n[PS2] ERROR: Mouse did not set resolution");
-        ps2_mouse->is_initialized = true;
-        return;        
-    }
+    // // set resolution 4 count / mm
+    // if(functions->send_command_with_payload(0xE8, 0x02) == ERROR) {
+    //     log("\n[PS2] ERROR: Mouse did not set resolution");
+    //     ps2_mouse->is_initialized = true;
+    //     return;        
+    // }
 
-    // set 100 samples per second
-    if(functions->send_command_with_payload(0xF3, 100) == ERROR) {
-        log("\n[PS2] ERROR: Mouse did not set sample rate");
-        ps2_mouse->is_initialized = true;
-        return;
-    }
+    // // set 100 samples per second
+    // if(functions->send_command_with_payload(0xF3, 100) == ERROR) {
+    //     log("\n[PS2] ERROR: Mouse did not set sample rate");
+    //     ps2_mouse->is_initialized = true;
+    //     return;
+    // }
 
     // start streaming
     if(functions->send_command(0xF4) == ERROR) {
@@ -181,5 +182,6 @@ void ps2_mouse_receive(hardware_t *ps2_mouse, uint8_t *buffer, uint32_t size) {
         }
 
         // TODO: process packet in human input group
+        human_input_movement_event(x_movement, y_movement, wheel_vertical_movement, wheel_horizontal_movement);
     }
 }

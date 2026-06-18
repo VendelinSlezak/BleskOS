@@ -10,24 +10,46 @@
 
 #include <kernel/hardware/main.h>
 
+typedef enum {
+    PART_STATE_MAIN_PANEL = 0,
+    PART_STATE_PROGRAM,
+    PART_STATE_HORIZONTAL_SPLIT,
+    PART_STATE_VERTICAL_SPLIT
+} part_state_t;
+typedef struct screen_part {
+    struct screen_part *parent;
+    uint32_t x;
+    uint32_t y;
+    uint32_t width;
+    uint32_t height;
+    void *view;
+    part_state_t state;
+    uint32_t split;
+    struct screen_part *first_child;
+    struct screen_part *second_child;
+    uint32_t is_processed;
+} screen_part_t;
 typedef struct {
-    void (*redraw_full_screen)(hardware_t *device, void *buffer);
-    void (*redraw_part_of_screen)(hardware_t *device, uint32_t monitor_x, uint32_t monitor_y, void *double_buffer, uint32_t buffer_pixels_per_line, uint32_t buffer_x, uint32_t buffer_y, uint32_t width, uint32_t height);
-    void *(*get_linear_frame_buffer)(hardware_t *device);
-    uint32_t (*get_size_of_output_buffer)(hardware_t *device);
-    uint32_t (*get_output_width)(hardware_t *device);
-    uint32_t (*get_output_height)(hardware_t *device);
-    uint32_t (*get_output_bpp)(hardware_t *device);
-    uint32_t (*get_bytes_per_line)(hardware_t *device);
-} graphic_output_group_device_functions_t;
+    uint32_t is_active;
+    hardware_t *monitor;
+    uint32_t width;
+    uint32_t height;
+    void *buffer;
+    void *preview_buffer;
+    screen_part_t *global_part;
+} view_t;
 typedef struct {
-    hardware_t *device;
-    graphic_output_group_device_functions_t *functions;
-} graphic_output_device_t;
-#define MAX_NUMBER_OF_GRAPHIC_OUTPUT_DEVICES 8
-typedef struct {
-    uint32_t number_of_devices;
-    graphic_output_device_t devices[MAX_NUMBER_OF_GRAPHIC_OUTPUT_DEVICES];
-} graphic_output_group_t;
+    uint32_t number_of_views;
+    view_t *views[];
+} list_of_views_t;
 
-extern uint32_t is_there_graphic_output_device;
+typedef struct {
+    uint32_t start_of_mouse_area;
+    uint32_t split_position;
+    uint32_t end_of_mouse_area;
+} fixed_editing_mode_area_t;
+
+extern uint32_t mouse_cursor_x;
+extern uint32_t mouse_cursor_y;
+
+#define MINIMAL_PART_SIZE 150

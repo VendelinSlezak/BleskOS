@@ -21,6 +21,9 @@
 static graphic_output_group_device_functions_t monitor_functions = {
     .get_output_width = get_monitor_width,
     .get_output_height = get_monitor_height,
+    .get_output_bpp = get_monitor_bpp,
+    .get_bytes_per_line = get_monitor_bytes_per_line,
+    .get_linear_frame_buffer = get_monitor_linear_frame_buffer,
     .get_size_of_output_buffer = get_monitor_size_of_output_buffer,
     .redraw_full_screen = monitor_redraw_full_screen,
     .redraw_part_of_screen = monitor_redraw_part_of_screen
@@ -119,6 +122,21 @@ uint32_t get_monitor_width(hardware_t *monitor) {
 uint32_t get_monitor_height(hardware_t *monitor) {
     monitor_data_t *data = monitor->data;
     return data->actual_mode->active_height;
+}
+
+uint32_t get_monitor_bpp(hardware_t *monitor) {
+    monitor_data_t *data = monitor->data;
+    return data->actual_mode->bpp;
+}
+
+uint32_t get_monitor_bytes_per_line(hardware_t *monitor) {
+    monitor_data_t *data = monitor->data;
+    return data->actual_mode->bytes_per_line;
+}
+
+void *get_monitor_linear_frame_buffer(hardware_t *monitor) {
+    monitor_data_t *data = monitor->data;
+    return data->actual_mode->linear_frame_buffer;
 }
 
 uint32_t get_monitor_size_of_output_buffer(hardware_t *monitor) {
