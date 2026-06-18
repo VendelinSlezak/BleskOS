@@ -9,9 +9,9 @@
 */
 
 #include <kernel/firmware/acpi/acpi.h>
-#include <kernel/interrupt_controller/main.h>
-#include <kernel/interrupt_controller/apic.h>
-#include <kernel/cpu/info.h>
+#include <kernel/hardware/devices/interrupt_controllers/main.h>
+#include <kernel/hardware/devices/interrupt_controllers/apic.h>
+#include <kernel/hardware/devices/cpu/info.h>
 
 typedef struct {
     acpi_table_header_t header;

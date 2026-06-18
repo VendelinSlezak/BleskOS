@@ -9,10 +9,10 @@
 */
 
 /* includes */
-#include <libc/string.h>
+#include <kernel/libc/string.h>
 #include <kernel/firmware/acpi/aml/aml_definition.h>
 #include <kernel/firmware/acpi/acpi.h>
-#include <kernel/memory/memory_allocators.h>
+#include <kernel/hardware/devices/memory/memory_allocators.h>
 #include <kernel/hardware/groups/logging/logging.h>
 
 /* local variables */

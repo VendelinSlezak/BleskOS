@@ -10,15 +10,15 @@
 
 /* includes */
 #include <kernel/hardware/groups/logging/logging.h>
-#include <libc/string.h>
-#include <kernel/memory/physical_memory.h>
-#include <kernel/memory/virtual_memory.h>
-#include <kernel/memory/memory_allocators.h>
+#include <kernel/libc/string.h>
+#include <kernel/hardware/devices/memory/physical_memory.h>
+#include <kernel/hardware/devices/memory/virtual_memory.h>
+#include <kernel/hardware/devices/memory/memory_allocators.h>
 #include <kernel/software/syscall.h>
 #include <kernel/software/spawning_template.h>
 #include <kernel/software/ramdisk.h>
 #include <kernel/software/syslib.h>
-#include <kernel/cpu/commands.h>
+#include <kernel/hardware/devices/cpu/commands.h>
 
 /* local variables */
 uint8_t close_thread_function[] = {
@@ -120,7 +120,7 @@ spawning_template_t load_elf32_to_spawning_template(void *elf_data, void prepare
     }
 
     // load system libraries
-    load_static_elf32_to_memory(get_ramdisk_file_ptr("libraries.elf"));
+    load_static_elf32_to_memory(get_ramdisk_file_ptr("userspace_library.elf"));
 
     // set up syslib page
     syslib_t *template_syslib = (syslib_t *) 0x1000;

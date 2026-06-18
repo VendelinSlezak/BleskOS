@@ -11,11 +11,11 @@
 /* includes */
 #include <kernel/hardware/controllers/pci/supported_devices.h>
 #include <kernel/hardware/groups/logging/logging.h>
-#include <libc/stdlib.h>
-#include <libc/string.h>
-#include <kernel/cpu/commands.h>
-#include <kernel/memory/memory_allocators.h>
-#include <kernel/memory/virtual_memory.h>
+#include <kernel/libc/stdlib.h>
+#include <kernel/libc/string.h>
+#include <kernel/hardware/devices/cpu/commands.h>
+#include <kernel/hardware/devices/memory/memory_allocators.h>
+#include <kernel/hardware/devices/memory/virtual_memory.h>
 #include <kernel/firmware/main.h>
 #include <kernel/firmware/acpi/mcfg.h>
 #include <kernel/hardware/main.h>

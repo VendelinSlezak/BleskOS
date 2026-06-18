@@ -10,13 +10,13 @@
 
 /* includes */
 #include <stdarg.h>
-#include <libc/ctype.h>
-#include <libc/stdlib.h>
-#include <libc/string.h>
-#include <kernel/cpu/commands.h>
-#include <kernel/cpu/mutex.h>
-#include <kernel/cpu/interrupt.h>
-#include <kernel/memory/memory_allocators.h>
+#include <kernel/libc/ctype.h>
+#include <kernel/libc/stdlib.h>
+#include <kernel/libc/string.h>
+#include <kernel/hardware/devices/cpu/commands.h>
+#include <kernel/hardware/devices/cpu/mutex.h>
+#include <kernel/hardware/devices/cpu/interrupt.h>
+#include <kernel/hardware/devices/memory/memory_allocators.h>
 
 #include <kernel/software/syscall.h>
 #include <kernel/hardware/main.h>

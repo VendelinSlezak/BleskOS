@@ -9,20 +9,20 @@
 */
 
 /* includes */
-#include <libc/string.h>
-#include <kernel/starting_screen.h>
-#include <kernel/cpu/commands.h>
-#include <kernel/cpu/initialize.h>
-#include <kernel/cpu/scheduler.h>
-#include <kernel/cpu/lapic.h>
-#include <kernel/cpu/info.h>
-#include <kernel/cpu/interrupt.h>
-#include <kernel/memory/physical_memory.h>
-#include <kernel/memory/virtual_memory.h>
-#include <kernel/memory/memory_allocators.h>
+#include <kernel/libc/string.h>
+#include <kernel/software/starting_screen.h>
+#include <kernel/hardware/devices/cpu/commands.h>
+#include <kernel/hardware/devices/cpu/initialize.h>
+#include <kernel/hardware/devices/cpu/scheduler.h>
+#include <kernel/hardware/devices/cpu/lapic.h>
+#include <kernel/hardware/devices/cpu/info.h>
+#include <kernel/hardware/devices/cpu/interrupt.h>
+#include <kernel/hardware/devices/memory/physical_memory.h>
+#include <kernel/hardware/devices/memory/virtual_memory.h>
+#include <kernel/hardware/devices/memory/memory_allocators.h>
 #include <kernel/firmware/main.h>
-#include <kernel/interrupt_controller/main.h>
-#include <kernel/timers/main.h>
+#include <kernel/hardware/devices/interrupt_controllers/main.h>
+#include <kernel/hardware/devices/timers/main.h>
 #include <kernel/hardware/main.h>
 #include <kernel/hardware/groups/logging/logging.h>
 #include <kernel/hardware/groups/graphic_output/graphic_output.h>
@@ -82,8 +82,8 @@ void initialize_kernel(void) {
     // spawning_template_t template = load_elf32_to_spawning_template(get_ramdisk_file_ptr("test.elf"));
     // create_user_process_from_spawning_template(&template);
 
-    spawning_template_t template = load_elf32_to_spawning_template(get_ramdisk_file_ptr("dump_log.elf"), prepare_memory_for_dump_log);
-    create_user_process_from_spawning_template(&template);
+    // spawning_template_t template = load_elf32_to_spawning_template(get_ramdisk_file_ptr("dump_log.elf"), prepare_memory_for_dump_log);
+    // create_user_process_from_spawning_template(&template);
 
     close_current_thread();
 }

@@ -10,9 +10,9 @@
 
 /* includes */
 #include <kernel/kernel.h>
-#include <kernel/cpu/info.h>
-#include <kernel/cpu/interrupt.h>
-#include <kernel/cpu/scheduler.h>
+#include <kernel/hardware/devices/cpu/info.h>
+#include <kernel/hardware/devices/cpu/interrupt.h>
+#include <kernel/hardware/devices/cpu/scheduler.h>
 #include <kernel/hardware/groups/logging/logging.h>
 
 /* functions */

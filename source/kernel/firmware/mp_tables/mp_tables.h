@@ -8,9 +8,9 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <kernel/interrupt_controller/main.h>
-#include <kernel/interrupt_controller/apic.h>
-#include <kernel/cpu/info.h>
+#include <kernel/hardware/devices/interrupt_controllers/main.h>
+#include <kernel/hardware/devices/interrupt_controllers/apic.h>
+#include <kernel/hardware/devices/cpu/info.h>
 
 typedef struct {
     uint32_t signature;

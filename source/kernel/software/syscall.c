@@ -9,15 +9,15 @@
 */
 
 /* includes */
-#include <libc/string.h>
+#include <kernel/libc/string.h>
 #include <kernel/kernel.h>
-#include <kernel/cpu/info.h>
-#include <kernel/cpu/interrupt.h>
-#include <kernel/memory/memory_allocators.h>
-#include <kernel/memory/virtual_memory.h>
+#include <kernel/hardware/devices/cpu/info.h>
+#include <kernel/hardware/devices/cpu/interrupt.h>
+#include <kernel/hardware/devices/memory/memory_allocators.h>
+#include <kernel/hardware/devices/memory/virtual_memory.h>
 #include <kernel/hardware/groups/logging/logging.h>
 #include <kernel/hardware/main.h>
-#include <kernel/timers/main.h>
+#include <kernel/hardware/devices/timers/main.h>
 #include <kernel/hardware/subsystems/windows/windows.h>
 #include <kernel/hardware/groups/human_input/human_input.h>
 

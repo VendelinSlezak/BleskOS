@@ -19,19 +19,19 @@ BUILD_DIR = build
 IMAGE = bleskos.img
 
 # Sources
-C_SRCS = $(shell find $(SRC_DIR) -name "*.c" ! -path "$(SRC_DIR)/bootloader/*")
-ASM_SRCS = $(shell find $(SRC_DIR) -name "*.asm" ! -path "$(SRC_DIR)/bootloader/*")
-BOOTLOADER_ASM_SRCS = $(shell find "$(SRC_DIR)/bootloader" -name "*.asm")
+C_SRCS = $(shell find $(SRC_DIR) -name "*.c" ! -path "$(SRC_DIR)/bootloader_legacy/*")
+ASM_SRCS = $(shell find $(SRC_DIR) -name "*.asm" ! -path "$(SRC_DIR)/bootloader_legacy/*")
+BOOTLOADER_ASM_SRCS = $(shell find "$(SRC_DIR)/bootloader_legacy" -name "*.asm")
 
 # Object files - ROZDELENIE NA KERNEL A LIBRARIES
 ALL_C_OBJS = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.c.o,$(C_SRCS))
 ALL_ASM_OBJS = $(patsubst $(SRC_DIR)/%.asm,$(BUILD_DIR)/%.asm.o,$(ASM_SRCS))
 
 # Objekty pre knižnice (len tie z priečinka libraries)
-LIB_OBJS = $(filter $(BUILD_DIR)/libraries/%,$(ALL_C_OBJS) $(ALL_ASM_OBJS))
+LIB_OBJS = $(filter $(BUILD_DIR)/userspace_library/%,$(ALL_C_OBJS) $(ALL_ASM_OBJS))
 
 # Objekty pre kernel (všetko okrem priečinka libraries)
-KERNEL_OBJS = $(filter-out $(BUILD_DIR)/libraries/%,$(ALL_C_OBJS) $(ALL_ASM_OBJS))
+KERNEL_OBJS = $(filter-out $(BUILD_DIR)/userspace_library/%,$(ALL_C_OBJS) $(ALL_ASM_OBJS))
 
 # Header files (to generate in build/)
 C_GEN_HDRS = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.h,$(C_SRCS))
@@ -48,8 +48,8 @@ HDR_ONLY_BUILD = $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(HDR_ONLY))
 # Targets
 TARGET_ELF = $(BUILD_DIR)/kernel.elf
 TARGET_BIN = $(BUILD_DIR)/kernel.bin
-TARGET_LIBS_ELF = $(BUILD_DIR)/libraries.elf
-TARGET_BOOTLOADER_LIVE = $(BUILD_DIR)/bootloader/bootloader_live.img
+TARGET_LIBS_ELF = $(BUILD_DIR)/userspace_library.elf
+TARGET_BOOTLOADER_LIVE = $(BUILD_DIR)/bootloader_legacy/bootloader_live.img
 
 .PHONY: clean build_live run_qemu run_bochs
 
@@ -61,14 +61,14 @@ $(BUILD_DIR)/%:
 $(TARGET_BOOTLOADER_LIVE): $(BOOTLOADER_ASM_SRCS)
 	@echo "[INFO] Compiling live bootloader..."
 	@mkdir -p $(dir $@)
-	@$(ASSEMBLY_COMPILER) -f bin $(SRC_DIR)/bootloader/bootloader_live_mbr.asm -o $(BUILD_DIR)/bootloader/bootloader_live_mbr.bin
-	@$(ASSEMBLY_COMPILER) -f bin $(SRC_DIR)/bootloader/bootloader_live_partition.asm -o $(BUILD_DIR)/bootloader/bootloader_live_partition.bin
-	@$(ASSEMBLY_COMPILER) -f bin $(SRC_DIR)/bootloader/bootloader_live_extended.asm -o $(BUILD_DIR)/bootloader/bootloader_live_extended.bin
+	@$(ASSEMBLY_COMPILER) -f bin $(SRC_DIR)/bootloader_legacy/bootloader_live_mbr.asm -o $(BUILD_DIR)/bootloader_legacy/bootloader_live_mbr.bin
+	@$(ASSEMBLY_COMPILER) -f bin $(SRC_DIR)/bootloader_legacy/bootloader_live_partition.asm -o $(BUILD_DIR)/bootloader_legacy/bootloader_live_partition.bin
+	@$(ASSEMBLY_COMPILER) -f bin $(SRC_DIR)/bootloader_legacy/bootloader_live_extended.asm -o $(BUILD_DIR)/bootloader_legacy/bootloader_live_extended.bin
 	@echo "[INFO] Creating live bootloader image..."
 	@dd if=/dev/zero of=$@ bs=1024 count=1440 status=none
-	@dd if=$(BUILD_DIR)/bootloader/bootloader_live_mbr.bin of=$@ conv=notrunc seek=0 status=none
-	@dd if=$(BUILD_DIR)/bootloader/bootloader_live_partition.bin of=$@ conv=notrunc seek=1 status=none
-	@dd if=$(BUILD_DIR)/bootloader/bootloader_live_extended.bin of=$@ conv=notrunc seek=2 status=none
+	@dd if=$(BUILD_DIR)/bootloader_legacy/bootloader_live_mbr.bin of=$@ conv=notrunc seek=0 status=none
+	@dd if=$(BUILD_DIR)/bootloader_legacy/bootloader_live_partition.bin of=$@ conv=notrunc seek=1 status=none
+	@dd if=$(BUILD_DIR)/bootloader_legacy/bootloader_live_extended.bin of=$@ conv=notrunc seek=2 status=none
 	@echo "[SUCCESS] Live bootloader image created"
 
 # Compile ASM
@@ -77,7 +77,7 @@ $(BUILD_DIR)/%.asm.o: $(SRC_DIR)/%.asm
 	@mkdir -p $(dir $@)
 	@$(ASSEMBLY_COMPILER) $(ASSEMBLY_COMPILER_FLAGS) $< -o $@
 
-# Generate .h file (funguje pre všetko vrátane libraries/)
+# Generate .h file (funguje pre všetko vrátane userspace_library/)
 $(BUILD_DIR)/%.h: $(SRC_DIR)/%.c
 	@echo "[INFO] Generating header for $<..."
 	@mkdir -p $(dir $@)
@@ -144,7 +144,7 @@ $(TARGET_BIN): $(TARGET_ELF)
 # Build live image
 build_live: $(TARGET_BOOTLOADER_LIVE) $(C_GEN_HDRS) $(HDR_ONLY_BUILD) $(TARGET_BIN) $(TARGET_LIBS_ELF)
 	@cp $(TARGET_BIN) ramdisk/kernel.bin
-	@cp $(TARGET_LIBS_ELF) ramdisk/libraries.elf
+	@cp $(TARGET_LIBS_ELF) ramdisk/userspace_library.elf
 	@$(MAKE) -C ramdisk -f makefile
 	@echo "[INFO] Creating bootable image..."
 	@cp $(TARGET_BOOTLOADER_LIVE) $(IMAGE)

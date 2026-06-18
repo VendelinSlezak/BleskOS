@@ -9,12 +9,12 @@
 */
 
 /* includes */
-#include <libc/string.h>
+#include <kernel/libc/string.h>
 #include <kernel/firmware/main.h>
-#include <kernel/interrupt_controller/main.h>
-#include <kernel/interrupt_controller/apic.h>
-#include <kernel/cpu/initialize.h>
-#include <kernel/cpu/info.h>
+#include <kernel/hardware/devices/interrupt_controllers/main.h>
+#include <kernel/hardware/devices/interrupt_controllers/apic.h>
+#include <kernel/hardware/devices/cpu/initialize.h>
+#include <kernel/hardware/devices/cpu/info.h>
 #include <kernel/hardware/groups/logging/logging.h>
 
 /* functions */

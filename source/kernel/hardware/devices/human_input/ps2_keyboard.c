@@ -12,7 +12,7 @@
 #include <kernel/hardware/main.h>
 #include <kernel/hardware/groups/logging/logging.h>
 #include <kernel/hardware/groups/human_input/human_input.h>
-#include <kernel/memory/memory_allocators.h>
+#include <kernel/hardware/devices/memory/memory_allocators.h>
 #include <kernel/hardware/controllers/controller_8042/controller_8042.h>
 
 /* local variables */

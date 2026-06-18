@@ -9,11 +9,11 @@
 */
 
 /* includes */
-#include <kernel/cpu/commands.h>
+#include <kernel/hardware/devices/cpu/commands.h>
 #include <kernel/hardware/main.h>
-#include <kernel/memory/memory_allocators.h>
-#include <kernel/memory/virtual_memory.h>
-#include <libc/string.h>
+#include <kernel/hardware/devices/memory/memory_allocators.h>
+#include <kernel/hardware/devices/memory/virtual_memory.h>
+#include <kernel/libc/string.h>
 #include <kernel/hardware/groups/graphic_output/graphic_output.h>
 #include <kernel/hardware/groups/logging/logging.h>
 

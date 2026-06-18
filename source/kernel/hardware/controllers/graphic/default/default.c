@@ -12,11 +12,11 @@
 #include <kernel/kernel.h>
 #include <kernel/hardware/devices/monitor/monitor.h>
 #include <kernel/hardware/groups/logging/logging.h>
-#include <kernel/memory/virtual_memory.h>
-#include <kernel/memory/memory_allocators.h>
+#include <kernel/hardware/devices/memory/virtual_memory.h>
+#include <kernel/hardware/devices/memory/memory_allocators.h>
 #include <kernel/hardware/groups/graphic_output/graphic_output.h>
 #include <kernel/hardware/main.h>
-#include <libc/string.h>
+#include <kernel/libc/string.h>
 
 /* global variables */
 uint32_t try_to_detect_default_graphic_controller = true;

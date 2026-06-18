@@ -10,8 +10,8 @@
 
 /* includes */
 #include <kernel/firmware/main.h>
-#include <kernel/memory/virtual_memory.h>
-#include <kernel/memory/memory_allocators.h>
+#include <kernel/hardware/devices/memory/virtual_memory.h>
+#include <kernel/hardware/devices/memory/memory_allocators.h>
 #include <kernel/hardware/groups/logging/logging.h>
 
 /* functions */

@@ -54,7 +54,7 @@ Then follows including of all files. Default directory for <> includes is build 
 ```
 /* includes */
 #include <kernel/kernel.h>
-#include <kernel/memory/memory_allocators.h>
+#include <kernel/hardware/devices/memory/memory_allocators.h>
 ```
 
 ## Global variables section
@@ -117,7 +117,7 @@ Example: void *malloc(size_t size) {
 Example: void initialize_device(void) {
 ```
 
-It is because definitions or functions are generated automatically for programming comfort, and they are searched for by this template.
+It is because definitions or functions are generated automatically for programming comfort, and they are discovered by this template.
 
 Function can return globally defined constants true / false / SUCCESS / ERROR / INVALID. If it does, return type should be defined as `uint32_t`.
 
@@ -220,7 +220,7 @@ extern uint32_t global_var;
 
 ## Structures
 
-Name of every structure must end with _t. It needs to be defined by following template:
+Name of every structure must end with _t. It needs to be defined in style of following template:
 
 ```
 typedef struct {

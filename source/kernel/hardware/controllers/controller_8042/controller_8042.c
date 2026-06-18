@@ -10,14 +10,14 @@
 
 /* includes */
 #include <kernel/hardware/groups/logging/logging.h>
-#include <kernel/memory/memory_allocators.h>
-#include <kernel/cpu/commands.h>
-#include <kernel/cpu/interrupt.h>
-#include <kernel/cpu/scheduler.h>
-#include <kernel/timers/main.h>
+#include <kernel/hardware/devices/memory/memory_allocators.h>
+#include <kernel/hardware/devices/cpu/commands.h>
+#include <kernel/hardware/devices/cpu/interrupt.h>
+#include <kernel/hardware/devices/cpu/scheduler.h>
+#include <kernel/hardware/devices/timers/main.h>
 #include <kernel/hardware/main.h>
 #include <kernel/hardware/devices/human_input/ps2_keyboard.h>
-#include <kernel/cpu/mutex.h>
+#include <kernel/hardware/devices/cpu/mutex.h>
 
 /* local variables */
 hardware_t *controller_8042;

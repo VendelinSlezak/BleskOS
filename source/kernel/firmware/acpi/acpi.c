@@ -9,12 +9,12 @@
 */
 
 /* includes */
-#include <kernel/cpu/commands.h>
+#include <kernel/hardware/devices/cpu/commands.h>
 #include <kernel/firmware/main.h>
 #include <kernel/firmware/acpi/madt.h>
 #include <kernel/firmware/acpi/facp.h>
-#include <kernel/memory/virtual_memory.h>
-#include <kernel/memory/memory_allocators.h>
+#include <kernel/hardware/devices/memory/virtual_memory.h>
+#include <kernel/hardware/devices/memory/memory_allocators.h>
 #include <kernel/hardware/groups/logging/logging.h>
 #include <kernel/firmware/acpi/aml/parser.h>
 #include <kernel/firmware/acpi/aml/main.h>

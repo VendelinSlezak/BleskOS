@@ -9,7 +9,7 @@
 */
 
 /* includes*/
-#include <kernel/memory/memory_allocators.h>
+#include <kernel/hardware/devices/memory/memory_allocators.h>
 #include <kernel/hardware/controllers/graphic/default/default.h>
 #include <kernel/hardware/controllers/graphic/bga/bga.h>
 #include <kernel/hardware/controllers/pci/pci.h>
@@ -20,8 +20,8 @@
 #include <kernel/hardware/groups/graphic_output/graphic_output.h>
 #include <kernel/hardware/groups/human_input/human_input.h>
 #include <kernel/hardware/subsystems/windows/windows.h>
-#include <kernel/cpu/mutex.h>
-#include <kernel/cpu/scheduler.h>
+#include <kernel/hardware/devices/cpu/mutex.h>
+#include <kernel/hardware/devices/cpu/scheduler.h>
 
 /* global variables */
 virtual_hardware_list_t *virtual_hardware_list;

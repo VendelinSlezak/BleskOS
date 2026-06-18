@@ -10,7 +10,7 @@
 
 /* includes */
 #include <kernel/hardware/groups/logging/logging.h>
-#include <libc/string.h>
+#include <kernel/libc/string.h>
 
 /* functions */
 void dump_ramdisk_content(void) {

@@ -9,15 +9,15 @@
 */
 
 /* includes */
-#include <libc/string.h>
+#include <kernel/libc/string.h>
 #include <kernel/hardware/groups/logging/logging.h>
 #include <kernel/hardware/subsystems/windows/windows.h>
-#include <kernel/memory/memory_allocators.h>
-#include <kernel/cpu/mutex.h>
+#include <kernel/hardware/devices/memory/memory_allocators.h>
+#include <kernel/hardware/devices/cpu/mutex.h>
 #include <kernel/hardware/main.h>
-#include <kernel/cpu/scheduler.h>
-#include <kernel/cpu/commands.h>
-#include <kernel/cpu/info.h>
+#include <kernel/hardware/devices/cpu/scheduler.h>
+#include <kernel/hardware/devices/cpu/commands.h>
+#include <kernel/hardware/devices/cpu/info.h>
 #include <kernel/software/syscall.h>
 
 /* local variables */

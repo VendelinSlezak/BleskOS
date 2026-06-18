@@ -9,7 +9,7 @@
 */
 
 /* includes */
-#include <kernel/cpu/commands.h>
+#include <kernel/hardware/devices/cpu/commands.h>
 #include <kernel/hardware/groups/logging/logging.h>
 #include <kernel/hardware/main.h>
 

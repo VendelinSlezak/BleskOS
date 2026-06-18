@@ -9,15 +9,15 @@
 */
 
 /* includes */
-#include <libc/string.h>
+#include <kernel/libc/string.h>
 #include <kernel/firmware/bios_data_area/bda.h>
 #include <kernel/firmware/pir/pir.h>
 #include <kernel/firmware/mp_tables/mp_tables.h>
 #include <kernel/firmware/acpi/acpi.h>
 #include <kernel/firmware/acpi/aml/main.h>
 #include <kernel/firmware/smbios/smbios.h>
-#include <kernel/memory/virtual_memory.h>
-#include <kernel/memory/memory_allocators.h>
+#include <kernel/hardware/devices/memory/virtual_memory.h>
+#include <kernel/hardware/devices/memory/memory_allocators.h>
 #include <kernel/hardware/groups/logging/logging.h>
 
 /* global variables */

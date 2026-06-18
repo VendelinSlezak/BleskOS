@@ -9,8 +9,8 @@
 */
 
 /* includes */
-#include <kernel/memory/memory_allocators.h>
-#include <kernel/cpu/info.h>
+#include <kernel/hardware/devices/memory/memory_allocators.h>
+#include <kernel/hardware/devices/cpu/info.h>
 #include <kernel/software/syscall.h>
 #include <kernel/hardware/main.h>
 #include <kernel/hardware/groups/graphic_output/graphic_output.h>
