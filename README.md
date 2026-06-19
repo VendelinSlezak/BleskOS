@@ -12,18 +12,39 @@ Then you can build BleskOS from source code by:
 make build_live
 ```
 
-This will generate bleskos.img, which can be connected to emulator as floppy or hard disk, or it can be written to USB flash. If you have installed qemu or bochs, you can directly run them from makefile by `run_qemu` or `run_bochs`.
+This will generate bleskos.img, which can be connected to emulator as floppy or hard disk, or it can be written to USB flash. If you have installed qemu or bochs, you can directly run them from makefile by `make run_qemu` or `make run_bochs`.
 
-You can remove generated files by `clean`.
+You can remove generated files by `make clean`.
 
 ## File organization
 
-Folder `source` contains all source code. It has several folders. Every folder contains source code that will be compiled to one result file, and then they will be all baked together in ramdisk.
+```
+BleskOS <- you are here
+├── source
+│   ├── bootloader_legacy
+|   |   ├── modules
+|   |   ├── bootloader_live_mbr.asm
+|   |   ├── bootloader_live_partition.asm
+|   |   └── bootloader_live_extended.asm
+│   ├── kernel
+|   |   ├── firmware
+|   |   ├── hardware
+|   |   ├── software
+|   |   ├── libc
+|   |   ├── kernel.asm
+|   |   ├── kernel.c
+|   |   ├── kernel.h
+|   |   └── linker.ld
+│   ├── userspace_library
+│   └── global_declarations.h
+├── ramdisk
+├── extract_prototypes.py
+├── makefile
+├── LICENSE
+└── CODING_GUIDELINES.md
+```
 
-* `bootloader_legacy` - This folder contains bootloader that loads BleskOS in x86 architecture with BIOS legacy booting.
-* `kernel` - This folder contains code of BleskOS kernel.
-* `userspace_library` - This folder contains code of library that is loaded to userspace of every program running in BleskOS, so it can use functions from there.
-* `global_declarations.h` - This file is included during compilation of all .c files in `source` folder.
+Folder `source` contains all source code. It has several folders. Every folder contains source code that will be compiled to one result file, and then they will be all baked together in ramdisk.
 
 Folder `ramdisk` contains all files that will be transformed to one result image which will be loaded by bootloader.
 
