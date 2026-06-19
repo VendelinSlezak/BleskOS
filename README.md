@@ -4,17 +4,63 @@ IMPORTANT NOTE: I started developing new multitasking kernel, with bunch of impr
 
 ## Build
 
-You need to have installed gcc, nasm, ld, objcopy and python3.
+### Prerequisites
 
-Then you can build BleskOS from source code by:
+* gcc
+* nasm
+* ld
+* objcopy
+* python3
+* (optional) qemu / bochs / virtualbox
 
+Latest version of everything is the best, but code should be able to compile even under older versions.
+
+```bash
+sudo apt install gcc nasm binutils python3 qemu-system-x86
 ```
+
+### Clone repository
+
+```bash
+git clone https://github.com/VendelinSlezak/BleskOS
+cd BleskOS
+```
+
+### Compile source code
+
+```bash
 make build_live
 ```
 
-This will generate bleskos.img, which can be connected to emulator as floppy or hard disk, or it can be written to USB flash. If you have installed qemu or bochs, you can directly run them from makefile by `make run_qemu` or `make run_bochs`.
+`build_live` will produce image that is immediately runnable from everywhere as fully functional operating system.
 
-You can remove generated files by `make clean`.
+### Run image
+
+Command `make build_live` generated bleskos.img, which can be connected to emulator as floppy or hard disk, or it can be written to USB flash.
+
+If you have installed qemu or bochs, you can directly run them from makefile with: 
+
+```bash
+make run_qemu
+```
+
+Or if you have installed Bochs, you can edit path to your bochsrc file in `makefile` and run it with:
+
+```bash
+make run_bochs
+```
+
+Usually during development those commands work best together as:
+
+```bash
+make build_live run_qemu
+```
+
+### Remove build files
+
+```bash
+make clean
+```
 
 ## File organization
 
