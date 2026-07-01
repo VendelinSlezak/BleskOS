@@ -48,6 +48,15 @@ typedef struct {
     uint32_t split_position;
     uint32_t end_of_mouse_area;
 } fixed_editing_mode_area_t;
+typedef enum {
+    EDITING_FIXED_MODE,
+    EDITING_FREE_MODE,
+} editing_mode_t;
+enum {
+    EDITING_OUTSIDE_OF_PART = -1,
+    EDITING_FIRST_COLLAPSE_AREA = -2,
+    EDITING_SECOND_COLLAPSE_AREA = -3,
+};
 
 extern uint32_t is_there_screen_subsystem;
 extern uint32_t mouse_cursor_x;

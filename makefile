@@ -162,6 +162,6 @@ run_bochs: $(IMAGE)
 # Clean
 clean:
 	@echo "[INFO] Removing build artifacts..."
-	@rm -rf $(BUILD_DIR) $(IMAGE)
+	@rm -rf $(BUILD_DIR) $(IMAGE) ramdisk/kernel.bin ramdisk/userspace_library.elf
 	@$(MAKE) -C ramdisk -f makefile clean
 	@echo "[SUCCESS] Artifacts removed"

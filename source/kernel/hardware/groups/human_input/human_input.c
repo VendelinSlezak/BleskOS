@@ -225,7 +225,8 @@ void hid_process_changes_of_local_state(human_input_device_state_t *state) {
                     human_input_global_state.last_pressed_key_event_count = 0;
                 }
             }
-            // TODO: send key event to screen subsystem
+
+            screen_subsystem_event_keyboard_key(i, human_input_global_state.key_state[i], unicode_value);
         }
     }
     if(state->movement_state == NEW_MOVEMENT_CHANGE) {
@@ -247,6 +248,7 @@ void hid_process_changes_of_local_state(human_input_device_state_t *state) {
                 }
                 human_input_global_state.button_state[i] = BUTTON_PRESSED;
                 human_input_global_state.button_state_timestamp[i] = (*get_time_in_microseconds)();
+                screen_subsystem_event_mouse_button(i, BUTTON_PRESSED);
                 break;
             }
             case BUTTON_PRESSED:
@@ -256,6 +258,7 @@ void hid_process_changes_of_local_state(human_input_device_state_t *state) {
                 }
                 human_input_global_state.button_state[i] = BUTTON_RELEASED;
                 human_input_global_state.button_state_timestamp[i] = (*get_time_in_microseconds)();
+                screen_subsystem_event_mouse_button(i, BUTTON_RELEASED);
                 break;
             }
         }
@@ -305,8 +308,8 @@ void check_human_input_state(void) {
         diff -= microseconds_to_repeat_key_first_time;
         diff /= microseconds_to_repeat_key_next_time;
         if(key_event_count < diff) {
-            // TODO: fire event
             human_input_global_state.last_pressed_key_event_count = diff;
+            screen_subsystem_event_keyboard_key(key, KEY_PRESSED, key_unicode_value);
         }
 
         if(human_input_global_state.key_state[key] == KEY_RELEASED) {
