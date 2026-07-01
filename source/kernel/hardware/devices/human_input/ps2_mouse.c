@@ -16,6 +16,11 @@
 #include <kernel/hardware/controllers/controller_8042/controller_8042.h>
 #include <kernel/hardware/subsystems/screen/screen.h>
 
+/* local variables */
+static human_input_group_device_functions_t ps2_mouse_functions = {
+    .get_state = ps2_mouse_get_state,
+};
+
 /* functions */
 void initialize_ps2_mouse(hardware_t *ps2_mouse) {
     log("\n[PS2] Initializing mouse...");
@@ -93,27 +98,6 @@ void initialize_ps2_mouse(hardware_t *ps2_mouse) {
     }
     log("\n[PS2] Mouse ID: 0x%02x", mouse_id);
 
-    // // set scaling 1:1
-    // if(functions->send_command(0xE6) == ERROR) {
-    //     log("\n[PS2] ERROR: Mouse did not set scaling");
-    //     ps2_mouse->is_initialized = true;
-    //     return;        
-    // }
-
-    // // set resolution 4 count / mm
-    // if(functions->send_command_with_payload(0xE8, 0x02) == ERROR) {
-    //     log("\n[PS2] ERROR: Mouse did not set resolution");
-    //     ps2_mouse->is_initialized = true;
-    //     return;        
-    // }
-
-    // // set 100 samples per second
-    // if(functions->send_command_with_payload(0xF3, 100) == ERROR) {
-    //     log("\n[PS2] ERROR: Mouse did not set sample rate");
-    //     ps2_mouse->is_initialized = true;
-    //     return;
-    // }
-
     // start streaming
     if(functions->send_command(0xF4) == ERROR) {
         log("\n[PS2] ERROR: Mouse did not start streaming");
@@ -123,7 +107,7 @@ void initialize_ps2_mouse(hardware_t *ps2_mouse) {
     functions->set_receive_function(ps2_mouse, ps2_mouse_receive);
 
     // add to group
-    add_human_input_group_device(HUMAN_INPUT_DEVICE_TYPE_PS2_MOUSE, ps2_mouse);
+    add_human_input_device(ps2_mouse, &ps2_mouse_functions);
     log("\n[PS2] Mouse initialized");
 
     ps2_mouse->is_initialized = true;
@@ -181,7 +165,24 @@ void ps2_mouse_receive(hardware_t *ps2_mouse, uint8_t *buffer, uint32_t size) {
             }
         }
 
-        // TODO: process packet in human input group
-        human_input_movement_event(x_movement, y_movement, wheel_vertical_movement, wheel_horizontal_movement);
+        // process packet in human input group
+        hid_reset_state_before_new_events(&data->state);
+        hid_local_event_button(&data->state, BUTTON_LEFT, left_button);
+        hid_local_event_button(&data->state, BUTTON_MIDDLE, middle_button);
+        hid_local_event_button(&data->state, BUTTON_RIGHT, right_button);
+        hid_local_event_button(&data->state, BUTTON_4, button_4);
+        hid_local_event_button(&data->state, BUTTON_5, button_5);
+        if(x_movement != 0 || y_movement != 0 || wheel_vertical_movement != 0 || wheel_horizontal_movement != 0) {
+            hid_local_event_movement(&data->state, X_MOVEMENT, x_movement);
+            hid_local_event_movement(&data->state, Y_MOVEMENT, y_movement);
+            hid_local_event_movement(&data->state, WHEEL_VERTICAL_MOVEMENT, wheel_vertical_movement);
+            hid_local_event_movement(&data->state, WHEEL_HORIZONTAL_MOVEMENT, wheel_horizontal_movement);
+        }
+        hid_process_changes_of_local_state(&data->state);
     }
+}
+
+human_input_device_state_t *ps2_mouse_get_state(hardware_t *ps2_mouse) {
+    ps2_mouse_data_t *data = ps2_mouse->data;
+    return &data->state;
 }

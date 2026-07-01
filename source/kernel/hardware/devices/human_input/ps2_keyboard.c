@@ -459,6 +459,11 @@ uint32_t ps2_keyboard_scancode_set3_parsing_map[] = {
     0
 };
 
+static human_input_group_device_functions_t ps2_keyboard_functions = {
+    .get_state = ps2_keyboard_get_state,
+    .keyboard_set_leds = ps2_keyboard_set_leds,
+};
+
 /* functions */
 void initialize_ps2_keyboard(hardware_t *ps2_keyboard) {
     // create device structure
@@ -512,7 +517,7 @@ void initialize_ps2_keyboard(hardware_t *ps2_keyboard) {
     functions->set_receive_function(ps2_keyboard, ps2_keyboard_receive);
 
     // add to group
-    add_human_input_group_device(HUMAN_INPUT_DEVICE_TYPE_PS2_KEYBOARD, ps2_keyboard);
+    add_human_input_device(ps2_keyboard, &ps2_keyboard_functions);
     log("\n[PS2] Keyboard initialized");
 
     ps2_keyboard->is_initialized = true;
@@ -625,25 +630,38 @@ void ps2_keyboard_receive(hardware_t *ps2_keyboard, uint8_t *buffer, uint32_t si
 }
 
 void ps2_keyboard_put_event(ps2_keyboard_data_t *data, uint32_t key, uint32_t value) {
-    data->key_state[key] = value;
+    hid_reset_state_before_new_events(&data->state);
     switch(value) {
-        case 0:
-            human_input_event_released_key(key);
+        case 0: {
+            hid_local_event_key(&data->state, key, KEY_RELEASED);
             break;
-        case 1:
-            human_input_event_pressed_key(key);
+        }
+        case 1: {
+            hid_local_event_key(&data->state, key, KEY_PRESSED);
             break;
+        }
     }
-    human_input_end_of_event();
+    hid_process_changes_of_local_state(&data->state);
 }
 
-uint32_t ps2_keyboard_is_key_pressed(hardware_t *ps2_keyboard, uint32_t key) {
+human_input_device_state_t *ps2_keyboard_get_state(hardware_t *ps2_keyboard) {
     ps2_keyboard_data_t *data = ps2_keyboard->data;
-    return data->key_state[key];
+    return &data->state;
 }
 
-uint32_t ps2_keyboard_set_leds(hardware_t *ps2_keyboard, leds_t leds) {
+void ps2_keyboard_set_leds(hardware_t *ps2_keyboard, leds_t leds) {
     ps2_keyboard_data_t *data = ps2_keyboard->data;
-    // TODO:
-    return false;
+    controller_8042_communication_functions_t *functions = (controller_8042_communication_functions_t *) ps2_keyboard->communication_functions;
+    uint8_t payload = 0;
+    if(leds.scrollock) {
+        payload |= 0x01;
+    }
+    if(leds.numlock) {
+        payload |= 0x02;
+    }
+    if(leds.capslock) {
+        payload |= 0x04;
+    }
+    functions->send_command_with_payload(0xED, payload);
+    data->state.leds = leds;
 }

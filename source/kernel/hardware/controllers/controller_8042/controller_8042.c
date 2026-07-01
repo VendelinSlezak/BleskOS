@@ -486,7 +486,15 @@ void controller_8042_channel_1_set_receive_function(hardware_t *structure, void 
 }
 
 uint32_t controller_8042_channel_1_send_command(uint8_t command) {
+    controller_8042_data_t *data = controller_8042->data;
+    void *structure = data->channel_1_device_structure;
+    void *receive_function = data->channel_1_process_data;
+
     uint32_t state = controller_8042_channel_1_send_command_universal(command, false, 0, false);
+
+    data->channel_1_device_structure = structure;
+    data->channel_1_process_data = receive_function;
+
     if(state == INVALID) {
         return ERROR;
     }
@@ -496,7 +504,15 @@ uint32_t controller_8042_channel_1_send_command(uint8_t command) {
 }
 
 uint32_t controller_8042_channel_1_send_command_with_payload(uint8_t command, uint8_t payload) {
+    controller_8042_data_t *data = controller_8042->data;
+    void *structure = data->channel_1_device_structure;
+    void *receive_function = data->channel_1_process_data;
+
     uint32_t state = controller_8042_channel_1_send_command_universal(command, true, payload, false);
+
+    data->channel_1_device_structure = structure;
+    data->channel_1_process_data = receive_function;
+
     if(state == INVALID) {
         return ERROR;
     }
@@ -506,11 +522,29 @@ uint32_t controller_8042_channel_1_send_command_with_payload(uint8_t command, ui
 }
 
 uint32_t controller_8042_channel_1_send_command_with_return(uint8_t command) {
-    return controller_8042_channel_1_send_command_universal(command, false, 0, true);
+    controller_8042_data_t *data = controller_8042->data;
+    void *structure = data->channel_1_device_structure;
+    void *receive_function = data->channel_1_process_data;
+
+    uint32_t state = controller_8042_channel_1_send_command_universal(command, false, 0, true);
+
+    data->channel_1_device_structure = structure;
+    data->channel_1_process_data = receive_function;
+
+    return state;
 }
 
 uint32_t controller_8042_channel_1_send_command_with_payload_and_return(uint8_t command, uint8_t payload) {
-    return controller_8042_channel_1_send_command_universal(command, true, payload, true);
+    controller_8042_data_t *data = controller_8042->data;
+    void *structure = data->channel_1_device_structure;
+    void *receive_function = data->channel_1_process_data;
+
+    uint32_t state = controller_8042_channel_1_send_command_universal(command, true, payload, true);
+
+    data->channel_1_device_structure = structure;
+    data->channel_1_process_data = receive_function;
+
+    return state;
 }
 
 uint32_t controller_8042_channel_2_send_command_universal(uint8_t command, uint32_t is_payload, uint8_t payload, uint32_t is_response) {
@@ -603,7 +637,15 @@ void controller_8042_channel_2_set_receive_function(hardware_t *structure, void 
 }
 
 uint32_t controller_8042_channel_2_send_command(uint8_t command) {
+    controller_8042_data_t *data = controller_8042->data;
+    void *structure = data->channel_2_device_structure;
+    void *receive_function = data->channel_2_process_data;
+
     uint32_t state = controller_8042_channel_2_send_command_universal(command, false, 0, false);
+
+    data->channel_2_device_structure = structure;
+    data->channel_2_process_data = receive_function;
+
     if(state == INVALID) {
         return ERROR;
     }
@@ -613,7 +655,15 @@ uint32_t controller_8042_channel_2_send_command(uint8_t command) {
 }
 
 uint32_t controller_8042_channel_2_send_command_with_payload(uint8_t command, uint8_t payload) {
+    controller_8042_data_t *data = controller_8042->data;
+    void *structure = data->channel_2_device_structure;
+    void *receive_function = data->channel_2_process_data;
+
     uint32_t state = controller_8042_channel_2_send_command_universal(command, true, payload, false);
+
+    data->channel_2_device_structure = structure;
+    data->channel_2_process_data = receive_function;
+
     if(state == INVALID) {
         return ERROR;
     }
@@ -623,11 +673,29 @@ uint32_t controller_8042_channel_2_send_command_with_payload(uint8_t command, ui
 }
 
 uint32_t controller_8042_channel_2_send_command_with_return(uint8_t command) {
-    return controller_8042_channel_2_send_command_universal(command, false, 0, true);
+    controller_8042_data_t *data = controller_8042->data;
+    void *structure = data->channel_2_device_structure;
+    void *receive_function = data->channel_2_process_data;
+
+    uint32_t state = controller_8042_channel_2_send_command_universal(command, false, 0, true);
+
+    data->channel_2_device_structure = structure;
+    data->channel_2_process_data = receive_function;
+
+    return state;
 }
 
 uint32_t controller_8042_channel_2_send_command_with_payload_and_return(uint8_t command, uint8_t payload) {
-    return controller_8042_channel_2_send_command_universal(command, true, payload, true);
+    controller_8042_data_t *data = controller_8042->data;
+    void *structure = data->channel_2_device_structure;
+    void *receive_function = data->channel_2_process_data;
+
+    uint32_t state = controller_8042_channel_2_send_command_universal(command, true, payload, true);
+
+    data->channel_2_device_structure = structure;
+    data->channel_2_process_data = receive_function;
+
+    return state;
 }
 
 /* interrupt handler */

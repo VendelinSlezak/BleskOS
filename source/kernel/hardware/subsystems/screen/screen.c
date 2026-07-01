@@ -12,9 +12,11 @@
 #include <kernel/hardware/devices/memory/memory_allocators.h>
 #include <kernel/hardware/groups/logging/logging.h>
 #include <kernel/hardware/groups/graphic_output/graphic_output.h>
+#include <kernel/hardware/groups/human_input/human_input.h>
 #include <kernel/kernel.h>
 
 /* global variables */
+uint32_t is_there_screen_subsystem = false;
 uint32_t mouse_cursor_x = 0;
 uint32_t mouse_cursor_y = 0;
 const uint8_t *cursor_data = 
@@ -35,7 +37,7 @@ const uint8_t *cursor_data =
 "BBB\n";
 
 /* local variables */
-uint32_t is_there_screen_subsystem = false;
+uint32_t show_mouse_cursor = true;
 void *global_double_buffer;
 list_of_views_t *list_of_views;
 
@@ -464,7 +466,10 @@ void part_move_split(screen_part_t *part, uint32_t split) {
 }
 
 void draw_mouse_cursor(uint32_t x, uint32_t y) {
-    redraw_part_of_screen(mouse_cursor_x, mouse_cursor_y, global_double_buffer, get_output_width(), mouse_cursor_x, mouse_cursor_y, 16, 16);
+    if(show_mouse_cursor == false) {
+        return;
+    }
+    redraw_part_of_screen_wihtout_mouse(mouse_cursor_x, mouse_cursor_y, global_double_buffer, get_output_width(), mouse_cursor_x, mouse_cursor_y, 16, 16);
     uint32_t bpp = get_output_bpp();
     void *dst = (void *) ((uint32_t)get_output_linear_frame_buffer() + (y * get_output_bytes_per_line()) + (x * (bpp / 8)));
     uint32_t i = 0;
@@ -526,28 +531,6 @@ void draw_mouse_cursor(uint32_t x, uint32_t y) {
     }
     mouse_cursor_x = x;
     mouse_cursor_y = y;
-}
-
-void move_mouse_cursor(uint32_t x_movement, uint32_t y_movement) {
-    if(very_unlikely(is_there_screen_subsystem == false)) {
-        return;
-    }
-    int new_x = mouse_cursor_x + x_movement;
-    int new_y = mouse_cursor_y + y_movement;
-    if(new_x < 0) {
-        new_x = 0;
-    }
-    if(new_y < 0) {
-        new_y = 0;
-    }
-    if(new_x >= get_output_width()) {
-        new_x = get_output_width() - 1;
-    }
-    if(new_y >= (get_output_height() - 1)) {
-        new_y = get_output_height() - 1;
-    }
-
-    draw_mouse_cursor(new_x, new_y);
 }
 
 void draw_dashed_column(screen_part_t *part, uint32_t x) {
@@ -689,4 +672,30 @@ void dump_parts(screen_part_t *part, int depth) {
     }
     dump_parts(part->first_child, depth + 1);
     dump_parts(part->second_child, depth + 1);
+}
+
+/* process input from human input group */
+void screen_subsystem_event_mouse_movement(void) {
+    uint32_t x_movement = human_input_global_state.movement_value[X_MOVEMENT];
+    uint32_t y_movement = human_input_global_state.movement_value[Y_MOVEMENT];
+
+    if(very_unlikely(is_there_screen_subsystem == false)) {
+        return;
+    }
+    int new_x = mouse_cursor_x + x_movement;
+    int new_y = mouse_cursor_y + y_movement;
+    if(new_x < 0) {
+        new_x = 0;
+    }
+    if(new_y < 0) {
+        new_y = 0;
+    }
+    if(new_x >= get_output_width()) {
+        new_x = get_output_width() - 1;
+    }
+    if(new_y >= (get_output_height() - 1)) {
+        new_y = get_output_height() - 1;
+    }
+
+    draw_mouse_cursor(new_x, new_y);
 }

@@ -9,6 +9,7 @@
 */
 
 #include <kernel/hardware/main.h>
+#include <kernel/hardware/groups/human_input/human_input.h>
 
 enum {
     PS2_MOUSE_DEFAULT = 0,
@@ -20,4 +21,6 @@ typedef struct {
     uint32_t bytes_per_packet;
     uint8_t packet_ptr;
     uint8_t packet[4];
+
+    human_input_device_state_t state;
 } ps2_mouse_data_t;

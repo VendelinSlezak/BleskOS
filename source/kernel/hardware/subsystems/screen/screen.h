@@ -49,6 +49,7 @@ typedef struct {
     uint32_t end_of_mouse_area;
 } fixed_editing_mode_area_t;
 
+extern uint32_t is_there_screen_subsystem;
 extern uint32_t mouse_cursor_x;
 extern uint32_t mouse_cursor_y;
 

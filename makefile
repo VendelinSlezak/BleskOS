@@ -23,14 +23,10 @@ C_SRCS = $(shell find $(SRC_DIR) -name "*.c" ! -path "$(SRC_DIR)/bootloader_lega
 ASM_SRCS = $(shell find $(SRC_DIR) -name "*.asm" ! -path "$(SRC_DIR)/bootloader_legacy/*")
 BOOTLOADER_ASM_SRCS = $(shell find "$(SRC_DIR)/bootloader_legacy" -name "*.asm")
 
-# Object files - ROZDELENIE NA KERNEL A LIBRARIES
+# Object files
 ALL_C_OBJS = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.c.o,$(C_SRCS))
 ALL_ASM_OBJS = $(patsubst $(SRC_DIR)/%.asm,$(BUILD_DIR)/%.asm.o,$(ASM_SRCS))
-
-# Objekty pre knižnice (len tie z priečinka libraries)
 LIB_OBJS = $(filter $(BUILD_DIR)/userspace_library/%,$(ALL_C_OBJS) $(ALL_ASM_OBJS))
-
-# Objekty pre kernel (všetko okrem priečinka libraries)
 KERNEL_OBJS = $(filter-out $(BUILD_DIR)/userspace_library/%,$(ALL_C_OBJS) $(ALL_ASM_OBJS))
 
 # Header files (to generate in build/)
@@ -77,7 +73,7 @@ $(BUILD_DIR)/%.asm.o: $(SRC_DIR)/%.asm
 	@mkdir -p $(dir $@)
 	@$(ASSEMBLY_COMPILER) $(ASSEMBLY_COMPILER_FLAGS) $< -o $@
 
-# Generate .h file (funguje pre všetko vrátane userspace_library/)
+# Generate .h file
 $(BUILD_DIR)/%.h: $(SRC_DIR)/%.c
 	@echo "[INFO] Generating header for $<..."
 	@mkdir -p $(dir $@)
@@ -167,4 +163,5 @@ run_bochs: $(IMAGE)
 clean:
 	@echo "[INFO] Removing build artifacts..."
 	@rm -rf $(BUILD_DIR) $(IMAGE)
+	@$(MAKE) -C ramdisk -f makefile clean
 	@echo "[SUCCESS] Artifacts removed"

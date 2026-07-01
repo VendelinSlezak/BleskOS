@@ -121,41 +121,66 @@ typedef enum {
     KEY_ABNT_C1,            // brazilian "/" numpad
     KEY_ABNT_C2,            // brazilian "." numpad
 
-    MOUSE_BUTTON_LEFT,
-    MOUSE_BUTTON_RIGHT,
-    MOUSE_BUTTON_MIDDLE,
-    MOUSE_BUTTON_4,
-    MOUSE_BUTTON_5,
-
     INPUT_KEY_COUNT
 } human_input_keys_t;
+enum {
+    KEY_RELEASED = 0,
+    KEY_PRESSED = 1,
+};
+typedef enum {
+    BUTTON_LEFT = 1,
+    BUTTON_MIDDLE,
+    BUTTON_RIGHT,
+    BUTTON_4,
+    BUTTON_5,
 
+    INPUT_BUTTONS_COUNT
+} human_input_buttons_t;
+enum {
+    BUTTON_RELEASED = 0,
+    BUTTON_PRESSED = 1,
+    BUTTON_DRAGGED = 2,
+};
+typedef enum {
+    X_MOVEMENT = 1,
+    Y_MOVEMENT,
+    WHEEL_VERTICAL_MOVEMENT,
+    WHEEL_HORIZONTAL_MOVEMENT,
+
+    INPUT_MOVEMENTS_COUNT
+} human_input_movements_t;
+enum {
+    NO_MOVEMENT_CHANGE = 0,
+    NEW_MOVEMENT_CHANGE
+};
 typedef struct {
     uint32_t capslock : 1;
     uint32_t scrollock : 1;
     uint32_t numlock : 1;
+    uint32_t : 29;
 } leds_t;
 
-enum {
-    HUMAN_INPUT_DEVICE_TYPE_PS2_KEYBOARD = 1,
-    HUMAN_INPUT_DEVICE_TYPE_PS2_MOUSE
-};
 typedef struct {
-    uint32_t type;
-    void *structure;
-} human_input_device_t;
+    uint8_t key_state[INPUT_KEY_COUNT];
+    leds_t leds;
+    uint8_t button_state[INPUT_BUTTONS_COUNT];
+    uint8_t movement_state;
+    uint32_t movement_value[INPUT_MOVEMENTS_COUNT];
+} human_input_device_state_t;
 
-#define MAX_NUMBER_OF_HUMAN_INPUT_DEVICES 16
 typedef struct {
-    uint32_t number_of_devices;
-    human_input_device_t devices[MAX_NUMBER_OF_HUMAN_INPUT_DEVICES];
+    uint8_t key_state[INPUT_KEY_COUNT];
+    uint32_t key_state_timestamp[INPUT_KEY_COUNT];
+    leds_t leds;
+    uint8_t button_state[INPUT_BUTTONS_COUNT];
+    uint32_t button_state_timestamp[INPUT_BUTTONS_COUNT];
+    uint8_t movement_state;
+    uint32_t movement_value[INPUT_MOVEMENTS_COUNT];
 
-    mutex_t spinlock;
-    uint32_t number_of_pressed_keys;
-    uint32_t pressed_keys[INPUT_KEY_COUNT];
-    uint32_t number_of_released_keys;
-    uint32_t released_keys[INPUT_KEY_COUNT];
-} human_input_group_t;
+    uint32_t last_pressed_key;
+    uint32_t last_pressed_key_unicode_value;
+    uint32_t last_pressed_key_event_count;
+} human_input_global_state_t;
 
 enum {
     HUMAN_INPUT_GROUP_LISTEN_TO_EVENTS = 1,
@@ -165,7 +190,6 @@ typedef struct {
     uint32_t type;
     uint32_t argument[];
 } human_input_group_command_t;
-
 enum {
     HUMAN_INPUT_EVENT_KEY_PRESSED = 1,
     HUMAN_INPUT_EVENT_KEY_RELEASED
@@ -181,3 +205,19 @@ typedef struct {
     uint32_t consumer;
     human_input_event_t stack[MAX_NUMBER_OF_HUMAN_INPUT_EVENTS];
 } human_input_event_stack_t;
+
+typedef struct {
+    human_input_device_state_t *(*get_state)(hardware_t *device);
+    void (*keyboard_set_leds)(hardware_t *device, leds_t leds);
+} human_input_group_device_functions_t;
+typedef struct {
+    hardware_t *device;
+    human_input_group_device_functions_t *functions;
+} human_input_device_t;
+#define MAX_NUMBER_OF_HUMAN_INPUT_DEVICES 8
+typedef struct {
+    uint32_t number_of_devices;
+    human_input_device_t devices[MAX_NUMBER_OF_HUMAN_INPUT_DEVICES];
+} human_input_group_t;
+
+extern human_input_global_state_t human_input_global_state;

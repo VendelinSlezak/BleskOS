@@ -16,5 +16,5 @@ typedef struct {
     uint32_t *parse_map;
     uint32_t parsing_state;
     
-    uint32_t key_state[INPUT_KEY_COUNT];
+    human_input_device_state_t state;
 } ps2_keyboard_data_t;
