@@ -102,7 +102,7 @@ void *pm_bump_alloc(uint32_t size) {
     }
 
     // no memory was founded
-    kernel_panic("pm_bump_alloc() can not allocate memory");
+    kernel_panic("pm_bump_alloc() can not allocate memory", NULL);
 
     return (void *) NULL;
 }
@@ -113,7 +113,7 @@ void *pm_alloc_page(void) {
 
     // check if stack is empty
     if(pm_stack_pointer == (uint32_t *) MEM_PM_STACK) {
-        kernel_panic("pm_alloc_page() out of physical memory pages");
+        kernel_panic("pm_alloc_page() out of physical memory pages", NULL);
     }
 
     // pop page from stack
@@ -129,7 +129,7 @@ void pm_free_page(void *page) {
 
     // check if stack is full
     if(pm_stack_pointer == pm_stack_last_entry) {
-        kernel_panic("pm_free_page() physical memory stack overflow");
+        kernel_panic("pm_free_page() physical memory stack overflow", NULL);
     }
 
     // push page to stack
@@ -144,7 +144,7 @@ uint32_t *pm_alloc_pages(uint32_t number_of_pages) {
 
     // check if enough pages are available
     if((pm_stack_pointer - (number_of_pages * 4)) < (uint32_t *) MEM_PM_STACK) {
-        kernel_panic("pm_alloc_pages() not enough physical memory pages available");
+        kernel_panic("pm_alloc_pages() not enough physical memory pages available", NULL);
     }
 
     // return pointer to first page

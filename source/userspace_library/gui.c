@@ -130,7 +130,7 @@ void gui_event_listener(void) {
         }
 
         // pop all events
-        human_input_event_t *event = &human_input_event_stack.stack[human_input_event_stack.consumer];
+        human_input_event_old_t *event = &human_input_event_stack.stack[human_input_event_stack.consumer];
         while(human_input_event_stack.consumer != human_input_event_stack.producer) {
             switch(event->type) {
                 case HUMAN_INPUT_EVENT_KEY_PRESSED: {

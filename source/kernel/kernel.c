@@ -76,43 +76,21 @@ void initialize_kernel(void) {
 
     log("\nKernel initialized successfully");
 
-    // create_kernel_thread((uint32_t)kthread_test, (uint32_t []) { 1000 * 1000, 3000 * 1000 }, 2);
-    // create_kernel_thread((uint32_t)kthread_test, (uint32_t []) { 300 * 1000, 3000 * 1000 }, 2);
-    // create_kernel_thread((uint32_t)kthread_test, (uint32_t []) { 100 * 1000, 3000 * 1000 }, 2);
-
-    // spawning_template_t template = load_elf32_to_spawning_template(get_ramdisk_file_ptr("test.elf"));
-    // create_user_process_from_spawning_template(&template);
-
-    // spawning_template_t template = load_elf32_to_spawning_template(get_ramdisk_file_ptr("dump_log.elf"), prepare_memory_for_dump_log);
-    // create_user_process_from_spawning_template(&template);
-
     initialize_screen_subsystem();
 
     close_current_thread();
 }
 
-void prepare_memory_for_dump_log(void) {
-    memcpy((void *) 0xE8000000, get_ramdisk_file_ptr("ter-v16n.psf"), get_ramdisk_file_size("ter-v16n.psf"));
-    copy_log_to_userspace((uint32_t *)0x80000000);
-}
-
-void kernel_panic(char *msg) {
+void kernel_panic(char *msg, interrupt_stack_t *stack_of_interrupt) {
     logging_enabled = true;
     log("\n[PANIC] %s", msg);
 
     log("\nCR2: %x", read_cr2());
-    log("\nPD: %x", *((uint32_t *) (P_MEM_PAGE_DIRECTORY + ((read_cr2() >> 22) * 4))));
+    log("\nPT: %x", *((uint32_t *) (P_MEM_PAGE_DIRECTORY + ((read_cr2() >> 22) * 4))));
+    log("\nPD: %x", read_cr3());
+    log("\nEIP: %x", stack_of_interrupt->eip);
 
     while(true) {
         asm volatile("hlt");
-    }
-}
-
-void kthread_test(uint32_t how_much_sleep, uint32_t until) {
-    uint32_t sleep = 0;
-    while(sleep < until) {
-        log("\nHere: %d", sleep);
-        sleep_current_thread(how_much_sleep);
-        sleep += how_much_sleep;
     }
 }

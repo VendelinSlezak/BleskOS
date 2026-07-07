@@ -182,6 +182,25 @@ typedef struct {
     uint32_t last_pressed_key_event_count;
 } human_input_global_state_t;
 
+#define MAX_NUMBER_OF_HUMAN_INPUT_EVENTS 16
+typedef enum {
+    EVENT_KEY_PRESSED = 1,
+    EVENT_KEY_RELEASED,
+    EVENT_MOUSE_BUTTON_PRESSED,
+    EVENT_MOUSE_BUTTON_RELEASED,
+    EVENT_MOUSE_MOVEMENT,
+} human_input_event_type_t;
+typedef struct {
+    human_input_global_state_t state;
+    human_input_event_type_t type;
+    uint32_t event_value;
+} human_input_event_t;
+typedef struct {
+    human_input_event_t stack[MAX_NUMBER_OF_HUMAN_INPUT_EVENTS];
+    uint32_t producer; // points to free slot
+    uint32_t consumer; // points to first slot to be read
+} human_input_event_list_t;
+
 enum {
     HUMAN_INPUT_GROUP_LISTEN_TO_EVENTS = 1,
     HUMAN_INPUT_GROUP_STOP_LISTENING_TO_EVENTS,
@@ -197,13 +216,12 @@ enum {
 typedef struct {
     uint32_t type;
     uint32_t value;
-} human_input_event_t;
-#define MAX_NUMBER_OF_HUMAN_INPUT_EVENTS 16
+} human_input_event_old_t;
 typedef struct {
     mutex_t spinlock;
     uint32_t producer;
     uint32_t consumer;
-    human_input_event_t stack[MAX_NUMBER_OF_HUMAN_INPUT_EVENTS];
+    human_input_event_old_t stack[MAX_NUMBER_OF_HUMAN_INPUT_EVENTS];
 } human_input_event_stack_t;
 
 typedef struct {

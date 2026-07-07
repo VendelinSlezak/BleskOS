@@ -9,6 +9,7 @@
 */
 
 #include <kernel/hardware/main.h>
+#include <kernel/hardware/groups/human_input/human_input.h>
 
 typedef enum {
     PART_STATE_MAIN_PANEL = 0,
@@ -24,6 +25,10 @@ typedef struct screen_part {
     uint32_t height;
     void *view;
     part_state_t state;
+
+    uint8_t *program_name;
+    void *event_list;
+
     uint32_t split;
     struct screen_part *first_child;
     struct screen_part *second_child;
@@ -51,6 +56,12 @@ typedef struct {
 typedef enum {
     EDITING_FIXED_MODE,
     EDITING_FREE_MODE,
+    EDITING_VERTICAL_MODE_FROM_LEFT,
+    EDITING_VERTICAL_MODE_FROM_RIGHT,
+    EDITING_HORIZONTAL_MODE_FROM_TOP,
+    EDITING_HORIZONTAL_MODE_FROM_BOTTOM,
+    EDITING_VERTICAL_SPLIT,
+    EDITING_HORIZONTAL_SPLIT,
 } editing_mode_t;
 enum {
     EDITING_OUTSIDE_OF_PART = -1,
@@ -61,5 +72,7 @@ enum {
 extern uint32_t is_there_screen_subsystem;
 extern uint32_t mouse_cursor_x;
 extern uint32_t mouse_cursor_y;
+extern view_t *active_view;
+extern screen_part_t *part_with_focus;
 
 #define MINIMAL_PART_SIZE 150

@@ -83,9 +83,6 @@ void initialize_hardware_list(void) {
     initialize_graphic_group();
     initialize_human_input_group();
 
-    // initialize subsystems
-    initialize_windows_subsystem();
-
     // TODO: add all controllers based on data from ACPI tables
     pci_controller = add_hardware(motherboard, "PCI controller", NULL, NULL, initialize_pci_controller, NULL);
     isa_controller = add_hardware(motherboard, "ISA controller", NULL, NULL, initialize_isa_controller, NULL);

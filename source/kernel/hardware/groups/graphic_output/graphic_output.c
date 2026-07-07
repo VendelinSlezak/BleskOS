@@ -14,7 +14,7 @@
 #include <kernel/hardware/main.h>
 #include <kernel/hardware/devices/monitor/monitor.h>
 #include <kernel/hardware/groups/logging/logging.h>
-#include <kernel/hardware/subsystems/screen/screen.h>
+#include <kernel/hardware/subsystems/screen/draw.h>
 
 /* global variables */
 uint32_t is_there_graphic_output_device = false;
@@ -77,7 +77,7 @@ void redraw_full_screen(void *double_buffer) {
     draw_mouse_cursor(mouse_cursor_x, mouse_cursor_y);
 }
 
-void redraw_part_of_screen_wihtout_mouse(uint32_t monitor_x, uint32_t monitor_y, void *double_buffer, uint32_t buffer_pixels_per_line, uint32_t buffer_x, uint32_t buffer_y, uint32_t width, uint32_t height) {
+void redraw_part_of_screen_without_mouse(uint32_t monitor_x, uint32_t monitor_y, void *double_buffer, uint32_t buffer_pixels_per_line, uint32_t buffer_x, uint32_t buffer_y, uint32_t width, uint32_t height) {
     if(graphic_output_group->number_of_devices == 0) {
         return;
     }
@@ -94,7 +94,7 @@ void redraw_part_of_screen_wihtout_mouse(uint32_t monitor_x, uint32_t monitor_y,
 }
 
 void redraw_part_of_screen(uint32_t monitor_x, uint32_t monitor_y, void *double_buffer, uint32_t buffer_pixels_per_line, uint32_t buffer_x, uint32_t buffer_y, uint32_t width, uint32_t height) {
-    redraw_part_of_screen_wihtout_mouse(monitor_x, monitor_y, double_buffer, buffer_pixels_per_line, buffer_x, buffer_y, width, height);
+    redraw_part_of_screen_without_mouse(monitor_x, monitor_y, double_buffer, buffer_pixels_per_line, buffer_x, buffer_y, width, height);
     if(very_unlikely(is_there_screen_subsystem == false)) {
         return;
     }

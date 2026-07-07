@@ -8,7 +8,9 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-// Prevod int na string v desiatkovej sústave
+#include <limits.h>
+#include <kernel/libc/ctype.h>
+
 void itoa(int value, char *str, size_t size) {
     if(size == 0) {
         return;
@@ -102,4 +104,75 @@ char *htoan(unsigned int value, char *str, size_t n) {
     } while(n > 0);
 
     return str;
+}
+
+long strtol(const char *nptr, char **endptr, int base) {
+    const char *s = nptr;
+    unsigned long acc;
+    int c;
+    unsigned long cutoff;
+    int neg = 0, any = 0, cutlim;
+
+    do {
+        c = *s++;
+    } while (isspace(c));
+
+    if (c == '-') {
+        neg = 1;
+        c = *s++;
+    } else if (c == '+') {
+        c = *s++;
+    }
+
+    if ((base == 0 || base == 16) && c == '0' && (*s == 'x' || *s == 'X')) {
+        c = s[1];
+        s += 2;
+        base = 16;
+    }
+    if (base == 0) {
+        base = (c == '0') ? 8 : 10;
+    }
+
+    cutoff = neg ? -(unsigned long)LONG_MIN : LONG_MAX;
+    cutlim = cutoff % (unsigned long)base;
+    cutoff /= (unsigned long)base;
+
+    for (acc = 0;; c = *s++) {
+        if (isdigit(c)) {
+            c -= '0';
+        } else if (isalpha(c)) {
+            c = tolower(c) - 'a' + 10;
+        } else {
+            break;
+        }
+        
+        if (c >= base) {
+            break;
+        }
+
+        if (any < 0) {
+            continue;
+        }
+
+        if (acc > cutoff || (acc == cutoff && c > cutlim)) {
+            any = -1;
+        } else {
+            any = 1;
+            acc *= base;
+            acc += c;
+        }
+    }
+
+    if (any < 0) {
+        acc = neg ? LONG_MIN : LONG_MAX;
+        // errno = ERANGE;
+    } else if (neg) {
+        acc = -acc;
+    }
+
+    if (endptr != NULL) {
+        *endptr = (char *)(any ? s - 1 : nptr);
+    }
+
+    return (long)acc;
 }

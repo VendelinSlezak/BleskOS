@@ -156,10 +156,37 @@ void *perm_phy_alloc(uint32_t phy_start, uint32_t size, uint32_t flags) {
 }
 
 /* KERNEL HEAP */
+void kheap_dump(void) {
+    kernel_heap_metadata_t *kernel_heap_metadata = (kernel_heap_metadata_t *) MEM_KERNEL_HEAP_START;
+    log("\nACTUAL FREE POINTER: 0x%x - %d - 0x%x",
+        kernel_heap_metadata->free_memory_start,
+        kernel_heap_metadata->free_memory_size,
+        kernel_heap_metadata->free_memory_start + kernel_heap_metadata->free_memory_size);
+    kheap_entry_t *current_entry = (kheap_entry_t *) &kernel_heap_metadata->first_entry;
+    while(current_entry != NULL) {
+        log("\nENTRY: metadata=0x%x, start=0x%x, end=0x%x, prev=0x%x, next=0x%x, size=%d",
+            current_entry,
+            (uint32_t)current_entry + sizeof(kheap_entry_t),
+            current_entry->end,
+            current_entry->prev,
+            current_entry->next,
+            current_entry->end - (uint32_t)current_entry + sizeof(kheap_entry_t));
+        if((uint32_t)current_entry->next != current_entry->end && current_entry->next != NULL) {
+            log("\nFREE: start=0x%x, end=0x%x, size=%d",
+                current_entry->end,
+                current_entry->next,
+                (uint32_t)current_entry->next - current_entry->end);
+        }
+        current_entry = (kheap_entry_t *) current_entry->next;
+    }
+}
+
 void *kalloc(uint32_t size) {
     if(size == 0) {
         return NULL;
     }
+
+    // log("\nKALLOC request %d bytes", size);
 
     // extend size for allocation metadata
     size += sizeof(kheap_entry_t);
@@ -290,6 +317,8 @@ void *krealloc(void *allocation, uint32_t new_size) {
     if(allocation == NULL) {
         return kalloc(new_size);
     }
+
+    // log("\nKREALLOC request %d bytes", new_size);
 
     LOCK_MUTEX(&kheap_mutex);
     kernel_heap_metadata_t *kernel_heap_metadata = (kernel_heap_metadata_t *) MEM_KERNEL_HEAP_START;

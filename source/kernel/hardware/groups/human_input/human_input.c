@@ -226,7 +226,8 @@ void hid_process_changes_of_local_state(human_input_device_state_t *state) {
                 }
             }
 
-            screen_subsystem_event_keyboard_key(i, human_input_global_state.key_state[i], unicode_value);
+            uint32_t event_type = (human_input_global_state.key_state[i] == KEY_PRESSED) ? EVENT_KEY_PRESSED : EVENT_KEY_RELEASED;
+            add_event_to_screen_subsystem_list(event_type, i);
         }
     }
     if(state->movement_state == NEW_MOVEMENT_CHANGE) {
@@ -238,7 +239,7 @@ void hid_process_changes_of_local_state(human_input_device_state_t *state) {
         for(int i = 0; i < INPUT_MOVEMENTS_COUNT; i++) {
             human_input_global_state.movement_value[i] = state->movement_value[i];
         }
-        screen_subsystem_event_mouse_movement();
+        add_event_to_screen_subsystem_list(EVENT_MOUSE_MOVEMENT, 0);
     }
     for(int i = 0; i < INPUT_BUTTONS_COUNT; i++) {
         switch(human_input_global_state.button_state[i]) {
@@ -248,7 +249,7 @@ void hid_process_changes_of_local_state(human_input_device_state_t *state) {
                 }
                 human_input_global_state.button_state[i] = BUTTON_PRESSED;
                 human_input_global_state.button_state_timestamp[i] = (*get_time_in_microseconds)();
-                screen_subsystem_event_mouse_button(i, BUTTON_PRESSED);
+                add_event_to_screen_subsystem_list(EVENT_MOUSE_BUTTON_PRESSED, i);
                 break;
             }
             case BUTTON_PRESSED:
@@ -258,7 +259,7 @@ void hid_process_changes_of_local_state(human_input_device_state_t *state) {
                 }
                 human_input_global_state.button_state[i] = BUTTON_RELEASED;
                 human_input_global_state.button_state_timestamp[i] = (*get_time_in_microseconds)();
-                screen_subsystem_event_mouse_button(i, BUTTON_RELEASED);
+                add_event_to_screen_subsystem_list(EVENT_MOUSE_BUTTON_RELEASED, i);
                 break;
             }
         }
@@ -309,7 +310,8 @@ void check_human_input_state(void) {
         diff /= microseconds_to_repeat_key_next_time;
         if(key_event_count < diff) {
             human_input_global_state.last_pressed_key_event_count = diff;
-            screen_subsystem_event_keyboard_key(key, KEY_PRESSED, key_unicode_value);
+            uint32_t event_type = (key_state == KEY_PRESSED) ? EVENT_KEY_PRESSED : EVENT_KEY_RELEASED;
+            add_event_to_screen_subsystem_list(event_type, key);
         }
 
         if(human_input_global_state.key_state[key] == KEY_RELEASED) {

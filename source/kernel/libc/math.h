@@ -8,22 +8,4 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <kernel/hardware/subsystems/screen/stb_image_implementation.h>
-
-typedef struct {
-    uint32_t offset;
-    uint32_t size;
-    uint8_t name[];
-}__attribute__((packed)) ramdisk_file_entry_t;
-
-typedef struct {
-    uint8_t *name;
-    image_t *icon;
-    void *elf_file_ptr;
-    uint32_t elf_file_size;
-} ramdisk_elf_program_t;
-
-typedef struct {
-    uint32_t number_of_programs;
-    ramdisk_elf_program_t programs[];
-} ramdisk_elf_program_list_t;
+#define HUGE_VAL (__builtin_huge_val())

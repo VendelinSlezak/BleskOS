@@ -69,3 +69,13 @@ void strncpy(char* dest, const char *src, unsigned int n) {
         dest[i] = 0;
     }
 }
+
+char *strchr(const char *string, int c) {
+    while(*string) {
+        if(*string == c) {
+            return (char *) string;
+        }
+        string++;
+    }
+    return NULL;
+}

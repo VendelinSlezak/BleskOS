@@ -186,11 +186,43 @@ page_fault_handler_i686:
 
     ; special case null page fault TODO: close when only user thread
     .null_page_fault:
+        pop ds
+        popad
+
+        push 8
+        pushad
+        push ds
+        push es
+        push fs
+        push gs
+        mov ax, 0x10 ; GDT selector for kernel data segment
+        mov ds, ax
+        mov es, ax
+        mov fs, ax
+        mov gs, ax
+        
+        push esp
         push null_page_fault
         call kernel_panic
 
     ; special case page fault in kernel
     .kernel_page_fault:
+        pop ds
+        popad
+
+        push 8
+        pushad
+        push ds
+        push es
+        push fs
+        push gs
+        mov ax, 0x10 ; GDT selector for kernel data segment
+        mov ds, ax
+        mov es, ax
+        mov fs, ax
+        mov gs, ax
+        
+        push esp
         push kernel_space_page_fault
         call kernel_panic
 

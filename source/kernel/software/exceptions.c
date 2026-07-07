@@ -25,7 +25,7 @@ void initialize_exceptions(void) {
 void kill_running_thread(interrupt_stack_t *stack_of_interrupt) {
     logical_processor_t *lpdata = get_current_logical_processor_struct();
     if(lpdata->scheduler_state == SCHEDULER_STATE_KERNEL) {
-        kernel_panic("Exception in kernel space");
+        kernel_panic("Exception in kernel space", stack_of_interrupt);
     }
     close_current_thread_interrupt(stack_of_interrupt);
 }

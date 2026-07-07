@@ -12,7 +12,7 @@
 #include <kernel/hardware/devices/cpu/mutex.h>
 #include <kernel/software/elf_loader.h>
 
-#define KERNEL_STACK_SIZE 4096
+#define KERNEL_STACK_SIZE (1024 * 32)
 
 #define INTERRUPT_SLEEP_FOR_THREAD 0xFB
 #define INTERRUPT_PREEMPETIVE_SCHEDULING 0xFC
