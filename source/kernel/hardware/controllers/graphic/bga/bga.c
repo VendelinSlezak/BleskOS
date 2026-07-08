@@ -78,6 +78,7 @@ void initialize_bga_controller(hardware_t *device) {
     modes[0].active_width = 640; modes[0].active_height = 480;
     modes[1].active_width = 800; modes[1].active_height = 600;
     modes[2].active_width = 1024; modes[2].active_height = 768;
+    // modes[2].active_width = 1600; modes[2].active_height = 1000;
     if(version == 4) {
         modes[3].active_width = 1600; modes[3].active_height = 1200;
         number_of_modes++;

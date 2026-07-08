@@ -26,3 +26,14 @@ typedef struct {
     int width;
     int height;
 } calculated_area_t;
+
+typedef struct {
+    void *screen;
+    uint32_t *screen_ptr;
+    uint32_t screen_width;
+    uint32_t x;
+    uint32_t y;
+    uint32_t width;
+    uint32_t height;
+    uint32_t buffer[];
+} screen_part_buffer_t;

@@ -88,6 +88,61 @@ calculated_area_t calculate_area_in_part(screen_part_t *part, int x, int y, int 
     return area;
 }
 
+screen_part_buffer_t *alloc_screen_part_buffer(void *screen, uint32_t screen_width, uint32_t x, uint32_t y, uint32_t width, uint32_t height) {
+    screen_part_buffer_t *buffer = kalloc(sizeof(screen_part_buffer_t) + (width * height * sizeof(uint32_t)));
+    buffer->screen = screen;
+    buffer->screen_ptr = (uint32_t *) ((uint32_t)screen + (y * screen_width * 4) + (x * 4));
+    buffer->screen_width = screen_width;
+    buffer->x = x;
+    buffer->y = y;
+    buffer->width = width;
+    buffer->height = height;
+    return buffer;
+}
+
+void move_screen_part_buffer(screen_part_buffer_t **buffer_ptr, uint32_t x, uint32_t y, uint32_t width, uint32_t height) {
+    screen_part_buffer_t *buffer = *buffer_ptr;
+    if((width * height) != (buffer->width * buffer->height)) {
+        buffer = krealloc(buffer, sizeof(screen_part_buffer_t) + (width * height * sizeof(uint32_t)));
+        *buffer_ptr = buffer;
+    }
+    buffer->screen_ptr = (uint32_t *) ((uint32_t)buffer->screen + (y * buffer->screen_width * 4) + (x * 4));
+    buffer->x = x;
+    buffer->y = y;
+    buffer->width = width;
+    buffer->height = height;
+}
+
+void copy_from_screen_to_buffer(screen_part_buffer_t *buffer) {
+    uint32_t *src = buffer->screen_ptr;
+    uint32_t *dst = (uint32_t *) &buffer->buffer;
+    uint32_t height = buffer->height;
+    uint32_t width = buffer->width;
+    uint32_t screen_width = buffer->screen_width;
+    for(int i = 0; i < height; i++) {
+        uint32_t *line_src = src;
+        for(int j = 0; j < width; j++) {
+            *dst++ = *line_src++;
+        }
+        src += screen_width;
+    }
+}
+
+void copy_from_buffer_to_screen(screen_part_buffer_t *buffer) {
+    uint32_t *src = (uint32_t *) &buffer->buffer;
+    uint32_t *dst = buffer->screen_ptr;
+    uint32_t height = buffer->height;
+    uint32_t width = buffer->width;
+    uint32_t screen_width = buffer->screen_width;
+    for(int i = 0; i < height; i++) {
+        uint32_t *line_dst = dst;
+        for(int j = 0; j < width; j++) {
+            *line_dst++ = *src++;
+        }
+        dst += screen_width;
+    }
+}
+
 void draw_square(uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t color) {
     uint32_t output_width = get_output_width();
 

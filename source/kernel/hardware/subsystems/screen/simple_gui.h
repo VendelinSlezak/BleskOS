@@ -80,7 +80,10 @@ typedef struct block_t {
     int padding_left;
     int padding_right;
 
-    int border_size;
+    int border_top_size;
+    int border_bottom_size;
+    int border_left_size;
+    int border_right_size;
     uint32_t border_color;
 
     uint32_t background_color;

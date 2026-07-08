@@ -9,14 +9,3 @@
 */
 
 #include <kernel/hardware/subsystems/screen/screen.h>
-
-typedef struct {
-    uint8_t *name;
-    void *data;
-    screen_part_t *part_where_program_is_running;
-} placeholder_running_program_t;
-
-typedef struct {
-    uint32_t number_of_programs;
-    placeholder_running_program_t programs[];
-} placeholder_running_program_list_t;

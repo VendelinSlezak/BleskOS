@@ -132,8 +132,8 @@ void calculate_block_dimensions(block_t *block) {
                 block->draw_from_two_ends = false;
             }
             block->content_height = height;
-            width += block->margin_left + block->border_size + block->padding_left + block->padding_right + block->border_size + block->margin_right;
-            height += block->margin_top + block->border_size + block->padding_top + block->padding_bottom + block->border_size + block->margin_bottom;
+            width += block->margin_left + block->border_left_size + block->padding_left + block->padding_right + block->border_right_size + block->margin_right;
+            height += block->margin_top + block->border_top_size + block->padding_top + block->padding_bottom + block->border_bottom_size + block->margin_bottom;
             block->actual_width = width;
             block->actual_height = height;
             break;
@@ -167,8 +167,8 @@ void calculate_block_dimensions(block_t *block) {
                 height = block->min_height;
             }
             block->content_height = height;
-            width += block->margin_left + block->border_size + block->padding_left + block->padding_right + block->border_size + block->margin_right;
-            height += block->margin_top + block->border_size + block->padding_top + block->padding_bottom + block->border_size + block->margin_bottom;
+            width += block->margin_left + block->border_left_size + block->padding_left + block->padding_right + block->border_right_size + block->margin_right;
+            height += block->margin_top + block->border_top_size + block->padding_top + block->padding_bottom + block->border_bottom_size + block->margin_bottom;
             block->actual_width = width;
             block->actual_height = height;
             break;
@@ -286,8 +286,8 @@ void calculate_block_dimensions(block_t *block) {
                 height = block->min_height;
             }
             block->content_height = height;
-            width += block->margin_left + block->border_size + block->padding_left + block->padding_right + block->border_size + block->margin_right;
-            height += block->margin_top + block->border_size + block->padding_top + block->padding_bottom + block->border_size + block->margin_bottom;
+            width += block->margin_left + block->border_left_size + block->padding_left + block->padding_right + block->border_right_size + block->margin_right;
+            height += block->margin_top + block->border_top_size + block->padding_top + block->padding_bottom + block->border_bottom_size + block->margin_bottom;
             block->actual_width = width;
             block->actual_height = height;
             break;
@@ -309,8 +309,8 @@ void calculate_block_dimensions(block_t *block) {
                 height = block->min_height;
             }
             block->content_height = height;
-            width += block->margin_left + block->border_size + block->padding_left + block->padding_right + block->border_size + block->margin_right;
-            height += block->margin_top + block->border_size + block->padding_top + block->padding_bottom + block->border_size + block->margin_bottom;
+            width += block->margin_left + block->border_left_size + block->padding_left + block->padding_right + block->border_right_size + block->margin_right;
+            height += block->margin_top + block->border_top_size + block->padding_top + block->padding_bottom + block->border_bottom_size + block->margin_bottom;
             block->actual_width = width;
             block->actual_height = height;
             break;
@@ -339,44 +339,50 @@ void draw_gui_block(screen_part_t *part, block_t *block, click_area_list_t **cli
         }
     }
 
-    if(block->border_size != 0) {
+    if(block->border_top_size != 0) {
         draw_square_in_part(part,
                             x + block->margin_left,
                             y + block->margin_top, 
-                            block->border_size + block->padding_left + block->content_width + block->padding_right + block->border_size,
-                            block->border_size,
+                            block->border_left_size + block->padding_left + block->content_width + block->padding_right + block->border_right_size,
+                            block->border_top_size,
                             block->border_color);
+    }
+    if(block->border_bottom_size != 0) {
         draw_square_in_part(part,
                             x + block->margin_left,
-                            y + block->margin_top + block->border_size + block->padding_top + block->content_height + block->padding_bottom,
-                            block->border_size + block->padding_left + block->content_width + block->padding_right + block->border_size,
-                            block->border_size,
+                            y + block->margin_top + block->border_top_size + block->padding_top + block->content_height + block->padding_bottom,
+                            block->border_left_size + block->padding_left + block->content_width + block->padding_right + block->border_right_size,
+                            block->border_bottom_size,
                             block->border_color);
+    }
+    if(block->border_left_size != 0) {
         draw_square_in_part(part,
                             x + block->margin_left,
                             y + block->margin_top,
-                            block->border_size,
-                            block->border_size + block->padding_top + block->content_height + block->padding_bottom + block->border_size,
+                            block->border_left_size,
+                            block->border_top_size + block->padding_top + block->content_height + block->padding_bottom + block->border_bottom_size,
                             block->border_color);
+    }
+    if(block->border_right_size != 0) {
         draw_square_in_part(part,
-                            x + block->margin_left + block->border_size + block->padding_left + block->content_width + block->padding_right,
+                            x + block->margin_left + block->border_left_size + block->padding_left + block->content_width + block->padding_right,
                             y + block->margin_top,
-                            block->border_size,
-                            block->border_size + block->padding_top + block->content_height + block->padding_bottom + block->border_size,
+                            block->border_right_size,
+                            block->border_top_size + block->padding_top + block->content_height + block->padding_bottom + block->border_bottom_size,
                             block->border_color);
     }
 
     if(block->background_color != 0x00000000) {
         draw_square_in_part(part, 
-                            x + block->margin_left + block->border_size,
-                            y + block->margin_top + block->border_size,
+                            x + block->margin_left + block->border_left_size,
+                            y + block->margin_top + block->border_top_size,
                             block->padding_left + block->content_width + block->padding_right,
                             block->padding_top + block->content_height + block->padding_bottom,
                             block->background_color);
     }
 
-    x += block->margin_left + block->border_size + block->padding_left;
-    y += block->margin_top + block->border_size + block->padding_top;
+    x += block->margin_left + block->border_left_size + block->padding_left;
+    y += block->margin_top + block->border_top_size + block->padding_top;
 
     switch(block->type) {
         case VERTICAL_BLOCK: {
@@ -703,10 +709,7 @@ void dump_gui_block(block_t *block, int depth) {
 
     log("\n");
     INDENT(); log("=== BLOCK DUMP (Address: 0x%x) ===\n", (void*)block);
-    INDENT(); log("Parent: 0x%x\n", (void*)block->parent);
     INDENT(); log("Type: %d\n", block->type);
-    INDENT(); log("Data pointer: 0x%x\n", block->data);
-    INDENT(); log("Text pointer: 0x%x\n", (void*)block->text);
 
     INDENT(); log("Horizontal alignment: %d, Vertical alignment: %d\n", 
                   block->horizontal_alignment, block->vertical_alignment);
@@ -714,7 +717,12 @@ void dump_gui_block(block_t *block, int depth) {
                   block->margin_top, block->margin_bottom, block->margin_left, block->margin_right);
     INDENT(); log("Padding - T: %d, B: %d, L: %d, R: %d\n", 
                   block->padding_top, block->padding_bottom, block->padding_left, block->padding_right);
-    INDENT(); log("Border size: %d, Border color: 0x%08X\n", block->border_size, block->border_color);
+    INDENT(); log("Border size: %d %d %d %d, Border color: 0x%08X\n",
+        block->border_top_size,
+        block->border_bottom_size,
+        block->border_left_size,
+        block->border_right_size,
+        block->border_color);
     INDENT(); log("Background color: 0x%08X\n", block->background_color);
     INDENT(); log("Text color: 0x%08X\n", block->text_color);
     INDENT(); log("Width  - Min: %d, Max: %d, ActMax: %d, Actual: %d\n", 

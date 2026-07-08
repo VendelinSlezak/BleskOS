@@ -9,6 +9,7 @@
 */
 
 #include <kernel/hardware/subsystems/screen/stb_image_implementation.h>
+#include <kernel/hardware/subsystems/screen/screen.h>
 
 typedef struct {
     uint32_t offset;
@@ -21,6 +22,9 @@ typedef struct {
     image_t *icon;
     void *elf_file_ptr;
     uint32_t elf_file_size;
+    uint32_t is_loaded_into_memory;
+    void *program_info;
+    screen_part_t *part_where_program_is_running;
 } ramdisk_elf_program_t;
 
 typedef struct {
