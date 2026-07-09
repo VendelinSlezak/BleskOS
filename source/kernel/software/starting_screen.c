@@ -15,6 +15,9 @@
 #include <kernel/hardware/main.h>
 #include <kernel/hardware/devices/cpu/scheduler.h>
 #include <kernel/hardware/subsystems/screen/screen.h>
+#include <kernel/hardware/subsystems/screen/stb_image_implementation.h>
+#include <kernel/hardware/subsystems/screen/draw.h>
+#include <kernel/software/ramdisk.h>
 
 /* functions */
 void show_starting_screen(void) {
@@ -37,10 +40,12 @@ void show_starting_screen(void) {
     // draw starting screen
     uint32_t *buffer = kalloc(get_size_of_double_buffer());
     for(uint32_t i = 0; i < get_size_of_double_buffer() / 4; i++) {
-        buffer[i] = 0x000000;
+        buffer[i] = 0xFF000000;
     }
-    // TODO: add logo
+    image_t *logo = load_image(get_ramdisk_file_ptr("logo.bmp"), get_ramdisk_file_size("logo.bmp"));
+    draw_bitmap(buffer, get_output_width(), (get_output_width() - logo->width) / 2, (get_output_height() - logo->height) / 2, (uint32_t *) logo->data, logo->width, logo->height);
     redraw_full_screen(buffer);
+    free_image(logo);
 
     // wait for all devices to be initialized
     while(how_many_devices_are_uninitalized() > 0) {

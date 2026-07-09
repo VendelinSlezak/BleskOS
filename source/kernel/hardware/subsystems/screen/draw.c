@@ -187,7 +187,80 @@ void draw_square_in_part(screen_part_t *part, int x, int y, int width, int heigh
     draw_square(part->x + area.left, part->y + area.top, area.width, area.height, color);
 }
 
-void draw_bitmap(screen_part_t *part, uint32_t x, uint32_t y, uint32_t *data, uint32_t width, uint32_t height) {
+void draw_bitmap(uint32_t *buffer, uint32_t view_width, uint32_t x, uint32_t y, uint32_t *data, uint32_t width, uint32_t height) {
+    calculated_area_t area;
+    int part_height = (int) get_output_height();
+    int part_width = (int) get_output_width();
+
+    area.top = y;
+    if(area.top >= part_height) {
+        return;
+    }
+    area.bottom = y + height;
+    if(area.bottom <= 0) {
+        return;
+    }
+
+    area.first_line = 0;
+    if(area.top < 0) {
+        area.first_line = (area.top * -1);
+        area.top = 0;
+    }
+    area.last_line = height;
+    if(area.bottom >= part_height) {
+        area.last_line = height - (area.bottom - part_height);
+        area.bottom = part_height;
+    }
+    area.height = area.last_line - area.first_line;
+
+    area.left = x;
+    if(area.left >= part_width) {
+        return;
+    }
+    area.right = x + width;
+    if(area.right <= 0) {
+        return;
+    }
+
+    area.first_column = 0;
+    if(area.left < 0) {
+        area.first_column = (area.left * -1);
+        area.left = 0;
+    }
+    area.last_column = width;
+    if(area.right >= part_width) {
+        area.last_column = width - (area.right - part_width);
+        area.right = part_width;
+    }
+    area.width = area.last_column - area.first_column;
+
+    uint32_t top = area.top;
+    uint32_t left = area.left;
+    uint32_t showed_width = area.width;
+    uint32_t showed_height = area.height;
+    uint32_t first_line = area.first_line;
+    uint32_t first_column = area.first_column;
+
+    uint32_t *dst = (uint32_t *) &buffer[(top * view_width) + left];
+    uint32_t *src = (uint32_t *) &data[(first_line * width) + first_column];
+    for(uint32_t i = 0; i < showed_height; i++) {
+        uint32_t *line_dst = dst;
+        uint32_t *line_src = src;
+        for(int j = 0; j < showed_width; j++) {
+            if((*line_src & 0xFF000000) == 0x00000000) {
+                line_src++;
+                line_dst++;
+            }
+            else {
+                *line_dst++ = *line_src++;
+            }
+        }
+        dst += view_width;
+        src += width;
+    }
+}
+
+void draw_bitmap_in_part(screen_part_t *part, uint32_t x, uint32_t y, uint32_t *data, uint32_t width, uint32_t height) {
     calculated_area_t area = calculate_area_in_part(part, x, y, width, height);
     if(area.drawable == false) {
         return;

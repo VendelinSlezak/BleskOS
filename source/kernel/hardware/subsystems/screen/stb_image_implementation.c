@@ -26,7 +26,7 @@ image_t *load_image(const void *data, uint32_t size) {
 }
 
 void draw_image(image_t *image, screen_part_t *part, uint32_t x, uint32_t y) {
-    draw_bitmap(part, x, y, (uint32_t *) image->data, image->width, image->height);
+    draw_bitmap_in_part(part, x, y, (uint32_t *) image->data, image->width, image->height);
 }
 
 void free_image(image_t *image) {
