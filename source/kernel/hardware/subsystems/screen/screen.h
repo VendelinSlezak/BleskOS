@@ -10,12 +10,14 @@
 
 #include <kernel/hardware/main.h>
 #include <kernel/hardware/groups/human_input/human_input.h>
+#include <kernel/firmware/cmos/cmos.h>
 
 typedef enum {
     PART_STATE_MAIN_PANEL = 0,
     PART_STATE_PROGRAM,
     PART_STATE_HORIZONTAL_SPLIT,
-    PART_STATE_VERTICAL_SPLIT
+    PART_STATE_VERTICAL_SPLIT,
+    PART_STATE_WHOLE_SCREEN
 } part_state_t;
 typedef struct screen_part {
     struct screen_part *parent;
@@ -27,6 +29,7 @@ typedef struct screen_part {
     part_state_t state;
 
     uint8_t *program_name;
+    void *main_panel_data;
     void *event_list;
 
     uint32_t split;
@@ -42,6 +45,10 @@ typedef struct {
     void *buffer;
     void *preview_buffer;
     screen_part_t *global_part;
+
+    uint32_t is_whole_screen_mode_active;
+    screen_part_t *whole_screen_part;
+    void (*draw_whole_screen)(screen_part_t *part);
 } view_t;
 typedef struct {
     uint32_t number_of_views;
@@ -74,5 +81,6 @@ extern uint32_t mouse_cursor_x;
 extern uint32_t mouse_cursor_y;
 extern view_t *active_view;
 extern screen_part_t *part_with_focus;
+extern datetime_t current_time;
 
-#define MINIMAL_PART_SIZE 150
+#define MINIMAL_PART_SIZE (64 + 150 + 64)

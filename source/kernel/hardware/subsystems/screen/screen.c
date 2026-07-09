@@ -9,6 +9,7 @@
 */
 
 /* includes */
+#include <kernel/firmware/cmos/cmos.h>
 #include <kernel/hardware/devices/memory/memory_allocators.h>
 #include <kernel/hardware/groups/logging/logging.h>
 #include <kernel/hardware/groups/graphic_output/graphic_output.h>
@@ -20,6 +21,7 @@
 #include <kernel/hardware/devices/cpu/scheduler.h>
 #include <kernel/software/ramdisk.h>
 #include <kernel/kernel.h>
+#include <kernel/libc/string.h>
 
 /* global variables */
 uint32_t is_there_screen_subsystem = false;
@@ -27,6 +29,7 @@ uint32_t mouse_cursor_x = 0;
 uint32_t mouse_cursor_y = 0;
 view_t *active_view;
 screen_part_t *part_with_focus;
+datetime_t current_time;
 
 /* local variables */
 void *global_double_buffer;
@@ -39,6 +42,10 @@ editing_mode_t editing_mode;
 int editing_state_value;
 screen_part_buffer_t *editing_line_buffer = NULL;
 void (*redraw_edited_part)(screen_part_t *part);
+
+uint32_t is_program_dragged = false;
+screen_part_t *part_dragged_from;
+screen_part_t *part_dragged_to;
 
 human_input_event_list_t *event_list;
 
@@ -71,13 +78,26 @@ void initialize_screen_subsystem(void) {
     global_part->view = view;
     global_part->parent = NULL;
     global_part->state = PART_STATE_MAIN_PANEL;
-    global_part->program_name = NULL;
     global_part->split = 0;
     global_part->first_child = NULL;
     global_part->second_child = NULL;
     global_part->is_processed = true;
 
+    global_part->program_name = NULL;
+    global_part->main_panel_data = kalloc(sizeof(main_panel_data_t));
+    global_part->event_list = NULL;
+
     view->global_part = global_part;
+
+    screen_part_t *whole_screen_part = kalloc(sizeof(screen_part_t));
+    whole_screen_part->x = 0;
+    whole_screen_part->y = 0;
+    whole_screen_part->width = view->width;
+    whole_screen_part->height = view->height;
+    whole_screen_part->view = view;
+
+    view->whole_screen_part = whole_screen_part;
+    view->is_whole_screen_mode_active = false;
 
     list_of_views = kalloc(sizeof(list_of_views_t) + sizeof(view_t *) * 1);
     list_of_views->number_of_views = 1;
@@ -86,6 +106,8 @@ void initialize_screen_subsystem(void) {
     active_view = view;
     part_with_focus = global_part;
     editing_line_buffer = alloc_screen_part_buffer(global_double_buffer, active_view->width, 0, 0, 1, active_view->height);
+
+    current_time = cmos_datetime;
 
     create_kernel_thread((uint32_t)screen_subsystem_event_loop, 0, 0);
 
@@ -114,6 +136,11 @@ void mark_all_parts_below_as_unprocessed(screen_part_t *part) {
 
 void draw_view(view_t *view) {
     if(view->is_active == false) {
+        return;
+    }
+
+    if(view->is_whole_screen_mode_active == true) {
+        (*view->draw_whole_screen)(view->whole_screen_part);
         return;
     }
 
@@ -154,8 +181,16 @@ void draw_view(view_t *view) {
                 draw_square(part->x + part->split, part->y, 1, part->height, 0xFF000000);
                 break;
             }
+            case PART_STATE_WHOLE_SCREEN: {
+                break;
+            }
         }
-        if(is_view_edited == true && edited_part == part) {
+        if(is_program_dragged == true) {
+            if(part == part_dragged_from || part == part_dragged_to) {
+                draw_square(part->x, part->y, part->width, part->height, 0xCCFFFFFF);
+            }
+        }
+        else if(is_view_edited == true && edited_part == part) {
             if(part_type_of_editing == EDITING_VERTICAL_SPLIT || part_type_of_editing == EDITING_VERTICAL_MODE_FROM_LEFT || part_type_of_editing == EDITING_VERTICAL_MODE_FROM_RIGHT) {
                 if(editing_mode == EDITING_FIXED_MODE) {
                     draw_part_in_vertical_fixed_editing_mode(part);
@@ -231,10 +266,12 @@ void split_part_vertically(screen_part_t *part, uint32_t split, uint32_t split_t
 
     original_part->state = part->state;
     original_part->program_name = part->program_name;
+    original_part->main_panel_data = part->main_panel_data;
     original_part->event_list = part->event_list;
     part_is_moving_to_part(part, original_part);
     
     new_part->state = PART_STATE_MAIN_PANEL;
+    new_part->main_panel_data = kalloc(sizeof(main_panel_data_t));
 
     part->state = PART_STATE_VERTICAL_SPLIT;
     part->split = split;
@@ -282,10 +319,12 @@ void split_part_horizontally(screen_part_t *part, uint32_t split, uint32_t split
 
     original_part->state = part->state;
     original_part->program_name = part->program_name;
+    original_part->main_panel_data = part->main_panel_data;
     original_part->event_list = part->event_list;
     part_is_moving_to_part(part, original_part);
 
     new_part->state = PART_STATE_MAIN_PANEL;
+    new_part->main_panel_data = kalloc(sizeof(main_panel_data_t));
 
     part->state = PART_STATE_HORIZONTAL_SPLIT;
     part->split = split;
@@ -304,6 +343,7 @@ void remove_part(screen_part_t *part) {
         screen_part_t *old_parent = part->parent;
         screen_part_t *new_parent = part->parent->second_child;
 
+        kfree(part->main_panel_data);
         kfree(part->event_list);
         kfree(part);
 
@@ -330,6 +370,7 @@ void remove_part(screen_part_t *part) {
         screen_part_t *old_parent = part->parent;
         screen_part_t *new_parent = part->parent->first_child;
 
+        kfree(part->main_panel_data);
         kfree(part->event_list);
         kfree(part);
 
@@ -465,6 +506,8 @@ void part_move_split(screen_part_t *part, uint32_t split) {
                 part->first_child->width = part->split;
                 part->first_child->height = part->height;
             }
+            main_panel_data_t *main_panel_data = (main_panel_data_t *) part->main_panel_data;
+            main_panel_data->y_offset = 0; main_panel_data->vertical_scrollbar_position = 0;
             part->first_child->is_processed = true;
             part = part->first_child;
             continue;
@@ -522,6 +565,8 @@ void part_move_split(screen_part_t *part, uint32_t split) {
                 part->second_child->width = part->width - part->split - 1;
                 part->second_child->height = part->height;
             }
+            main_panel_data_t *main_panel_data = (main_panel_data_t *) part->main_panel_data;
+            main_panel_data->y_offset = 0; main_panel_data->vertical_scrollbar_position = 0;
             part->second_child->is_processed = true;
             part = part->second_child;
             continue;
@@ -628,8 +673,7 @@ void draw_part_in_vertical_fixed_editing_mode(screen_part_t *part) {
         if(    mouse_cursor_x >= areas[i].start_of_mouse_area
             && mouse_cursor_x <= areas[i].end_of_mouse_area
             && mouse_cursor_y >= part->y
-            && mouse_cursor_y < (part->y + part->height)
-            && editing_state_value != areas[i].split_position) {
+            && mouse_cursor_y < (part->y + part->height)) {
             move_screen_part_buffer(&editing_line_buffer, (part->x + areas[i].split_position), part->y, 1, part->height);
             copy_from_screen_to_buffer(editing_line_buffer);
             editing_state_value = areas[i].split_position;
@@ -874,6 +918,11 @@ void draw_part_in_vertical_free_editing_mode(screen_part_t *part) {
     move_screen_part_buffer(&editing_line_buffer, part->x, part->y, 1, part->height);
     copy_from_screen_to_buffer(editing_line_buffer);
 
+    if((part->width / 2) < MINIMAL_PART_SIZE) {
+        editing_state_value = EDITING_OUTSIDE_OF_PART;
+        return;
+    }
+
     draw_dashed_column(part, MINIMAL_PART_SIZE);
     draw_dashed_column(part, part->width - MINIMAL_PART_SIZE);
 
@@ -912,6 +961,10 @@ void draw_part_in_vertical_free_editing_mode(screen_part_t *part) {
 }
 
 void redraw_part_in_vertical_free_editing_mode(screen_part_t *part) {
+    if((part->width / 2) < MINIMAL_PART_SIZE) {
+        return;
+    }
+
     uint32_t nonsplit_area_size = MINIMAL_PART_SIZE / 2;
     if(    mouse_cursor_x >= part->x
         && mouse_cursor_x < (part->x + part->width)
@@ -971,6 +1024,11 @@ void draw_part_in_horizontal_free_editing_mode(screen_part_t *part) {
     move_screen_part_buffer(&editing_line_buffer, part->x, part->y, part->width, 1);
     copy_from_screen_to_buffer(editing_line_buffer);
 
+    if((part->height / 2) < MINIMAL_PART_SIZE) {
+        editing_state_value = EDITING_OUTSIDE_OF_PART;
+        return;
+    }
+
     draw_dashed_line(part, MINIMAL_PART_SIZE);
     draw_dashed_line(part, part->height - MINIMAL_PART_SIZE);
 
@@ -1009,6 +1067,10 @@ void draw_part_in_horizontal_free_editing_mode(screen_part_t *part) {
 }
 
 void redraw_part_in_horizontal_free_editing_mode(screen_part_t *part) {
+    if((part->height / 2) < MINIMAL_PART_SIZE) {
+        return;
+    }
+
     uint32_t nonsplit_area_size = MINIMAL_PART_SIZE / 2;
     if(    mouse_cursor_x >= part->x
         && mouse_cursor_x < (part->x + part->width)
@@ -1130,6 +1192,11 @@ screen_part_t *part_where_is_mouse_cursor(void) {
 void screen_subsystem_event_loop(void) {
     while(true) {
         if(event_list->consumer == event_list->producer) {
+            if(memcmp(&cmos_datetime, &current_time, sizeof(datetime_t)) != 0) {
+                current_time = cmos_datetime;
+                draw_view(active_view);
+                redraw_screen();
+            }
             switch_to_another_thread();
             continue;
         }
@@ -1137,6 +1204,10 @@ void screen_subsystem_event_loop(void) {
 
         switch(event->type) {
             case EVENT_KEY_PRESSED: {
+                if(active_view->is_whole_screen_mode_active == true) {
+                    break; // TODO: pass key event
+                }
+
                 // log("\nKey %d pressed", event->event_value);
                 if(is_view_edited == true && (event->event_value == KEY_LEFT_SHIFT || event->event_value == KEY_RIGHT_SHIFT) && editing_mode == EDITING_FIXED_MODE) {
                     editing_mode = EDITING_FREE_MODE;
@@ -1155,6 +1226,10 @@ void screen_subsystem_event_loop(void) {
                 break;
             }
             case EVENT_KEY_RELEASED: {
+                if(active_view->is_whole_screen_mode_active == true) {
+                    break; // TODO: pass key event
+                }
+
                 // log("\nKey %d released", event->event_value);
                 if(is_view_edited == true && (event->event_value == KEY_LEFT_SHIFT || event->event_value == KEY_RIGHT_SHIFT) && editing_mode == EDITING_FREE_MODE) {
                     editing_mode = EDITING_FIXED_MODE;
@@ -1192,19 +1267,56 @@ void screen_subsystem_event_loop(void) {
                 }
                 draw_mouse_cursor(new_x, new_y);
 
-                if(is_view_edited == true) {
+                if(active_view->is_whole_screen_mode_active == true) {
+                    break; // TODO: pass mouse movement event
+                }
+
+                if(is_program_dragged == true && event->state.button_state[BUTTON_LEFT] == BUTTON_DRAGGED) {
+                    screen_part_t *part = part_where_is_mouse_cursor();
+                    if(part_dragged_to != part) {
+                        part_dragged_to = part;
+                        draw_view(active_view);
+                        redraw_screen();
+                    }
+                }
+                else if(is_view_edited == true) {
                     (*redraw_edited_part)(edited_part);
                 }
                 else {
+                    if(part_with_focus != NULL && part_with_focus->state == PART_STATE_MAIN_PANEL) {
+                        main_panel_process_mouse_movement(part_with_focus);
+                    }
+                    else {
+                        main_panel_process_mouse_movement(NULL);
+                    }
+
                     // TODO: pass mouse movement to part with focus
                 }
                 break;
             }
             case EVENT_MOUSE_BUTTON_PRESSED: {
+                if(active_view->is_whole_screen_mode_active == true) {
+                    if(event->event_value == BUTTON_LEFT) {
+                        process_left_click_event(active_view->whole_screen_part, mouse_cursor_x, mouse_cursor_y);
+                    }
+                    break;
+                }
+
                 // log("\nMouse button %d pressed", event->event_value);
                 screen_part_t *part = part_where_is_mouse_cursor();
 
                 if(event->event_value == BUTTON_LEFT) {
+                    if(part->state == PART_STATE_PROGRAM && part_with_focus != part) {
+                        part_with_focus = part;
+                        draw_view(active_view);
+                        redraw_screen();
+                    }
+                    process_left_click_event(part, mouse_cursor_x, mouse_cursor_y);
+                }
+                else if(event->event_value == BUTTON_RIGHT) {
+                    if(is_program_dragged == true) {
+                        break;
+                    }
                     if(part->state == PART_STATE_VERTICAL_SPLIT) {
                         // log("\nVertical move");
                         is_view_edited = true;
@@ -1223,7 +1335,7 @@ void screen_subsystem_event_loop(void) {
                         edited_part = part;
                         redraw_edited_part = redraw_part_in_horizontal_fixed_editing_mode;
                     }
-                    else if(mouse_cursor_x == 0 && mouse_cursor_y != 0 && mouse_cursor_y != (get_output_height() - 1)) {
+                    else if(mouse_cursor_x == 0) {
                         // log("\nVertical split");
                         is_view_edited = true;
                         part_type_of_editing = EDITING_VERTICAL_MODE_FROM_LEFT;
@@ -1232,7 +1344,7 @@ void screen_subsystem_event_loop(void) {
                         edited_part = part;
                         redraw_edited_part = redraw_part_in_vertical_fixed_editing_mode;
                     }
-                    else if(mouse_cursor_x == (get_output_width() - 1) && mouse_cursor_y != 0 && mouse_cursor_y != (get_output_height() - 1)) {
+                    else if(mouse_cursor_x == (get_output_width() - 1)) {
                         // log("\nVertical split");
                         is_view_edited = true;
                         part_type_of_editing = EDITING_VERTICAL_MODE_FROM_RIGHT;
@@ -1241,7 +1353,7 @@ void screen_subsystem_event_loop(void) {
                         edited_part = part;
                         redraw_edited_part = redraw_part_in_vertical_fixed_editing_mode;
                     }
-                    else if(mouse_cursor_y == 0 && mouse_cursor_x != 0 && mouse_cursor_x != (get_output_width() - 1)) {
+                    else if(mouse_cursor_y == 0) {
                         // log("\nHorizontal split");
                         is_view_edited = true;
                         part_type_of_editing = EDITING_HORIZONTAL_MODE_FROM_TOP;
@@ -1250,7 +1362,7 @@ void screen_subsystem_event_loop(void) {
                         edited_part = part;
                         redraw_edited_part = redraw_part_in_horizontal_fixed_editing_mode;
                     }
-                    else if(mouse_cursor_y == (get_output_height() - 1) && mouse_cursor_x != 0 && mouse_cursor_x != (get_output_width() - 1)) {
+                    else if(mouse_cursor_y == (get_output_height() - 1)) {
                         // log("\nHorizontal split");
                         is_view_edited = true;
                         part_type_of_editing = EDITING_HORIZONTAL_MODE_FROM_BOTTOM;
@@ -1258,14 +1370,6 @@ void screen_subsystem_event_loop(void) {
                         editing_state_value = EDITING_OUTSIDE_OF_PART;
                         edited_part = part;
                         redraw_edited_part = redraw_part_in_horizontal_fixed_editing_mode;
-                    }
-                    else {
-                        if(part->state == PART_STATE_PROGRAM && part_with_focus != part) {
-                            part_with_focus = part;
-                            draw_view(active_view);
-                            redraw_screen();
-                        }
-                        process_left_click_event(part, mouse_cursor_x, mouse_cursor_y);
                     }
 
                     if(is_view_edited == true) {
@@ -1276,10 +1380,50 @@ void screen_subsystem_event_loop(void) {
                 break;
             }
             case EVENT_MOUSE_BUTTON_RELEASED: {
+                if(active_view->is_whole_screen_mode_active == true) {
+                    break; // TODO: pass mouse event
+                }
                 // log("\nMouse button %d released", event->event_value);
                 screen_part_t *part = part_where_is_mouse_cursor();
 
                 if(event->event_value == BUTTON_LEFT) {
+                    if(is_program_dragged == true) {
+                        is_program_dragged = false;
+                        if(part_dragged_from != part_dragged_to) {
+                            screen_part_t temp_part;
+
+                            temp_part.state = part_dragged_from->state;
+                            temp_part.program_name = part_dragged_from->program_name;
+                            temp_part.main_panel_data = part_dragged_from->main_panel_data;
+                            temp_part.event_list = part_dragged_from->event_list;
+                            
+                            part_dragged_from->state = part_dragged_to->state;
+                            part_dragged_from->program_name = part_dragged_to->program_name;
+                            part_dragged_from->main_panel_data = part_dragged_to->main_panel_data;
+                            part_dragged_from->event_list = part_dragged_to->event_list;
+
+                            part_dragged_to->state = temp_part.state;
+                            part_dragged_to->program_name = temp_part.program_name;
+                            part_dragged_to->main_panel_data = temp_part.main_panel_data;
+                            part_dragged_to->event_list = temp_part.event_list;
+
+                            if(part_with_focus == part_dragged_from) {
+                                part_with_focus = part_dragged_to;
+                            }
+
+                            parts_are_switching(part_dragged_from, part_dragged_to);
+                        }
+                        draw_view(active_view);
+                        redraw_screen();
+                    }
+                    else if(part->state == PART_STATE_MAIN_PANEL) {
+                        main_panel_process_mouse_left_click_release(part);
+                    }
+                    else {
+                        main_panel_process_mouse_left_click_release(NULL);
+                    }
+                }
+                else if(event->event_value == BUTTON_RIGHT) {
                     if(is_view_edited == true) {
                         is_view_edited = false;
                         if(part_type_of_editing == EDITING_VERTICAL_SPLIT) {
@@ -1334,4 +1478,10 @@ void screen_subsystem_event_loop(void) {
         event_list->consumer = ((event_list->consumer + 1) % MAX_NUMBER_OF_HUMAN_INPUT_EVENTS);
         switch_to_another_thread();
     }
+}
+
+void start_dragging_part(screen_part_t *part) {
+    is_program_dragged = true;
+    part_dragged_from = part;
+    part_dragged_to = part;
 }

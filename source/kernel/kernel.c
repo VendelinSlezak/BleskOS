@@ -21,6 +21,7 @@
 #include <kernel/hardware/devices/memory/virtual_memory.h>
 #include <kernel/hardware/devices/memory/memory_allocators.h>
 #include <kernel/firmware/main.h>
+#include <kernel/firmware/cmos/cmos.h>
 #include <kernel/hardware/devices/interrupt_controllers/main.h>
 #include <kernel/hardware/devices/timers/main.h>
 #include <kernel/hardware/main.h>
@@ -57,6 +58,7 @@ void initialize_kernel(void) {
 
     // initialize timers for processors
     initialize_timers();
+    start_counting_time();
 
     // initialize application processors
     initialize_all_application_processors();

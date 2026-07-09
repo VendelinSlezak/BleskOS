@@ -321,6 +321,20 @@ void calculate_block_dimensions(block_t *block) {
     }
 }
 
+void gui_add_left_click_event(screen_part_t *part, uint32_t x, uint32_t y, uint32_t width, uint32_t height, void (*process_click)(screen_part_t *part, uint32_t argument), uint32_t argument) {
+    click_area_list_t *list = part->event_list;
+    part->event_list = krealloc(list, sizeof(click_area_list_t) + (sizeof(click_area_t) * (list->number_of_click_areas + 1)));
+    list = part->event_list;
+    uint32_t index = list->number_of_click_areas;
+    list->click_areas[index].x = part->x + x;
+    list->click_areas[index].y = part->y + y;
+    list->click_areas[index].width = width;
+    list->click_areas[index].height = height;
+    list->click_areas[index].process_click = process_click;
+    list->click_areas[index].argument = argument;
+    list->number_of_click_areas++;
+}
+
 void draw_gui_block(screen_part_t *part, block_t *block, click_area_list_t **click_area_list, uint32_t x, uint32_t y) {
     if(block->process_click != NULL) {
         calculated_area_t area = calculate_area_in_part(part, x, y, block->actual_width, block->actual_height);

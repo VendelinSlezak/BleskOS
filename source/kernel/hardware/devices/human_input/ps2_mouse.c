@@ -128,8 +128,8 @@ void ps2_mouse_receive(hardware_t *ps2_mouse, uint8_t *buffer, uint32_t size) {
         }
 
         uint32_t left_button = data->packet[0] & 0x01;
-        uint32_t middle_button = (data->packet[0] >> 1) & 0x01;
-        uint32_t right_button = (data->packet[0] >> 2) & 0x01;
+        uint32_t right_button = (data->packet[0] >> 1) & 0x01;
+        uint32_t middle_button = (data->packet[0] >> 2) & 0x01;
         uint32_t x_movement = data->packet[1];
         if((data->packet[0] & 0x10) == 0x10) {
             x_movement |= 0xFFFFFF00;

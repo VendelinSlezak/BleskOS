@@ -18,6 +18,7 @@
 #include <kernel/hardware/devices/cpu/scheduler.h>
 #include <kernel/hardware/devices/cpu/commands.h>
 #include <kernel/hardware/devices/cpu/info.h>
+#include <kernel/hardware/groups/human_input/keyboard_layout.h>
 #include <kernel/software/syscall.h>
 #include <kernel/hardware/subsystems/screen/screen.h>
 #include <kernel/hardware/devices/timers/main.h>
@@ -30,82 +31,11 @@ human_input_group_t *human_input_group;
 mutex_t human_input_group_global_event_mutex;
 uint32_t microseconds_to_repeat_key_first_time = 300000;
 uint32_t microseconds_to_repeat_key_next_time = 50000;
-uint32_t *key_to_unicode = NULL;
-
-uint32_t keyboard_no_shift_to_unicode[INPUT_KEY_COUNT] = {
-    [KEY_A] = L'a', [KEY_B] = L'b', [KEY_C] = L'c', [KEY_D] = L'd', [KEY_E] = L'e',
-    [KEY_F] = L'f', [KEY_G] = L'g', [KEY_H] = L'h', [KEY_I] = L'i', [KEY_J] = L'j',
-    [KEY_K] = L'k', [KEY_L] = L'l', [KEY_M] = L'm', [KEY_N] = L'n', [KEY_O] = L'o',
-    [KEY_P] = L'p', [KEY_Q] = L'q', [KEY_R] = L'r', [KEY_S] = L's', [KEY_T] = L't',
-    [KEY_U] = L'u', [KEY_V] = L'v', [KEY_W] = L'w', [KEY_X] = L'x', [KEY_Y] = L'y',
-    [KEY_Z] = L'z',
-
-    [KEY_0] = L'0', [KEY_1] = L'1', [KEY_2] = L'2', [KEY_3] = L'3', [KEY_4] = L'4',
-    [KEY_5] = L'5', [KEY_6] = L'6', [KEY_7] = L'7', [KEY_8] = L'8', [KEY_9] = L'9',
-
-    [KEY_GRAVE] = L'`',
-    [KEY_MINUS] = L'-',
-    [KEY_EQUAL] = L'=',
-    [KEY_LEFT_BRACKET] = L'[',
-    [KEY_RIGHT_BRACKET] = L']',
-    [KEY_BACKSLASH] = L'\\',
-    [KEY_SEMICOLON] = L';',
-    [KEY_APOSTROPHE] = L'\'',
-    [KEY_COMMA] = L',',
-    [KEY_PERIOD] = L'.',
-    [KEY_SLASH] = L'/',
-    [KEY_SPACE] = L' ',
-    [KEY_TAB] = L'\t',
-    [KEY_ENTER] = L'\n',
-
-    [KEY_NUMPAD_0] = L'0', [KEY_NUMPAD_1] = L'1', [KEY_NUMPAD_2] = L'2',
-    [KEY_NUMPAD_3] = L'3', [KEY_NUMPAD_4] = L'4', [KEY_NUMPAD_5] = L'5',
-    [KEY_NUMPAD_6] = L'6', [KEY_NUMPAD_7] = L'7', [KEY_NUMPAD_8] = L'8',
-    [KEY_NUMPAD_9] = L'9', [KEY_NUMPAD_DOT] = L'.',
-    [KEY_NUMPAD_PLUS] = L'+',
-    [KEY_NUMPAD_MINUS] = L'-',
-    [KEY_NUMPAD_ASTERISK] = L'*',
-    [KEY_NUMPAD_SLASH] = L'/',
-};
-uint32_t keyboard_with_shift_to_unicode[INPUT_KEY_COUNT] = {
-    [KEY_A] = L'A', [KEY_B] = L'B', [KEY_C] = L'C', [KEY_D] = L'D', [KEY_E] = L'E',
-    [KEY_F] = L'F', [KEY_G] = L'G', [KEY_H] = L'H', [KEY_I] = L'I', [KEY_J] = L'J',
-    [KEY_K] = L'K', [KEY_L] = L'L', [KEY_M] = L'M', [KEY_N] = L'N', [KEY_O] = L'O',
-    [KEY_P] = L'P', [KEY_Q] = L'Q', [KEY_R] = L'R', [KEY_S] = L'S', [KEY_T] = L'T',
-    [KEY_U] = L'U', [KEY_V] = L'V', [KEY_W] = L'W', [KEY_X] = L'X', [KEY_Y] = L'Y',
-    [KEY_Z] = L'Z',
-
-    [KEY_0] = L')', [KEY_1] = L'!', [KEY_2] = L'@', [KEY_3] = L'#', [KEY_4] = L'$',
-    [KEY_5] = L'%', [KEY_6] = L'^', [KEY_7] = L'&', [KEY_8] = L'*', [KEY_9] = L'(',
-
-    [KEY_GRAVE] = L'~',
-    [KEY_MINUS] = L'_',
-    [KEY_EQUAL] = L'+',
-    [KEY_LEFT_BRACKET] = L'{',
-    [KEY_RIGHT_BRACKET] = L'}',
-    [KEY_BACKSLASH] = L'|',
-    [KEY_SEMICOLON] = L':',
-    [KEY_APOSTROPHE] = L'"',
-    [KEY_COMMA] = L'<',
-    [KEY_PERIOD] = L'>',
-    [KEY_SLASH] = L'?',
-    [KEY_SPACE] = L' ',
-    [KEY_TAB] = L'\t',
-    [KEY_ENTER] = L'\n',
-
-    [KEY_NUMPAD_0] = L'0', [KEY_NUMPAD_1] = L'1', [KEY_NUMPAD_2] = L'2',
-    [KEY_NUMPAD_3] = L'3', [KEY_NUMPAD_4] = L'4', [KEY_NUMPAD_5] = L'5',
-    [KEY_NUMPAD_6] = L'6', [KEY_NUMPAD_7] = L'7', [KEY_NUMPAD_8] = L'8',
-    [KEY_NUMPAD_9] = L'9', [KEY_NUMPAD_DOT] = L'.',
-    [KEY_NUMPAD_PLUS] = L'+',
-    [KEY_NUMPAD_MINUS] = L'-',
-    [KEY_NUMPAD_ASTERISK] = L'*',
-    [KEY_NUMPAD_SLASH] = L'/',
-};
 
 /* functions */
 void initialize_human_input_group(void) {
     human_input_group = kalloc(sizeof(human_input_group_t));
+    set_keyboard_layout("EN");
     add_virtual_device_to_hardware_list(VIRTUAL_HARDWARE_HUMAN_INPUT_DEVICE);
     create_kernel_thread((uint32_t)check_human_input_state, 0, 0);
 }
@@ -203,13 +133,7 @@ void hid_process_changes_of_local_state(human_input_device_state_t *state) {
         if(human_input_global_state.key_state[i] != actual_global_state.key_state[i]) {
             human_input_global_state.key_state[i] = actual_global_state.key_state[i];
             human_input_global_state.key_state_timestamp[i] = (*get_time_in_microseconds)();
-
-            key_to_unicode = keyboard_no_shift_to_unicode;
-            if(    (human_input_global_state.leds.capslock == false && (human_input_global_state.key_state[KEY_LEFT_SHIFT] == KEY_PRESSED || human_input_global_state.key_state[KEY_RIGHT_SHIFT] == KEY_PRESSED))
-                || (human_input_global_state.leds.capslock == true && (human_input_global_state.key_state[KEY_LEFT_SHIFT] == KEY_RELEASED && human_input_global_state.key_state[KEY_RIGHT_SHIFT] == KEY_RELEASED))) {
-                key_to_unicode = keyboard_with_shift_to_unicode;
-            }
-            uint32_t unicode_value = key_to_unicode[i];
+            uint32_t unicode_value = get_key_unicode_value(i);
 
             if(human_input_global_state.last_pressed_key == i && human_input_global_state.key_state[i] == KEY_RELEASED) {
                 human_input_global_state.last_pressed_key = 0;

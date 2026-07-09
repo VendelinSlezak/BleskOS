@@ -16,6 +16,7 @@
 #include <kernel/firmware/acpi/acpi.h>
 #include <kernel/firmware/acpi/aml/main.h>
 #include <kernel/firmware/smbios/smbios.h>
+#include <kernel/firmware/cmos/cmos.h>
 #include <kernel/hardware/devices/memory/virtual_memory.h>
 #include <kernel/hardware/devices/memory/memory_allocators.h>
 #include <kernel/hardware/groups/logging/logging.h>
@@ -36,6 +37,9 @@ void read_firmware_data(void) {
 
     // read BIOS data area
     read_bda_data();
+
+    // read CMOS
+    read_cmos();
 
     // search for tables
     search_for_pir_table();

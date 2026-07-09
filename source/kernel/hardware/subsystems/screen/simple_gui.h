@@ -105,8 +105,8 @@ typedef struct block_t {
     int actual_height;
 
     uint32_t draw_from_two_ends;
-    uint32_t number_of_blocks_from_start;
-    uint32_t number_of_blocks_from_end;
-    uint32_t number_of_blocks;
+    int number_of_blocks_from_start;
+    int number_of_blocks_from_end;
+    int number_of_blocks;
     struct block_t *blocks[];
 } block_t;
