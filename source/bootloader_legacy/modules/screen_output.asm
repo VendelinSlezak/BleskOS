@@ -99,7 +99,7 @@ bootloader_panic:
 
     mov ax, 0x0000
     mov ds, ax
-    mov ax, 0xB800
+    mov ax, 0xB80A
     mov fs, ax
     mov di, 0
 

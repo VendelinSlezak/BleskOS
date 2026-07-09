@@ -91,7 +91,7 @@ create_standardized_phy_memory_map:
 ; BOOTLOADER FUNCTION
 create_standardized_32_bit_free_memory_map:
     ; CREATE STANDARDIZED 32 BIT FREE MEMORY MAP
-    ; area below 0x10000 is reserved and will not be added to this map
+    ; area below 0x20000 is reserved and will not be added to this map
     ; dw number_of_entries
     ; entries:
     ;  dw start_of_memory
@@ -107,6 +107,7 @@ create_standardized_32_bit_free_memory_map:
     mov cx, word [si] ; number of entries in standardized memory map
     add si, 4
     .add_entry_to_standardized_free_phy_mem_map:
+    push cx
         ; check if we will add this entry
         cmp dword [si+standardized_memory_map_entry.type], STANDARDIZED_PHY_MEM_MAP_FREE_ENTRY
         jne .add_entry_to_standardized_free_phy_mem_map_next_loop ; memory entry is not free
@@ -123,21 +124,30 @@ create_standardized_32_bit_free_memory_map:
             jb .if_entry_size_below_4_GB ; entry is bigger than 4 GB, use ebx as 0xFFFFFFFF
             mov ebx, eax ; eax contains end of area that is below 4 GB
         .if_entry_size_below_4_GB:
-        cmp ebx, 0x10000
-        jb .add_entry_to_standardized_free_phy_mem_map_next_loop ; entry end is below 0x10000, do not add it do list
+        cmp ebx, 0x20000
+        jb .add_entry_to_standardized_free_phy_mem_map_next_loop ; entry end is below 0x20000, do not add it do list
         sub ebx, dword [si+standardized_memory_map_entry.memory_start+0] ; ebx contains length of area
 
-        ; check if this entry is above 0x10000
+        ; check if this entry is above 0x20000
         mov eax, dword [si+standardized_memory_map_entry.memory_start+0]
-        cmp eax, 0x10000
-        jae .if_entry_starts_below_0x10000
-            mov edx, 0x10000
-            sub edx, eax ; edx now contains size of area below 0x10000
-            sub ebx, edx ; recalculate size of area without part below 0x10000
-            mov eax, 0x10000 ; area will start at 0x10000
-        .if_entry_starts_below_0x10000:
+        cmp eax, 0x20000
+        jae .if_entry_starts_below_0x20000
+            mov edx, 0x20000
+            sub edx, eax ; edx now contains size of area below 0x20000
+            sub ebx, edx ; recalculate size of area without part below 0x20000
+            mov eax, 0x20000 ; area will start at 0x20000
+        .if_entry_starts_below_0x20000:
 
-        ; set memory start
+        ; set memory start aligned to page
+        mov edx, eax
+        and edx, 0xFFFFF000
+        add edx, 0x1000
+        sub edx, eax ; edx now contains offset from start of entry to page boundary
+        cmp edx, 0x1000
+        je .if_entry_starts_at_page_boundary
+            add eax, edx ; move memory start
+            sub ebx, edx ; move memory size
+        .if_entry_starts_at_page_boundary:
         mov dword [di+standardized_32_bit_free_memory_map_entry.memory_start], eax
 
         ; set memory size
@@ -150,7 +160,10 @@ create_standardized_32_bit_free_memory_map:
         add di, STANDARDIZED_FREE_PHY_MEM_MAP_ENTRY_SIZE
     .add_entry_to_standardized_free_phy_mem_map_next_loop:
     add si, STANDARDIZED_PHY_MEM_MAP_ENTRY_SIZE
-    loop .add_entry_to_standardized_free_phy_mem_map
+    pop cx
+    dec cx
+    cmp cx, 0
+    jne .add_entry_to_standardized_free_phy_mem_map
 
     ret
 
@@ -238,21 +251,26 @@ copy_data:
 
     pusha
 
-    ; copy in real mode
-    mov ax, 0
-    mov ds, ax
+    mov ax, word [data_input+2]
+    shl ax, 12
+    mov fs, ax
     mov si, word [data_input]
     mov ax, word [data_output+2]
     shl ax, 12
-    mov es, ax
+    mov gs, ax
     mov di, word [data_output]
     mov cx, word [data_size]
-    shr cx, 2 ; cx /= 4
-    rep movsd
+    .copy_byte:
+        mov al, byte [fs:si]
+        mov byte [gs:di], al
+        inc si
+        inc di
+    loop .copy_byte
 
-    ; reset es
+    ; reset segments
     mov ax, 0
-    mov es, ax
+    mov fs, ax
+    mov gs, ax
 
     popa
     ret

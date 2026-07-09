@@ -52,76 +52,98 @@ load_ramdisk_to_physical_and_virtual_memory:
 
     ; LOAD BLESKOS RAMDISK TO MEMORY
     mov edi, 0xFF000000 ; pointer to virtual memory
-    mov dword [data_input], PAGE_OF_LOADED_DATA_START ; we will always copy data from here
     mov dword [data_size], PAGE_SIZE ; we will always copy one page of data
     mov eax, dword [PAGE_OF_LOADED_DATA_START] ; read size of ramdisk in bytes
-    shr eax, 12
-    inc eax
-    mov word [ramdisk_number_of_pages], ax ; size was converted to number of pages
-    mov ax, 10
-    mov cx, word [ramdisk_number_of_pages]
-    .load_page_of_data:
+    add eax, ((120 * 512) - 1)
+    mov ebx, 120 * 512
+    xor edx, edx
+    div ebx
+    mov word [ramdisk_number_of_chunks], ax ; size was converted to number of chunks
+    mov ax, 10 ; start reading from sector 10
+    mov cx, word [ramdisk_number_of_chunks]
+    .load_chunk_of_data:
     push cx
         ; print how much data is loaded
         pusha
             mov ax, 100
-            mov bx, word [ramdisk_number_of_pages]
+            mov bx, word [ramdisk_number_of_chunks]
             sub bx, cx
             mul bx
-            mov bx, word [ramdisk_number_of_pages]
+            mov bx, word [ramdisk_number_of_chunks]
             mov dx, 0
             div bx
             call print_loaded_percent
         popa
 
-        ; load one page of data from disk
-        mov bp, PAGE_OF_LOADED_DATA_START
-        call read_page_of_data
+        ; load one chunk of data from disk
+        call read_chunk_of_data
 
         ; save LBA number of sector to be readed
-        add ax, 8
+        add ax, 120
         push ax
 
-        ; allocate page from physical memory
-        mov eax, PAGE_SIZE
-        call phy_alloc
+        ; copy disk data to pages
+        mov dword [data_input], CHUNK_OF_LOADED_DATA_START ; data were loaded here
+        mov cx, (120 / 8)
+        .copy_page_of_data:
+        push cx
+            ; allocate page from physical memory
+            mov eax, PAGE_SIZE
+            call phy_alloc
+            mov dword [data_output], ebp
 
-        ; map this page to virtual memory
-        mov eax, (1 << 1) | (1 << 0) ; flags: write-back, supervisor, read-write, present
-        mov esi, ebp ; phy_alloc returned physical memory address in ebp
-        call map_page_to_virtual_memory
-        add edi, PAGE_SIZE ; move to next page in virtual memory
+            ; map this page to virtual memory
+            mov eax, (1 << 1) | (1 << 0) ; flags: write-back, supervisor, read-write, present
+            mov esi, ebp ; phy_alloc returned physical memory address in ebp
+            call map_page_to_virtual_memory
+            add edi, PAGE_SIZE ; move to next page in virtual memory
 
-        ; copy disk data to this page
-        mov dword [data_output], esi
-        call copy_data
+            ; copy disk data to this page
+            call copy_data
+            add dword [data_input], PAGE_SIZE
+        pop cx
+        loop .copy_page_of_data
 
         ; restore LBA number of sector to be readed
         pop ax 
     pop cx
-    loop .load_page_of_data
+    loop .load_chunk_of_data
 
     PRINT_STRING 'Ramdisk successfully loaded'
 
     ret
 
-; input: ax = LBA number of first sector, bp = offset where data will be loaded
+; input: ax = LBA number of first sector
 ; output: nothing
-read_page_of_data:
+read_chunk_of_data:
     pusha
 
     ; test if we will use CHS method or LBA method
     test byte [boot_device_number], 0x80
     jnz .use_lba_read
 
+    push dword [data_input]
+    push dword [data_size]
+    push dword [data_output]
+
     ; use CHS
-    mov cx, 8
-    mov bp, PAGE_OF_LOADED_DATA_START
+    mov cx, 120
+    mov dword [data_input], PAGE_OF_LOADED_DATA_START
+    mov dword [data_size], 512
+    mov dword [data_output], CHUNK_OF_LOADED_DATA_START
     .load_sector_of_data:
+        mov bp, PAGE_OF_LOADED_DATA_START
         call read_sector
         inc ax ; next sector
-        add bp, 512
+        pusha
+        call copy_data
+        popa
+        add dword [data_output], 512
     loop .load_sector_of_data
+
+    pop dword [data_output]
+    pop dword [data_size]
+    pop dword [data_input]
 
     popa
     ret
@@ -129,9 +151,9 @@ read_page_of_data:
     .use_lba_read:
     ; set packet
     mov word [ah_0x42_packet.signature], 0x0010 ; set signature
-    mov word [ah_0x42_packet.number_of_sectors], 8 ; we will read eight sectors
-    mov word [ah_0x42_packet.offset], bp ; set physical memory pointer
-    mov word [ah_0x42_packet.segment], 0x0000
+    mov word [ah_0x42_packet.number_of_sectors], 120 ; we will read 120 sectors
+    mov word [ah_0x42_packet.offset], (CHUNK_OF_LOADED_DATA_START & 0xFFFF) ; set physical memory pointer
+    mov word [ah_0x42_packet.segment], ((CHUNK_OF_LOADED_DATA_START >> 16) << 12)
     mov word [ah_0x42_packet.lba_lower_word], ax ; LBA value
     mov word [ah_0x42_packet.lba_upper_word], 0
     mov dword [ah_0x42_packet.lba_upper_dword], 0
@@ -237,4 +259,4 @@ loading_string db '% of BleskOS kernel is loaded...', 0
 
 boot_device_number db 0
 
-ramdisk_number_of_pages dw 0
+ramdisk_number_of_chunks dw 0
