@@ -1,167 +1,127 @@
-# Tools
-C_COMPILER = gcc
-C_COMPILER_FLAGS =  -m32 -ffreestanding -fno-stack-protector -fno-PIC -march=i686 -std=gnu99 -O2 \
-                    -Wall -Wno-pointer-sign -Wno-unused-variable -g
+MAKEFLAGS += --no-print-directory
 
-ASSEMBLY_COMPILER = nasm
-ASSEMBLY_COMPILER_FLAGS = -f elf32
-
-LINKER = ld
-LINKER_FLAGS = -z noexecstack -m elf_i386 -T source/kernel/linker.ld
-LIB_LINKER_FLAGS = -z noexecstack -m elf_i386 -Ttext 0xE0000000
-
-OBJCOPY = objcopy
-OBJCOPY_FLAGS = -O binary
-
-# Directories
+export ROOT_DIR := $(CURDIR)
 SRC_DIR = source
 BUILD_DIR = build
-IMAGE = bleskos.img
 
-# Sources
-C_SRCS = $(shell find $(SRC_DIR) -name "*.c" ! -path "$(SRC_DIR)/bootloader_legacy/*")
-ASM_SRCS = $(shell find $(SRC_DIR) -name "*.asm" ! -path "$(SRC_DIR)/bootloader_legacy/*")
-BOOTLOADER_ASM_SRCS = $(shell find "$(SRC_DIR)/bootloader_legacy" -name "*.asm")
-
-# Object files
-ALL_C_OBJS = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.c.o,$(C_SRCS))
-ALL_ASM_OBJS = $(patsubst $(SRC_DIR)/%.asm,$(BUILD_DIR)/%.asm.o,$(ASM_SRCS))
-LIB_OBJS = $(filter $(BUILD_DIR)/userspace_library/%,$(ALL_C_OBJS) $(ALL_ASM_OBJS))
-KERNEL_OBJS = $(filter-out $(BUILD_DIR)/userspace_library/%,$(ALL_C_OBJS) $(ALL_ASM_OBJS))
-
-# Header files (to generate in build/)
-C_GEN_HDRS = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.h,$(C_SRCS))
-
-# All header files
+C_SRCS = $(shell find $(SRC_DIR) -name "*.c")
 HDR_SRCS = $(shell find $(SRC_DIR) -name "*.h")
-# Those headers which have a matching .c
-HDR_WITH_C = $(patsubst $(SRC_DIR)/%.c,$(SRC_DIR)/%.h,$(C_SRCS))
-# Headers without matching .c (need to be copied)
-HDR_ONLY = $(filter-out $(HDR_WITH_C),$(HDR_SRCS))
-# Destination .h files in build/
-HDR_ONLY_BUILD = $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(HDR_ONLY))
+C_SRCS_WITH_HDR := $(foreach f,$(C_SRCS),$(if $(wildcard $(patsubst %.c,%.h,$(f))),$(f)))
 
-# Targets
-TARGET_ELF = $(BUILD_DIR)/kernel.elf
-TARGET_BIN = $(BUILD_DIR)/kernel.bin
-TARGET_LIBS_ELF = $(BUILD_DIR)/userspace_library.elf
+C_GEN_HDRS = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.h,$(C_SRCS))
+C_GEN_HDRS_WITH_HDR := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.h,$(C_SRCS_WITH_HDR))
+HDR_WITH_C = $(patsubst $(SRC_DIR)/%.c,$(SRC_DIR)/%.h,$(C_SRCS))
+HDR_ONLY = $(filter-out $(HDR_WITH_C),$(HDR_SRCS))
+HDR_ONLY_BUILD := $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(HDR_ONLY))
+
+IMAGE = bleskos.img
 TARGET_BOOTLOADER_LIVE = $(BUILD_DIR)/bootloader_legacy/bootloader_live.img
 
-.PHONY: clean build_live run_qemu run_bochs
+# those folders have their own makefiles
+SUBDIRS = source/bootloader_legacy source/kernel source/userspace_library source/test
 
-# Create build dir
-$(BUILD_DIR)/%:
+.PHONY: all headers build_subdirs build_live clean run_qemu run_bochs $(SUBDIRS)
+
+all: build_live
+
+# GENERATING ALL HEADERS
+headers: $(C_GEN_HDRS) $(HDR_ONLY_BUILD)
+
+# generate guard definition name from file path
+define get_guard
+$(shell echo "$1" | tr '/.' '_' | tr -cd 'A-Za-z0-9_' | tr '[:lower:]' '[:upper:]')
+endef
+
+# update file only if content has changed
+define update_if_changed
+	@if ! cmp -s "$1" "$2"; then \
+		mv "$1" "$2"; \
+	else \
+		rm -f "$1"; \
+	fi
+endef
+
+# generate .h files from .c + .h files
+$(C_GEN_HDRS_WITH_HDR): $(BUILD_DIR)/%.h: $(SRC_DIR)/%.h $(SRC_DIR)/%.c
+	@echo "[INFO] Generating header for $< and $(SRC_DIR)/$*.c..."
 	@mkdir -p $(dir $@)
+	$(eval GUARD := $(call get_guard,$@))
+	@TMP="$@.tmp"; \
+	{ \
+		echo "#ifndef $(GUARD)"; \
+		echo "#define $(GUARD)"; \
+		echo ""; \
+		cat "$(SRC_DIR)/$*.h"; \
+		python3 extract_prototypes.py < "$(SRC_DIR)/$*.c"; \
+		echo ""; \
+		echo "#endif /* $(GUARD) */"; \
+	} > "$$TMP"
+	$(call update_if_changed,"$@.tmp","$@")
 
-# Create live bootloader image
-$(TARGET_BOOTLOADER_LIVE): $(BOOTLOADER_ASM_SRCS)
-	@echo "[INFO] Compiling live bootloader..."
-	@mkdir -p $(dir $@)
-	@$(ASSEMBLY_COMPILER) -f bin $(SRC_DIR)/bootloader_legacy/bootloader_live_mbr.asm -o $(BUILD_DIR)/bootloader_legacy/bootloader_live_mbr.bin
-	@$(ASSEMBLY_COMPILER) -f bin $(SRC_DIR)/bootloader_legacy/bootloader_live_partition.asm -o $(BUILD_DIR)/bootloader_legacy/bootloader_live_partition.bin
-	@$(ASSEMBLY_COMPILER) -f bin $(SRC_DIR)/bootloader_legacy/bootloader_live_extended.asm -o $(BUILD_DIR)/bootloader_legacy/bootloader_live_extended.bin
-	@echo "[INFO] Creating live bootloader image..."
-	@dd if=/dev/zero of=$@ bs=1024 count=1440 status=none
-	@dd if=$(BUILD_DIR)/bootloader_legacy/bootloader_live_mbr.bin of=$@ conv=notrunc seek=0 status=none
-	@dd if=$(BUILD_DIR)/bootloader_legacy/bootloader_live_partition.bin of=$@ conv=notrunc seek=1 status=none
-	@dd if=$(BUILD_DIR)/bootloader_legacy/bootloader_live_extended.bin of=$@ conv=notrunc seek=2 status=none
-	@echo "[SUCCESS] Live bootloader image created"
-
-# Compile ASM
-$(BUILD_DIR)/%.asm.o: $(SRC_DIR)/%.asm
-	@echo "[INFO] Compiling $<..."
-	@mkdir -p $(dir $@)
-	@$(ASSEMBLY_COMPILER) $(ASSEMBLY_COMPILER_FLAGS) $< -o $@
-
-# Generate .h file
+# generate .h files from .c files
 $(BUILD_DIR)/%.h: $(SRC_DIR)/%.c
 	@echo "[INFO] Generating header for $<..."
 	@mkdir -p $(dir $@)
-	@TMP_HDR="$@.tmp"; \
-	GUARD_RAW="$@"; \
-	GUARD_NAME=$$(echo "$$GUARD_RAW" | tr '/.' '_' | tr -cd 'A-Za-z0-9_'); \
-	GUARD_NAME=$$(echo "$$GUARD_NAME" | tr '[:lower:]' '[:upper:]'); \
-	if [ -f "$(SRC_DIR)/$*.h" ]; then cp "$(SRC_DIR)/$*.h" "$$TMP_HDR"; else : > "$$TMP_HDR"; fi; \
-	echo "#ifndef $$GUARD_NAME" > "$$TMP_HDR.with_guard"; \
-	echo "#define $$GUARD_NAME" >> "$$TMP_HDR.with_guard"; \
-	echo "" >> "$$TMP_HDR.with_guard"; \
-	cat "$$TMP_HDR" >> "$$TMP_HDR.with_guard"; \
-	python3 extract_prototypes.py < $< >> "$$TMP_HDR.with_guard"; \
-	echo "" >> "$$TMP_HDR.with_guard"; \
-	echo "#endif /* $$GUARD_NAME */" >> "$$TMP_HDR.with_guard"; \
-	if ! cmp -s "$$TMP_HDR.with_guard" "$@"; then \
-		mv "$$TMP_HDR.with_guard" "$@"; \
-	else \
-		rm "$$TMP_HDR.with_guard"; \
-	fi; \
-	rm -f "$$TMP_HDR"
+	$(eval GUARD := $(call get_guard,$@))
+	@TMP="$@.tmp"; \
+	{ \
+		echo "#ifndef $(GUARD)"; \
+		echo "#define $(GUARD)"; \
+		echo ""; \
+		python3 extract_prototypes.py < $<; \
+		echo ""; \
+		echo "#endif /* $(GUARD) */"; \
+	} > "$$TMP"
+	$(call update_if_changed,"$@.tmp","$@")
 
-# Copy pure header files without .c
+# copy pure .h files
 $(BUILD_DIR)/%.h: $(SRC_DIR)/%.h
 	@echo "[INFO] Copying $<..."
 	@mkdir -p $(dir $@)
-	@TMP_HDR="$@.tmp"; \
-	GUARD_RAW="$@"; \
-	GUARD_NAME=$$(echo "$$GUARD_RAW" | tr '/.' '_' | tr -cd 'A-Za-z0-9_'); \
-	GUARD_NAME=$$(echo "$$GUARD_NAME" | tr '[:lower:]' '[:upper:]'); \
-	echo "#ifndef $$GUARD_NAME" > "$$TMP_HDR"; \
-	echo "#define $$GUARD_NAME" >> "$$TMP_HDR"; \
-	echo "" >> "$$TMP_HDR"; \
-	cat "$<" >> "$$TMP_HDR"; \
-	echo "" >> "$$TMP_HDR"; \
-	echo "#endif /* $$GUARD_NAME */" >> "$$TMP_HDR"; \
-	if ! cmp -s "$$TMP_HDR" "$@"; then \
-		mv "$$TMP_HDR" "$@"; \
-	else \
-		rm "$$TMP_HDR"; \
-	fi
+	$(eval GUARD := $(call get_guard,$@))
+	@TMP="$@.tmp"; \
+	{ \
+		echo "#ifndef $(GUARD)"; \
+		echo "#define $(GUARD)"; \
+		echo ""; \
+		cat "$<"; \
+		echo ""; \
+		echo "#endif /* $(GUARD) */"; \
+	} > "$$TMP"
+	$(call update_if_changed,"$@.tmp","$@")
 
-# Compile .c file
-$(BUILD_DIR)/%.c.o: $(SRC_DIR)/%.c $(BUILD_DIR)/%.h
-	@echo "[INFO] Compiling $<..."
-	@mkdir -p $(dir $@)
-	@$(C_COMPILER) $(C_COMPILER_FLAGS) -Ibuild -include source/global_declarations.h -include $(@:.c.o=.h) -c $< -o $@
+# COMPILING ALL SUBDIRS
+$(SUBDIRS):
+	@echo "[INFO] Compiling folder $@..."
+	$(MAKE) -C $@
 
-# Link Kernel
-$(TARGET_ELF): $(KERNEL_OBJS)
-	@echo "[INFO] Linking Kernel..."
-	@$(LINKER) $(LINKER_FLAGS) -o $@ $(KERNEL_OBJS)
+build_subdirs: headers $(SUBDIRS)
 
-# Link Libraries
-$(TARGET_LIBS_ELF): $(LIB_OBJS)
-	@echo "[INFO] Linking Libraries ELF..."
-	@$(LINKER) $(LIB_LINKER_FLAGS) -o $@ $(LIB_OBJS)
-
-# Convert to BIN
-$(TARGET_BIN): $(TARGET_ELF)
-	@echo "[INFO] Converting ELF to BIN..."
-	@$(OBJCOPY) $(OBJCOPY_FLAGS) $< $@
-
-# Build live image
-build_live: $(TARGET_BOOTLOADER_LIVE) $(C_GEN_HDRS) $(HDR_ONLY_BUILD) $(TARGET_BIN) $(TARGET_LIBS_ELF)
-	@cp $(TARGET_BIN) ramdisk/kernel.bin
-	@cp $(TARGET_LIBS_ELF) ramdisk/userspace_library.elf
+# CREATING FINAL IMAGE FOR LIVE BOOT
+build_live: build_subdirs
 	@$(MAKE) -C ramdisk -f makefile
-	@echo "[INFO] Creating bootable image..."
 	@cp $(TARGET_BOOTLOADER_LIVE) $(IMAGE)
 	@dd if=ramdisk/ramdisk.img of=$(IMAGE) conv=notrunc seek=10 status=none
 	@echo "[SUCCESS] Image created: $(IMAGE)"
 
-# Run qemu
+# RUN IMAGE IN QEMU
 run_qemu: $(IMAGE)
 	@echo "[RUN] Starting QEMU..."
-	@qemu-system-i386 -drive file=$(IMAGE),format=raw,if=floppy -debugcon stdio -no-reboot -smp 1
+	@qemu-system-i386 -drive file=$(IMAGE),format=raw,if=floppy \
+                      -debugcon stdio \
+                      -no-reboot -d cpu_reset,guest_errors \
+                      -smp 1
 	@echo "\n\n[RUN] QEMU exited"
 
-# Run bochs
+# RUN IMAGE IN BOCHS
 run_bochs: $(IMAGE)
 	@echo "[RUN] Starting Bochs..."
 	@bochs -f /home/user/bochs -debugger
 	@echo "\n\n[RUN] Bochs exited"
 
-# Clean
 clean:
-	@echo "[INFO] Removing build artifacts..."
-	@rm -rf $(BUILD_DIR) $(IMAGE) ramdisk/kernel.bin ramdisk/userspace_library.elf
+	@for dir in $(SUBDIRS); do \
+		$(MAKE) -C $$dir clean; \
+	done
 	@$(MAKE) -C ramdisk -f makefile clean
-	@echo "[SUCCESS] Artifacts removed"
+	@rm -rf $(BUILD_DIR) $(IMAGE)

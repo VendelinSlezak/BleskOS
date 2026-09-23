@@ -28,6 +28,7 @@
 #include <kernel/software/elf_loader.h>
 #include <kernel/software/syscall.h>
 #include <kernel/software/spawning_template.h>
+#include <kernel/software/running_executables.h>
 
 /* local variables */
 kernel_thread_list_t *kernel_threads = NULL;
@@ -39,7 +40,7 @@ void initialize_scheduler(void) {
     kernel_threads = kalloc(sizeof(kernel_thread_list_t) * number_of_logical_processors);
 
     // create main kernel thread
-    kernel_thread_t *kernel_main_thread = kalloc(sizeof(kernel_thread_t));
+    kernel_thread_t *kernel_main_thread = block_alloc(sizeof(kernel_thread_t));
     kernel_main_thread->next = NULL;
     kernel_main_thread->id = get_unique_kernel_tid(get_current_logical_processor_index());
     kernel_main_thread->page_directory_physical_address = NULL; // this thread is in all page directories
@@ -67,6 +68,7 @@ void initialize_scheduler(void) {
     register_interrupt_handler(INTERRUPT_PREEMPETIVE_SCHEDULING, preemptive_scheduling_interrupt);
     register_interrupt_handler(INTERRUPT_VECTOR_EXIT_THREAD, close_current_thread_interrupt);
     register_interrupt_handler(INTERRUPT_VECTOR_SCHEDULER, scheduler_interrupt);
+    register_interrupt_handler(INTERRUPT_REFRESH_TLB, refresh_tlb);
 }
 
 uint32_t get_number_of_running_programs_on_processor(uint32_t logical_processor_index) {
@@ -82,7 +84,7 @@ uint32_t get_number_of_running_programs_on_processor(uint32_t logical_processor_
 }
 
 /* create processes and threads */
-void create_user_process_from_spawning_template(spawning_template_t *template) {
+void *create_running_program_from_spawning_template(spawning_template_t *template) {
     // load virtual space of template
     uint32_t original_page_directory = read_cr3();
     load_page_directory(template->page_directory);
@@ -90,21 +92,21 @@ void create_user_process_from_spawning_template(spawning_template_t *template) {
     // create new page directory
     LOCK_MUTEX(&creating_page_directory_mutex);
     uint32_t new_page_directory = (uint32_t) pm_alloc_page();
-    vm_map_page(P_MEM_NEW_PAGE_DIRECTORY, new_page_directory, VM_KERNEL);
-    invlpg(P_MEM_NEW_PAGE_DIRECTORY);
-    uint32_t *template_page_directory = (uint32_t *) P_MEM_PAGE_DIRECTORY;
-    uint32_t *page_directory = (uint32_t *) P_MEM_NEW_PAGE_DIRECTORY;
-    for(int i = 0; i < (1024 - number_of_shared_page_tables); i++) {
+    vm_map_page(VM_NEW_PAGE_DIRECTORY, new_page_directory, VM_KERNEL);
+    invlpg(VM_NEW_PAGE_DIRECTORY);
+    uint32_t *template_page_directory = (uint32_t *) VM_PAGE_DIRECTORY;
+    uint32_t *page_directory = (uint32_t *) VM_NEW_PAGE_DIRECTORY;
+    for(int i = 0; i < 768; i++) {
         if((template_page_directory[i] & VM_FLAG_PRESENT) != 0) {
             // copy pages into new page tables
             uint32_t new_page_table = (uint32_t) pm_alloc_page();
             page_directory[i] = (new_page_table | VM_PAGE_TABLE);
-            vm_map_page(P_MEM_NEW_PAGE_TABLE, new_page_table, VM_KERNEL);
-            invlpg(P_MEM_NEW_PAGE_TABLE);
-            memcpy((void *)P_MEM_NEW_PAGE_TABLE, (void *) (P_MEM_PAGE_TABLE + (i * PAGE_SIZE)), PAGE_SIZE);
+            vm_map_page(VM_NEW_PAGE_TABLE, new_page_table, VM_KERNEL);
+            invlpg(VM_NEW_PAGE_TABLE);
+            memcpy((void *)VM_NEW_PAGE_TABLE, (void *) (VM_PAGE_TABLES + (i * PAGE_SIZE)), PAGE_SIZE);
         }
     }
-    for(int i = (1024 - number_of_shared_page_tables); i < 1023; i++) {
+    for(int i = 768; i < 1023; i++) {
         page_directory[i] = template_page_directory[i]; // copy kernel page tables
     }
     page_directory[1023] = (new_page_directory | VM_KERNEL); // map page directory to itself
@@ -123,16 +125,17 @@ void create_user_process_from_spawning_template(spawning_template_t *template) {
 
     // create new program
     program_t *program = kalloc(sizeof(program_t) + (sizeof(user_thread_list_t) * number_of_logical_processors));
-    program->template = template;
-    program->window = NULL;
-    program->page_directory_for_human_input_event_stack = NULL;
-    program->human_input_event_stack = NULL;
+    running_executable_t *running_executable = add_running_executable();
+    program->running_executable = running_executable;
+    running_executable->program = program;
+    running_executable->template = template;
+    running_executable->page_directory_of_virtual_hardware = new_page_directory;
 
     // create new user thread
-    user_thread_t *user_main_thread = kalloc(sizeof(user_thread_t));
+    user_thread_t *user_main_thread = block_alloc(sizeof(user_thread_t));
     user_main_thread->next = NULL;
     user_main_thread->page_directory_physical_address = new_page_directory;
-    user_main_thread->number_of_threads_in_page_directory = kalloc(sizeof(uint32_t));
+    user_main_thread->number_of_threads_in_page_directory = block_alloc(sizeof(uint32_t));
     *user_main_thread->number_of_threads_in_page_directory = 1;
     user_main_thread->creation_thread_id = 0; // this is main thread so it is not connected to any other thread
     user_main_thread->id = get_unique_user_program_tid(target_logical_processor_index, program);
@@ -156,10 +159,14 @@ void create_user_process_from_spawning_template(spawning_template_t *template) {
     user_main_thread->time_end_of_sleep = NULL;
 
     // update stats
+    program->is_blocked = false;
+    program->main_thread = user_main_thread;
     program->number_of_threads = 1;
     program->thread_list_on_logical_processor[target_logical_processor_index].number_of_running_threads = 1;
     program->thread_list_on_logical_processor[target_logical_processor_index].threads = user_main_thread;
     program->thread_list_on_logical_processor[target_logical_processor_index].current_thread = user_main_thread;
+
+    log("\nCreated user thread %d in process %x on CPU%d", user_main_thread->id, program, target_logical_processor_index);
 
     // add program to program list
     program->next = programs;
@@ -174,11 +181,14 @@ void create_user_process_from_spawning_template(spawning_template_t *template) {
         )
     ) {}
 
+
     // move back to original page directory
     load_page_directory(original_page_directory);
 
     // signal the logical processor to run the new process
     lapic_send_ipi(logical_processors[target_logical_processor_index].hardware_id, INTERRUPT_PREEMPETIVE_SCHEDULING);
+
+    return running_executable;
 }
 
 uint32_t get_unique_kernel_tid(uint32_t target_logical_processor_index) {
@@ -206,7 +216,7 @@ uint32_t get_unique_user_program_tid(uint32_t target_logical_processor_index, pr
     return 0; // no available TIDs
 }
 
-uint32_t create_kernel_thread(uint32_t function, uint32_t arguments[], uint32_t number_of_arguments) {
+uint32_t create_kernel_thread(uint8_t *name, uint32_t function, uint32_t arguments[], uint32_t number_of_arguments) {
     // find logical processor with least number of threads
     uint32_t target_logical_processor_index = 0;
     uint32_t target_logical_processor_num_of_threads = kernel_threads[0].number_of_running_threads;
@@ -224,12 +234,13 @@ uint32_t create_kernel_thread(uint32_t function, uint32_t arguments[], uint32_t 
     }
 
     // create new thread
-    log("\nCreating thread %d in kernel process on CPU%d", tid, target_logical_processor_index);
-    kernel_thread_t *new_thread = kalloc(sizeof(kernel_thread_t));
+    log("\nCreating thread %s with id %d in kernel process on CPU%d", name, tid, target_logical_processor_index);
+    kernel_thread_t *new_thread = block_alloc(sizeof(kernel_thread_t));
     new_thread->next = NULL;
     new_thread->id = tid;
     new_thread->page_directory_physical_address = NULL;
     new_thread->kernel_stack = kalloc(KERNEL_STACK_SIZE);
+    new_thread->is_blocked = false;
     new_thread->kill_me = false;
     new_thread->sleeping = false;
     new_thread->time_end_of_sleep = 0;
@@ -315,10 +326,13 @@ uint32_t create_user_thread(program_t *program, void *entry_point, void *stack_p
 
     // create new user thread
     logical_processor_t *lpdata = get_current_logical_processor_struct();
-    user_thread_t *user_thread = kalloc(sizeof(user_thread_t));
+    user_thread_t *current_thread = lpdata->current_user_thread;
+    user_thread_t *user_thread = block_alloc(sizeof(user_thread_t));
     user_thread->next = NULL;
-    user_thread->page_directory_physical_address = get_current_logical_processor_struct()->current_user_thread->page_directory_physical_address;
-    user_thread->creation_thread_id = lpdata->current_user_thread->id;
+    user_thread->page_directory_physical_address = current_thread->page_directory_physical_address;
+    user_thread->number_of_threads_in_page_directory = current_thread->number_of_threads_in_page_directory;
+    __atomic_add_fetch(user_thread->number_of_threads_in_page_directory, 1, __ATOMIC_SEQ_CST);
+    user_thread->creation_thread_id = current_thread->id;
     user_thread->id = tid;
     user_thread->kernel_stack = kalloc(KERNEL_STACK_SIZE);
     interrupt_stack_t *kernel_stack_pointer = (interrupt_stack_t *) ((uint32_t)user_thread->kernel_stack + KERNEL_STACK_SIZE - sizeof(interrupt_stack_t));
@@ -332,6 +346,7 @@ uint32_t create_user_thread(program_t *program, void *entry_point, void *stack_p
     kernel_stack_pointer->ss = 0x23; // user data segment with RPL 3
     kernel_stack_pointer->user_esp = (uint32_t) stack_pointer;
     user_thread->kernel_stack_pointer = (uint32_t) kernel_stack_pointer;
+    user_thread->is_blocked = false;
     user_thread->delete_me = false;
     user_thread->delete_signal_running = false;
     user_thread->kill_me = false;
@@ -340,6 +355,7 @@ uint32_t create_user_thread(program_t *program, void *entry_point, void *stack_p
     user_thread->time_end_of_sleep = NULL;
 
     // update stats
+    __atomic_add_fetch(&program->number_of_threads, 1, __ATOMIC_SEQ_CST);
     __atomic_add_fetch(&program->thread_list_on_logical_processor[target_logical_processor_index].number_of_running_threads, 1, __ATOMIC_SEQ_CST);
 
     // atomically add thread to thread list on target logical processor
@@ -401,45 +417,45 @@ uint32_t spawn_user_thread(program_t *program, void *entry_point, uint32_t delet
 
     // load virtual space of template
     uint32_t original_page_directory = read_cr3();
-    spawning_template_t *template = (spawning_template_t *) program->template;
+    running_executable_t *running_executable = (running_executable_t *) program->running_executable;
+    spawning_template_t *template = (spawning_template_t *) running_executable->template;
     load_page_directory(template->page_directory);
 
     // create new page directory
     LOCK_MUTEX(&creating_page_directory_mutex);
     uint32_t new_page_directory = (uint32_t) pm_alloc_page();
-    vm_map_page(P_MEM_NEW_PAGE_DIRECTORY, new_page_directory, VM_KERNEL);
-    invlpg(P_MEM_NEW_PAGE_DIRECTORY);
-    uint32_t *template_page_directory = (uint32_t *) P_MEM_PAGE_DIRECTORY;
-    uint32_t *page_directory = (uint32_t *) P_MEM_NEW_PAGE_DIRECTORY;
-    for(int i = 0; i < (1024 - number_of_shared_page_tables); i++) {
+    vm_map_page(VM_NEW_PAGE_DIRECTORY, new_page_directory, VM_KERNEL);
+    invlpg(VM_NEW_PAGE_DIRECTORY);
+    uint32_t *template_page_directory = (uint32_t *) VM_PAGE_DIRECTORY;
+    uint32_t *page_directory = (uint32_t *) VM_NEW_PAGE_DIRECTORY;
+    for(int i = 0; i < 768; i++) {
         if((template_page_directory[i] & VM_FLAG_PRESENT) != 0) {
             // copy pages into new page tables
             uint32_t new_page_table = (uint32_t) pm_alloc_page();
             page_directory[i] = (new_page_table | VM_PAGE_TABLE);
-            vm_map_page(P_MEM_NEW_PAGE_TABLE, new_page_table, VM_KERNEL);
-            invlpg(P_MEM_NEW_PAGE_TABLE);
-            memcpy((void *)P_MEM_NEW_PAGE_TABLE, (void *) (P_MEM_PAGE_TABLE + (i * PAGE_SIZE)), PAGE_SIZE);
+            vm_map_page(VM_NEW_PAGE_TABLE, new_page_table, VM_KERNEL);
+            invlpg(VM_NEW_PAGE_TABLE);
+            memcpy((void *)VM_NEW_PAGE_TABLE, (void *) (VM_PAGE_TABLES + (i * PAGE_SIZE)), PAGE_SIZE);
         }
     }
-    for(int i = (1024 - number_of_shared_page_tables); i < 1023; i++) {
+    for(int i = 768; i < 1023; i++) {
         page_directory[i] = template_page_directory[i]; // copy kernel page tables
     }
     page_directory[1023] = (new_page_directory | VM_KERNEL); // map page directory to itself
-    // TODO: add shared page tables
     UNLOCK_MUTEX(&creating_page_directory_mutex);
 
     // create new user thread
     logical_processor_t *lpdata = get_current_logical_processor_struct();
-    user_thread_t *user_thread = kalloc(sizeof(user_thread_t));
+    user_thread_t *user_thread = block_alloc(sizeof(user_thread_t));
     user_thread->next = NULL;
     user_thread->page_directory_physical_address = new_page_directory;
-    user_thread->number_of_threads_in_page_directory = kalloc(sizeof(uint32_t));
+    user_thread->number_of_threads_in_page_directory = block_alloc(sizeof(uint32_t));
     *user_thread->number_of_threads_in_page_directory = 1;
     user_thread->creation_thread_id = lpdata->current_user_thread->id;
     user_thread->id = tid;
     user_thread->kernel_stack = kalloc(KERNEL_STACK_SIZE);
     interrupt_stack_t *kernel_stack_pointer = (interrupt_stack_t *) ((uint32_t)user_thread->kernel_stack + KERNEL_STACK_SIZE - sizeof(interrupt_stack_t));
-    kernel_stack_pointer->eip = template->entry_point;
+    kernel_stack_pointer->eip = (uint32_t) entry_point;
     kernel_stack_pointer->cs = 0x1B; // user code segment with RPL 3
     kernel_stack_pointer->eflags = 0x202; // interrupt enable flag
     kernel_stack_pointer->ds = 0x23; // user data segment with RPL 3
@@ -449,6 +465,7 @@ uint32_t spawn_user_thread(program_t *program, void *entry_point, uint32_t delet
     kernel_stack_pointer->ss = 0x23; // user data segment with RPL 3
     kernel_stack_pointer->user_esp = (uint32_t) template->user_stack;
     user_thread->kernel_stack_pointer = (uint32_t) kernel_stack_pointer;
+    user_thread->is_blocked = false;
     user_thread->delete_me = false;
     user_thread->delete_signal_running = false;
     user_thread->kill_me = false;
@@ -459,8 +476,6 @@ uint32_t spawn_user_thread(program_t *program, void *entry_point, uint32_t delet
     // update stats
     __atomic_add_fetch(&program->number_of_threads, 1, __ATOMIC_RELAXED);
     __atomic_add_fetch(&program->thread_list_on_logical_processor[target_logical_processor_index].number_of_running_threads, 1, __ATOMIC_RELAXED);
-    program->thread_list_on_logical_processor[target_logical_processor_index].threads = user_thread;
-    program->thread_list_on_logical_processor[target_logical_processor_index].current_thread = user_thread;
 
     // atomically add thread to thread list on target logical processor
     user_thread->next = program->thread_list_on_logical_processor[target_logical_processor_index].threads;
@@ -486,6 +501,8 @@ uint32_t spawn_user_thread(program_t *program, void *entry_point, uint32_t delet
     // move back to original page directory
     load_page_directory(original_page_directory);
 
+    log("\nSpawned user thread %d on logical processor %d", tid, target_logical_processor_index);
+
     return tid;
 }
 
@@ -496,8 +513,7 @@ void sleep_for_thread(interrupt_stack_t *stack_of_interrupt, uint32_t microsecon
     }
 
     logical_processor_t *lpdata = get_current_logical_processor_struct();
-    scheduler_state_t scheduler_state = lpdata->scheduler_state;
-    if(scheduler_state == SCHEDULER_STATE_KERNEL) {
+    if(lpdata->running_thread_state == SCHEDULER_STATE_KERNEL) {
         // save stack pointer of current thread
         kernel_thread_t *current_thread = lpdata->current_kernel_thread;
         current_thread->kernel_stack_pointer = (uint32_t) stack_of_interrupt;
@@ -534,23 +550,85 @@ void sleep_for_thread(interrupt_stack_t *stack_of_interrupt, uint32_t microsecon
     scheduler_interrupt(stack_of_interrupt);
 }
 
+/* block threads */
+// TODO: if thread is executed, switch from it immediately
+void block_kernel_thread(kernel_thread_t *thread) {
+    thread->is_blocked = true;
+}
+
+void unblock_kernel_thread(kernel_thread_t *thread) {
+    thread->is_blocked = false;
+}
+
+void block_user_thread(user_thread_t *thread) {
+    thread->is_blocked = true;
+}
+
+void unblock_user_thread(user_thread_t *thread) {
+    thread->is_blocked = false;
+}
+
 /* destroy processes and threads */
+void send_closing_signal_to_program(program_t *program) {
+    program->main_thread->delete_me = true;
+}
+
+void kill_program(program_t *program) {
+    // stop execution of program on all logical processors
+    program->is_blocked = true;
+    for(int i = 0; i < number_of_logical_processors; i++) {
+        lapic_send_ipi(logical_processors[i].hardware_id, INTERRUPT_PREEMPETIVE_SCHEDULING);
+    }
+
+    // set kill signal for all threads
+    program->main_thread->kill_me = true;
+    for(int i = 0; i < number_of_logical_processors; i++) {
+        user_thread_list_t *local_thread_list = &program->thread_list_on_logical_processor[i];
+        user_thread_t *local_current_thread = local_thread_list->threads;
+        while(local_current_thread != NULL) {
+            local_current_thread->kill_me = true;
+            local_current_thread = local_current_thread->next;
+        }
+    }
+
+    // let all logicall processors handle the kill signal
+    program->is_blocked = false;
+}
+
 void close_current_thread_interrupt(interrupt_stack_t *stack_of_interrupt) {
     logical_processor_t *lpdata = get_current_logical_processor_struct();
-    if(lpdata->scheduler_state == SCHEDULER_STATE_KERNEL) {
+    if(lpdata->running_thread_state == SCHEDULER_STATE_KERNEL) {
         kernel_thread_t *current_thread = lpdata->current_kernel_thread;
         log("\nClosing signal from kernel thread %d on CPU%d", current_thread->id, lpdata->index);
         current_thread->kill_me = true;
         extern void move_to_floating_stack(uint32_t new_esp, uint32_t new_eip, uint32_t argument);
         move_to_floating_stack((uint32_t) lpdata->floating_stack + KERNEL_STACK_SIZE, (uint32_t) &scheduler_interrupt, (uint32_t) stack_of_interrupt);
     }
-    else {
+    else { // lpdata->running_thread_state == SCHEDULER_STATE_USER
         user_thread_t *current_thread = lpdata->current_user_thread;
         log("\nClosing signal from user thread %d in program %x on CPU%d", current_thread->id, lpdata->current_program, lpdata->index);
         current_thread->delete_me = true;
-        if(current_thread->delete_signal_handler_address == NULL ||current_thread->delete_signal_running == true) {
+        if(current_thread->delete_signal_handler_address == NULL || current_thread->delete_signal_running == true) {
             current_thread->kill_me = true;
         }
+        extern void move_to_floating_stack(uint32_t new_esp, uint32_t new_eip, uint32_t argument);
+        move_to_floating_stack((uint32_t) lpdata->floating_stack + KERNEL_STACK_SIZE, (uint32_t) &scheduler_interrupt, (uint32_t) stack_of_interrupt);
+    }
+}
+
+void kill_current_thread_interrupt(interrupt_stack_t *stack_of_interrupt) {
+    logical_processor_t *lpdata = get_current_logical_processor_struct();
+    if(lpdata->running_thread_state == SCHEDULER_STATE_KERNEL) {
+        kernel_thread_t *current_thread = lpdata->current_kernel_thread;
+        log("\nKilling signal from kernel thread %d on CPU%d", current_thread->id, lpdata->index);
+        current_thread->kill_me = true;
+        extern void move_to_floating_stack(uint32_t new_esp, uint32_t new_eip, uint32_t argument);
+        move_to_floating_stack((uint32_t) lpdata->floating_stack + KERNEL_STACK_SIZE, (uint32_t) &scheduler_interrupt, (uint32_t) stack_of_interrupt);
+    }
+    else { // lpdata->running_thread_state == SCHEDULER_STATE_USER
+        user_thread_t *current_thread = lpdata->current_user_thread;
+        log("\nKilling signal from user thread %d in program %x on CPU%d", current_thread->id, lpdata->current_program, lpdata->index);
+        current_thread->kill_me = true;
         extern void move_to_floating_stack(uint32_t new_esp, uint32_t new_eip, uint32_t argument);
         move_to_floating_stack((uint32_t) lpdata->floating_stack + KERNEL_STACK_SIZE, (uint32_t) &scheduler_interrupt, (uint32_t) stack_of_interrupt);
     }
@@ -575,7 +653,7 @@ uint32_t send_signal_to_current_user_thread(interrupt_stack_t *stack_of_interrup
 void preemptive_scheduling_interrupt(interrupt_stack_t *stack_of_interrupt) {
     in_interrupt = true;
 
-    // this interrupt can be invoked only by LAPIC timer, or IPI so acknowledge interrupt on LAPIC
+    // this interrupt can be invoked only by LAPIC timer or IPI so acknowledge interrupt on LAPIC
     lapic_send_eoi();
 
     // invoke scheduler
@@ -588,7 +666,7 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
     // log("\nScheduler invoked on CPU%d", lpdata->index);
 
     // save stack pointer
-    switch(lpdata->scheduler_state) {
+    switch(lpdata->running_thread_state) {
         case SCHEDULER_STATE_USER: {
             if(lpdata->current_user_thread != NULL) {
                 user_thread_t *current_thread = lpdata->current_user_thread;
@@ -623,7 +701,7 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                     lpdata->current_program = previous_program->next;
                 }
                 program_t *current_program = lpdata->current_program;
-                if(current_program == NULL) {
+                if(current_program == NULL || current_program->is_blocked == true) {
                     // log("\nEnd of programs list on CPU%d", lpdata->index);
                     lpdata->scheduler_state = SCHEDULER_STATE_KERNEL;
                     break;
@@ -649,11 +727,16 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                         previous_program->next = current_program->next;
                     }
 
+                    // stop everything connected to this program
+                    remove_running_executable(current_program->running_executable);
+
                     // free process resources
+                    lpdata->current_program = NULL;
                     kfree(current_program);
 
                     log("\nProgram %x removed from program list", current_program);
 
+                    lpdata->scheduler_state = SCHEDULER_STATE_KERNEL;
                     continue;
                 }
 
@@ -677,9 +760,40 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                     }
 
                     // process flags
+                    if(current_thread->delete_me == true) {
+                        if(current_thread->delete_signal_running == false) {
+                            // move execution to signal handler
+                            if(current_thread->delete_signal_handler_address == NULL) {
+                                current_thread->kill_me = true;
+                            }
+                            else {
+                                interrupt_stack_t *current_thread_stack = (interrupt_stack_t *) current_thread->kernel_stack_pointer;
+                                current_thread_stack->eip = current_thread->delete_signal_handler_address;
+                            }
+
+                            // set flag that signal is running
+                            current_thread->delete_signal_running = true;
+                            current_thread->sleeping = false;
+                            current_thread->is_blocked = false;
+                        }
+                    }
                     if(current_thread->kill_me == true) {
                         uint32_t tid = current_thread->id;
-                        log("\nKilling user thread %d", tid);
+                        log("\nKilling user thread %d from %d running threads", tid, current_program->number_of_threads);
+
+                        // set all threads that were created by this thread to be deleted
+                        // we can do this because this thread can not now create more threads
+                        uint32_t current_thread_id = current_thread->id;
+                        for(int i = 0; i < number_of_logical_processors; i++) {
+                            user_thread_list_t *local_thread_list = &current_program->thread_list_on_logical_processor[i];
+                            user_thread_t *local_current_thread = local_thread_list->threads;
+                            while(local_current_thread != NULL) {
+                                if(local_current_thread->creation_thread_id == current_thread_id) {
+                                    local_current_thread->delete_me = true;
+                                }
+                                local_current_thread = local_current_thread->next;
+                            }
+                        }
 
                         // unlink from list
                         if(previous_thread == NULL) {
@@ -714,44 +828,27 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                         }
 
                         // atomically decrease number of threads in page directory
-                        __atomic_sub_fetch(&(current_thread->number_of_threads_in_page_directory), 1, __ATOMIC_SEQ_CST);
+                        __atomic_fetch_sub(current_thread->number_of_threads_in_page_directory, 1, __ATOMIC_SEQ_CST);
 
                         // free page directory if necessary
-                        if(current_thread->number_of_threads_in_page_directory == 0) {
+                        if(*current_thread->number_of_threads_in_page_directory == 0) {
+                            log("\nFreeing virtual space");
                             free_virtual_space(current_thread->page_directory_physical_address);
-                            kfree(current_thread->number_of_threads_in_page_directory);
+                            stop_everything_on_page_directory(current_program->running_executable, current_thread->page_directory_physical_address);
+                            block_free(sizeof(uint32_t), current_thread->number_of_threads_in_page_directory);
                         }
 
                         // free stack
                         kfree(current_thread->kernel_stack);
-                        kfree(current_thread);
+                        block_free(sizeof(user_thread_t), current_thread);
 
                         log("\nUser thread %d is killed", tid);
 
                         continue;
                     }
-                    if(current_thread->delete_me == true) {
-                        if(current_thread->delete_signal_running == false) {
-                            // move execution to signal handler
-                            stack_of_interrupt->eip = current_thread->delete_signal_handler_address;
-
-                            // set all threads that were created by this thread to be deleted
-                            // we can do this because this thread can not now create more threads
-                            uint32_t current_thread_id = current_thread->id;
-                            for(int i = 0; i < number_of_logical_processors; i++) {
-                                user_thread_list_t *local_thread_list = &current_program->thread_list_on_logical_processor[i];
-                                user_thread_t *local_current_thread = local_thread_list->threads;
-                                while(local_current_thread != NULL) {
-                                    if(local_current_thread->creation_thread_id == current_thread_id) {
-                                        local_current_thread->delete_me = true;
-                                    }
-                                    local_current_thread = local_current_thread->next;
-                                }
-                            }
-
-                            // set flag that signal is running
-                            current_thread->delete_signal_running = true;
-                        }
+                    if(current_thread->is_blocked == true) {
+                        // log("\nUser thread %d is blocked on CPU%d", current_thread->id, lpdata->index);
+                        continue;
                     }
                     if(current_thread->sleeping == true) {
                         if((int)(actual_time - current_thread->time_end_of_sleep) > 0) {
@@ -770,7 +867,9 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                     lpdata->scheduler_state = SCHEDULER_STATE_KERNEL;
 
                     // switch to selected thread
-                    // log("\nSwitching to program %x to user thread %d on CPU%d", current_program, current_thread->id, lpdata->index);
+                    kernel_interrupt_stack_t *interrupt_stack = (kernel_interrupt_stack_t *) current_thread->kernel_stack_pointer;
+                    // log("\nSwitching to program %x to user thread %d on CPU%d to EIP %x", current_program, current_thread->id, lpdata->index, interrupt_stack->eip);
+                    lpdata->running_thread_state = SCHEDULER_STATE_USER;
                     lpdata->current_program = current_program;
                     lpdata->current_user_thread = current_thread;
                     extern void exit_interrupt_to_thread(uint32_t stack_pointer);
@@ -842,10 +941,14 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
 
                         // free stack
                         kfree(current_thread->kernel_stack);
-                        kfree(current_thread);
+                        block_free(sizeof(kernel_thread_t), current_thread);
 
                         log("\nKernel thread %d is killed", tid);
 
+                        continue;
+                    }
+                    if(current_thread->is_blocked == true) {
+                        // log("\nKernel thread %d is blocked", current_thread->id);
                         continue;
                     }
                     if(current_thread->sleeping == true) {
@@ -862,7 +965,9 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                     }
 
                     // switch to this thread
-                    // log("\nSwitching to kernel thread %d on CPU%d", current_thread->id, lpdata->index);
+                    kernel_interrupt_stack_t *interrupt_stack = (kernel_interrupt_stack_t *) current_thread->kernel_stack_pointer;
+                    // log("\nSwitching to kernel thread %d on CPU%d to EIP %x", current_thread->id, lpdata->index, interrupt_stack->eip);
+                    lpdata->running_thread_state = SCHEDULER_STATE_KERNEL;
                     lpdata->current_kernel_thread = current_thread;
                     extern void exit_interrupt_to_thread(uint32_t stack_pointer);
                     if(current_thread->page_directory_physical_address != NULL && current_thread->page_directory_physical_address != read_cr3()) {
@@ -881,7 +986,8 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
     }
 
     // there are no running threads, go to idle state
-    // log("\nCPU%d has no running kernel threads, going to idle state on %x", lpdata->index, lpdata->idle_thread_stack);
+    log("\nCPU%d has no running kernel threads, going to idle state on %x", lpdata->index, lpdata->idle_thread_stack);
+    lpdata->running_thread_state = SCHEDULER_STATE_IDLE;
     lpdata->scheduler_state = SCHEDULER_STATE_IDLE;
     lapic_set_oneshot_interrupt(10, INTERRUPT_PREEMPETIVE_SCHEDULING); // TODO: wake from sleep exactly when it is needed for next sleeping thread
     extern void exit_interrupt_to_thread(uint32_t stack_pointer);
@@ -904,4 +1010,37 @@ void switch_to_another_thread(void) {
 
 void close_current_thread(void) {
     asm volatile ("int %0" : : "i" (INTERRUPT_VECTOR_EXIT_THREAD));
+}
+
+/* dumps */
+void log_all_threads_on_cpu(void) {
+    log("\n--- start of scheduler dump ---");
+    logical_processor_t *lpdata = get_current_logical_processor_struct();
+    uint8_t *state_string = "IDLE";
+    if(lpdata->running_thread_state == SCHEDULER_STATE_KERNEL) {
+        state_string = "KERNEL";
+    }
+    else if(lpdata->running_thread_state == SCHEDULER_STATE_USER) {
+        state_string = "USER";
+    }
+    log("\nCPU%d is in %s state", lpdata->index, state_string);
+    log("\nKernel threads:");
+    kernel_thread_t *kthread = kernel_threads[lpdata->index].threads;
+    while(kthread != NULL) {
+        log("\n Thread %d", kthread->id);
+        kthread = kthread->next;
+    }
+    log("\nUser threads:");
+    program_t *program = programs;
+    while(program != NULL) {
+        running_executable_t *running_executable = program->running_executable;
+        log("\n Program from template 0x%x", running_executable->template);
+        user_thread_t *uthread = program->thread_list_on_logical_processor[lpdata->index].threads;
+        while(uthread != NULL) {
+            log("\n  Thread %d", uthread->id);
+            uthread = uthread->next;
+        }
+        program = program->next;
+    }
+    log("\n--- end of scheduler dump ---");
 }

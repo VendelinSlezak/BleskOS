@@ -7,20 +7,3 @@
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
-
-/* includes */
-#include <userspace_library/main.h>
-
-/* functions */
-screen_buffer_t *syslib_create_screen_buffer(uint32_t max_width, uint32_t max_height) {
-    screen_buffer_t *buffer = syslib->calloc(sizeof(screen_buffer_t) + (max_width * max_height * sizeof(uint32_t)), 1);
-    buffer->max_width = max_width;
-    buffer->max_height = max_height;
-    buffer->width = max_width;
-    buffer->height = max_height;
-    return buffer;
-}
-
-void syslib_destroy_screen_buffer(screen_buffer_t *buffer) {
-    syslib->free(buffer);
-}

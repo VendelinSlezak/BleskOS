@@ -8,12 +8,6 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-extern uint32_t permanent_kernel_allocator_base;
-extern uint32_t user_space_allocation_start;
-extern uint32_t user_space_allocation_size;
-extern uint32_t user_space_allocation_end;
-extern uint32_t number_of_shared_page_tables;
-
 typedef struct kheap_entry {
     uint32_t end;
 
@@ -32,3 +26,11 @@ typedef struct {
 
     kheap_entry_t first_entry;
 } kernel_heap_metadata_t;
+
+#define NUMBER_OF_PREALLOCATED_BLOCKS_IN_CELL 32
+typedef struct block_cell_metadata {
+    struct block_cell_metadata *prev;
+    struct block_cell_metadata *next;
+    uint32_t lifo_index;
+    void *allocations[NUMBER_OF_PREALLOCATED_BLOCKS_IN_CELL];
+} block_cell_metadata_t;

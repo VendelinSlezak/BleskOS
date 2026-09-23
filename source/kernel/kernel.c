@@ -32,54 +32,30 @@
 #include <kernel/software/ramdisk.h>
 #include <kernel/software/syscall.h>
 #include <kernel/software/exceptions.h>
-#include <kernel/software/syslib.h>
+#include <kernel/software/running_executables.h>
 
 /* functions */
 void initialize_kernel(void) {
-    // initialize RAM memory
     initialize_physical_memory();
-    initialize_virtual_memory();
     initialize_allocators();
-
-    // initialize logging
     initialize_hardware_structs();
     initialize_logging();
-    logging_enabled = true;
-
-    // read all informations about hardware from firmware
     read_firmware_data();
-
-    // initialize bootstrap processor
     initialize_cpu_structures();
     initialize_bootstrap_processor();
-
-    // initialize interrupt controllers
     initialize_interrupt_controllers();
-
-    // initialize timers for processors
     initialize_timers();
     start_counting_time();
-
-    // initialize application processors
     initialize_all_application_processors();
-
-    // initialize scheduler
     initialize_scheduler();
-
-    // initialize hardware
     initialize_hardware_list();
     show_starting_screen();
-
-    // initialize user space
-    initialize_user_space_allocation();
+    initialize_allocators_for_user_space();
     initialize_exceptions();
     initialize_syscalls();
-    initialize_syslib();
-
+    initialize_executables();
     log("\nKernel initialized successfully");
-
     initialize_screen_subsystem();
-
     close_current_thread();
 }
 
@@ -87,12 +63,19 @@ void kernel_panic(char *msg, interrupt_stack_t *stack_of_interrupt) {
     logging_enabled = true;
     log("\n[PANIC] %s", msg);
 
+    logical_processor_t *lpdata = get_current_logical_processor_struct();
+    uint8_t *state_string = "IDLE";
+    if(lpdata->running_thread_state == SCHEDULER_STATE_KERNEL) {
+        state_string = "KERNEL";
+    }
+    else if(lpdata->running_thread_state == SCHEDULER_STATE_USER) {
+        state_string = "USER";
+    }
+    log("\nCPU%d is in %s state", lpdata->index, state_string);
+
     log("\nCR2: %x", read_cr2());
-    log("\nPT: %x", *((uint32_t *) (P_MEM_PAGE_DIRECTORY + ((read_cr2() >> 22) * 4))));
-    log("\nPD: %x", read_cr3());
+    log("\nPD: %x PDE: %x PTE: %x", read_cr3(), *((uint32_t *) (VM_PAGE_DIRECTORY + ((read_cr2() >> 22) * 4))), *((uint32_t *) (VM_PAGE_TABLES + ((read_cr2() >> 12) * 4))));
     log("\nEIP: %x", stack_of_interrupt->eip);
 
-    while(true) {
-        asm volatile("hlt");
-    }
+    HALT_FOREVER
 }

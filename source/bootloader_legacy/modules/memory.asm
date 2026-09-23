@@ -175,23 +175,23 @@ initialize_paging_memory_structures:
     mov di, PAGE_DIRECTORY_START
     call clear_page
     mov dword [PAGE_DIRECTORY_START+4*0], PAGE_TABLE_FIRST_MB | (1 << 1) | (1 << 0) ; page table for mapping first MB of virtual memory 0x00000000 - 0x00400000, with flags: write-back, supervisor, read-write, present
-    mov dword [PAGE_DIRECTORY_START+4*1019], PAGE_TABLE_COMMAND | (1 << 1) | (1 << 0)
-    mov dword [PAGE_DIRECTORY_START+4*1020], PAGE_TABLE_KERNEL | (1 << 1) | (1 << 0)
-    mov dword [PAGE_DIRECTORY_START+4*1021], PAGE_TABLE_KERNEL_2 | (1 << 1) | (1 << 0)
-    mov dword [PAGE_DIRECTORY_START+4*1022], PAGE_TABLE_PM_STACK | (1 << 1) | (1 << 0)
+    mov dword [PAGE_DIRECTORY_START+4*768], PAGE_TABLE_KERNEL | (1 << 1) | (1 << 0)
+    ; mov dword [PAGE_DIRECTORY_START+4*769], PAGE_TABLE_KERNEL_2 | (1 << 1) | (1 << 0)
+    ; mov dword [PAGE_DIRECTORY_START+4*1019], PAGE_TABLE_COMMAND | (1 << 1) | (1 << 0)
+    ; mov dword [PAGE_DIRECTORY_START+4*1022], PAGE_TABLE_PM_STACK | (1 << 1) | (1 << 0)
     mov dword [PAGE_DIRECTORY_START+4*1023], PAGE_DIRECTORY_START | (1 << 1) | (1 << 0) ; recursive mapping for accessing page directory and page tables 0xFFC00000 - 0xFFFFFFFF, with flags: write-back, supervisor, read-write, present
 
     ; clear page tables
     mov di, PAGE_TABLE_FIRST_MB
     call clear_page
-    mov di, PAGE_TABLE_COMMAND
-    call clear_page
     mov di, PAGE_TABLE_KERNEL
     call clear_page
-    mov di, PAGE_TABLE_KERNEL_2
-    call clear_page
-    mov di, PAGE_TABLE_PM_STACK
-    call clear_page
+    ; mov di, PAGE_TABLE_KERNEL_2
+    ; call clear_page
+    ; mov di, PAGE_TABLE_COMMAND
+    ; call clear_page
+    ; mov di, PAGE_TABLE_PM_STACK
+    ; call clear_page
 
     ; identity map bootloader code at page 0x1000
     mov eax, (1 << 1) | (1 << 0) ; flags: write-back, supervisor, read-write, present
@@ -204,18 +204,18 @@ initialize_paging_memory_structures:
     call phy_alloc
     mov eax, (1 << 1) | (1 << 0) ; flags: write-back, supervisor, read-write, present
     mov esi, ebp ; phy_alloc returned physical memory address in ebp
-    mov edi, 0xFF3FF000 ; we need to map page to virtual memory on 0xFF3FF000 - 0xFF400000
+    mov edi, VM_KERNEL_STACK_END - PAGE_SIZE ; virtual memory for one page of kernel stack
     call map_page_to_virtual_memory
 
     ; map all usefull info from bootloader to kernel virtual memory
     mov esi, STANDARDIZED_PHY_MEM_MAP_START
-    mov edi, 0xFF3FC000
+    mov edi, VM_RAMDISK_START + 0x3FC000
     call map_page_to_virtual_memory
     mov esi, STANDARDIZED_FREE_PHY_MEM_MAP_START
-    mov edi, 0xFF3FD000
+    mov edi, VM_RAMDISK_START + 0x3FD000
     call map_page_to_virtual_memory
     mov esi, STANDARDIZED_GRAPHIC_OUTPUT_INFO_START
-    mov edi, 0xFF3FE000
+    mov edi, VM_RAMDISK_START + 0x3FE000
     call map_page_to_virtual_memory
 
     ret

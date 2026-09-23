@@ -29,7 +29,7 @@ static logging_group_device_functions_t functions = {
 
 /* functions */
 uint32_t does_text_mode_vga_device_exist(void) {
-    standardized_graphic_output_t *standardized_graphic_output = (standardized_graphic_output_t *) P_MEM_STANDARDIZED_GRAPHIC_OUTPUT_INFO;
+    standardized_graphic_output_t *standardized_graphic_output = (standardized_graphic_output_t *) VM_STANDARDIZED_GRAPHIC_OUTPUT_INFO;
     if(standardized_graphic_output->type == STANDARDIZED_GRAPHIC_OUTPUT_TYPE_TEXT_MODE) {
         return true;
     }
@@ -39,7 +39,7 @@ uint32_t does_text_mode_vga_device_exist(void) {
 }
 
 void initialize_text_mode_vga_device(hardware_t *vga_device) {
-    standardized_graphic_output_t *standardized_graphic_output = (standardized_graphic_output_t *) P_MEM_STANDARDIZED_GRAPHIC_OUTPUT_INFO;
+    standardized_graphic_output_t *standardized_graphic_output = (standardized_graphic_output_t *) VM_STANDARDIZED_GRAPHIC_OUTPUT_INFO;
     num_of_lines = standardized_graphic_output->height;
     num_of_columns = standardized_graphic_output->width;
 

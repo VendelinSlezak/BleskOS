@@ -20,6 +20,7 @@
 #include <kernel/firmware/acpi/madt.h>
 #include <kernel/firmware/main.h>
 #include <kernel/firmware/mp_tables/mp_tables.h>
+#include <kernel/hardware/devices/memory/physical_memory.h>
 #include <kernel/hardware/devices/memory/virtual_memory.h>
 #include <kernel/hardware/devices/memory/memory_allocators.h>
 #include <kernel/hardware/groups/logging/logging.h>
@@ -164,6 +165,12 @@ void initialize_cpu_structures(void) {
     memset(logical_processor_structs_ptr, 0, sizeof(logical_processor_t) * number_of_logical_processors);
     for(int i = 0; i < number_of_logical_processors; i++) {
         logical_processor_structs_ptr[i].index = i;
+    }
+
+    // move physical page allocation to local stacks
+    if(number_of_logical_processors > 1) {
+        pm_alloc_page = pm_local_alloc_page;
+        pm_free_page = pm_local_free_page;
     }
 }
 

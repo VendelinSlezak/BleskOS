@@ -19,12 +19,10 @@
 #include <kernel/hardware/groups/logging/logging.h>
 #include <kernel/hardware/groups/graphic_output/graphic_output.h>
 #include <kernel/hardware/groups/human_input/human_input.h>
-#include <kernel/hardware/subsystems/windows/windows.h>
 #include <kernel/hardware/devices/cpu/mutex.h>
 #include <kernel/hardware/devices/cpu/scheduler.h>
 
 /* global variables */
-virtual_hardware_list_t *virtual_hardware_list;
 hardware_t *motherboard;
 
 /* local variables */
@@ -33,7 +31,6 @@ mutex_t hardware_list_spinlock;
 
 /* functions */
 void initialize_hardware_structs(void) {
-    virtual_hardware_list = (virtual_hardware_list_t *) kalloc(sizeof(virtual_hardware_list_t) + (sizeof(virtual_hardware_list_entry_t) * MAX_NUMBER_OF_ENTRIES_IN_HARDWARE_LIST));
     motherboard = kalloc(sizeof(hardware_t));
     motherboard->id = get_unique_hardware_id();
     motherboard->name = "Motherboard";
@@ -47,35 +44,6 @@ uint32_t get_unique_hardware_id(void) {
 void release_unique_hardware_id(uint32_t id) {
     // TODO:
     return;
-}
-
-void add_virtual_device_to_hardware_list(uint32_t type) {
-    if(virtual_hardware_list->number_of_entries >= MAX_NUMBER_OF_ENTRIES_IN_HARDWARE_LIST) {
-        return;
-    }
-    virtual_hardware_list->entries[virtual_hardware_list->number_of_entries].type = type;
-    virtual_hardware_list->number_of_entries++;
-}
-
-uint32_t does_virtual_device_exist(uint32_t type) {
-    for(int i = 0; i < virtual_hardware_list->number_of_entries; i++) {
-        if(virtual_hardware_list->entries[i].type == type) {
-            return true;
-        }
-    }
-    return false;
-}
-
-void initialize_logging(void) {
-    initialize_logging_group();
-    if(does_e9_device_exist() == true) {
-        hardware_t *e9_device = add_hardware(motherboard, "E9 logging device", NULL, NULL, NULL, NULL);
-        initialize_e9_device(e9_device);
-    }
-    if(does_text_mode_vga_device_exist() == true) {
-        hardware_t *vga_device = add_hardware(motherboard, "VGA text mode", NULL, NULL, NULL, NULL);
-        initialize_text_mode_vga_device(vga_device);
-    }
 }
 
 void initialize_hardware_list(void) {
@@ -146,7 +114,7 @@ hardware_t *add_hardware(hardware_t *controller, uint8_t *name, void *communicat
 
 void init_hardware(hardware_t *hardware) {
     if(hardware->init != NULL) {
-        create_kernel_thread((uint32_t) hardware->init, (uint32_t []) { (uint32_t) hardware }, 1);
+        create_kernel_thread("init_hardware", (uint32_t) hardware->init, (uint32_t []) { (uint32_t) hardware }, 1);
     }
 }
 

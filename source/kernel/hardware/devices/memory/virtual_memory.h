@@ -12,6 +12,7 @@
 #include <kernel/hardware/devices/cpu/mutex.h>
 
 #define PAGE_SIZE 0x1000
+#define PAGE_TABLE_SIZE 0x400000
 #define PAGE_MASK(x) ((x) & 0xFFFFF000)
 #define PAGE_OFFSET_MASK(x) ((x) & 0xFFF)
 #define PAGE_TABLE_MASK(x) ((x) & 0xFFC00000)

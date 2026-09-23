@@ -9,26 +9,21 @@
 */
 
 /* includes */
+#include <syslib.h>
 #include <kernel/hardware/main.h>
-#include <kernel/software/syslib.h>
 #include <kernel/software/syscall.h>
 
 #include <userspace_library/time.h>
-#include <userspace_library/gui.h>
 #include <userspace_library/logging.h>
 #include <userspace_library/bleskalloc.h>
 
 /* global variables */
-syslib_t *syslib = NULL;
+virtual_hardware_t *virtual_hardware;
 
 /* functions */
-void syslib_initialize(syslib_t *syslib_ptr) {
-    syslib = syslib_ptr;
-
-    does_timer_exist = syscall_does_virtual_device_exist(VIRTUAL_HARDWARE_TIMER);
-    does_logger_exist = syscall_does_virtual_device_exist(VIRTUAL_HARDWARE_LOGGER);
-    does_window_subsystem_exist = syscall_does_virtual_device_exist(VIRTUAL_HARDWARE_WINDOW);
-    does_human_input_exist = syscall_does_virtual_device_exist(VIRTUAL_HARDWARE_HUMAN_INPUT_DEVICE);
-
-    syslib_initialize_bleskalloc();
+void initialize(virtual_hardware_t *virtual_hardware_ptr) {
+    virtual_hardware = virtual_hardware_ptr;
+    virtual_hardware_ptr->consumer = 0;
+    virtual_hardware_ptr->producer = 0;
+    syscall_virtual_hardware(VIRTUAL_HARDWARE_HUMAN_INPUT_ID, VH_HUMAN_INPUT_DEMAND_ENABLE_STREAMING);
 }

@@ -11,7 +11,6 @@
 /* includes */
 #include <kernel/libc/string.h>
 #include <kernel/hardware/groups/logging/logging.h>
-#include <kernel/hardware/subsystems/windows/windows.h>
 #include <kernel/hardware/devices/memory/memory_allocators.h>
 #include <kernel/hardware/devices/cpu/mutex.h>
 #include <kernel/hardware/main.h>
@@ -36,8 +35,7 @@ uint32_t microseconds_to_repeat_key_next_time = 50000;
 void initialize_human_input_group(void) {
     human_input_group = kalloc(sizeof(human_input_group_t));
     set_keyboard_layout("EN");
-    add_virtual_device_to_hardware_list(VIRTUAL_HARDWARE_HUMAN_INPUT_DEVICE);
-    create_kernel_thread((uint32_t)check_human_input_state, 0, 0);
+    create_kernel_thread("check_human_input_state", (uint32_t)check_human_input_state, 0, 0);
 }
 
 void add_human_input_device(hardware_t *device, human_input_group_device_functions_t *functions) {
@@ -56,35 +54,6 @@ void remove_human_input_device(hardware_t *device) {
                 human_input_group->devices[j] = human_input_group->devices[j + 1];
             }
             human_input_group->number_of_devices--;
-            break;
-        }
-    }
-}
-
-/* userspace functions */
-void human_input_group_process_userspace_command(human_input_group_command_t *command) {
-    if(return_validated_pointer(command, sizeof(human_input_group_command_t)) == NULL) {
-        return;
-    }
-
-    switch(command->type) {
-        case HUMAN_INPUT_GROUP_LISTEN_TO_EVENTS: {
-            if(return_validated_pointer(command, sizeof(human_input_group_command_t) + sizeof(uint32_t)) == NULL) {
-                break;
-            }
-            human_input_event_stack_t *event_stack = (human_input_event_stack_t *) command->argument[0];
-            if(return_validated_pointer(event_stack, sizeof(human_input_event_stack_t)) == NULL) {
-                return;
-            }
-            program_t *program = get_current_logical_processor_struct()->current_program;
-            program->page_directory_for_human_input_event_stack = read_cr3();
-            program->human_input_event_stack = event_stack;
-            break;
-        }
-        case HUMAN_INPUT_GROUP_STOP_LISTENING_TO_EVENTS: {
-            program_t *program = get_current_logical_processor_struct()->current_program;
-            program->page_directory_for_human_input_event_stack = NULL;
-            program->human_input_event_stack = NULL;
             break;
         }
     }
@@ -192,7 +161,6 @@ void hid_process_changes_of_local_state(human_input_device_state_t *state) {
     UNLOCK_MUTEX(&human_input_group_global_event_mutex);
 }
 
-// TODO: thread that will repeat firing of key events
 void check_human_input_state(void) {
     while(true) {
         for(int i = 0; i < human_input_group->number_of_devices; i++) {

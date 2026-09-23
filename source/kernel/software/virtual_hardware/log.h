@@ -8,34 +8,4 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <kernel/hardware/main.h>
-#include <userspace_library/screen.h>
-
-enum {
-    CANVAS_COMPONENT = 1
-};
-typedef struct {
-    uint32_t x;
-    uint32_t y;
-    uint32_t width;
-    uint32_t height;
-    uint32_t x_offset;
-    uint32_t y_offset;
-    void (*redraw)(uint32_t screen_x, uint32_t screen_y, uint32_t screen_width, uint32_t screen_height, uint32_t x_offset, uint32_t y_offset);
-} canvas_component_t;
-typedef struct {
-    uint32_t type;
-    void *structure;
-} component_t;
-typedef struct {
-    uint32_t x;
-    uint32_t y;
-    uint32_t width;
-    uint32_t height;
-    uint32_t number_of_components;
-    component_t *components;
-} gui_area_t;
-
-extern screen_buffer_t *window_buffer;
-extern uint32_t does_window_subsystem_exist;
-extern uint32_t does_human_input_exist;
+#define VH_LOG_DEMAND_PRINTLNF 1

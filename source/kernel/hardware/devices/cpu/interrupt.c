@@ -27,7 +27,7 @@ void (*interrupt_handlers[256])(interrupt_stack_t *stack_of_interrupt);
 void global_interrupt_handler(uint32_t interrupt_number, interrupt_stack_t *stack_of_interrupt) {
     in_interrupt = true;
 
-    // log("\n[INTERRUPT] Interrupt number: %x %x handler: %x", interrupt_number, stack_of_interrupt, interrupt_handlers[interrupt_number]);
+    // log("\n[INTERRUPT] Interrupt number: %x %x handler: %x EIP: 0x%x", interrupt_number, stack_of_interrupt, interrupt_handlers[interrupt_number], stack_of_interrupt->eip);
 
     // call specific interrupt handler
     if(interrupt_handlers[interrupt_number] != NULL) {

@@ -36,6 +36,8 @@ typedef struct screen_part {
     struct screen_part *first_child;
     struct screen_part *second_child;
     uint32_t is_processed;
+
+    void *running_executable;
 } screen_part_t;
 typedef struct {
     uint32_t is_active;
@@ -82,5 +84,7 @@ extern uint32_t mouse_cursor_y;
 extern view_t *active_view;
 extern screen_part_t *part_with_focus;
 extern datetime_t current_time;
+extern uint32_t is_view_edited;
+extern uint32_t is_program_dragged;
 
 #define MINIMAL_PART_SIZE (64 + 150 + 64)

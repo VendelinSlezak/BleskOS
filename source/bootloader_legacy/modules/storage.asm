@@ -51,7 +51,7 @@ load_ramdisk_to_physical_and_virtual_memory:
     call read_sector
 
     ; LOAD BLESKOS RAMDISK TO MEMORY
-    mov edi, 0xFF000000 ; pointer to virtual memory
+    mov edi, VM_RAMDISK_START ; pointer to virtual memory
     mov dword [data_size], PAGE_SIZE ; we will always copy one page of data
     mov eax, dword [PAGE_OF_LOADED_DATA_START] ; read size of ramdisk in bytes
     add eax, ((120 * 512) - 1)

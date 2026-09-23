@@ -39,9 +39,6 @@ void initialize_timers(void) {
 
     // initialize LAPIC timer on bootstrap processor
     lapic_calibrate_timer();
-
-    // add timer to hardware list
-    add_virtual_device_to_hardware_list(VIRTUAL_HARDWARE_TIMER);
 }
 
 void wait_microseconds(uint32_t microseconds) {
@@ -49,12 +46,4 @@ void wait_microseconds(uint32_t microseconds) {
     while((int)(wakeup_time - (*get_time_in_microseconds)()) > 0) {
         asm volatile("pause");
     }
-}
-
-/* userspace functions */
-void timer_group_process_userspace_command(uint64_t *pointer) {
-    if(return_validated_pointer(pointer, sizeof(uint64_t)) == NULL) {
-        return;
-    }
-    *pointer = (*get_time_in_microseconds)();
 }

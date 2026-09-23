@@ -31,13 +31,23 @@ uint32_t logging_data_pointer;
 core_mutex_t logging_mutex;
 
 /* functions */
-void initialize_logging_group(void) {
+void initialize_logging(void) {
     logging_group = (logging_group_t *) kalloc(sizeof(logging_group_t));
-    add_virtual_device_to_hardware_list(VIRTUAL_HARDWARE_LOGGER);
 
     logging_data = (uint32_t *) kalloc(sizeof(uint32_t) * 1024 * 100);
     logging_data_size = 1024 * 100 - 1;
     logging_data_pointer = 0;
+
+    logging_enabled = true;
+
+    if(does_e9_device_exist() == true) {
+        hardware_t *e9_device = add_hardware(motherboard, "E9 logging device", NULL, NULL, NULL, NULL);
+        initialize_e9_device(e9_device);
+    }
+    // if(does_text_mode_vga_device_exist() == true) {
+    //     hardware_t *vga_device = add_hardware(motherboard, "VGA text mode", NULL, NULL, NULL, NULL);
+    //     initialize_text_mode_vga_device(vga_device);
+    // }
 }
 
 void add_logging_device(hardware_t *device, logging_group_device_functions_t *functions) {
@@ -64,6 +74,14 @@ void remove_logging_device(hardware_t *device) {
 void reset_logging(void) {
     logging_data_pointer = 0;
     memset(logging_data, 0, sizeof(uint32_t) * logging_data_size);
+}
+
+void enable_logging(void) {
+    logging_enabled = true;
+}
+
+void disable_logging(void) {
+    logging_enabled = false;
 }
 
 void log_char(uint32_t character) {

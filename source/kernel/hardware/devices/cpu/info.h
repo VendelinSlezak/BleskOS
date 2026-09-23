@@ -41,6 +41,7 @@ typedef struct {
     void *floating_stack;
 
     scheduler_state_t scheduler_state;
+    scheduler_state_t running_thread_state;
     program_t *current_program;
     kernel_thread_t *current_kernel_thread;
     user_thread_t *current_user_thread;
@@ -48,6 +49,8 @@ typedef struct {
     void *copy_on_write_page;
 
     uint32_t lapic_ticks_per_millisecond;
+
+    uint32_t physical_pages_stack[256]; // physical_pages_stack[0] is pointer, when 0 = stack is empty, when 255 = stack is full
 } logical_processor_t;
 
 extern uint32_t number_of_logical_processors;

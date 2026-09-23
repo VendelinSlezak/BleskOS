@@ -16,11 +16,11 @@
 
 /* functions */
 void dump_ramdisk_content(void) {
-    uint32_t *ramdisk = (uint32_t *) P_MEM_RAMDISK;
+    uint32_t *ramdisk = (uint32_t *) VM_RAMDISK;
 
     log("\nRAMDISK DUMP\nSize in bytes: %d", *ramdisk);
 
-    ramdisk_file_entry_t *ramdisk_entry = (ramdisk_file_entry_t *) (P_MEM_RAMDISK + 4);
+    ramdisk_file_entry_t *ramdisk_entry = (ramdisk_file_entry_t *) (VM_RAMDISK + 4);
     while(ramdisk_entry->offset != 0) {
         log("\nFile: %s Start: 0x%x Size: %d", ramdisk_entry->name, ramdisk_entry->offset, ramdisk_entry->size);
         ramdisk_entry = (ramdisk_file_entry_t *) ((uint32_t)ramdisk_entry + 8 + strlen(ramdisk_entry->name) + 1);
@@ -28,11 +28,11 @@ void dump_ramdisk_content(void) {
 }
 
 void *get_ramdisk_file_ptr(uint8_t *file) {
-    ramdisk_file_entry_t *ramdisk_entry = (ramdisk_file_entry_t *) (P_MEM_RAMDISK + 4);
+    ramdisk_file_entry_t *ramdisk_entry = (ramdisk_file_entry_t *) (VM_RAMDISK + 4);
 
     while(ramdisk_entry->offset != 0) {
         if(strcmp(ramdisk_entry->name, file) == 0) {
-            return (void *) (P_MEM_RAMDISK + ramdisk_entry->offset);
+            return (void *) (VM_RAMDISK + ramdisk_entry->offset);
         }
         ramdisk_entry = (ramdisk_file_entry_t *) ((uint32_t)ramdisk_entry + 8 + strlen(ramdisk_entry->name) + 1);
     }
@@ -41,7 +41,7 @@ void *get_ramdisk_file_ptr(uint8_t *file) {
 }
 
 uint32_t get_ramdisk_file_size(uint8_t *file) {
-    ramdisk_file_entry_t *ramdisk_entry = (ramdisk_file_entry_t *) (P_MEM_RAMDISK + 4);
+    ramdisk_file_entry_t *ramdisk_entry = (ramdisk_file_entry_t *) (VM_RAMDISK + 4);
 
     while(ramdisk_entry->offset != 0) {
         if(strcmp(ramdisk_entry->name, file) == 0) {
@@ -55,7 +55,7 @@ uint32_t get_ramdisk_file_size(uint8_t *file) {
 
 ramdisk_elf_program_list_t *get_ramdisk_elf_program_list(void) {
     ramdisk_elf_program_list_t *list = kalloc(sizeof(ramdisk_elf_program_list_t));
-    ramdisk_file_entry_t *ramdisk_entry = (ramdisk_file_entry_t *) (P_MEM_RAMDISK + 4);
+    ramdisk_file_entry_t *ramdisk_entry = (ramdisk_file_entry_t *) (VM_RAMDISK + 4);
 
     while(ramdisk_entry->offset != 0) {
         uint8_t *extension = strchr(ramdisk_entry->name, '.');
@@ -84,8 +84,9 @@ ramdisk_elf_program_list_t *get_ramdisk_elf_program_list(void) {
             icon_file[size_of_name + 4] = '\0';
             list->programs[index].icon = load_image(get_ramdisk_file_ptr(icon_file), get_ramdisk_file_size(icon_file));
             kfree(icon_file);
-            list->programs[index].elf_file_ptr = (void *) (P_MEM_RAMDISK + ramdisk_entry->offset);
+            list->programs[index].elf_file_ptr = (void *) (VM_RAMDISK + ramdisk_entry->offset);
             list->programs[index].elf_file_size = ramdisk_entry->size;
+            list->programs[index].spawning_template = load_elf32_to_spawning_template(list->programs[index].elf_file_ptr, NULL);
             list->number_of_programs++;
         }
         ramdisk_entry = (ramdisk_file_entry_t *) ((uint32_t)ramdisk_entry + 8 + strlen(ramdisk_entry->name) + 1);

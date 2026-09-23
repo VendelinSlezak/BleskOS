@@ -1,7 +1,7 @@
-ASM_FILE  := ramdisk.asm
-IMG_FILE  := ramdisk.img
+ASM_FILE  = ramdisk.asm
+IMG_FILE  = ramdisk.img
 
-FILES := $(filter kernel.bin,$(wildcard *)) $(filter-out makefile $(ASM_FILE) $(IMG_FILE) kernel.bin,$(wildcard *))
+FILES = $(filter kernel.bin,$(wildcard *)) $(filter-out makefile $(ASM_FILE) $(IMG_FILE) kernel.bin,$(wildcard *))
 
 all: $(IMG_FILE)
 
@@ -40,4 +40,4 @@ $(ASM_FILE): $(FILES)
 	@echo "end_of_image:" >> $@
 
 clean:
-	rm -f $(ASM_FILE) $(IMG_FILE)
+	@rm -f $(ASM_FILE) $(IMG_FILE)

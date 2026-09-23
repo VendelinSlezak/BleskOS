@@ -31,7 +31,7 @@ static monitor_communication_functions_t dgc_monitor_funcs = {
 
 /* functions for device initialization */
 uint32_t is_default_graphic_controller_present(void) {
-    standardized_graphic_output_t *standardized_graphic_output = (standardized_graphic_output_t *) P_MEM_STANDARDIZED_GRAPHIC_OUTPUT_INFO;
+    standardized_graphic_output_t *standardized_graphic_output = (standardized_graphic_output_t *) VM_STANDARDIZED_GRAPHIC_OUTPUT_INFO;
     if(standardized_graphic_output->type == STANDARDIZED_GRAPHIC_OUTPUT_TYPE_GRAPHIC_MODE) {
         return true;
     }
@@ -45,7 +45,7 @@ void initialize_default_graphic_controller(hardware_t *device) {
     default_graphic_controller = device;
     is_there_graphic_output_device = true;
 
-    standardized_graphic_output_t *standardized_graphic_output = (standardized_graphic_output_t *) P_MEM_STANDARDIZED_GRAPHIC_OUTPUT_INFO;
+    standardized_graphic_output_t *standardized_graphic_output = (standardized_graphic_output_t *) VM_STANDARDIZED_GRAPHIC_OUTPUT_INFO;
     monitor_mode_t modes[1];
     modes[0].active_width = standardized_graphic_output->width;
     modes[0].active_height = standardized_graphic_output->height;

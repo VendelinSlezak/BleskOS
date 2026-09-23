@@ -14,10 +14,11 @@
 
 #define KERNEL_STACK_SIZE (1024 * 32)
 
-#define INTERRUPT_SLEEP_FOR_THREAD 0xFB
-#define INTERRUPT_PREEMPETIVE_SCHEDULING 0xFC
-#define INTERRUPT_VECTOR_EXIT_THREAD 0xFD
-#define INTERRUPT_VECTOR_SCHEDULER 0xFE
+#define INTERRUPT_SLEEP_FOR_THREAD 0xFA
+#define INTERRUPT_PREEMPETIVE_SCHEDULING 0xFB
+#define INTERRUPT_VECTOR_EXIT_THREAD 0xFC
+#define INTERRUPT_VECTOR_SCHEDULER 0xFD
+#define INTERRUPT_REFRESH_TLB 0xFE
 
 typedef enum {
     SCHEDULER_STATE_KERNEL = 0,
@@ -33,6 +34,7 @@ typedef struct kernel_thread_t {
     void *kernel_stack;
     uint32_t kernel_stack_pointer;
 
+    uint16_t is_blocked;
     uint8_t kill_me;
     uint8_t sleeping;
 
@@ -50,12 +52,13 @@ typedef struct user_thread_t {
     struct user_thread_t *next;
     uint32_t page_directory_physical_address;
     uint32_t *number_of_threads_in_page_directory;
-    uint32_t creation_thread_id;
+    uint32_t creation_thread_id; // id of thread that created this thread
     uint32_t id;
     
     void *kernel_stack;
     uint32_t kernel_stack_pointer;
 
+    uint32_t is_blocked;
     uint8_t delete_me;
     uint8_t delete_signal_running;
     uint8_t kill_me;
@@ -75,12 +78,9 @@ typedef struct {
 
 typedef struct program_t {
     struct program_t *next;
-
-    void *template;
-    void *window;
-    uint32_t page_directory_for_human_input_event_stack;
-    void *human_input_event_stack;
-
+    uint32_t is_blocked;
+    void *running_executable;
+    user_thread_t *main_thread;
     uint32_t number_of_threads;
     user_thread_list_t thread_list_on_logical_processor[];
 } program_t;

@@ -8,20 +8,20 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/* includes */
-#include <kernel/hardware/main.h>
-#include <kernel/software/syscall.h>
-#include <userspace_library/main.h>
+// /* includes */
+// #include <kernel/hardware/main.h>
+// #include <kernel/software/syscall.h>
+// #include <userspace_library/main.h>
 
-/* global variables */
-uint32_t does_timer_exist = false;
+// /* global variables */
+// uint32_t does_timer_exist = false;
 
-/* functions */
-uint64_t syslib_get_time_in_microseconds(void) {
-    if(does_timer_exist == false) {
-        return 0;
-    }
-    uint64_t volatile time = 0;
-    syscall_send_command_to_virtual_device(VIRTUAL_HARDWARE_TIMER, &time);
-    return time;
-}
+// /* functions */
+// uint64_t syslib_get_time_in_microseconds(void) {
+//     if(does_timer_exist == false) {
+//         return 0;
+//     }
+//     uint64_t volatile time = 0;
+//     // syscall_send_command_to_virtual_device(VIRTUAL_HARDWARE_TIMER, &time);
+//     return time;
+// }

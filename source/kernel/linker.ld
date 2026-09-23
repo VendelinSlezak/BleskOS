@@ -9,7 +9,7 @@ PHDRS
 
 SECTIONS
 {
-    . = 0xFF001000;
+    . = 0xC0001000;
 
     .text ALIGN(4K) : {
         *(.start) /* source/kernel/kernel.asm */

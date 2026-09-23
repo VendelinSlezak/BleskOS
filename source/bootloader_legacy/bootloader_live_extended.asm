@@ -10,7 +10,7 @@
 ;;
 ;;;;;
 
-%include "source/bootloader_legacy/modules/global_declarations.asm"
+%include "modules/global_declarations.asm"
 
 ; bootloader of partition will load this code here
 org 0x1000
@@ -81,20 +81,18 @@ start:
     or eax, 0x80000000 ; paging bit
     mov cr0, eax
 
-    ; set stack
-    mov esp, 0xFF400000
-
     ; start execution of BleskOS kernel
-    jmp 0xFF001000
+    mov esp, VM_KERNEL_STACK_END
+    jmp VM_KERNEL_START
 
 ; FUNCTIONS
 
 bits 16
 
-%include "source/bootloader_legacy/modules/screen_output.asm"
-%include "source/bootloader_legacy/modules/a20.asm"
-%include "source/bootloader_legacy/modules/8042_controller.asm"
-%include "source/bootloader_legacy/modules/memory.asm"
-%include "source/bootloader_legacy/modules/storage.asm"
-%include "source/bootloader_legacy/modules/vbe.asm"
-%include "source/bootloader_legacy/modules/gdt.asm"
+%include "modules/screen_output.asm"
+%include "modules/a20.asm"
+%include "modules/8042_controller.asm"
+%include "modules/memory.asm"
+%include "modules/storage.asm"
+%include "modules/vbe.asm"
+%include "modules/gdt.asm"

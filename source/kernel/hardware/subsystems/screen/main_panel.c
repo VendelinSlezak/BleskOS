@@ -10,19 +10,23 @@
 
 /* includes */
 #include <kernel/firmware/cmos/cmos.h>
+#include <kernel/hardware/devices/memory/memory_allocators.h>
 #include <kernel/hardware/groups/logging/logging.h>
 #include <kernel/hardware/groups/graphic_output/graphic_output.h>
 #include <kernel/hardware/groups/human_input/keyboard_layout.h>
 #include <kernel/hardware/subsystems/screen/screen.h>
 #include <kernel/hardware/subsystems/screen/font.h>
 #include <kernel/hardware/subsystems/screen/stb_image.h>
-#include <kernel/hardware/devices/memory/memory_allocators.h>
 #include <kernel/hardware/subsystems/screen/draw.h>
 #include <kernel/hardware/subsystems/screen/simple_gui.h>
 #include <kernel/hardware/subsystems/screen/stb_image_implementation.h>
 #include <kernel/hardware/subsystems/screen/shutdown_dialog.h>
+#include <kernel/software/virtual_hardware/screen.h>
 #include <kernel/software/ramdisk.h>
+#include <kernel/software/running_executables.h>
 #include <kernel/libc/string.h>
+#include <syslib.h>
+#include <kernel/software/virtual_hardware/human_input.h>
 
 /* local variables */
 ramdisk_elf_program_list_t *program_list;
@@ -89,14 +93,19 @@ void draw_main_panel(screen_part_t *part) {
         p1->horizontal_alignment = ALIGN_CENTER;
         p1->padding_right = 10;
         p1->padding_bottom = 10;
-        p1->background_color = (program_list->programs[i].is_loaded_into_memory == true) ? 0xFF00AA00 : 0x00000000;
+        p1->background_color = (program_list->programs[i].running_executable != NULL) ? 0xFF00AA00 : 0x00000000;
         block_t *ib1 = add_block(&p1, ADD_FROM_START, IMAGE_BLOCK, program_list->programs[i].icon);
         ib1->padding_bottom = 10;
         block_t *tb2 = add_block(&p1, ADD_FROM_START, TEXT_BLOCK, program_list->programs[i].name);
         tb2->text_color = 0xFF000000;
         tb2->horizontal_alignment = ALIGN_CENTER;
 
-        set_block_clickable(p1, start_program, i);
+        if(program_list->programs[i].running_executable == NULL) {
+            set_block_clickable(p1, start_program, i);
+        }
+        else {
+            set_block_clickable(p1, show_program, (uint32_t) program_list->programs[i].running_executable);
+        }
     }
 
     if(part->width >= BREAKING_POINT_FOR_LAYOUT) {
@@ -184,8 +193,7 @@ void grab_scrollbar(screen_part_t *part, uint32_t argument) {
     actual_processed_main_panel->is_vertical_scrollbar_dragged = true;
     actual_processed_main_panel->initial_grab_y_position = mouse_cursor_y;
     part_with_focus = part;
-    draw_view(active_view);
-    redraw_screen();
+    redraw_part(part);
 }
 void main_panel_process_mouse_movement(screen_part_t *part) {
     if(actual_processed_main_panel != NULL) {
@@ -200,8 +208,7 @@ void main_panel_process_mouse_movement(screen_part_t *part) {
             if(offset != actual_processed_main_panel->vertical_scrollbar_position) {
                 actual_processed_main_panel->vertical_scrollbar_position = offset;
                 actual_processed_main_panel->y_offset = (actual_processed_main_panel->vertical_scrollbar_position * actual_processed_main_panel->y_offset_range) / actual_processed_main_panel->vertical_scrollbar_range;
-                draw_view(active_view);
-                redraw_screen();
+                redraw_part(part);
             }
         }
     }
@@ -212,65 +219,75 @@ void main_panel_process_mouse_left_click_release(screen_part_t *part) {
         actual_processed_main_panel = NULL;
     }
 }
+// I am reading this again and like seriously what is even that code why is it redrawing whole view??
 
 void start_program(screen_part_t *part, uint32_t index) {
-    ramdisk_elf_program_t *program_in_part = NULL;
-    for(int i = 0; i < program_list->number_of_programs; i++) {
-        if(program_list->programs[i].part_where_program_is_running == part) {
-            program_in_part = &program_list->programs[i];
-            break;
-        }
-    }
+    ramdisk_elf_program_t *new_program = &program_list->programs[index];
+    log("\nStarting program %s", new_program->name);
+
+    // if this part already shows program, close it
+    running_executable_t *program_in_part = part->running_executable;
     if(program_in_part != NULL) {
-        program_in_part->part_where_program_is_running = NULL;
+        program_in_part->part = NULL;
     }
+
     main_panel_data_t *data = (main_panel_data_t *) part->main_panel_data;
     data->show_remaining_programs = false;
 
-    ramdisk_elf_program_t *new_program = &program_list->programs[index];
-    screen_part_t *part_where_program_was_running = new_program->part_where_program_is_running;
-    log("\nStarting program %s", new_program->name);
-    if(new_program->is_loaded_into_memory == false) {
-        // TODO: load program into memory here
-        new_program->is_loaded_into_memory = true;
-        number_of_running_programs++;
-    }
+    // show program in this part
+    running_executable_t *re = new_program->running_executable;
+    screen_part_t *part_where_program_was_running = NULL;
+    re = create_running_program_from_spawning_template(&new_program->spawning_template);
+    re->name = new_program->name;
+    re->part = part;
+    new_program->running_executable = re;
+    vh_screen_update_window_resolution(re, part->width, part->height - 60);
+
+    part->program_name = re->name;
+    part->running_executable = re;
     part->state = PART_STATE_PROGRAM;
-    part->program_name = new_program->name;
-    new_program->part_where_program_is_running = part;
     part_with_focus = part;
 
-    if(part_where_program_was_running != NULL) {
-        uint32_t is_part_set = false;
-        for(int i = index + 1; i < program_list->number_of_programs; i++) {
-            if(program_list->programs[i].is_loaded_into_memory == true && program_list->programs[i].part_where_program_is_running == NULL) {
-                program_list->programs[i].part_where_program_is_running = part_where_program_was_running;
+    redraw_part(part);
+    redraw_main_panels_under_part(active_view->global_part);
+}
 
-                part_where_program_was_running->program_name = program_list->programs[i].name; // TODO: set all variables here
+void show_program(screen_part_t *part, uint32_t running_executable) {
+    running_executable_t *re = (running_executable_t *) (running_executable);
 
-                is_part_set = true;
-                break;
-            }
+    log("\nShow program %s", re->name);
+
+    // if program is already shown at other part, then change what is shown in that part to other program or to main panel
+    if(re->part != part && re->part != NULL) {
+        running_executable_t *other_re = get_not_shown_running_executable_except(re);
+        if(other_re == NULL) {
+            re->part->running_executable = NULL;
+            re->part->state = PART_STATE_MAIN_PANEL;
+            redraw_part(re->part);
         }
-        if(is_part_set == false) {
-            for(int i = index - 1; i >= 0; i--) {
-                if(program_list->programs[i].is_loaded_into_memory == true && program_list->programs[i].part_where_program_is_running == NULL) {
-                    program_list->programs[i].part_where_program_is_running = part_where_program_was_running;
-
-                    part_where_program_was_running->program_name = program_list->programs[i].name; // TODO: set all variables here
-
-                    is_part_set = true;
-                    break;
-                }
-            }
-            if(is_part_set == false) {
-                part_where_program_was_running->state = PART_STATE_MAIN_PANEL;
-            }
+        else {
+            re->part->program_name = other_re->name;
+            re->part->running_executable = other_re;
+            re->part->state = PART_STATE_PROGRAM;
+            other_re->part = re->part;
+            vh_screen_demand_redraw_from_program(other_re);
+            redraw_part(other_re->part);
         }
     }
+    re->part = part;
 
-    draw_view(active_view);
-    redraw_screen();
+    // show program in this part
+    part->program_name = re->name;
+    part->running_executable = re;
+    part->state = PART_STATE_PROGRAM;
+    screen_part_t *old_part_with_focus = part_with_focus;
+    part_with_focus = part;
+    vh_screen_demand_redraw_from_program(re);
+
+    redraw_part(part);
+    if(old_part_with_focus != NULL && old_part_with_focus != part) {
+        redraw_part(old_part_with_focus);
+    }
 }
 
 void send_shutdown_signal(screen_part_t *part, uint32_t argument) {
@@ -285,20 +302,15 @@ void select_keyboard_layout(screen_part_t *part, uint32_t layout) {
         return;
     }
     set_keyboard_layout((uint8_t *) layout);
-    draw_view(active_view);
-    redraw_screen();
+    redraw_main_panels_under_part(active_view->global_part);
 }
 
 void draw_program(screen_part_t *part, uint32_t does_have_focus) {
     main_panel_data_t *data = (main_panel_data_t *) part->main_panel_data;
 
-    int program_index = -1;
-    for(int i = 0; i < program_list->number_of_programs; i++) {
-        if(program_list->programs[i].part_where_program_is_running == part) {
-            program_index = i;
-            break;
-        }
-    }
+    log("\ndraw program");
+
+    running_executable_t *re = part->running_executable;
 
     block_t *first_block = create_first_block();
     block_t *big_block = add_block(&first_block, ADD_FROM_START, VERTICAL_BLOCK, NULL);
@@ -320,8 +332,7 @@ void draw_program(screen_part_t *part, uint32_t does_have_focus) {
     block_t *program = add_block(&big_block, ADD_FROM_START, VERTICAL_BLOCK, NULL);
     program->min_width = part->width;
     program->min_height = part->height - (30 * 2);
-    program->background_color = 0xFFFFFFFF;
-    set_block_clickable(program, click_inside_program, program_index);
+    program->background_color = 0x00000000;
 
     block_t *footer = add_block(&big_block, ADD_FROM_START, HORIZONTAL_BLOCK, NULL);
     footer->min_width = part->width;
@@ -343,25 +354,19 @@ void draw_program(screen_part_t *part, uint32_t does_have_focus) {
     uint32_t size_of_one_program_bar = 150;
     uint32_t shown_programs = (number_of_running_programs * size_of_one_program_bar) > (part->width - 200) ? ((part->width - 200) / size_of_one_program_bar) : number_of_running_programs;
     uint32_t last_not_checked_program = 0;
-    for(int i = 0, d = 0; i < program_list->number_of_programs && d < shown_programs; i++) {
+    for(int i = 0; i < running_executable_list->number_of_running_executables; i++) {
         last_not_checked_program = i;
-        if(program_list->programs[i].is_loaded_into_memory == false) {
-            continue;
-        }
-        else {
-            d++;
-        }
-        block_t *program_bar = add_block(&footer, ADD_FROM_START, TEXT_BLOCK, program_list->programs[i].name);
+        block_t *program_bar = add_block(&footer, ADD_FROM_START, TEXT_BLOCK, running_executable_list->running_executable[i]->name);
         program_bar->vertical_alignment = ALIGN_CENTER;
         program_bar->min_width = size_of_one_program_bar;
         program_bar->min_height = 30;
         program_bar->border_right_size = 1;
         program_bar->padding_left = 10;
         program_bar->border_color = 0xFF000000;
-        if(i == program_index) {
+        if(running_executable_list->running_executable[i] == re) {
             program_bar->background_color = (does_have_focus == true) ? 0xFFFFFF00 : 0xFF666666;
         }
-        set_block_clickable(program_bar, start_program, i);
+        set_block_clickable(program_bar, show_program, (uint32_t) running_executable_list->running_executable[i]);
     }
     if(last_not_checked_program != 0) {
         last_not_checked_program++;
@@ -385,32 +390,32 @@ void draw_program(screen_part_t *part, uint32_t does_have_focus) {
     quit_button->padding_right = 10;
     quit_button->text_color = 0xFF000000;
     quit_button->background_color = (does_have_focus == true) ? 0xFFCC0000 : 0xFF666666;
-    set_block_clickable(quit_button, close_program, program_index);
+    set_block_clickable(quit_button, close_program, (uint32_t) re);
 
     draw_gui_blocks(part, first_block, 0, 0);
     if(data->show_remaining_programs == true) {
         uint32_t x = (53 + (shown_programs * (size_of_one_program_bar + 1)) - 1);
         uint32_t y = (part->height - 29);
         uint32_t background_color = 0xFFFF0000;
-        for(int i = last_not_checked_program; i < program_list->number_of_programs; i++) {
-            if(program_list->programs[i].is_loaded_into_memory == false) {
-                continue;
-            }
+        for(int i = last_not_checked_program; i < running_executable_list->number_of_running_executables; i++) {
             y -= 30;
-            if(i == program_index) {
+            if(running_executable_list->running_executable[i] == re) {
                 draw_square_in_part(part, x, y, size_of_one_program_bar, 30, (does_have_focus == true) ? 0xFFFFFF00 : 0xFF666666);
             }
             else {
                 draw_square_in_part(part, x, y, size_of_one_program_bar, 30, background_color);
             }
             background_color = (background_color == 0xFFFF0000) ? 0xFFEE0000 : 0xFFFF0000;
-            draw_bitmap_string(part, x + 10, y + 7, program_list->programs[i].name, 0xFF000000);
-            gui_add_left_click_event(part, x, y, size_of_one_program_bar, 30, start_program, i);
+            draw_bitmap_string(part, x + 10, y + 7, running_executable_list->running_executable[i]->name, 0xFF000000);
+            gui_add_left_click_event(part, x, y, size_of_one_program_bar, 30, show_program, (uint32_t) running_executable_list->running_executable[i]);
         }
     }
     free_gui_blocks(first_block);
 
-    // TODO: redraw inside of program / set flag for redraw
+    // set flag for redraw of program
+    if(is_view_edited == false && is_program_dragged == false) {
+        vh_screen_update_window_resolution(re, part->width, part->height - 60);
+    }
 }
 
 void start_dragging_program_between_parts(screen_part_t *part, uint32_t argument) {
@@ -420,65 +425,49 @@ void start_dragging_program_between_parts(screen_part_t *part, uint32_t argument
 }
 
 void back_to_main_panel(screen_part_t *part, uint32_t argument) {
-    for(int i = 0; i < program_list->number_of_programs; i++) {
-        if(program_list->programs[i].part_where_program_is_running == part) {
-            program_list->programs[i].part_where_program_is_running = NULL;
+    running_executable_t *re = part->running_executable;
+    re->part = NULL;
+    part->state = PART_STATE_MAIN_PANEL;
+    part->running_executable = NULL;
+    part_with_focus = part;
+    redraw_part(part);
+}
+
+void close_program(screen_part_t *part, uint32_t running_executable) {
+    running_executable_t *re = (running_executable_t *) (running_executable);
+    log("\nClosing program %s", re->name);
+    send_closing_signal_to_program(re->program);
+    // TODO: set timer, and if program is not closed, show "Program had not completed closing signal so far, do you want to kill it?"
+}
+
+void part_program_closed(screen_part_t *part) {
+    running_executable_t *running_executable = part->running_executable;
+    if(running_executable != NULL) {
+        for(int i = 0; i < program_list->number_of_programs; i++) {
+            if(program_list->programs[i].running_executable == running_executable) {
+                program_list->programs[i].running_executable = NULL;
+            }
         }
     }
+    part->running_executable = NULL;
     part->state = PART_STATE_MAIN_PANEL;
-    part_with_focus = part;
-    draw_main_panel(part);
+    draw_view(active_view); // we need to update everything because closing program will affect main panel and also program parts
     redraw_screen();
 }
 
-void close_program(screen_part_t *part, uint32_t index) {
-    log("\nClosing program %s", program_list->programs[index].name);
-    // TODO: unload program from memory here
-    program_list->programs[index].is_loaded_into_memory = false;
-    number_of_running_programs--;
-    if(program_list->programs[index].part_where_program_is_running == NULL) {
+void process_mouse_button_click_for_program(screen_part_t *part, uint32_t button, uint32_t x, uint32_t y) {
+    if(    x < part->x
+        || x >= (part->x + part->width)
+        || y < (part->y + 30)
+        || y >= (part->y + part->height - 30)) {
         return;
     }
-    screen_part_t *part_with_program = program_list->programs[index].part_where_program_is_running;
-    program_list->programs[index].part_where_program_is_running = NULL;
-    for(int i = index + 1; i < program_list->number_of_programs; i++) {
-        if(program_list->programs[i].is_loaded_into_memory == true && program_list->programs[i].part_where_program_is_running == NULL) {
-            program_list->programs[i].part_where_program_is_running = part;
-            part_with_focus = part;
-
-            part->program_name = program_list->programs[i].name; // TODO: set all variables here
-
-            draw_view(active_view);
-            redraw_screen();
-            return;
-        }
-    }
-    for(int i = index - 1; i >= 0; i--) {
-        if(program_list->programs[i].is_loaded_into_memory == true && program_list->programs[i].part_where_program_is_running == NULL) {
-            program_list->programs[i].part_where_program_is_running = part;
-            part_with_focus = part;
-
-            part->program_name = program_list->programs[i].name; // TODO: set all variables here
-
-            draw_view(active_view);
-            redraw_screen();
-            return;
-        }
-    }
-    part_with_program->state = PART_STATE_MAIN_PANEL;
-    part_with_focus = part_with_program;
-    draw_view(active_view);
-    redraw_screen();
-}
-
-void click_inside_program(screen_part_t *part, uint32_t argument) {
     main_panel_data_t *data = (main_panel_data_t *) part->main_panel_data;
     if(data->show_remaining_programs == true) {
         data->show_remaining_programs = false;
+        redraw_part(part);
     }
-    // TODO: send to virtual hardware human input
-    draw_view(active_view);
-    redraw_screen();
+    vh_human_input_event(part->running_executable, VH_HUMAN_INPUT_EVENT_BUTTON_PRESSED, button, x - part->x, y - part->y - 30);
 }
 
 void show_remaining_programs(screen_part_t *part, uint32_t argument) {
@@ -489,25 +478,15 @@ void show_remaining_programs(screen_part_t *part, uint32_t argument) {
     else {
         data->show_remaining_programs = true;
     }
-    draw_view(active_view);
-    redraw_screen();
+    redraw_part(part);
 }
 
 void part_is_moving_to_part(screen_part_t *part, screen_part_t *new_part) {
-    for(int i = 0; i < program_list->number_of_programs; i++) {
-        if(program_list->programs[i].part_where_program_is_running == part) {
-            program_list->programs[i].part_where_program_is_running = new_part;
-        }
+    running_executable_t *re = part->running_executable;
+    if(re == NULL) {
+        return;
     }
-}
-
-void parts_are_switching(screen_part_t *part1, screen_part_t *part2) {
-    for(int i = 0; i < program_list->number_of_programs; i++) {
-        if(program_list->programs[i].part_where_program_is_running == part1) {
-            program_list->programs[i].part_where_program_is_running = part2;
-        }
-        else if(program_list->programs[i].part_where_program_is_running == part2) {
-            program_list->programs[i].part_where_program_is_running = part1;
-        }
-    }
+    re->part->running_executable = NULL;
+    re->part = new_part;
+    new_part->running_executable = re;
 }

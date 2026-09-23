@@ -8,30 +8,8 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-typedef struct {
-    void *program;
-    uint32_t x;
-    uint32_t y;
-    uint32_t width;
-    uint32_t height;
-    uint32_t real_inside_width;
-    uint32_t real_inside_height;
-} window_t;
+#include <kernel/hardware/devices/cpu/scheduler.h>
+#include <kernel/software/running_executables.h>
 
-typedef struct {
-    uint32_t num_of_windows;
-    window_t *window[4];
-} screen_layout_t;
-
-enum {
-    WINDOWS_SUBSYSTEM_CREATE_WINDOW = 1,
-    WINDOWS_SUBSYSTEM_REDRAW_WINDOW
-};
-
-typedef struct {
-    uint32_t type;
-    uint32_t argument[];
-} windows_subsystem_command_t;
-
-extern screen_layout_t *screen_layout;
-extern window_t *current_window;
+#define VH_SCREEN_DEMAND_WINDOW_CHANGE 1
+#define VH_SCREEN_DEMAND_REDRAW 2

@@ -758,6 +758,9 @@ void free_gui_blocks(block_t *block) {
     for(int i = 0; i < block->number_of_blocks; i++) {
         free_gui_blocks(block->blocks[i]);
     }
+    if(block->type == TEXT_BLOCK && block->text != NULL) {
+        kfree(block->text);
+    }
     kfree(block);
 }
 

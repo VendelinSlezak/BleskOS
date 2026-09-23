@@ -12,4 +12,6 @@ typedef struct {
     uint32_t page_directory;
     uint32_t entry_point;
     void *user_stack;
+    void *syslib_got;
+    void *virtual_hardware;
 } spawning_template_t;

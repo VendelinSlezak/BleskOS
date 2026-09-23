@@ -9,6 +9,7 @@
 */
 
 #include <kernel/hardware/subsystems/screen/screen.h>
+#include <kernel/hardware/devices/cpu/scheduler.h>
 
 #define BREAKING_POINT_FOR_LAYOUT 500
 

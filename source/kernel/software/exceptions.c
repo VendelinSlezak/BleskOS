@@ -19,31 +19,56 @@
 void initialize_exceptions(void) {
     set_isr_interrupt_handler(0x00, exception_division_by_zero);
     set_isr_interrupt_handler(0x06, exception_unknown_opcode);
+    set_isr_interrupt_handler(0x08, exception_double_fault);
     set_isr_interrupt_handler(0x0D, exception_general_protection_fault);
 }
 
-void kill_running_thread(interrupt_stack_t *stack_of_interrupt) {
+void close_running_thread(interrupt_stack_t *stack_of_interrupt) {
     logical_processor_t *lpdata = get_current_logical_processor_struct();
-    if(lpdata->scheduler_state == SCHEDULER_STATE_KERNEL) {
+    if(lpdata->running_thread_state == SCHEDULER_STATE_KERNEL) {
         kernel_panic("Exception in kernel space", stack_of_interrupt);
     }
     close_current_thread_interrupt(stack_of_interrupt);
 }
 
+void kill_running_thread(interrupt_stack_t *stack_of_interrupt) {
+    logical_processor_t *lpdata = get_current_logical_processor_struct();
+    if(lpdata->running_thread_state == SCHEDULER_STATE_KERNEL) {
+        kernel_panic("Exception in kernel space", stack_of_interrupt);
+    }
+    kill_current_thread_interrupt(stack_of_interrupt);
+}
+
 void exception_division_by_zero(interrupt_stack_t *stack_of_interrupt) {
     logical_processor_t *lpdata = get_current_logical_processor_struct();
     log("\n[EXCEPTION] Division by zero in process %x thread %d on CPU%d", lpdata->current_program, lpdata->current_user_thread->id, lpdata->index);
-    kill_running_thread(stack_of_interrupt);
+    close_running_thread(stack_of_interrupt);
 }
 
 void exception_unknown_opcode(interrupt_stack_t *stack_of_interrupt) {
     logical_processor_t *lpdata = get_current_logical_processor_struct();
     log("\n[EXCEPTION] Unknown opcode in process %x thread %d on CPU%d", lpdata->current_program, lpdata->current_user_thread->id, lpdata->index);
-    kill_running_thread(stack_of_interrupt);
+    close_running_thread(stack_of_interrupt);
+}
+
+void exception_double_fault(interrupt_stack_t *stack_of_interrupt) {
+    kernel_panic("Double fault", stack_of_interrupt);
 }
 
 void exception_general_protection_fault(interrupt_stack_t *stack_of_interrupt) {
     logical_processor_t *lpdata = get_current_logical_processor_struct();
     log("\n[EXCEPTION] General protection fault in process %x thread %d on CPU%d", lpdata->current_program, lpdata->current_user_thread->id, lpdata->index);
     kill_running_thread(stack_of_interrupt);
+}
+
+void null_page_fault_handler(interrupt_stack_t *stack_of_interrupt) {
+    logical_processor_t *lpdata = get_current_logical_processor_struct();
+    log("\n[EXCEPTION] Null page fault in process %x thread %d on CPU%d by EIP 0x%x", lpdata->current_program, lpdata->current_user_thread->id, lpdata->index, stack_of_interrupt->eip);
+    if(lpdata->running_thread_state == SCHEDULER_STATE_KERNEL) {
+        kernel_panic("Null page fault in kernel space", stack_of_interrupt);
+    }
+    else {
+        send_closing_signal_to_program(lpdata->current_program);
+        close_running_thread(stack_of_interrupt);
+    }
 }

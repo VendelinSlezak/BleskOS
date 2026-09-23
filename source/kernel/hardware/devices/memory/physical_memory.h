@@ -26,3 +26,6 @@ typedef struct {
     uint32_t number_of_entries;
     standardized_32_bit_free_memory_map_entry_t entry[];
 }__attribute__((packed)) standardized_32_bit_free_memory_map_t;
+
+extern void *(*pm_alloc_page)(void);
+extern void (*pm_free_page)(void *page);

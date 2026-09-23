@@ -10,60 +10,29 @@
 
 /* includes */
 #include <stdarg.h>
-#include <kernel/hardware/main.h>
-#include <kernel/software/syscall.h>
-#include <kernel/hardware/groups/logging/logging.h>
+#include <syslib.h>
 #include <userspace_library/main.h>
 
-/* global variables */
-uint32_t does_logger_exist = false;
-
 /* functions */
-void syslib_log(char *string) {
-    if(does_logger_exist == false) {
-        return;
-    }
-    static logging_device_command_t command = {
-        .type = LOGGING_GROUP_COMMAND_SEND_STRING,
-        .argument = {
-            0
-        }
-    };
-    command.argument[0] = (uint32_t) string;
-    syscall_send_command_to_virtual_device(VIRTUAL_HARDWARE_LOGGER, &command);
-}
-
-void syslib_logf(char *string, ...) {
-    if(does_logger_exist == false) {
-        return;
-    }
-    static uint32_t free_memory[2 + 1000];
-    logging_device_command_t *command = (logging_device_command_t *) &free_memory[0];
-    command->type = LOGGING_GROUP_COMMAND_SEND_FORMATTED_STRING;
-    command->argument[0] = (uint32_t) string;
-    uint32_t *argument = (uint32_t *) &command->argument[1];
+void log(char *string, ...) {
+    uint32_t length_of_string = 0;
     uint32_t number_of_args = 0;
     va_list args;
     va_start(args, string);
-    while(*string != 0) {
-        if(*string != '%') {
-            string++;
-        }
-        else {
-            string++;
-            if(*string == 0) {
+    while(length_of_string < 255 && *string != 0) {
+        virtual_hardware->log_string[length_of_string++] = *string;
+        if(string[0] == '%' && string[1] != '%') {
+            number_of_args++;
+            if(number_of_args >= 16) {
                 break;
             }
-            else if(*string == '%') {
-                string++;
-            }
-            else if(number_of_args < 1000) {
-                number_of_args++;
-                *argument++ = va_arg(args, uint32_t);
-                string++;
-            }
         }
+        string++;
+    }
+    virtual_hardware->log_string[length_of_string] = '\0';
+    for(int i = 0; i < number_of_args; i++) {
+        virtual_hardware->log_string_parameters[i] = va_arg(args, uint32_t);
     }
     va_end(args);
-    syscall_send_command_to_virtual_device(VIRTUAL_HARDWARE_LOGGER, command);
+    syscall_virtual_hardware(VIRTUAL_HARDWARE_LOG_ID, VH_LOG_DEMAND_PRINTLNF);
 }

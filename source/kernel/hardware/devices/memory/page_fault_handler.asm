@@ -10,9 +10,9 @@
 ;;
 ;;;;;
 
-%define PT_MEM_VM_MAP 0xFFC00000
-%define P_MEM_PAGE_TABLE        (PT_MEM_VM_MAP + 0x00000000)
-%define P_MEM_PAGE_DIRECTORY    (PT_MEM_VM_MAP + 0x003FF000)
+%define VM_KERNEL_DATA_START 0xC0000000
+%define VM_PAGE_TABLES 0xFFC00000
+%define VM_PAGE_DIRECTORY 0xFFFFF000
 
 %define VM_FLAG_NOT_PRESENT (0 << 0)
 %define VM_FLAG_PRESENT     (1 << 0)
@@ -22,17 +22,16 @@
 %define VM_FLAG_USER        (1 << 2)
 %define VM_FLAG_SPINLOCK    (1 << 11)
 
-%define VM_PAGE_TABLE   (VM_FLAG_PRESENT | VM_FLAG_READ_WRITE | VM_FLAG_SUPERVISOR | VM_FLAG_USER)
-%define VM_USER         (VM_FLAG_PRESENT | VM_FLAG_READ_WRITE | VM_FLAG_USER)
-
 %define VM_LAZY_ALLOCATION  (0b001 << 9)
 %define VM_COW_ALLOCATION   (0b010 << 9)
+
+%define VM_PAGE_TABLE       (VM_FLAG_PRESENT | VM_FLAG_READ_WRITE | VM_FLAG_SUPERVISOR | VM_FLAG_USER)
+%define VM_USER             (VM_FLAG_PRESENT | VM_FLAG_READ_WRITE | VM_FLAG_USER)
 
 extern pm_alloc_page
 extern kernel_panic
 extern get_copy_on_write_page
-
-extern user_space_allocation_end
+extern null_page_fault_handler
 
 global page_fault_handler_i686
 page_fault_handler_i686:
@@ -52,13 +51,13 @@ page_fault_handler_i686:
     ; calculate where is page entry in page table
     mov ebx, eax
     shr ebx, 10 ; PTE index
-    add ebx, P_MEM_PAGE_TABLE  ; add page table base
+    add ebx, VM_PAGE_TABLES  ; add page table base
 
     ; calculate where is page table entry in page directory
     mov eax, ebp
     shr eax, 22
     shl eax, 2 ; multiply by 4
-    add eax, P_MEM_PAGE_DIRECTORY ; add page directory base
+    add eax, VM_PAGE_DIRECTORY ; add page directory base
     mov edx, eax
 
     ; check if page table is allocated
@@ -71,7 +70,7 @@ page_fault_handler_i686:
     ; check case
     cmp ebp, 0
     je .null_page_fault
-    cmp ebp, dword [user_space_allocation_end]
+    cmp ebp, VM_KERNEL_DATA_START
     jae .kernel_page_fault
     test eax, VM_FLAG_PRESENT
     jz .lazy_page_fault
@@ -109,7 +108,7 @@ page_fault_handler_i686:
 
         ; allocate new page table and write it to page directory
         push edx
-        call pm_alloc_page
+        call dword [pm_alloc_page]
         pop edx
         or eax, VM_PAGE_TABLE
         mov dword [edx], eax ; this will clear spinlock
@@ -143,7 +142,7 @@ page_fault_handler_i686:
         .allocate_new_page:
 
         ; allocate new clear page and write it to page table
-        call pm_alloc_page
+        call dword [pm_alloc_page]
         or eax, VM_USER
         mov dword [ebx], eax ; this will clear spinlock
 
@@ -164,7 +163,7 @@ page_fault_handler_i686:
         rep movsd
 
         ; allocate new page and write it to page table
-        call pm_alloc_page
+        call dword [pm_alloc_page]
         or eax, VM_USER
         mov dword [ebx], eax
 
@@ -202,8 +201,7 @@ page_fault_handler_i686:
         mov gs, ax
         
         push esp
-        push null_page_fault
-        call kernel_panic
+        call null_page_fault_handler
 
     ; special case page fault in kernel
     .kernel_page_fault:
@@ -228,11 +226,26 @@ page_fault_handler_i686:
 
     ; this situation should never occur, it is here mainly for debugging purposes
     .unknown_state:
+        pop ds
+        popad
+
+        push 8
+        pushad
+        push ds
+        push es
+        push fs
+        push gs
+        mov ax, 0x10 ; GDT selector for kernel data segment
+        mov ds, ax
+        mov es, ax
+        mov fs, ax
+        mov gs, ax
+        
+        push esp
         push unknown_type_page_fault
         call kernel_panic
 
 unknown_type_page_fault db 'Page has unknown type', 0
 kernel_space_page_fault db 'Page fault in kernel space', 0
-null_page_fault db 'Null page fault', 0
 
 ; TODO: special handler for one core

@@ -16,81 +16,120 @@
 #include <kernel/hardware/groups/logging/logging.h>
 #include <kernel/hardware/devices/cpu/mutex.h>
 #include <kernel/hardware/devices/cpu/interrupt.h>
+#include <kernel/hardware/devices/memory/block_alloc_cells_list.h>
 
 /* local variables */
 uint32_t temporary_kernel_allocator_base;
 uint32_t temporary_kernel_allocator_free_size;
-uint32_t user_space_allocation_start;
-uint32_t user_space_allocation_size;
-uint32_t user_space_allocation_end;
-uint32_t number_of_shared_page_tables;
-
 mutex_t temp_alloc_mutex;
+
+uint32_t permanent_kernel_allocator_base;
+uint32_t perm_allocator_num_of_allocations;
+uint32_t perm_allocator_requested_size;
+uint32_t perm_allocator_real_size;
+uint32_t perm_allocator_phy_mem_mapped;
 mutex_t perm_alloc_mutex;
+
 mutex_t kheap_mutex;
 
-/* global variables */
-uint32_t permanent_kernel_allocator_base;
+block_cell_metadata_t **block_alloc_cells;
+mutex_t block_alloc_mutex;
 
 /* initialize */
 void initialize_allocators(void) {
     // temporary allocator
-    temporary_kernel_allocator_base = TEMPORARY_KERNEL_ALLOCATOR_BASE;
-    temporary_kernel_allocator_free_size = MEM_KERNEL_HEAP_START - TEMPORARY_KERNEL_ALLOCATOR_BASE;
+    temporary_kernel_allocator_base = VM_TEMP_ALLOCATOR_START;
+    temporary_kernel_allocator_free_size = PAGE_TABLE_SIZE * 511;
+    temp_alloc_mutex.lock = MUTEX_UNLOCKED_VALUE;
 
     // permanent allocator
-    permanent_kernel_allocator_base = MEM_KERNEL_HEAP_START;
+    permanent_kernel_allocator_base = VM_PERM_ALLOCATOR_END;
+    perm_alloc_mutex.lock = MUTEX_UNLOCKED_VALUE;
 
     // kernel heap
-    vm_allocate_pages(MEM_KERNEL_HEAP_START, sizeof(kernel_heap_metadata_t), VM_KERNEL);
-    kernel_heap_metadata_t *kernel_heap_metadata = (kernel_heap_metadata_t *) MEM_KERNEL_HEAP_START;
-    kernel_heap_metadata->memory_start = MEM_KERNEL_HEAP_START + sizeof(kernel_heap_metadata_t);
+    vm_allocate_pages(VM_KERNEL_HEAP_START, sizeof(kernel_heap_metadata_t), VM_KERNEL);
+    kernel_heap_metadata_t *kernel_heap_metadata = (kernel_heap_metadata_t *) VM_KERNEL_HEAP_START;
+    kernel_heap_metadata->memory_start = VM_KERNEL_HEAP_START + sizeof(kernel_heap_metadata_t);
     if(PAGE_OFFSET_MASK(sizeof(kernel_heap_metadata_t)) != 0) {
         kernel_heap_metadata->memory_start = PAGE_MASK(kernel_heap_metadata->memory_start) + PAGE_SIZE;
     }
-    kernel_heap_metadata->memory_size = PT_MEM_KERNEL - kernel_heap_metadata->memory_start;
-    kernel_heap_metadata->memory_end = PT_MEM_KERNEL;
+    kernel_heap_metadata->memory_end = VM_KERNEL_HEAP_END;
+    kernel_heap_metadata->memory_size = kernel_heap_metadata->memory_end - kernel_heap_metadata->memory_start;
     kernel_heap_metadata->free_memory_start = kernel_heap_metadata->memory_start;
     kernel_heap_metadata->free_memory_size = kernel_heap_metadata->memory_size;
     kernel_heap_metadata->insert_entry = (kheap_entry_t *) &kernel_heap_metadata->first_entry;
     kernel_heap_metadata->first_entry.end = kernel_heap_metadata->memory_start;
     kernel_heap_metadata->first_entry.prev = NULL;
     kernel_heap_metadata->first_entry.next = NULL;
+    kheap_mutex.lock = MUTEX_UNLOCKED_VALUE;
 
-    // user space allocations
-    user_space_allocation_start = NULL;
-    user_space_allocation_end = NULL;
+    // block allocator
+    block_alloc_cells = (block_cell_metadata_t **) kalloc((block_alloc_cells_list_biggest_entry + 1) * sizeof(block_cell_metadata_t *)); // list of cell metadata, each cell can be accessed by simple index of its size
+    for(int i = 0; i < block_alloc_cells_list_count; i++) {
+        uint32_t size = block_alloc_cells_list[i];
+        if(block_alloc_cells[size] != NULL) {
+            continue;
+        }
+
+        block_alloc_cells[size] = (block_cell_metadata_t *) kalloc(sizeof(block_cell_metadata_t));
+        block_cell_metadata_t *cell = block_alloc_cells[size];
+        for(int j = 0; j < NUMBER_OF_PREALLOCATED_BLOCKS_IN_CELL; j++) {
+            cell->allocations[j] = kalloc(size);
+        }
+    }
 }
 
-void initialize_user_space_allocation(void) {
-    // first 4 MB block is for user stack, then there are blocks for user space and blocks with and above permanent allocator are for kernel
-    user_space_allocation_start = MEM_USER_HEAP_BASE;
-    user_space_allocation_size = ((permanent_kernel_allocator_base / 0x400000) * 0x400000) - user_space_allocation_start;
-    user_space_allocation_end = user_space_allocation_start + user_space_allocation_size;
-    number_of_shared_page_tables = (0 - user_space_allocation_end) / 0x400000;
-
-    log("\nUser space allocation: start=0x%x, end=0x%x, size=0x%x, num=%d", user_space_allocation_start, user_space_allocation_end, user_space_allocation_size, number_of_shared_page_tables);
+void initialize_allocators_for_user_space(void) {
+    log("\n[USER SPACE] %d MB available", (VM_USER_SPACE_END - VM_USER_SPACE_START + (1024 * 1024) - 1) / (1024 * 1024));
 
     // temporary allocator works in space for user space allocations, so we need to quit it
     quit_temp_alloc();
+
+    // log info about permanent allocator
+    log("\n[PERM ALLOCATOR] Booting allocated %d allocations on permanent allocator\n requested size: %d B\n real size: %d KB\n physical memory mapped: %d KB\n Permanent allocator starts at: 0x%x", 
+        perm_allocator_num_of_allocations, perm_allocator_requested_size, perm_allocator_real_size / 1024, perm_allocator_phy_mem_mapped / 1024, permanent_kernel_allocator_base);
+
+    // find end of kernel heap
+    kernel_heap_metadata_t *kernel_heap_metadata = (kernel_heap_metadata_t *) VM_KERNEL_HEAP_START;
+    kheap_entry_t *current_entry = (kheap_entry_t *) &kernel_heap_metadata->first_entry;
+    kheap_entry_t *last_entry = current_entry;
+    uint32_t end_of_kernel_heap = last_entry->end;
+    uint32_t kernel_number_of_allocations = 0;
+    uint32_t kernel_allocated_space = 0;
+    while(current_entry != NULL) {
+        if(current_entry->end > end_of_kernel_heap) {
+            last_entry = current_entry;
+            end_of_kernel_heap = last_entry->end;
+        }
+        kernel_number_of_allocations++;
+        kernel_allocated_space += current_entry->end - (uint32_t)current_entry + sizeof(kheap_entry_t);
+
+        current_entry = current_entry->next;
+    }
+    log("\n[KERNEL HEAP] Booting allocated %d allocations on heap\n metadata size: %d B\n allocated space: %d B\n total space: %d B / %d KB\n last entry ends at: 0x%x\n now %d MB available",
+        kernel_number_of_allocations,
+        sizeof(kernel_heap_metadata_t) * kernel_number_of_allocations,
+        kernel_allocated_space,
+        kernel_allocated_space + (sizeof(kernel_heap_metadata_t) * kernel_number_of_allocations),
+        (kernel_allocated_space + (sizeof(kernel_heap_metadata_t) * kernel_number_of_allocations) + 1023) / 1024,
+        last_entry->end,
+        (permanent_kernel_allocator_base - VM_KERNEL_HEAP_START + (1024 * 1024) - 1) / (1024 * 1024));
+    kernel_heap_metadata->memory_end = permanent_kernel_allocator_base;
 
     log("\nUser space allocation initialized successfully");
 }
 
 /* TEMPORARY ALLOCATOR */
 void *temp_phy_alloc(uint32_t phy_start, uint32_t size, uint32_t flags) {
-    LOCK_MUTEX(&temp_alloc_mutex);
+    // align size to page size
+    size += PAGE_OFFSET_MASK(phy_start);
+    size = (((size + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE);
 
     // check if temporary allocator is working
+    LOCK_MUTEX(&temp_alloc_mutex);
     if(temporary_kernel_allocator_base == NULL || temporary_kernel_allocator_free_size == 0 || size > temporary_kernel_allocator_free_size) {
         UNLOCK_MUTEX(&temp_alloc_mutex);
         return NULL;
-    }
-
-    // align size to page size
-    size += PAGE_OFFSET_MASK(phy_start);
-    if(PAGE_OFFSET_MASK(size) != 0) {
-        size = PAGE_MASK(size) + PAGE_SIZE;
     }
 
     // TODO: check if there is not overflow of 32-bit address space
@@ -108,7 +147,7 @@ void *temp_phy_alloc(uint32_t phy_start, uint32_t size, uint32_t flags) {
 }
 
 void quit_temp_alloc(void) {
-    vm_unmap_pages(TEMPORARY_KERNEL_ALLOCATOR_BASE, temporary_kernel_allocator_base - TEMPORARY_KERNEL_ALLOCATOR_BASE);
+    vm_unmap_pages(VM_TEMP_ALLOCATOR_START, temporary_kernel_allocator_base - VM_TEMP_ALLOCATOR_START);
     temporary_kernel_allocator_base = NULL;
     temporary_kernel_allocator_free_size = 0;
 }
@@ -116,20 +155,24 @@ void quit_temp_alloc(void) {
 /* PERMANENT ALLOCATOR */
 void *perm_alloc(uint32_t size) {
     // align size to page size
-    if(PAGE_OFFSET_MASK(size) != 0) {
-        size = PAGE_MASK(size) + PAGE_SIZE;
+    perm_allocator_num_of_allocations++;
+    perm_allocator_requested_size += size;
+    size = (((size + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE);
+
+    // check if permanent allocator is working
+    LOCK_MUTEX(&perm_alloc_mutex);
+    if((permanent_kernel_allocator_base - size) < VM_PERM_ALLOCATOR_START) {
+        UNLOCK_MUTEX(&perm_alloc_mutex);
+        return NULL;
     }
 
     // TODO: check if there is not overflow of 32-bit address space
 
     // allocate in kernel memory
-    LOCK_MUTEX(&perm_alloc_mutex);
     permanent_kernel_allocator_base -= size;
     vm_allocate_pages(permanent_kernel_allocator_base, size, VM_KERNEL | VM_FLAG_GLOBAL);
-
-    // update temporary allocator
-    temporary_kernel_allocator_free_size = permanent_kernel_allocator_base - temporary_kernel_allocator_base;
     void *allocated_address = (void *) permanent_kernel_allocator_base;
+    perm_allocator_real_size += size;
 
     UNLOCK_MUTEX(&perm_alloc_mutex);
     return allocated_address;
@@ -137,19 +180,22 @@ void *perm_alloc(uint32_t size) {
 
 void *perm_phy_alloc(uint32_t phy_start, uint32_t size, uint32_t flags) {
     // align size to page size
+    perm_allocator_num_of_allocations++;
     size += PAGE_OFFSET_MASK(phy_start);
-    if(PAGE_OFFSET_MASK(size) != 0) {
-        size = PAGE_MASK(size) + PAGE_SIZE;
+    size = (((size + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE);
+
+    // check if permanent allocator is working
+    LOCK_MUTEX(&perm_alloc_mutex);
+    if((permanent_kernel_allocator_base - size) < VM_PERM_ALLOCATOR_START) {
+        UNLOCK_MUTEX(&perm_alloc_mutex);
+        return NULL;
     }
 
     // allocate in kernel memory
-    LOCK_MUTEX(&perm_alloc_mutex);
     permanent_kernel_allocator_base -= size;
     vm_map_phy_pages(permanent_kernel_allocator_base, PAGE_MASK(phy_start), size, flags | VM_FLAG_GLOBAL);
-
-    // update temporary allocator
-    temporary_kernel_allocator_free_size = permanent_kernel_allocator_base - temporary_kernel_allocator_base;
     void *allocated_address = (void *) (permanent_kernel_allocator_base + PAGE_OFFSET_MASK(phy_start));
+    perm_allocator_phy_mem_mapped += size;
 
     UNLOCK_MUTEX(&perm_alloc_mutex);
     return allocated_address;
@@ -157,7 +203,7 @@ void *perm_phy_alloc(uint32_t phy_start, uint32_t size, uint32_t flags) {
 
 /* KERNEL HEAP */
 void kheap_dump(void) {
-    kernel_heap_metadata_t *kernel_heap_metadata = (kernel_heap_metadata_t *) MEM_KERNEL_HEAP_START;
+    kernel_heap_metadata_t *kernel_heap_metadata = (kernel_heap_metadata_t *) VM_KERNEL_HEAP_START;
     log("\nACTUAL FREE POINTER: 0x%x - %d - 0x%x",
         kernel_heap_metadata->free_memory_start,
         kernel_heap_metadata->free_memory_size,
@@ -198,7 +244,7 @@ void *kalloc(uint32_t size) {
 
     // find suitable space
     LOCK_MUTEX(&kheap_mutex);
-    kernel_heap_metadata_t *kernel_heap_metadata = (kernel_heap_metadata_t *) MEM_KERNEL_HEAP_START;
+    kernel_heap_metadata_t *kernel_heap_metadata = (kernel_heap_metadata_t *) VM_KERNEL_HEAP_START;
     if(size > kernel_heap_metadata->free_memory_size) {
         // find biggest free space block
         uint32_t biggest_space = 0; kheap_entry_t *biggest_space_entry;
@@ -266,6 +312,7 @@ void *kalloc(uint32_t size) {
 
     void *allocated_address = (void *) ((uint32_t)new_entry + sizeof(kheap_entry_t));
     UNLOCK_MUTEX(&kheap_mutex);
+    // log(" allocated at %x", allocated_address);
     return allocated_address;
 }
 
@@ -274,8 +321,10 @@ void kfree(void *allocation) {
         return;
     }
 
+    // log("\nKFREE request %x", allocation);
+
     LOCK_MUTEX(&kheap_mutex);
-    kernel_heap_metadata_t *kernel_heap_metadata = (kernel_heap_metadata_t *) MEM_KERNEL_HEAP_START;
+    kernel_heap_metadata_t *kernel_heap_metadata = (kernel_heap_metadata_t *) VM_KERNEL_HEAP_START;
     kheap_entry_t *entry = (kheap_entry_t *) ((uint32_t)allocation - sizeof(kheap_entry_t));
     uint32_t entry_start = (uint32_t) entry;
     uint32_t entry_end = entry->end;
@@ -318,10 +367,10 @@ void *krealloc(void *allocation, uint32_t new_size) {
         return kalloc(new_size);
     }
 
-    // log("\nKREALLOC request %d bytes", new_size);
+    // log("\nKREALLOC request %x to %d bytes", allocation, new_size);
 
     LOCK_MUTEX(&kheap_mutex);
-    kernel_heap_metadata_t *kernel_heap_metadata = (kernel_heap_metadata_t *) MEM_KERNEL_HEAP_START;
+    kernel_heap_metadata_t *kernel_heap_metadata = (kernel_heap_metadata_t *) VM_KERNEL_HEAP_START;
     kheap_entry_t *entry = (kheap_entry_t *) ((uint32_t)allocation - sizeof(kheap_entry_t));
     uint32_t entry_start = (uint32_t) entry;
     uint32_t entry_end = entry->end;
@@ -343,6 +392,7 @@ void *krealloc(void *allocation, uint32_t new_size) {
     }
     else if(new_size == entry_size) { // do nothing
         UNLOCK_MUTEX(&kheap_mutex);
+        // log(" REALLOCATED IN SAME PLACE");
         return allocation;
     }
     else if(new_size < entry_size) { // shrink allocation
@@ -372,6 +422,7 @@ void *krealloc(void *allocation, uint32_t new_size) {
         }
 
         UNLOCK_MUTEX(&kheap_mutex);
+        // log(" REALLOCATED IN SAME PLACE");
         return allocation;
     }
     else { // expand allocation
@@ -403,6 +454,7 @@ void *krealloc(void *allocation, uint32_t new_size) {
             }
 
             UNLOCK_MUTEX(&kheap_mutex);
+            // log(" REALLOCATED IN SAME PLACE");
             return allocation;
         }
 
@@ -488,6 +540,7 @@ void *krealloc(void *allocation, uint32_t new_size) {
 
             void *entry_new_start_ptr = (void *) (entry_new_start + sizeof(kheap_entry_t));
             UNLOCK_MUTEX(&kheap_mutex);
+            // log(" REALLOCATED: 0x%x -> 0x%x", allocation, entry_new_start_ptr);
             return entry_new_start_ptr;
         }
 
@@ -504,6 +557,67 @@ void *krealloc(void *allocation, uint32_t new_size) {
         // free old block
         kfree(allocation);
 
+        // log(" REALLOCATED: 0x%x -> 0x%x", allocation, new_allocation);
         return new_allocation;
     }
+}
+
+/* BLOCK ALLOCATOR*/
+void *block_alloc(uint32_t size) {
+    LOCK_MUTEX(&block_alloc_mutex);
+    block_cell_metadata_t *metadata = block_alloc_cells[size];
+
+    // if cell is full, allocate new one
+    if(metadata->lifo_index == NUMBER_OF_PREALLOCATED_BLOCKS_IN_CELL) {
+        if(metadata->next != NULL) {
+            metadata = metadata->next;
+        }
+        else {
+            // create new cell
+            metadata->next = kalloc(sizeof(block_cell_metadata_t));
+            metadata->next->prev = metadata;
+            metadata = metadata->next;
+            for(int i = 0; i < NUMBER_OF_PREALLOCATED_BLOCKS_IN_CELL; i++) {
+                metadata->allocations[i] = kalloc(size);
+            }
+        }
+        block_alloc_cells[size] = metadata; // update pointer to cell with available blocks
+    }
+
+    // pop allocation
+    void *allocation = metadata->allocations[metadata->lifo_index++];
+
+    UNLOCK_MUTEX(&block_alloc_mutex);
+    return allocation;
+}
+
+void block_free(uint32_t size, void *allocation) {
+    LOCK_MUTEX(&block_alloc_mutex);
+    block_cell_metadata_t *metadata = block_alloc_cells[size];
+
+    // if cell is empty, move to previous cell
+    if(metadata->lifo_index == 0) {
+        if(metadata->prev == NULL) {
+            log("\n[ERROR] Block allocator is empty");
+            UNLOCK_MUTEX(&block_alloc_mutex);
+            return;
+        }
+        metadata = metadata->prev;
+    }
+
+    // push allocation
+    metadata->allocations[--metadata->lifo_index] = allocation;
+
+    // delete next cell if there is enough space in actual cell
+    if(metadata->lifo_index == (NUMBER_OF_PREALLOCATED_BLOCKS_IN_CELL / 2) && metadata->next != NULL) {
+        block_cell_metadata_t *next_metadata = metadata->next;
+        for(int i = 0; i < NUMBER_OF_PREALLOCATED_BLOCKS_IN_CELL; i++) {
+            kfree(next_metadata->allocations[i]);
+        }
+        kfree(next_metadata);
+        metadata->next = NULL;
+        block_alloc_cells[size] = metadata;
+    }
+
+    UNLOCK_MUTEX(&block_alloc_mutex);
 }

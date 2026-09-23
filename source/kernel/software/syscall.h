@@ -18,52 +18,5 @@ enum {
     DEMAND_TYPE_CLOSE_THREAD, // nothing
     DEMAND_TYPE_MAP_PHYSICAL_PAGES_TO_USERSPACE, // ebx = address, ecx = size
     DEMAND_TYPE_UNMAP_PHYSICAL_PAGES_FROM_USERSPACE, // ebx = address, ecx = size
-    DEMAND_TYPE_DOES_VIRTUAL_DEVICE_EXIST, // ebx = device type
-    DEMAND_TYPE_SEND_COMMAND_TO_VIRTUAL_DEVICE // ebx = device id, ecx = pointer to command
+    DEMAND_TYPE_SEND_DOORBELL_TO_VIRTUAL_DEVICE // ebx = device id, ecx = demand
 };
-
-#define syscall_create_thread(entry_point, stack_pointer, delete_signal_handler) ({ \
-    int _retval;                                             \
-    asm volatile (                                           \
-        "int %1"                                             \
-        : "=a" (_retval)                                     \
-        : "i" (0xD0),                                        \
-          "a" (DEMAND_TYPE_CREATE_THREAD),                   \
-          "b" (entry_point),                                 \
-          "c" (stack_pointer),                               \
-          "d" (delete_signal_handler)                        \
-        : "memory"                                           \
-    );                                                       \
-    _retval;                                                 \
-})
-#define syscall_spawn_thread(entry_point, delete_signal_handler) ({ \
-    int _retval;                                                    \
-    asm volatile (                                                  \
-        "int %1"                                                    \
-        : "=a" (_retval)                                            \
-        : "i" (0xD0),                                               \
-          "a" (DEMAND_TYPE_SPAWN_THREAD),                           \
-          "b" (entry_point),                                        \
-          "c" (delete_signal_handler)                               \
-        : "memory"                                                  \
-    );                                                              \
-    _retval;                                                        \
-})
-#define syscall_switch() asm volatile ("int %0" : : "i" (0xD0), "a" (DEMAND_TYPE_SWITCH_THREADS))
-#define syscall_sleep(microseconds) asm volatile ("int %0" : : "i" (0xD0), "a" (DEMAND_TYPE_SLEEP_FOR_THREAD), "b" (microseconds))
-#define syscall_close() asm volatile ("int %0" : : "i" (0xD0), "a" (DEMAND_TYPE_CLOSE_THREAD))
-#define syscall_map_pages(address, size) asm volatile ("int %0" : : "i" (0xD0), "a" (DEMAND_TYPE_MAP_PHYSICAL_PAGES_TO_USERSPACE), "b" (address), "c" (size))
-#define syscall_unmap_pages(address, size) asm volatile ("int %0" : : "i" (0xD0), "a" (DEMAND_TYPE_UNMAP_PHYSICAL_PAGES_FROM_USERSPACE), "b" (address), "c" (size))
-#define syscall_does_virtual_device_exist(type) ({      \
-    int _retval;                                        \
-    asm volatile (                                      \
-        "int %1"                                        \
-        : "=a" (_retval)                                \
-        : "i" (0xD0),                                   \
-          "a" (DEMAND_TYPE_DOES_VIRTUAL_DEVICE_EXIST),  \
-          "b" (type)                                    \
-        : "memory"                                      \
-    );                                                  \
-    _retval;                                            \
-})
-#define syscall_send_command_to_virtual_device(type, pointer) asm volatile ("int %0" : : "i" (0xD0), "a" (DEMAND_TYPE_SEND_COMMAND_TO_VIRTUAL_DEVICE), "b" (type), "c" (pointer))
