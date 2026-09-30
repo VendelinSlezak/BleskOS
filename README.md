@@ -2,6 +2,10 @@
 
 IMPORTANT NOTE: I started developing new multitasking kernel, with bunch of improvements of overall code. Actual source code you are looking at is code in progress. If you want to get last usable version of BleskOS, download [v2025u10](https://github.com/VendelinSlezak/BleskOS/releases/tag/v2025u10). Detailed informations about development of new kernel and new phase of BleskOS, you can visit this topic: [New phase of BleskOS (entity-based multitasking kernel)](https://github.com/VendelinSlezak/BleskOS/discussions/104)
 
+Preview of actual development of main panel:
+
+![BleskOS main panel](bleskos_development_main_panel.png)
+
 ## Build
 
 ### Prerequisites
@@ -82,12 +86,15 @@ BleskOS <- you are here
 |   |   ├── kernel.h
 |   |   └── linker.ld
 │   ├── userspace_library
+│   ├── test
+│   ├── syslib.h
 │   └── global_declarations.h
 ├── ramdisk
 ├── extract_prototypes.py
 ├── makefile
 ├── LICENSE
-└── CODING_GUIDELINES.md
+├── CODING_GUIDELINES.md
+└── CONTRIBUTORS.md
 ```
 
 Folder `source` contains all source code. It has several folders. Every folder contains source code that will be compiled to one result file, and then they will be all baked together in ramdisk.

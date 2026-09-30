@@ -20,7 +20,7 @@
 /* functions */
 void vh_human_input_doorbell(uint32_t demand) {
     logical_processor_t *lpdata = get_current_logical_processor_struct();
-    program_t *program = lpdata->current_program;
+    process_t *program = lpdata->current_process;
     running_executable_t *re = program->running_executable;
     virtual_hardware_t *virtual_hardware = re->template->virtual_hardware;
 
@@ -41,8 +41,11 @@ void vh_human_input_event(running_executable_t *re, uint32_t type, int argument1
     if(re->is_human_input_streaming_enabled == false) {
         return;
     }
-
-    move_temporarily_to_virtual_space(re->page_directory_of_virtual_hardware);
+    uint32_t page_directory_of_virtual_hardware = re->page_directory_of_virtual_hardware;
+    if(page_directory_of_virtual_hardware == 0) {
+        return;
+    }
+    move_temporarily_to_virtual_space(page_directory_of_virtual_hardware);
     uint32_t next_producer = (virtual_hardware->producer + 1) % VH_HUMAN_INPUT_SIZE_OF_RING;
     if(virtual_hardware->consumer == next_producer) {
         move_back_to_previous_virtual_space();

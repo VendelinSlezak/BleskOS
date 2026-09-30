@@ -42,7 +42,7 @@ typedef struct {
 
     scheduler_state_t scheduler_state;
     scheduler_state_t running_thread_state;
-    program_t *current_program;
+    process_t *current_process;
     kernel_thread_t *current_kernel_thread;
     user_thread_t *current_user_thread;
 

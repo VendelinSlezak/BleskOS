@@ -41,13 +41,13 @@ void kill_running_thread(interrupt_stack_t *stack_of_interrupt) {
 
 void exception_division_by_zero(interrupt_stack_t *stack_of_interrupt) {
     logical_processor_t *lpdata = get_current_logical_processor_struct();
-    log("\n[EXCEPTION] Division by zero in process %x thread %d on CPU%d", lpdata->current_program, lpdata->current_user_thread->id, lpdata->index);
+    log("\n[EXCEPTION] Division by zero in process %x thread %d on CPU%d", lpdata->current_process, lpdata->current_user_thread->id, lpdata->index);
     close_running_thread(stack_of_interrupt);
 }
 
 void exception_unknown_opcode(interrupt_stack_t *stack_of_interrupt) {
     logical_processor_t *lpdata = get_current_logical_processor_struct();
-    log("\n[EXCEPTION] Unknown opcode in process %x thread %d on CPU%d", lpdata->current_program, lpdata->current_user_thread->id, lpdata->index);
+    log("\n[EXCEPTION] Unknown opcode in process %x thread %d on CPU%d", lpdata->current_process, lpdata->current_user_thread->id, lpdata->index);
     close_running_thread(stack_of_interrupt);
 }
 
@@ -57,18 +57,18 @@ void exception_double_fault(interrupt_stack_t *stack_of_interrupt) {
 
 void exception_general_protection_fault(interrupt_stack_t *stack_of_interrupt) {
     logical_processor_t *lpdata = get_current_logical_processor_struct();
-    log("\n[EXCEPTION] General protection fault in process %x thread %d on CPU%d", lpdata->current_program, lpdata->current_user_thread->id, lpdata->index);
+    log("\n[EXCEPTION] General protection fault in process %x thread %d on CPU%d", lpdata->current_process, lpdata->current_user_thread->id, lpdata->index);
     kill_running_thread(stack_of_interrupt);
 }
 
 void null_page_fault_handler(interrupt_stack_t *stack_of_interrupt) {
     logical_processor_t *lpdata = get_current_logical_processor_struct();
-    log("\n[EXCEPTION] Null page fault in process %x thread %d on CPU%d by EIP 0x%x", lpdata->current_program, lpdata->current_user_thread->id, lpdata->index, stack_of_interrupt->eip);
+    log("\n[EXCEPTION] Null page fault in process %x thread %d on CPU%d by EIP 0x%x", lpdata->current_process, lpdata->current_user_thread->id, lpdata->index, stack_of_interrupt->eip);
     if(lpdata->running_thread_state == SCHEDULER_STATE_KERNEL) {
         kernel_panic("Null page fault in kernel space", stack_of_interrupt);
     }
     else {
-        send_closing_signal_to_program(lpdata->current_program);
+        send_closing_signal_to_process(lpdata->current_process);
         close_running_thread(stack_of_interrupt);
     }
 }

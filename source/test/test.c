@@ -39,6 +39,15 @@ void main(syslib_t *syslib_ptr, virtual_hardware_t *virtual_hardware_ptr) {
             else if(event->type == VH_HUMAN_INPUT_EVENT_MOUSE_MOVEMENT) {
                 syslib->log("Mouse moved to %d %d wheel %d", event->argument1, event->argument2, event->argument3);
             }
+            else if(event->type == VH_HUMAN_INPUT_NEW_SESSION) {
+                syslib->log("New session");
+            }
+            else if(event->type == VH_HUMAN_INPUT_OPEN_SESSION) {
+                syslib->log("Open session %d", event->argument1);
+            }
+            else if(event->type == VH_HUMAN_INPUT_CLOSE_SESSION) {
+                syslib->log("Close session %d", event->argument1);
+            }
             virtual_hardware_ptr->consumer = (virtual_hardware_ptr->consumer + 1) % VH_HUMAN_INPUT_SIZE_OF_RING;
         }
     }

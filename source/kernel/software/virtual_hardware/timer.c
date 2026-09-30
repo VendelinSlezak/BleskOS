@@ -22,7 +22,7 @@
 /* functions */
 void vh_timer_doorbell(uint32_t demand) {
     logical_processor_t *lpdata = get_current_logical_processor_struct();
-    program_t *program = lpdata->current_program;
+    process_t *program = lpdata->current_process;
     running_executable_t *re = program->running_executable;
     virtual_hardware_t *virtual_hardware = re->template->virtual_hardware;
 

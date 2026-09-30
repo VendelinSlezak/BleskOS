@@ -12,18 +12,27 @@
 #include <kernel/hardware/subsystems/screen/screen.h>
 #include <kernel/software/spawning_template.h>
 
+#define MAX_NUMBER_OF_SESSIONS 20
+typedef struct {
+    uint8_t showed_name[16];
+    uint32_t does_have_focus;
+} session_t;
+
 typedef struct {
     uint8_t *name;
-    program_t *program;
+    process_t *process;
     screen_part_t *part;
     spawning_template_t *template;
     uint32_t page_directory_of_virtual_hardware;
     uint32_t is_human_input_streaming_enabled;
+    uint32_t are_sessions_enabled;
+    uint32_t number_of_sessions;
+    session_t *sessions;
 } running_executable_t;
 
 typedef struct {
     uint32_t number_of_running_executables;
-    running_executable_t *running_executable[];
+    running_executable_t *running_executables[];
 } running_executable_list_t;
 
 extern running_executable_list_t *running_executable_list;

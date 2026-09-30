@@ -16,6 +16,7 @@
 #include <userspace_library/time.h>
 #include <userspace_library/logging.h>
 #include <userspace_library/bleskalloc.h>
+#include <userspace_library/string.h>
 
 /* global variables */
 virtual_hardware_t *virtual_hardware;
@@ -27,3 +28,5 @@ void initialize(virtual_hardware_t *virtual_hardware_ptr) {
     virtual_hardware_ptr->producer = 0;
     syscall_virtual_hardware(VIRTUAL_HARDWARE_HUMAN_INPUT_ID, VH_HUMAN_INPUT_DEMAND_ENABLE_STREAMING);
 }
+
+// TODO: management of sessions

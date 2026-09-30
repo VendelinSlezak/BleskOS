@@ -48,7 +48,7 @@ void initialize_kernel(void) {
     start_counting_time();
     initialize_all_application_processors();
     initialize_scheduler();
-    initialize_hardware_list();
+    initialize_hardware();
     show_starting_screen();
     initialize_allocators_for_user_space();
     initialize_exceptions();

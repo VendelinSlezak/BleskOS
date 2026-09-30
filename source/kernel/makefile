@@ -6,7 +6,7 @@ C_COMPILER_FLAGS = -m32 -ffreestanding -fno-stack-protector -fno-PIC -march=i686
                     -Wall -Wno-pointer-sign -Wno-unused-variable -g
 
 ASSEMBLY_COMPILER = nasm
-ASSEMBLY_COMPILER_FLAGS = -f elf32
+ASSEMBLY_COMPILER_FLAGS = -f elf32 -g
 
 LINKER = ld
 LINKER_FLAGS = -z noexecstack -m elf_i386 -T $(SRC_DIR)/kernel/linker.ld

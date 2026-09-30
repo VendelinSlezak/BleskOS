@@ -46,7 +46,7 @@ void release_unique_hardware_id(uint32_t id) {
     return;
 }
 
-void initialize_hardware_list(void) {
+void initialize_hardware(void) {
     // initialize groups
     initialize_graphic_group();
     initialize_human_input_group();

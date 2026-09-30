@@ -9,6 +9,7 @@
 */
 
 /* includes */
+#include <kernel/hardware/groups/logging/logging.h>
 #include <kernel/hardware/devices/memory/memory_allocators.h>
 #include <kernel/hardware/subsystems/screen/main_panel.h>
 #include <kernel/libc/string.h>
@@ -24,15 +25,15 @@ void initialize_executables(void) {
 running_executable_t *add_running_executable(void) {
     running_executable_list = (running_executable_list_t *) krealloc(running_executable_list, sizeof(running_executable_list_t) + (sizeof(running_executable_t *) * (running_executable_list->number_of_running_executables + 1)));
     running_executable_t *running_executable = (running_executable_t *) kalloc(sizeof(running_executable_t));
-    running_executable_list->running_executable[running_executable_list->number_of_running_executables] = running_executable;
+    running_executable_list->running_executables[running_executable_list->number_of_running_executables] = running_executable;
     running_executable_list->number_of_running_executables++;
     return running_executable;
 }
 
 running_executable_t *get_running_executable_by_part(screen_part_t *part) {
     for(int i = 0; i < running_executable_list->number_of_running_executables; i++) {
-        if(running_executable_list->running_executable[i]->part == part) {
-            return running_executable_list->running_executable[i];
+        if(running_executable_list->running_executables[i]->part == part) {
+            return running_executable_list->running_executables[i];
         }
     }
     return NULL;
@@ -40,8 +41,8 @@ running_executable_t *get_running_executable_by_part(screen_part_t *part) {
 
 running_executable_t *get_not_shown_running_executable_except(running_executable_t *running_executable) {
     for(int i = 0; i < running_executable_list->number_of_running_executables; i++) {
-        if(running_executable_list->running_executable[i] != running_executable && running_executable_list->running_executable[i]->part != NULL) {
-            return running_executable_list->running_executable[i];
+        if(running_executable_list->running_executables[i] != running_executable && running_executable_list->running_executables[i]->part != NULL) {
+            return running_executable_list->running_executables[i];
         }
     }
     return NULL;
@@ -54,9 +55,12 @@ void stop_everything_on_page_directory(running_executable_t *running_executable,
 }
 
 void remove_running_executable(running_executable_t *running_executable) {
+    if(running_executable->sessions != NULL) {
+        kfree(running_executable->sessions);
+    }
     for(int i = 0; i < running_executable_list->number_of_running_executables; i++) {
-        if(running_executable_list->running_executable[i] == running_executable) {
-            memmove(&running_executable_list->running_executable[i], &running_executable_list->running_executable[i + 1], sizeof(running_executable_t *) * (running_executable_list->number_of_running_executables - i - 1));
+        if(running_executable_list->running_executables[i] == running_executable) {
+            memmove(&running_executable_list->running_executables[i], &running_executable_list->running_executables[i + 1], sizeof(running_executable_t *) * (running_executable_list->number_of_running_executables - i - 1));
             running_executable_list->number_of_running_executables--;
             break;
         }

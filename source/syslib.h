@@ -104,6 +104,9 @@
 #define VIRTUAL_HARDWARE_SCREEN_ID 1
     #define VH_SCREEN_DEMAND_WINDOW_CHANGE 1
     #define VH_SCREEN_DEMAND_REDRAW 2
+    #define VH_SCREEN_ENABLE_SESSIONS 3
+    #define VH_SCREEN_DISABLE_SESSIONS 4
+    #define VH_SCREEN_REDRAW_SESSIONS 5
 #define VIRTUAL_HARDWARE_LOG_ID 2
     #define VH_LOG_DEMAND_PRINTLNF 1
 #define VIRTUAL_HARDWARE_TIMER_ID 3
@@ -113,6 +116,17 @@
     #define VH_HUMAN_INPUT_DEMAND_ENABLE_STREAMING 1
     #define VH_HUMAN_INPUT_DEMAND_DISABLE_STREAMING 2
 
+#define MAX_NUMBER_OF_SESSIONS 20
+typedef struct {
+    uint8_t showed_name[16];
+    uint8_t name[64];
+    uint8_t id[1024];
+} program_session_t;
+typedef struct {
+    uint8_t showed_name[16];
+    uint32_t does_have_focus;
+} screen_session_t;
+
 #define VH_HUMAN_INPUT_SIZE_OF_RING 32
 enum {
     VH_HUMAN_INPUT_EVENT_KEY_PRESSED = 1,
@@ -121,6 +135,9 @@ enum {
     VH_HUMAN_INPUT_EVENT_BUTTON_RELEASED = 4,
     VH_HUMAN_INPUT_EVENT_BUTTON_DRAGGED = 5,
     VH_HUMAN_INPUT_EVENT_MOUSE_MOVEMENT = 6,
+    VH_HUMAN_INPUT_NEW_SESSION = 7,
+    VH_HUMAN_INPUT_OPEN_SESSION = 8,
+    VH_HUMAN_INPUT_CLOSE_SESSION = 9,
 };
 typedef struct {
     uint32_t type;
@@ -144,6 +161,9 @@ typedef struct {
     volatile uint32_t producer;
     uint32_t consumer;
     vh_human_input_event_t events[VH_HUMAN_INPUT_SIZE_OF_RING];
+
+    uint32_t number_of_sessions;
+    void *sessions;
 
     uint8_t flag_window_is_different_from_buffer;
     uint8_t flag_buffer_is_on_screen;

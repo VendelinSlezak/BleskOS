@@ -9,6 +9,7 @@
 */
 
 #include <kernel/hardware/main.h>
+#include <kernel/hardware/devices/cpu/scheduler.h>
 #include <kernel/hardware/groups/human_input/human_input.h>
 #include <kernel/firmware/cmos/cmos.h>
 
@@ -38,6 +39,7 @@ typedef struct screen_part {
     uint32_t is_processed;
 
     void *running_executable;
+    uint32_t show_remaining_sessions;
 } screen_part_t;
 typedef struct {
     uint32_t is_active;
@@ -86,5 +88,6 @@ extern screen_part_t *part_with_focus;
 extern datetime_t current_time;
 extern uint32_t is_view_edited;
 extern uint32_t is_program_dragged;
+extern kernel_thread_t *screen_subsystem_event_loop_thread;
 
 #define MINIMAL_PART_SIZE (64 + 150 + 64)

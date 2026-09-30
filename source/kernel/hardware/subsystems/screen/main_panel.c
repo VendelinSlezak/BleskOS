@@ -99,7 +99,6 @@ void draw_main_panel(screen_part_t *part) {
         block_t *tb2 = add_block(&p1, ADD_FROM_START, TEXT_BLOCK, program_list->programs[i].name);
         tb2->text_color = 0xFF000000;
         tb2->horizontal_alignment = ALIGN_CENTER;
-
         if(program_list->programs[i].running_executable == NULL) {
             set_block_clickable(p1, start_program, i);
         }
@@ -219,7 +218,7 @@ void main_panel_process_mouse_left_click_release(screen_part_t *part) {
         actual_processed_main_panel = NULL;
     }
 }
-// I am reading this again and like seriously what is even that code why is it redrawing whole view??
+// I am reading this again and like seriously what is even this code why is it redrawing whole view??
 
 void start_program(screen_part_t *part, uint32_t index) {
     ramdisk_elf_program_t *new_program = &program_list->programs[index];
@@ -235,17 +234,21 @@ void start_program(screen_part_t *part, uint32_t index) {
     data->show_remaining_programs = false;
 
     // show program in this part
-    running_executable_t *re = new_program->running_executable;
     screen_part_t *part_where_program_was_running = NULL;
-    re = create_running_program_from_spawning_template(&new_program->spawning_template);
+    running_executable_t *re = create_running_process_from_spawning_template(&new_program->spawning_template);
     re->name = new_program->name;
     re->part = part;
+    re->is_human_input_streaming_enabled = false;
+    re->are_sessions_enabled = false;
+    re->number_of_sessions = 0;
+    re->sessions = NULL;
     new_program->running_executable = re;
     vh_screen_update_window_resolution(re, part->width, part->height - 60);
 
     part->program_name = re->name;
     part->running_executable = re;
     part->state = PART_STATE_PROGRAM;
+    part->show_remaining_sessions = false;
     part_with_focus = part;
 
     redraw_part(part);
@@ -257,22 +260,11 @@ void show_program(screen_part_t *part, uint32_t running_executable) {
 
     log("\nShow program %s", re->name);
 
-    // if program is already shown at other part, then change what is shown in that part to other program or to main panel
+    // if program is already shown at other part, then change what is shown in that part to main panel
     if(re->part != part && re->part != NULL) {
-        running_executable_t *other_re = get_not_shown_running_executable_except(re);
-        if(other_re == NULL) {
-            re->part->running_executable = NULL;
-            re->part->state = PART_STATE_MAIN_PANEL;
-            redraw_part(re->part);
-        }
-        else {
-            re->part->program_name = other_re->name;
-            re->part->running_executable = other_re;
-            re->part->state = PART_STATE_PROGRAM;
-            other_re->part = re->part;
-            vh_screen_demand_redraw_from_program(other_re);
-            redraw_part(other_re->part);
-        }
+        re->part->running_executable = NULL;
+        re->part->state = PART_STATE_MAIN_PANEL;
+        redraw_part(re->part);
     }
     re->part = part;
 
@@ -280,6 +272,7 @@ void show_program(screen_part_t *part, uint32_t running_executable) {
     part->program_name = re->name;
     part->running_executable = re;
     part->state = PART_STATE_PROGRAM;
+    part->show_remaining_sessions = false;
     screen_part_t *old_part_with_focus = part_with_focus;
     part_with_focus = part;
     vh_screen_demand_redraw_from_program(re);
@@ -305,12 +298,11 @@ void select_keyboard_layout(screen_part_t *part, uint32_t layout) {
     redraw_main_panels_under_part(active_view->global_part);
 }
 
-void draw_program(screen_part_t *part, uint32_t does_have_focus) {
+void draw_program(screen_part_t *part) {
     main_panel_data_t *data = (main_panel_data_t *) part->main_panel_data;
-
-    log("\ndraw program");
-
     running_executable_t *re = part->running_executable;
+    uint32_t does_have_focus = (part == part_with_focus) ? true : false;
+    log("\ndraw program");
 
     block_t *first_block = create_first_block();
     block_t *big_block = add_block(&first_block, ADD_FROM_START, VERTICAL_BLOCK, NULL);
@@ -327,7 +319,64 @@ void draw_program(screen_part_t *part, uint32_t does_have_focus) {
     set_block_clickable(header, start_dragging_program_between_parts, 0);
     block_t *program_name = add_block(&header, ADD_FROM_START, TEXT_BLOCK, part->program_name);
     program_name->padding_left = 10;
+    program_name->padding_right = 10;
     program_name->text_color = 0xFF000000;
+    if(re->are_sessions_enabled == true) {
+        uint32_t size_of_sessions = (10 + (strlen(part->program_name) * 8) + 10) + (1 + 10 + 24 + 10) + (1 + 10 + 24 + 10); // program name + Add button + More button
+        uint32_t number_of_showed_sessions = 0;
+        for(int i = 0; i < re->number_of_sessions; i++) {
+            uint32_t size_of_session = (1 + 10 + (strlen(re->sessions[i].showed_name) * 8) + 10 + 1 + 4 + 8 + 4 + 1 + 10);
+            if((size_of_sessions + size_of_session) > part->width) {
+                break;
+            }
+            size_of_sessions += size_of_session;
+            number_of_showed_sessions = (i + 1);
+        }
+        for(int i = 0; i < number_of_showed_sessions; i++) {
+            block_t *session = add_block(&header, ADD_FROM_END, HORIZONTAL_BLOCK, NULL);
+            session->min_height = 30;
+            session->vertical_alignment = ALIGN_CENTER;
+            session->padding_left = 10;
+            session->padding_right = 10;
+            session->border_color = 0xFF000000;
+            session->border_left_size = 1;
+            session->background_color = (re->sessions[i].does_have_focus == true) ? 0xFFFFFFFF : 0xFFFF0000;
+            set_block_clickable(session, open_session, i);
+            block_t *session_name = add_block(&session, ADD_FROM_START, TEXT_BLOCK, re->sessions[i].showed_name);
+            session_name->text_color = 0xFF000000;
+            block_t *close_session_button = add_block(&session, ADD_FROM_END, TEXT_BLOCK, "X");
+            close_session_button->margin_left = 10;
+            close_session_button->padding_left = 4;
+            close_session_button->padding_right = 4;
+            close_session_button->border_color = 0xFF000000;
+            close_session_button->border_left_size = 1;
+            close_session_button->border_top_size = 1;
+            close_session_button->border_right_size = 1;
+            close_session_button->border_bottom_size = 1;
+            close_session_button->background_color = (re->sessions[i].does_have_focus == true) ? 0xFFFFFFFF : 0xFFFF0000;
+            set_block_clickable(close_session_button, close_session, i);
+        }
+        if(number_of_showed_sessions != re->number_of_sessions) {
+            block_t *show_remaining_sessions = add_block(&header, ADD_FROM_END, TEXT_BLOCK, "...");
+            show_remaining_sessions->padding_left = 10;
+            show_remaining_sessions->padding_right = 10;
+            show_remaining_sessions->border_color = 0xFF000000;
+            show_remaining_sessions->border_left_size = 1;
+            show_remaining_sessions->background_color = 0xFFFF0000;
+            show_remaining_sessions->min_height = 30;
+            show_remaining_sessions->vertical_alignment = ALIGN_CENTER;
+            set_block_clickable(show_remaining_sessions, show_remaining_sessions_from_program, 0);
+        }
+        block_t *add_session_button = add_block(&header, ADD_FROM_END, TEXT_BLOCK, "Add");
+        add_session_button->padding_left = 10;
+        add_session_button->padding_right = 10;
+        add_session_button->border_color = 0xFF000000;
+        add_session_button->border_left_size = 1;
+        add_session_button->background_color = 0xFFCC0000;
+        add_session_button->min_height = 30;
+        add_session_button->vertical_alignment = ALIGN_CENTER;
+        set_block_clickable(add_session_button, add_session, 0);
+    }
 
     block_t *program = add_block(&big_block, ADD_FROM_START, VERTICAL_BLOCK, NULL);
     program->min_width = part->width;
@@ -356,17 +405,17 @@ void draw_program(screen_part_t *part, uint32_t does_have_focus) {
     uint32_t last_not_checked_program = 0;
     for(int i = 0; i < running_executable_list->number_of_running_executables; i++) {
         last_not_checked_program = i;
-        block_t *program_bar = add_block(&footer, ADD_FROM_START, TEXT_BLOCK, running_executable_list->running_executable[i]->name);
+        block_t *program_bar = add_block(&footer, ADD_FROM_START, TEXT_BLOCK, running_executable_list->running_executables[i]->name);
         program_bar->vertical_alignment = ALIGN_CENTER;
         program_bar->min_width = size_of_one_program_bar;
         program_bar->min_height = 30;
         program_bar->border_right_size = 1;
         program_bar->padding_left = 10;
         program_bar->border_color = 0xFF000000;
-        if(running_executable_list->running_executable[i] == re) {
+        if(running_executable_list->running_executables[i] == re) {
             program_bar->background_color = (does_have_focus == true) ? 0xFFFFFF00 : 0xFF666666;
         }
-        set_block_clickable(program_bar, show_program, (uint32_t) running_executable_list->running_executable[i]);
+        set_block_clickable(program_bar, show_program, (uint32_t) running_executable_list->running_executables[i]);
     }
     if(last_not_checked_program != 0) {
         last_not_checked_program++;
@@ -393,29 +442,197 @@ void draw_program(screen_part_t *part, uint32_t does_have_focus) {
     set_block_clickable(quit_button, close_program, (uint32_t) re);
 
     draw_gui_blocks(part, first_block, 0, 0);
-    if(data->show_remaining_programs == true) {
-        uint32_t x = (53 + (shown_programs * (size_of_one_program_bar + 1)) - 1);
-        uint32_t y = (part->height - 29);
-        uint32_t background_color = 0xFFFF0000;
-        for(int i = last_not_checked_program; i < running_executable_list->number_of_running_executables; i++) {
-            y -= 30;
-            if(running_executable_list->running_executable[i] == re) {
-                draw_square_in_part(part, x, y, size_of_one_program_bar, 30, (does_have_focus == true) ? 0xFFFFFF00 : 0xFF666666);
-            }
-            else {
-                draw_square_in_part(part, x, y, size_of_one_program_bar, 30, background_color);
-            }
-            background_color = (background_color == 0xFFFF0000) ? 0xFFEE0000 : 0xFFFF0000;
-            draw_bitmap_string(part, x + 10, y + 7, running_executable_list->running_executable[i]->name, 0xFF000000);
-            gui_add_left_click_event(part, x, y, size_of_one_program_bar, 30, show_program, (uint32_t) running_executable_list->running_executable[i]);
-        }
-    }
+    draw_things_inside_program_area(part);
     free_gui_blocks(first_block);
 
     // set flag for redraw of program
     if(is_view_edited == false && is_program_dragged == false) {
         vh_screen_update_window_resolution(re, part->width, part->height - 60);
     }
+}
+
+void draw_things_inside_program_area(screen_part_t *part) {
+    main_panel_data_t *data = (main_panel_data_t *) part->main_panel_data;
+    running_executable_t *re = part->running_executable;
+    uint32_t does_have_focus = (part == part_with_focus) ? true : false;
+
+    uint32_t size_of_sessions = (10 + (strlen(part->program_name) * 8) + 10) + (1 + 10 + 24 + 10) + (1 + 10 + 24 + 10); // program name + Add button + More button
+    uint32_t number_of_showed_sessions = 0;
+    for(int i = 0; i < re->number_of_sessions; i++) {
+        uint32_t size_of_session = (1 + 10 + (strlen(re->sessions[i].showed_name) * 8) + 10 + 1 + 4 + 8 + 4 + 1 + 10);
+        if((size_of_sessions + size_of_session) > part->width) {
+            break;
+        }
+        size_of_sessions += size_of_session;
+        number_of_showed_sessions = (i + 1);
+    }
+    if(part->show_remaining_sessions == true) {
+        uint32_t size_of_one_session_bar = (10 + (16 * 8) + 10);
+        uint32_t x = (part->width - (1 + 10 + 24 + 10) - size_of_one_session_bar);
+        uint32_t y = 30;
+        for(int i = number_of_showed_sessions; i < re->number_of_sessions; i++) {
+            draw_square_in_part(part, x, y, size_of_one_session_bar, 30, (re->sessions[i].does_have_focus == true) ? 0xFFFFFFFF : 0xFFFF0000);
+            draw_bitmap_string(part, x + 10, y + 7, re->sessions[i].showed_name, 0xFF000000);
+            gui_add_left_click_event(part, x, y, size_of_one_session_bar, 30, open_session, i);
+            y += 30;
+        }
+    }
+
+    uint32_t size_of_one_program_bar = 150;
+    uint32_t shown_programs = (number_of_running_programs * size_of_one_program_bar) > (part->width - 200) ? ((part->width - 200) / size_of_one_program_bar) : number_of_running_programs;
+    if(data->show_remaining_programs == true) {
+        uint32_t x = (53 + (shown_programs * (size_of_one_program_bar + 1)) - 1);
+        uint32_t y = (part->height - 29);
+        uint32_t background_color = 0xFFFF0000;
+        for(int i = shown_programs; i < running_executable_list->number_of_running_executables; i++) {
+            y -= 30;
+            if(running_executable_list->running_executables[i] == re) {
+                draw_square_in_part(part, x, y, size_of_one_program_bar, 30, (does_have_focus == true) ? 0xFFFFFF00 : 0xFF666666);
+            }
+            else {
+                draw_square_in_part(part, x, y, size_of_one_program_bar, 30, background_color);
+            }
+            background_color = (background_color == 0xFFFF0000) ? 0xFFEE0000 : 0xFFFF0000;
+            draw_bitmap_string(part, x + 10, y + 7, running_executable_list->running_executables[i]->name, 0xFF000000);
+            gui_add_left_click_event(part, x, y, size_of_one_program_bar, 30, show_program, (uint32_t) running_executable_list->running_executables[i]);
+        }
+    }
+}
+
+void dump_sessions(screen_part_t *part) {
+    running_executable_t *re = part->running_executable;
+    for(int i = 0; i < re->number_of_sessions; i++) {
+        log("\nSession %d (0x%x): %s with focus %d", i, re->sessions[i], re->sessions[i].showed_name, re->sessions[i].does_have_focus);
+    }
+}
+
+void add_session(screen_part_t *part, uint32_t argument) {
+    part->show_remaining_sessions = false;
+    vh_human_input_event(part->running_executable, VH_HUMAN_INPUT_NEW_SESSION, 0, 0, 0);
+
+    // running_executable_t *re = part->running_executable;
+    // if(re->number_of_sessions == MAX_NUMBER_OF_SESSIONS) {
+    //     log("\nProgram has reached maximum number of sessions");
+    //     return;
+    // }
+    // re->number_of_sessions++;
+    // re->sessions = (session_t **) krealloc(re->sessions, sizeof(session_t *) * re->number_of_sessions);
+    // session_t *new_session = (session_t *) kalloc(sizeof(session_t));
+    // re->sessions[re->number_of_sessions - 1] = new_session;
+    // memcpy(new_session->showed_name, "New session", 12);
+    // memcpy(new_session->name, "New session", 12);
+    // memset(new_session->id, 0, sizeof(new_session->id));
+
+    // // show session in this part if there is nothing else
+    // if(part->session == NULL) {
+    //     new_session->part = part;
+    //     part->session = new_session;
+    // }
+
+    // vh_human_input_event(part->running_executable, VH_HUMAN_INPUT_NEW_SESSION, (uint32_t) new_session, 0, 0);
+
+    // draw_view(active_view);
+    redraw_screen();
+}
+
+void open_session(screen_part_t *part, uint32_t argument) {
+    part->show_remaining_sessions = false;
+    vh_human_input_event(part->running_executable, VH_HUMAN_INPUT_OPEN_SESSION, argument, 0, 0);
+
+    // session_t *session = (session_t *) (argument);
+    // if(part->session == session) {
+    //     return;
+    // }
+
+    // // close session in actual part
+    // if(part->session != NULL) {
+    //     session_t *old_session = part->session;
+    //     old_session->part = NULL;
+    // }
+
+    // // session is opened in other part
+    // if(session->part != NULL && session->part != part) {
+    //     screen_part_t *other_part = session->part;
+    //     running_executable_t *re = other_part->running_executable;
+    //     other_part->running_executable = NULL;
+    //     other_part->session = NULL;
+    //     other_part->state = PART_STATE_MAIN_PANEL;
+    //     if(re->number_of_sessions > 1) {
+    //         for(int i = 0; i < re->number_of_sessions; i++) {
+    //             if(re->sessions[i]->part == NULL) {
+    //                 re->sessions[i]->part = other_part;
+    //                 other_part->running_executable = re;
+    //                 other_part->session = re->sessions[i];
+    //                 other_part->state = PART_STATE_PROGRAM;
+    //                 break;
+    //             }
+    //         }
+    //     }
+    // }
+
+    // // show session in part
+    // session->part = part;
+    // part->session = session;
+
+    // vh_screen_demand_redraw_from_program(part->running_executable);
+
+    // draw_view(active_view);
+    // redraw_screen();
+}
+
+void close_session(screen_part_t *part, uint32_t argument) {
+    part->show_remaining_sessions = false;
+    vh_human_input_event(part->running_executable, VH_HUMAN_INPUT_CLOSE_SESSION, argument, 0, 0);
+
+    // session_t *session = (session_t *) (argument);
+    // running_executable_t *re = part->running_executable;
+    // uint32_t session_index = 0;
+    // for(int i = 0; i < re->number_of_sessions; i++) {
+    //     if(re->sessions[i] == session) {
+    //         session_index = i;
+    //         memmove(&re->sessions[i], &re->sessions[i + 1], sizeof(session_t *) * (re->number_of_sessions - i - 1));
+    //         break;
+    //     }
+    // }
+    // re->number_of_sessions--;
+    // re->sessions = (session_t **) krealloc(re->sessions, sizeof(session_t *) * re->number_of_sessions);
+    // if(part->session == session) {
+    //     part->session = NULL;
+    //     for(int i = session_index; i < re->number_of_sessions; i++) {
+    //         if(re->sessions[i]->part == NULL) {
+    //             // log("\nit is session up %d", i);
+    //             re->sessions[i]->part = part;
+    //             part->session = re->sessions[i];
+    //             break;
+    //         }
+    //     }
+    //     if(part->session == NULL) {
+    //         for(int i = (session_index - 1); i >= 0; i--) {
+    //             if(re->sessions[i]->part == NULL) {
+    //                 // log("\nit is session down %d", i);
+    //                 re->sessions[i]->part = part;
+    //                 part->session = re->sessions[i];
+    //                 break;
+    //             }
+    //         }
+    //     }
+    // }
+    // log("\nsession index: %d", session_index);
+
+    // vh_human_input_event(part->running_executable, VH_HUMAN_INPUT_CLOSE_SESSION, (uint32_t) session, 0, 0);
+
+    // draw_view(active_view);
+    // redraw_screen();
+}
+
+void show_remaining_sessions_from_program(screen_part_t *part, uint32_t argument) {
+    if(part->show_remaining_sessions == true) {
+        part->show_remaining_sessions = false;
+    }
+    else {
+        part->show_remaining_sessions = true;
+    }
+    redraw_part(part);
 }
 
 void start_dragging_program_between_parts(screen_part_t *part, uint32_t argument) {
@@ -436,7 +653,7 @@ void back_to_main_panel(screen_part_t *part, uint32_t argument) {
 void close_program(screen_part_t *part, uint32_t running_executable) {
     running_executable_t *re = (running_executable_t *) (running_executable);
     log("\nClosing program %s", re->name);
-    send_closing_signal_to_program(re->program);
+    send_closing_signal_to_process(re->process);
     // TODO: set timer, and if program is not closed, show "Program had not completed closing signal so far, do you want to kill it?"
 }
 
@@ -463,7 +680,8 @@ void process_mouse_button_click_for_program(screen_part_t *part, uint32_t button
         return;
     }
     main_panel_data_t *data = (main_panel_data_t *) part->main_panel_data;
-    if(data->show_remaining_programs == true) {
+    if(part->show_remaining_sessions == true || data->show_remaining_programs == true) {
+        part->show_remaining_sessions = false;
         data->show_remaining_programs = false;
         redraw_part(part);
     }

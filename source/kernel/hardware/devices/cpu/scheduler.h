@@ -76,11 +76,11 @@ typedef struct {
     user_thread_t *threads;
 } user_thread_list_t;
 
-typedef struct program_t {
-    struct program_t *next;
+typedef struct process_t {
+    struct process_t *next;
     uint32_t is_blocked;
     void *running_executable;
     user_thread_t *main_thread;
     uint32_t number_of_threads;
     user_thread_list_t thread_list_on_logical_processor[];
-} program_t;
+} process_t;

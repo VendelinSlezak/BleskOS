@@ -35,6 +35,7 @@ screen_part_t *part_with_focus;
 datetime_t current_time;
 uint32_t is_view_edited = false;
 uint32_t is_program_dragged = false;
+kernel_thread_t *screen_subsystem_event_loop_thread = 0;
 
 /* local variables */
 void *global_double_buffer;
@@ -112,7 +113,7 @@ void initialize_screen_subsystem(void) {
 
     current_time = cmos_datetime;
 
-    create_kernel_thread("screen_subsystem_event_loop", (uint32_t)screen_subsystem_event_loop, 0, 0);
+    screen_subsystem_event_loop_thread = create_kernel_thread("screen_subsystem_event_loop", (uint32_t)screen_subsystem_event_loop, 0, 0);
 
     is_there_screen_subsystem = true;
     mouse_cursor_x = global_part->width / 2;
@@ -194,12 +195,7 @@ void draw_part(screen_part_t *part) {
             break;
         }
         case PART_STATE_PROGRAM: {
-            if(part == part_with_focus) {
-                draw_program(part, true);
-            }
-            else {
-                draw_program(part, false);
-            }
+            draw_program(part);
             break;
         }
         case PART_STATE_HORIZONTAL_SPLIT: {
@@ -1172,6 +1168,8 @@ void add_event_to_screen_subsystem_list(human_input_event_type_t type, uint32_t 
     event_list->stack[actual_slot].event_value = value;
 
     event_list->producer = next_slot;
+
+    unblock_kernel_thread(screen_subsystem_event_loop_thread);
 }
 
 screen_part_t *part_where_is_mouse_cursor(void) {
@@ -1212,19 +1210,22 @@ screen_part_t *part_where_is_mouse_cursor(void) {
 
 void screen_subsystem_event_loop(void) {
     while(true) {
+        // update time
+        if(    memcmp(&cmos_datetime, &current_time, sizeof(datetime_t)) != 0
+            && is_view_edited == false
+            && is_program_dragged == false
+            && active_view->is_whole_screen_mode_active == false) {
+            current_time = cmos_datetime;
+            redraw_main_panels_under_part(active_view->global_part);
+        }
+
+        // if there is nothing to process, block thread
         if(event_list->consumer == event_list->producer) {
-            if(    memcmp(&cmos_datetime, &current_time, sizeof(datetime_t)) != 0
-                && is_view_edited == false
-                && is_program_dragged == false
-                && active_view->is_whole_screen_mode_active == false) {
-                current_time = cmos_datetime;
-                redraw_main_panels_under_part(active_view->global_part);
-            }
-            switch_to_another_thread();
+            block_current_thread();
             continue;
         }
-        human_input_event_t *event = &event_list->stack[event_list->consumer];
 
+        human_input_event_t *event = &event_list->stack[event_list->consumer];
         switch(event->type) {
             case EVENT_KEY_PRESSED: {
                 if(active_view->is_whole_screen_mode_active == true) {

@@ -13,6 +13,8 @@
 #include <kernel/hardware/devices/cpu/interrupt.h>
 #include <kernel/hardware/devices/cpu/commands.h>
 #include <kernel/libc/stdlib.h>
+#include <kernel/hardware/subsystems/screen/screen.h>
+#include <kernel/hardware/devices/cpu/scheduler.h>
 
 /* global variables */
 datetime_t cmos_datetime;
@@ -127,6 +129,11 @@ void start_counting_time(void) {
 void rtc_update_handler(interrupt_stack_t *stack_of_interrupt) {
     // read actual time
     read_time();
+
+    // unblock thread to process update
+    if(screen_subsystem_event_loop_thread != NULL) {
+        unblock_kernel_thread(screen_subsystem_event_loop_thread);
+    }
 
     // acknowledge interrupt
     cmos_reg_read(0x0C);

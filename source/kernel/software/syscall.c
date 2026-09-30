@@ -51,7 +51,7 @@ void doorbell_interrupt_handler(interrupt_stack_t *stack) {
                 delete_signal_handler = (uint32_t) return_validated_pointer((void *) stack->edx, PAGE_SIZE);
             }
             if(entry_point != NULL && stack_pointer != NULL) {
-                stack->eax = create_user_thread(get_current_logical_processor_struct()->current_program, entry_point, stack_pointer, delete_signal_handler);
+                stack->eax = create_user_thread(get_current_logical_processor_struct()->current_process, entry_point, stack_pointer, delete_signal_handler);
             }
             else {
                 stack->eax = 0;
@@ -65,7 +65,7 @@ void doorbell_interrupt_handler(interrupt_stack_t *stack) {
                 delete_signal_handler = (uint32_t) return_validated_pointer((void *) stack->ecx, PAGE_SIZE);
             }
             if(entry_point != NULL) {
-                stack->eax = spawn_user_thread(get_current_logical_processor_struct()->current_program, entry_point, delete_signal_handler);
+                stack->eax = spawn_user_thread(get_current_logical_processor_struct()->current_process, entry_point, delete_signal_handler);
             }
             else {
                 stack->eax = 0;

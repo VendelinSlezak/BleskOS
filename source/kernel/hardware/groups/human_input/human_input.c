@@ -163,6 +163,7 @@ void hid_process_changes_of_local_state(human_input_device_state_t *state) {
 
 void check_human_input_state(void) {
     while(true) {
+        sleep_current_thread(10000); // TODO: write this thread more effectively
         for(int i = 0; i < human_input_group->number_of_devices; i++) {
             if(human_input_group->devices[i].functions->keyboard_set_leds == NULL) {
                 continue;

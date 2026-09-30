@@ -430,7 +430,7 @@ uint32_t unmap_physical_pages_from_userspace(uint32_t address, uint32_t size) {
 
     // // refresh TLB on all relevant processors
     logical_processor_t *lpdata = get_current_logical_processor_struct();
-    program_t *program = lpdata->current_program;
+    process_t *program = lpdata->current_process;
     uint32_t current_page_directory = read_cr3();
     for(int i = 0; i < number_of_logical_processors; i++) {
         user_thread_list_t *thread_list = &program->thread_list_on_logical_processor[i];
