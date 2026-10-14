@@ -309,8 +309,9 @@ void initialize_bootstrap_processor(void) {
         }
     }
 
-    // set bootstrap processor ID
+    // set bootstrap processor identifiers
     bootstrap_processor_id = lapic_get_processor_id();
+    bootstrap_processor_index = logical_processor_index_number[bootstrap_processor_id];
 
     // load TSS
     logical_processor_t *data = get_current_logical_processor_struct();

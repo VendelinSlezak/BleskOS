@@ -45,6 +45,8 @@ typedef struct {
     process_t *current_process;
     kernel_thread_t *current_kernel_thread;
     user_thread_t *current_user_thread;
+    interrupt_thread_handler_t *current_interrupt_thread_handler;
+    uint32_t in_interrupt_thread_handler;
 
     void *copy_on_write_page;
 
@@ -58,3 +60,4 @@ extern logical_processor_info_t *logical_processors;
 extern uint32_t *logical_processor_index_number;
 extern logical_processor_t *logical_processor_structs_ptr;
 extern uint32_t bootstrap_processor_id;
+extern uint32_t bootstrap_processor_index;

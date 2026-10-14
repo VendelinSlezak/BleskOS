@@ -8,8 +8,16 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <kernel/hardware/main.h>
+#include <kernel/hardware/devices/cpu/interrupt.h>
+
 #define INTERRUPTS_THROUGH_PIC 1
 #define INTERRUPTS_THROUGH_APIC 2
+
+#define POLARITY_HIGH 0
+#define POLARITY_LOW 1
+#define TRIGGER_MODE_EDGE 0
+#define TRIGGER_MODE_LEVEL 1
 
 typedef struct {
     uint32_t is_overridden;
@@ -23,6 +31,8 @@ typedef struct {
     uint8_t device;
     uint8_t pin;
     uint32_t gsi;
+    uint32_t polarity;
+    uint32_t trigger_mode;
 } pci_irq_routing_t;
 
 extern int interrupt_mode;

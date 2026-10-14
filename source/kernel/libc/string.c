@@ -225,3 +225,42 @@ int sprintf(char *str, const char *format, ...) {
 
     return (str - start);
 }
+
+void switch_16_endian(void *buffer, uint32_t size) {
+    uint8_t *buffer8 = buffer;
+    for(uint32_t i = 0; i < (size & ~1); i += 2) {
+        uint8_t temp = buffer8[i];
+        buffer8[i] = buffer8[i + 1];
+        buffer8[i + 1] = temp;
+    }
+}
+
+void switch_32_endian(void *buffer, uint32_t size) {
+    uint8_t *buffer8 = buffer;
+    for(uint32_t i = 0; i < (size & ~3); i += 4) {
+        uint8_t temp = buffer8[i];
+        buffer8[i] = buffer8[i + 3];
+        buffer8[i + 3] = temp;
+        temp = buffer8[i + 1];
+        buffer8[i + 1] = buffer8[i + 2];
+        buffer8[i + 2] = temp;
+    }
+}
+
+void switch_64_endian(void *buffer, uint32_t size) {
+    uint8_t *buffer8 = buffer;
+    for(uint32_t i = 0; i < (size & ~7); i += 8) {
+        uint8_t temp = buffer8[i];
+        buffer8[i] = buffer8[i + 7];
+        buffer8[i + 7] = temp;
+        temp = buffer8[i + 1];
+        buffer8[i + 1] = buffer8[i + 6];
+        buffer8[i + 6] = temp;
+        temp = buffer8[i + 2];
+        buffer8[i + 2] = buffer8[i + 5];
+        buffer8[i + 5] = temp;
+        temp = buffer8[i + 3];
+        buffer8[i + 3] = buffer8[i + 4];
+        buffer8[i + 4] = temp;
+    }
+}

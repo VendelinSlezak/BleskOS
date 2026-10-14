@@ -8,6 +8,8 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <kernel/hardware/devices/cpu/scheduler.h>
+
 #define MUTEX_UNLOCKED_VALUE 0
 #define MUTEX_LOCKED_VALUE 1
 typedef struct {
@@ -31,8 +33,26 @@ typedef _Atomic int core_mutex_t;
             if (expected == MUTEX_UNLOCKED_VALUE) {                     \
                 break;                                                  \
             }                                                           \
-            asm volatile("pause");                                        \
+            asm volatile("pause");                                      \
         }                                                               \
+    } while(0)
+
+#define LOCK_MUTEX_WAIT_IN_SWITCHES(memory)                                \
+    do {                                                                    \
+        int expected;                                                       \
+        for (;;) {                                                          \
+            expected = MUTEX_UNLOCKED_VALUE;                                \
+            asm volatile (                                                  \
+                "lock cmpxchgl %2, %1"                                      \
+                : "=a" (expected), "+m" (((mutex_t *)memory)->lock)         \
+                : "r"(MUTEX_LOCKED_VALUE), "0" (expected)                   \
+                : "memory"                                                  \
+            );                                                              \
+            if (expected == MUTEX_UNLOCKED_VALUE) {                         \
+                break;                                                      \
+            }                                                               \
+            asm volatile ("int %0" : : "i" (INTERRUPT_VECTOR_SCHEDULER));   \
+        }                                                                   \
     } while(0)
 
 #define UNLOCK_MUTEX(memory)                    \

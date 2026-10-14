@@ -316,6 +316,159 @@ void *kalloc(uint32_t size) {
     return allocated_address;
 }
 
+void *aligned_kalloc(uint32_t alignment, uint32_t size) {
+    if(size == 0) {
+        return NULL;
+    }
+    if(alignment <= 4) {
+        return kalloc(size);
+    }
+
+    // log("\nALIGNED %d KALLOC request %d bytes", alignment, size);
+
+    // find suitable space
+    LOCK_MUTEX(&kheap_mutex);
+    kernel_heap_metadata_t *kernel_heap_metadata = (kernel_heap_metadata_t *) VM_KERNEL_HEAP_START;
+    kheap_entry_t *new_entry;
+    uint32_t new_entry_end;
+    kheap_entry_t *new_entry_prev;
+    kheap_entry_t *new_entry_next;
+    uint32_t lower_mask = (alignment - 1);
+    int metadata_size = sizeof(kheap_entry_t);
+    uint32_t free_memory_start = kernel_heap_metadata->free_memory_start;
+    uint32_t free_memory_size = kernel_heap_metadata->free_memory_size;
+    uint32_t can_be_block_allocated = true;
+    uint32_t free_size_until_alignment = ((free_memory_start & lower_mask) == 0) ? 0 : (alignment - (free_memory_start & lower_mask));
+    if(free_memory_size < free_size_until_alignment) {
+        can_be_block_allocated = false; // this free block does not even cross the alignment
+    }
+
+    // move to first cross of alignment
+    free_memory_start += free_size_until_alignment;
+    free_memory_size -= free_size_until_alignment;
+
+    // add space for metadata
+    if(free_size_until_alignment < sizeof(kheap_entry_t)) {
+        metadata_size -= free_size_until_alignment; // metadata can use size right below first cross of alignment
+        // we need to skip more crossings of alignments to make space for metadata
+        do {
+            if(free_memory_size < alignment) {
+                can_be_block_allocated = false;
+                break;
+            }
+            free_memory_start += alignment;
+            free_memory_size -= alignment;
+            metadata_size -= alignment;
+        } while(metadata_size > 0);
+    }
+    // else we can put whole metadata to space below first cross of alignment
+
+    // check if there is enough space left
+    if(free_memory_size < size) {
+        can_be_block_allocated = false;
+    }
+    if(can_be_block_allocated == true) {
+        // allocate block
+        new_entry = (kheap_entry_t *) (free_memory_start - sizeof(kheap_entry_t));
+        new_entry_end = ((uint32_t)new_entry + sizeof(kheap_entry_t) + size);
+        new_entry_prev = kernel_heap_metadata->insert_entry;
+        new_entry_next = kernel_heap_metadata->insert_entry->next;
+
+        // update global metadata
+        kernel_heap_metadata->free_memory_start = (free_memory_start + size);
+        kernel_heap_metadata->free_memory_size = (free_memory_size - size);
+        if(new_entry_next != NULL) {
+            new_entry_next->prev = new_entry;
+        }
+        kernel_heap_metadata->insert_entry->next = new_entry;
+        kernel_heap_metadata->insert_entry = new_entry;
+    }
+    else {
+        // find other suitable free space block
+        kheap_entry_t *current_entry = (kheap_entry_t *) &kernel_heap_metadata->first_entry;
+        while(current_entry != NULL) {
+            metadata_size = sizeof(kheap_entry_t);
+            free_memory_start = current_entry->end;
+            free_memory_size = (current_entry->next == NULL) ? (kernel_heap_metadata->memory_end - current_entry->end) : ((uint32_t)current_entry->next - current_entry->end);
+            can_be_block_allocated = true;
+            free_size_until_alignment = ((free_memory_start & lower_mask) == 0) ? 0 : (alignment - (free_memory_start & lower_mask));
+            if(free_memory_size < free_size_until_alignment) {
+                can_be_block_allocated = false; // this free block does not even cross the alignment
+            }
+
+            // move to first cross of alignment
+            free_memory_start += free_size_until_alignment;
+            free_memory_size -= free_size_until_alignment;
+
+            // add space for metadata
+            if(free_size_until_alignment < sizeof(kheap_entry_t)) {
+                metadata_size -= free_size_until_alignment; // metadata can use size right below first cross of alignment
+                // we need to skip more crossings of alignments to make space for metadata
+                do {
+                    if(free_memory_size < alignment) {
+                        can_be_block_allocated = false;
+                        break;
+                    }
+                    free_memory_start += alignment;
+                    free_memory_size -= alignment;
+                    metadata_size -= alignment;
+                } while(metadata_size > 0);
+            }
+            // else we can put whole metadata to space below first cross of alignment
+
+            // check if there is enough space left
+            if(free_memory_size < size) {
+                can_be_block_allocated = false;
+            }
+            if(can_be_block_allocated == true) {
+                // allocate block
+                new_entry = (kheap_entry_t *) (free_memory_start - sizeof(kheap_entry_t));
+                new_entry_end = ((uint32_t)new_entry + sizeof(kheap_entry_t) + size);
+                new_entry_prev = current_entry;
+                new_entry_next = current_entry->next;
+                if(new_entry_next != NULL) {
+                    new_entry_next->prev = new_entry;
+                }
+                current_entry->next = new_entry;
+                current_entry = new_entry;
+                break;
+            }
+
+            current_entry = current_entry->next;
+        }
+    }
+    if(can_be_block_allocated == false) {
+        UNLOCK_MUTEX(&kheap_mutex);
+        return NULL;
+    }
+
+    // map pages
+    uint32_t first_page = PAGE_MASK((uint32_t)new_entry);
+    if(PAGE_OFFSET_MASK(new_entry_prev->end) != 0 && PAGE_MASK(new_entry_prev->end) == first_page) {
+        first_page += PAGE_SIZE;
+    }
+    uint32_t last_page = PAGE_MASK(new_entry_end - 1);
+    if(new_entry_next != NULL && PAGE_MASK((uint32_t)new_entry_next) == last_page) {
+        last_page -= PAGE_SIZE;
+    }
+    if(last_page >= first_page) {
+        vm_allocate_pages(first_page, last_page - first_page + PAGE_SIZE, VM_KERNEL);
+    }
+
+    // clear allocation
+    memset((void *) new_entry, 0, size + sizeof(kheap_entry_t));
+
+    // save allocation metadata
+    new_entry->end = new_entry_end;
+    new_entry->prev = new_entry_prev;
+    new_entry->next = new_entry_next;
+
+    void *allocated_address = (void *) ((uint32_t)new_entry + sizeof(kheap_entry_t));
+    UNLOCK_MUTEX(&kheap_mutex);
+    // log(" allocated at %x", allocated_address);
+    return allocated_address;
+}
+
 void kfree(void *allocation) {
     if(allocation == NULL) {
         return;

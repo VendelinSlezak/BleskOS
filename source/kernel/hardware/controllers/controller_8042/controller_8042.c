@@ -213,12 +213,12 @@ void initialize_controller_8042(hardware_t *self) {
     write_ps2_command(0x20);
     configuration_byte = read_ps2_data();
     if(data->channel_1 == PRESENT) {
-        set_isa_interrupt_handler(1, controller_8042_irq);
+        set_isa_interrupt_handler(1, controller_8042_irq, NULL, NULL);
         configuration_byte |= (1 << 0); // enable interrupt 1
         configuration_byte &= ~(1 << 6); // disable translation to scan code set 1
     }
     if(data->channel_2 == PRESENT) {
-        set_isa_interrupt_handler(12, controller_8042_irq);
+        set_isa_interrupt_handler(12, controller_8042_irq, NULL, NULL);
         configuration_byte |= (1 << 1); // enable interrupt 12
     }
     write_ps2_command(0x60);

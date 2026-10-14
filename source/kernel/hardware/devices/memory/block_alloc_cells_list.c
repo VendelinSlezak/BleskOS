@@ -18,6 +18,7 @@ typedef union {
     uint32_t uint32;
 } block_cell_biggest_entry_t;
 const uint32_t block_alloc_cells_list[] = {
+    sizeof(interrupt_thread_t),
     sizeof(kernel_thread_t),
     sizeof(user_thread_t),
     sizeof(uint32_t),

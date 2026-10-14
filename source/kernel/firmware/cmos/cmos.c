@@ -123,7 +123,7 @@ void start_counting_time(void) {
     cmos_reg_write(0x0B, status_register_b);
 
     // register handler
-    set_isa_interrupt_handler(8, rtc_update_handler);
+    set_isa_interrupt_handler(8, rtc_update_handler, NULL, NULL);
 }
 
 void rtc_update_handler(interrupt_stack_t *stack_of_interrupt) {

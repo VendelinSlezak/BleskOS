@@ -26,6 +26,13 @@ typedef enum {
     SCHEDULER_STATE_IDLE = 2
 } scheduler_state_t;
 
+typedef struct {
+    uint32_t page_directory_physical_address;
+    void *kernel_stack;
+    uint32_t kernel_stack_pointer;
+    uint32_t function;
+} interrupt_thread_t;
+
 typedef struct kernel_thread_t {
     struct kernel_thread_t *next;
     uint32_t id;
@@ -66,6 +73,8 @@ typedef struct user_thread_t {
 
     uint32_t delete_signal_handler_address;
 
+    uint32_t time_start_of_running;
+    uint32_t time_of_running;
     uint32_t time_end_of_sleep;
 } user_thread_t;
 

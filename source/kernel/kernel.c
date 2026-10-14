@@ -22,11 +22,13 @@
 #include <kernel/hardware/devices/memory/memory_allocators.h>
 #include <kernel/firmware/main.h>
 #include <kernel/firmware/cmos/cmos.h>
+#include <kernel/firmware/acpi/services.h>
 #include <kernel/hardware/devices/interrupt_controllers/main.h>
 #include <kernel/hardware/devices/timers/main.h>
 #include <kernel/hardware/main.h>
 #include <kernel/hardware/groups/logging/logging.h>
 #include <kernel/hardware/groups/graphic_output/graphic_output.h>
+#include <kernel/hardware/groups/storage/storage.h>
 #include <kernel/hardware/subsystems/screen/screen.h>
 #include <kernel/software/elf_loader.h>
 #include <kernel/software/ramdisk.h>

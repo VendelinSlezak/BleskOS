@@ -15,13 +15,16 @@
 #include <kernel/hardware/devices/interrupt_controllers/apic.h>
 #include <kernel/hardware/devices/cpu/lapic.h>
 #include <kernel/hardware/devices/cpu/info.h>
+#include <kernel/hardware/devices/cpu/scheduler.h>
 #include <kernel/kernel.h>
+#include <kernel/hardware/main.h>
 
 /* global variables */
 int in_interrupt = false;
 
 /* local variables */
 void (*interrupt_handlers[256])(interrupt_stack_t *stack_of_interrupt);
+interrupt_thread_handler_t interrupt_thread_handlers[256];
 
 /* functions */
 void global_interrupt_handler(uint32_t interrupt_number, interrupt_stack_t *stack_of_interrupt) {
@@ -45,6 +48,23 @@ void global_interrupt_handler(uint32_t interrupt_number, interrupt_stack_t *stac
         lapic_send_eoi();
     }
 
+    // return back to extended interrupt handler which in special thread
+    if(interrupt_thread_handlers[interrupt_number].interrupt_thread != NULL) {
+        logical_processor_t *lpdata = get_logical_processor_struct_by_index(interrupt_thread_handlers[interrupt_number].processor_index);
+        interrupt_thread_handlers[interrupt_number].next = NULL;
+        if(lpdata->current_interrupt_thread_handler == NULL) {
+            lpdata->current_interrupt_thread_handler = &interrupt_thread_handlers[interrupt_number];
+        }
+        else {
+            interrupt_thread_handler_t *current_interrupt_thread_handler = lpdata->current_interrupt_thread_handler;
+            while(current_interrupt_thread_handler->next != NULL) {
+                current_interrupt_thread_handler = current_interrupt_thread_handler->next;
+            }
+            current_interrupt_thread_handler->next = &interrupt_thread_handlers[interrupt_number];
+        }
+        scheduler_interrupt(stack_of_interrupt);
+    }
+
     in_interrupt = false;
 }
 
@@ -57,9 +77,32 @@ void set_isr_interrupt_handler(uint32_t isr_number, void (*handler)(interrupt_st
     interrupt_handlers[isr_number] = handler;
 }
 
-void set_isa_interrupt_handler(uint32_t isa_interrupt_number, void (*handler)(interrupt_stack_t *stack_of_interrupt)) {
+interrupt_description_t set_isa_interrupt_handler(uint32_t isa_interrupt_number, void (*handler)(interrupt_stack_t *stack_of_interrupt), uint32_t thread_handler, uint32_t num_of_args) {
     interrupt_handlers[isa_interrupt_number + 0x20] = handler;
-    interrupt_controller_enable_isa_interrupt(isa_interrupt_number);
+    interrupt_description_t interrupt = interrupt_controller_enable_isa_interrupt(isa_interrupt_number);
+    if(interrupt.success == ERROR) {
+        return interrupt;
+    }
+    if(thread_handler != NULL) {
+        interrupt_thread_handlers[isa_interrupt_number + 0x20].next = NULL;
+        interrupt_thread_handlers[isa_interrupt_number + 0x20].processor_index = interrupt.processor_index;
+        interrupt_thread_handlers[isa_interrupt_number + 0x20].interrupt_thread = create_interrupt_handler_thread(interrupt.processor_index, thread_handler, num_of_args);
+    }
+    return interrupt;
+}
+
+interrupt_description_t set_pci_interrupt_handler(hardware_t *device, void (*handler)(interrupt_stack_t *stack_of_interrupt), uint32_t thread_handler, uint32_t num_of_args) {
+    interrupt_description_t interrupt = interrupt_controller_enable_pci_interrupt(device);
+    if(interrupt.success == ERROR) {
+        return interrupt;
+    }
+    interrupt_handlers[interrupt.idt_vector] = handler;
+    if(thread_handler != NULL) {
+        interrupt_thread_handlers[interrupt.idt_vector].next = NULL;
+        interrupt_thread_handlers[interrupt.idt_vector].processor_index = interrupt.processor_index;
+        interrupt_thread_handlers[interrupt.idt_vector].interrupt_thread = create_interrupt_handler_thread(interrupt.processor_index, thread_handler, num_of_args);
+    }
+    return interrupt;
 }
 
 void lock_core(void) {

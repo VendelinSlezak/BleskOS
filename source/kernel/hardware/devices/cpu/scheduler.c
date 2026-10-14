@@ -216,34 +216,87 @@ uint32_t get_unique_user_process_tid(uint32_t target_logical_processor_index, pr
     return 0; // no available TIDs
 }
 
-kernel_thread_t *create_kernel_thread(uint8_t *name, uint32_t function, uint32_t arguments[], uint32_t number_of_arguments) {
-    // find logical processor with least number of threads
-    uint32_t target_logical_processor_index = 0;
-    uint32_t target_logical_processor_num_of_threads = kernel_threads[0].number_of_running_threads;
+uint32_t get_index_of_processor_for_new_kernel_thread(void) {
+    uint32_t index = 0;
+    uint32_t num_of_threads = kernel_threads[0].number_of_running_threads;
     for(uint32_t i = 1; i < number_of_logical_processors; i++) {
-        if(kernel_threads[i].number_of_running_threads < target_logical_processor_num_of_threads) {
-            target_logical_processor_index = i;
-            target_logical_processor_num_of_threads = kernel_threads[i].number_of_running_threads;
+        if(kernel_threads[i].number_of_running_threads < num_of_threads) {
+            index = i;
+            num_of_threads = kernel_threads[i].number_of_running_threads;
         }
     }
+    return index;
+}
 
+interrupt_thread_t *create_interrupt_handler_thread(uint32_t processor_index, uint32_t function, uint32_t number_of_arguments) {
+    // create new thread
+    interrupt_thread_t *new_thread = block_alloc(sizeof(interrupt_thread_t));
+    new_thread->page_directory_physical_address = NULL;
+    new_thread->kernel_stack = kalloc(KERNEL_STACK_SIZE);
+    new_thread->function = function;
+
+    // push arguments onto stack
+    uint32_t *stack_pointer = (uint32_t *)(new_thread->kernel_stack + KERNEL_STACK_SIZE);
+    stack_pointer -= (number_of_arguments + 1);
+    *stack_pointer = (uint32_t) &switch_to_another_thread; // return address
+
+    // create stack as if interrupt happened
+    stack_pointer -= (sizeof(kernel_interrupt_stack_t) / sizeof(uint32_t));
+    kernel_interrupt_stack_t *interrupt_stack = (kernel_interrupt_stack_t *) stack_pointer;
+    interrupt_stack->eip = function;
+    interrupt_stack->cs = 0x08; // kernel code segment
+    interrupt_stack->eflags = 0x202; // interrupt enable flag
+    interrupt_stack->ds = 0x10; // kernel data segment
+    interrupt_stack->es = 0x10; // kernel data segment
+    interrupt_stack->fs = 0x10; // kernel data segment
+    interrupt_stack->gs = 0x10; // kernel data segment
+    new_thread->kernel_stack_pointer = (uint32_t) stack_pointer;
+    log("\nCreating interrupt handler thread %x in kernel process on CPU%d %x", new_thread, processor_index, &interrupt_stack->eip);
+
+    return new_thread;
+}
+
+void reset_interrupt_handler_thread_stack(uint32_t *stack_pointer, uint32_t function) {
+    kernel_interrupt_stack_t *interrupt_stack = (kernel_interrupt_stack_t *) stack_pointer;
+    interrupt_stack->eip = function;
+    interrupt_stack->cs = 0x08; // kernel code segment
+    interrupt_stack->eflags = 0x202; // interrupt enable flag
+    interrupt_stack->ds = 0x10; // kernel data segment
+    interrupt_stack->es = 0x10; // kernel data segment
+    interrupt_stack->fs = 0x10; // kernel data segment
+    interrupt_stack->gs = 0x10; // kernel data segment
+    stack_pointer += (sizeof(kernel_interrupt_stack_t) / sizeof(uint32_t));
+    *stack_pointer = (uint32_t) &switch_to_another_thread;
+}
+
+void set_interrupt_handler_thread_arguments(kernel_thread_t *thread, uint32_t arguments[], uint32_t number_of_arguments) {
+    uint32_t *stack_pointer = (uint32_t *)(thread->kernel_stack + KERNEL_STACK_SIZE);
+    if(number_of_arguments > 0) {
+        for(int i = (number_of_arguments - 1); i >= 0; i--) {
+            stack_pointer--;
+            *stack_pointer = arguments[i];
+        }
+    }
+}
+
+kernel_thread_t *create_kernel_thread_with_flags(uint8_t *name, uint32_t processor_index, uint32_t function, uint32_t arguments[], uint32_t number_of_arguments, uint32_t microseconds_to_sleep, uint32_t is_blocked) {
     // get unique TID for new thread
-    uint32_t tid = get_unique_kernel_tid(target_logical_processor_index);
+    uint32_t tid = get_unique_kernel_tid(processor_index);
     if(tid == 0) {
         return ERROR; // no available TIDs
     }
 
     // create new thread
-    log("\nCreating thread %s with id %d in kernel process on CPU%d", name, tid, target_logical_processor_index);
+    log("\nCreating thread %s with id %d in kernel process on CPU%d", name, tid, processor_index);
     kernel_thread_t *new_thread = block_alloc(sizeof(kernel_thread_t));
     new_thread->next = NULL;
     new_thread->id = tid;
     new_thread->page_directory_physical_address = NULL;
     new_thread->kernel_stack = kalloc(KERNEL_STACK_SIZE);
-    new_thread->is_blocked = false;
+    new_thread->is_blocked = is_blocked;
     new_thread->kill_me = false;
-    new_thread->sleeping = false;
-    new_thread->time_end_of_sleep = 0;
+    new_thread->sleeping = (microseconds_to_sleep == 0) ? false : true;
+    new_thread->time_end_of_sleep = (microseconds_to_sleep == 0) ? NULL : ((*get_time_in_microseconds)() + microseconds_to_sleep);
 
     // push arguments onto stack
     uint32_t *stack_pointer = (uint32_t *)(new_thread->kernel_stack + KERNEL_STACK_SIZE);
@@ -269,13 +322,13 @@ kernel_thread_t *create_kernel_thread(uint8_t *name, uint32_t function, uint32_t
     new_thread->kernel_stack_pointer = (uint32_t) stack_pointer;
 
     // atomically increase number of threads
-    __atomic_add_fetch(&kernel_threads[target_logical_processor_index].number_of_running_threads, 1, __ATOMIC_SEQ_CST);
+    __atomic_add_fetch(&kernel_threads[processor_index].number_of_running_threads, 1, __ATOMIC_SEQ_CST);
 
     // atomically add thread to thread list on target logical processor
-    new_thread->next = kernel_threads[target_logical_processor_index].threads;
+    new_thread->next = kernel_threads[processor_index].threads;
     while(
         !__atomic_compare_exchange_n(
-            &kernel_threads[target_logical_processor_index].threads,
+            &kernel_threads[processor_index].threads,
             &new_thread->next,
             new_thread,
             false, 
@@ -285,12 +338,36 @@ kernel_thread_t *create_kernel_thread(uint8_t *name, uint32_t function, uint32_t
     );
 
     // update pointer to current thread if needed
-    if(kernel_threads[target_logical_processor_index].current_thread == NULL) {
-        kernel_threads[target_logical_processor_index].current_thread = new_thread;
-        lapic_send_ipi(logical_processors[target_logical_processor_index].hardware_id, INTERRUPT_PREEMPETIVE_SCHEDULING);
+    if(kernel_threads[processor_index].current_thread == NULL) {
+        kernel_threads[processor_index].current_thread = new_thread;
+        lapic_send_ipi(logical_processors[processor_index].hardware_id, INTERRUPT_PREEMPETIVE_SCHEDULING);
     }
 
     return new_thread;
+}
+
+kernel_thread_t *create_kernel_thread(uint8_t *name, uint32_t function, uint32_t arguments[], uint32_t number_of_arguments) {
+    return create_kernel_thread_with_flags(name, get_index_of_processor_for_new_kernel_thread(), function, arguments, number_of_arguments, 0, false);
+}
+
+kernel_thread_t *create_kernel_thread_on_processor(uint8_t *name, uint32_t processor_index, uint32_t function, uint32_t arguments[], uint32_t number_of_arguments) {
+    return create_kernel_thread_with_flags(name, processor_index, function, arguments, number_of_arguments, 0, false);
+}
+
+kernel_thread_t *create_sleeping_kernel_thread(uint8_t *name, uint32_t function, uint32_t arguments[], uint32_t number_of_arguments, uint32_t microseconds_to_sleep) {
+    return create_kernel_thread_with_flags(name, get_index_of_processor_for_new_kernel_thread(), function, arguments, number_of_arguments, microseconds_to_sleep, false);
+}
+
+kernel_thread_t *create_sleeping_kernel_thread_on_processor(uint8_t *name, uint32_t processor_index, uint32_t function, uint32_t arguments[], uint32_t number_of_arguments, uint32_t microseconds_to_sleep) {
+    return create_kernel_thread_with_flags(name, processor_index, function, arguments, number_of_arguments, microseconds_to_sleep, false);
+}
+
+kernel_thread_t *create_blocked_kernel_thread(uint8_t *name, uint32_t function, uint32_t arguments[], uint32_t number_of_arguments) {
+    return create_kernel_thread_with_flags(name, get_index_of_processor_for_new_kernel_thread(), function, arguments, number_of_arguments, 0, true);
+}
+
+kernel_thread_t *create_blocked_kernel_thread_on_processor(uint8_t *name, uint32_t processor_index, uint32_t function, uint32_t arguments[], uint32_t number_of_arguments) {
+    return create_kernel_thread_with_flags(name, processor_index, function, arguments, number_of_arguments, 0, true);
 }
 
 uint32_t create_user_thread(process_t *process, void *entry_point, void *stack_pointer, uint32_t delete_signal_handler_address) {
@@ -506,6 +583,11 @@ uint32_t spawn_user_thread(process_t *process, void *entry_point, uint32_t delet
     return tid;
 }
 
+kernel_thread_t *get_current_kernel_thread(void) {
+    logical_processor_t *lpdata = get_current_logical_processor_struct();
+    return lpdata->current_kernel_thread;
+}
+
 /* sleep for threads */
 void sleep_for_thread(interrupt_stack_t *stack_of_interrupt, uint32_t microseconds) {
     if(microseconds == 0) {
@@ -550,8 +632,22 @@ void sleep_for_thread(interrupt_stack_t *stack_of_interrupt, uint32_t microsecon
     scheduler_interrupt(stack_of_interrupt);
 }
 
+void update_sleeping_kernel_thread(kernel_thread_t *thread, uint32_t microseconds) {
+    // log("\nKernel thread %x is sleeping for %d us", thread, microseconds);
+    if(thread->sleeping == false) {
+        logical_processor_t *lpdata = get_current_logical_processor_struct();
+        __atomic_sub_fetch(&kernel_threads[lpdata->index].number_of_running_threads, 1, __ATOMIC_SEQ_CST);
+    }
+    thread->time_end_of_sleep = ((*get_time_in_microseconds)() + microseconds);
+    thread->sleeping = true;
+}
+
+void wake_up_kernel_thread(kernel_thread_t *thread) {
+    // log("\nKernel thread %d is woken up early", thread->id);
+    thread->sleeping = false;
+}
+
 /* block threads */
-// TODO: if thread is executed, switch from it immediately
 void block_current_thread(void) {
     logical_processor_t *lpdata = get_current_logical_processor_struct();
     if(lpdata->running_thread_state == SCHEDULER_STATE_USER) {
@@ -563,9 +659,26 @@ void block_current_thread(void) {
     switch_to_another_thread();
 }
 
+void block_current_thread_with_sequence_causing_block(void (*blocking_sequence)(uint32_t argument), uint32_t argument) {
+    logical_processor_t *lpdata = get_current_logical_processor_struct();
+    if(lpdata->running_thread_state == SCHEDULER_STATE_USER) {
+        lpdata->current_user_thread->is_blocked = true;
+    }
+    else if(lpdata->running_thread_state == SCHEDULER_STATE_KERNEL) {
+        lpdata->current_kernel_thread->is_blocked = true;
+    }
+    blocking_sequence(argument);
+    switch_to_another_thread();
+}
+
+// TODO: if thread is executed, switch from it immediately
 void block_kernel_thread(kernel_thread_t *thread) {
     // log("\nKernel thread %d is blocked", thread->id);
     thread->is_blocked = true;
+    logical_processor_t *lpdata = get_current_logical_processor_struct();
+    if(lpdata->running_thread_state == SCHEDULER_STATE_KERNEL && lpdata->current_kernel_thread == thread) {
+        switch_to_another_thread();
+    }
 }
 
 void unblock_kernel_thread(kernel_thread_t *thread) {
@@ -575,6 +688,10 @@ void unblock_kernel_thread(kernel_thread_t *thread) {
 
 void block_user_thread(user_thread_t *thread) {
     thread->is_blocked = true;
+    logical_processor_t *lpdata = get_current_logical_processor_struct();
+    if(lpdata->running_thread_state == SCHEDULER_STATE_USER && lpdata->current_user_thread == thread) {
+        switch_to_another_thread();
+    }
 }
 
 void unblock_user_thread(user_thread_t *thread) {
@@ -590,7 +707,7 @@ void kill_process(process_t *process) {
     // stop execution of process on all logical processors
     process->is_blocked = true;
     for(int i = 0; i < number_of_logical_processors; i++) {
-        logical_processor_t *lpdata = get_logical_processor_struct_by_hardware_id(logical_processors[i].hardware_id);
+        logical_processor_t *lpdata = get_logical_processor_struct_by_index(i);
         if(lpdata->current_process == process) {
             lapic_send_ipi(logical_processors[i].hardware_id, INTERRUPT_PREEMPETIVE_SCHEDULING);
         }
@@ -650,6 +767,21 @@ void kill_current_thread_interrupt(interrupt_stack_t *stack_of_interrupt) {
     }
 }
 
+void kill_other_kernel_thread(kernel_thread_t *thread) {
+    // log("\nKernel thread %d is marked for kill", thread->id);
+    thread->kill_me = true;
+
+    // stop execution if this thread runs on this logical processor
+    if(in_interrupt == true) {
+        logical_processor_t *lpdata = get_current_logical_processor_struct();
+        if(lpdata->running_thread_state == SCHEDULER_STATE_KERNEL && lpdata->current_kernel_thread == thread) {
+            kernel_interrupt_stack_t *stack_of_interrupt = (kernel_interrupt_stack_t *) lpdata->current_kernel_thread->kernel_stack_pointer;
+            stack_of_interrupt->eip = (uint32_t) &switch_to_another_thread;
+        }
+    }
+    // TODO: send kill signal to other logical processors
+}
+
 /* signals */
 uint32_t send_signal_to_current_user_thread(interrupt_stack_t *stack_of_interrupt, uint32_t signal_handler_address) {
     logical_processor_t *lpdata = get_current_logical_processor_struct();
@@ -679,28 +811,53 @@ void preemptive_scheduling_interrupt(interrupt_stack_t *stack_of_interrupt) {
 void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
     uint32_t actual_time = (*get_time_in_microseconds)();
     logical_processor_t *lpdata = get_current_logical_processor_struct();
-    // log("\nScheduler invoked on CPU%d", lpdata->index);
+    // log("\nScheduler invoked on CPU%d interrupt state %s", lpdata->index, (lpdata->in_interrupt_thread_handler == true ? "true" : "false"));
 
     // save stack pointer
-    switch(lpdata->running_thread_state) {
-        case SCHEDULER_STATE_USER: {
-            if(lpdata->current_user_thread != NULL) {
-                user_thread_t *current_thread = lpdata->current_user_thread;
-                current_thread->kernel_stack_pointer = (uint32_t) stack_of_interrupt;
+    if(lpdata->in_interrupt_thread_handler == false) {
+        switch(lpdata->running_thread_state) {
+            case SCHEDULER_STATE_USER: {
+                if(lpdata->current_user_thread != NULL) {
+                    user_thread_t *current_thread = lpdata->current_user_thread;
+                    current_thread->kernel_stack_pointer = (uint32_t) stack_of_interrupt;
+                    current_thread->time_of_running += (actual_time - current_thread->time_start_of_running);
+                }
+                break;
             }
-            break;
-        }
-        case SCHEDULER_STATE_KERNEL: {
-            if(lpdata->current_kernel_thread != NULL) {
-                kernel_thread_t *current_thread = lpdata->current_kernel_thread;
-                current_thread->kernel_stack_pointer = (uint32_t) stack_of_interrupt;
+            case SCHEDULER_STATE_KERNEL: {
+                if(lpdata->current_kernel_thread != NULL) {
+                    kernel_thread_t *current_thread = lpdata->current_kernel_thread;
+                    current_thread->kernel_stack_pointer = (uint32_t) stack_of_interrupt;
+                }
+                break;
             }
-            break;
+            case SCHEDULER_STATE_IDLE: {
+                lpdata->scheduler_state = SCHEDULER_STATE_USER;
+                break;
+            }
         }
-        case SCHEDULER_STATE_IDLE: {
-            lpdata->scheduler_state = SCHEDULER_STATE_USER;
-            break;
+    }
+
+    // jump to interrupt handlers
+    if(lpdata->current_interrupt_thread_handler != NULL) {
+        interrupt_thread_handler_t *current_interrupt_thread_handler = lpdata->current_interrupt_thread_handler;
+        lpdata->current_interrupt_thread_handler = current_interrupt_thread_handler->next; // move pointer
+        current_interrupt_thread_handler->next = NULL;
+        lpdata->in_interrupt_thread_handler = true;
+        interrupt_thread_t *thread = current_interrupt_thread_handler->interrupt_thread;
+        reset_interrupt_handler_thread_stack((uint32_t *)thread->kernel_stack_pointer, thread->function);
+        kernel_interrupt_stack_t *interrupt_stack = (kernel_interrupt_stack_t *) thread->kernel_stack_pointer;
+        log("\nSwitching to interrupt handler thread %x on CPU%d to EIP %x", thread, lpdata->index, interrupt_stack->eip);
+        extern void exit_interrupt_to_thread(uint32_t stack_pointer);
+        if(thread->page_directory_physical_address != NULL && thread->page_directory_physical_address != read_cr3()) {
+            load_page_directory(thread->page_directory_physical_address);
         }
+        lpdata->tss->esp0 = (uint32_t) thread->kernel_stack_pointer + sizeof(kernel_interrupt_stack_t); // set kernel stack for next thread
+        in_interrupt = false;
+        exit_interrupt_to_thread(thread->kernel_stack_pointer);
+    }
+    else {
+        lpdata->in_interrupt_thread_handler = false;
     }
 
     // three passes before concluding that there are no running threads, it guarantees that everything was checked at least once
@@ -892,6 +1049,8 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                     if(current_thread->page_directory_physical_address != read_cr3()) {
                         load_page_directory(current_thread->page_directory_physical_address);
                     }
+                    current_thread->time_start_of_running = actual_time;
+                    current_thread->time_of_running = 0;
                     lpdata->tss->esp0 = (uint32_t) current_thread->kernel_stack + KERNEL_STACK_SIZE; // set kernel stack for next thread
                     lapic_set_oneshot_interrupt(10, INTERRUPT_PREEMPETIVE_SCHEDULING); // set preempetive scheduler interrupt
                     in_interrupt = false;
@@ -1017,8 +1176,8 @@ void sleep_current_thread_interrupt(interrupt_stack_t *stack_of_interrupt) {
     sleep_for_thread(stack_of_interrupt, stack_of_interrupt->eax);
 }
 
-void sleep_current_thread(uint32_t milliseconds) {
-    asm volatile ("int %0" : : "i" (INTERRUPT_SLEEP_FOR_THREAD), "a" (milliseconds));
+void sleep_current_thread(uint32_t microseconds) {
+    asm volatile ("int %0" : : "i" (INTERRUPT_SLEEP_FOR_THREAD), "a" (microseconds));
 }
 
 void switch_to_another_thread(void) {

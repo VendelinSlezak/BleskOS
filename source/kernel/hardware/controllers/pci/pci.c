@@ -132,7 +132,8 @@ uint8_t *pci_get_vendor_name(uint16_t vendor_id) {
 
 uint8_t *pci_get_device_type_string(uint32_t type) {
     for(uint32_t i = 0; pci_device_type_list[i].description != 0; i++) {
-        if(pci_device_type_list[i].type == type) {
+        if(pci_device_type_list[i].type == type
+            || (((pci_device_type_list[i].type & PASS_ALL_PROGIFS) == PASS_ALL_PROGIFS) && ((pci_device_type_list[i].type & 0xFFFF0000) == (type & 0xFFFF0000))) ) {
             return pci_device_type_list[i].description;
         }
     }
@@ -167,11 +168,11 @@ void pci_enable_busmastering(hardware_t *device) {
     pci_set_bits(device, 0x04, 0x4);
 }
 
-void pci_enable_mmio_busmastering(hardware_t *device) {
+void pci_enable_mmio_space(hardware_t *device) {
     pci_set_bits(device, 0x04, 0x6);
 }
 
-void pci_enable_io_busmastering(hardware_t *device) {
+void pci_enable_io_space(hardware_t *device) {
     pci_set_bits(device, 0x04, 0x5);
 }
 
@@ -337,7 +338,8 @@ void scan_pci_device(hardware_t *device) {
 
     // run driver of device
     for(uint32_t i = 0; pci_device_type_list[i].description != 0; i++) {
-        if(pci_device_type_list[i].type == type) {
+        if(    pci_device_type_list[i].type == type
+            || (((pci_device_type_list[i].type & PASS_ALL_PROGIFS) == PASS_ALL_PROGIFS) && ((pci_device_type_list[i].type & 0xFFFF0000) == (type & 0xFFFF0000))) ) {
             if(pci_device_type_list[i].drivers == NULL) {
                 break;
             }

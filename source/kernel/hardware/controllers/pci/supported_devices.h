@@ -35,6 +35,7 @@ typedef struct {
     void (*initialize)(hardware_t *device);
 } pci_drivers_for_type_t;
 
+#define PASS_ALL_PROGIFS (1 << 0)
 typedef struct { 
     uint32_t type;
     uint8_t *description;

@@ -15,10 +15,11 @@
 #include <kernel/hardware/controllers/pci/pci.h>
 #include <kernel/hardware/controllers/isa/isa.h>
 #include <kernel/hardware/devices/logging/e9_device.h>
-#include <kernel/hardware/devices/graphic_cards/vga.h>
+#include <kernel/hardware/devices/graphic_card/vga.h>
 #include <kernel/hardware/groups/logging/logging.h>
 #include <kernel/hardware/groups/graphic_output/graphic_output.h>
 #include <kernel/hardware/groups/human_input/human_input.h>
+#include <kernel/hardware/groups/storage/storage.h>
 #include <kernel/hardware/devices/cpu/mutex.h>
 #include <kernel/hardware/devices/cpu/scheduler.h>
 
@@ -50,6 +51,7 @@ void initialize_hardware(void) {
     // initialize groups
     initialize_graphic_group();
     initialize_human_input_group();
+    initialize_storage_group();
 
     // TODO: add all controllers based on data from ACPI tables
     pci_controller = add_hardware(motherboard, "PCI controller", NULL, NULL, initialize_pci_controller, NULL);
@@ -81,7 +83,7 @@ void initialize_hardware(void) {
 
 hardware_t *add_hardware(hardware_t *controller, uint8_t *name, void *communication_functions, void *data_from_controller, void (*init)(hardware_t *self), void (*remove)(hardware_t *self)) {
     log("\n[HARDWARE] New hardware %s", name);
-    
+
     hardware_t *new_hardware = kalloc(sizeof(hardware_t));
     new_hardware->id = get_unique_hardware_id();
     new_hardware->name = name;

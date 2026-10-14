@@ -18,6 +18,7 @@ logical_processor_info_t *logical_processors;
 uint32_t *logical_processor_index_number;
 logical_processor_t *logical_processor_structs_ptr;
 uint32_t bootstrap_processor_id;
+uint32_t bootstrap_processor_index;
 
 /* functions */
 uint32_t get_current_logical_processor_index(void) {
@@ -32,6 +33,10 @@ logical_processor_t *get_current_logical_processor_struct(void) {
 
 logical_processor_t *get_logical_processor_struct_by_hardware_id(uint32_t hardware_id) {
     return &logical_processor_structs_ptr[logical_processor_index_number[hardware_id]];
+}
+
+logical_processor_t *get_logical_processor_struct_by_index(uint32_t index) {
+    return &logical_processor_structs_ptr[index];
 }
 
 uint32_t get_copy_on_write_page(void) {

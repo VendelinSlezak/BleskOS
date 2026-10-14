@@ -8,6 +8,8 @@
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <kernel/hardware/main.h>
+
 extern int in_interrupt;
 
 typedef struct {
@@ -67,3 +69,15 @@ typedef struct {
     uint32_t user_esp;
     uint32_t ss;
 }__attribute__((packed)) interrupt_stack_t;
+
+typedef struct {
+    uint32_t success;
+    uint32_t idt_vector;
+    uint32_t processor_index;
+} interrupt_description_t;
+
+typedef struct interrupt_thread_handler_t {
+    struct interrupt_thread_handler_t *next;
+    void *interrupt_thread;
+    uint32_t processor_index;
+} interrupt_thread_handler_t;

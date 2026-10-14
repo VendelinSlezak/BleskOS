@@ -24,7 +24,7 @@ void initialize_pit(void) {
     lock_core();
 
     // connect interrupt handler
-    set_isa_interrupt_handler(0, pit_periodic_interrupt);
+    set_isa_interrupt_handler(0, pit_periodic_interrupt, NULL, NULL);
 
     // set interrupt every 65536 ticks = 54925 microseconds
     outb(0x43, 0x34);

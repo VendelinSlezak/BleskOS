@@ -89,6 +89,12 @@ pci_drivers_for_type_t vga_compatibile_graphic_controller_drivers[] = {
     {  NULL, NULL, NULL, NULL }
 };
 
+#include <kernel/hardware/controllers/ide/ide.h>
+pci_drivers_for_type_t ide_controller_drivers[] = { 
+    {  "IDE", NULL, NULL, initialize_ide_entry_on_pci },
+    {  NULL, NULL, NULL, NULL }
+};
+
 pci_device_type_list_t pci_device_type_list[] = { 
     // Unclassified
     { 0x00000000, "Non-VGA-Compatible Unclassified Device", NULL},
@@ -96,14 +102,7 @@ pci_device_type_list_t pci_device_type_list[] = {
 
     // Mass Storage Controller
     { 0x01000000, "SCSI Bus Controller", NULL},
-    { 0x01010000, "IDE Controller (ISA mode-only)", NULL},
-    { 0x01010500, "IDE Controller (PCI mode-only)", NULL},
-    { 0x01010A00, "IDE Controller (ISA mode, both channels switched to PCI mode)", NULL},
-    { 0x01010F00, "IDE Controller (PCI mode, both channels switched to ISA mode)", NULL},
-    { 0x01018000, "IDE Controller (ISA mode-only, bus mastering)", NULL},
-    { 0x01018500, "IDE Controller (PCI mode-only, bus mastering)", NULL},
-    { 0x01018A00, "IDE Controller (ISA mode, both channels switched to PCI mode, bus mastering)", NULL},
-    { 0x01018F00, "IDE Controller (PCI mode, both channels switched to ISA mode, bus mastering)", NULL},
+    { 0x01010000 | PASS_ALL_PROGIFS, "IDE Controller", ide_controller_drivers },
     { 0x01020000, "Floppy Disk Controller", NULL},
     { 0x01030000, "IPI Bus Controller", NULL},
     { 0x01040000, "RAID Controller", NULL},

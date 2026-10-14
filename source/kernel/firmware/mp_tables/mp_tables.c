@@ -18,6 +18,7 @@
 #include <kernel/hardware/devices/cpu/initialize.h>
 #include <kernel/hardware/devices/cpu/info.h>
 #include <kernel/hardware/groups/logging/logging.h>
+#include <kernel/hardware/devices/interrupt_controllers/main.h>
 
 /* local variables */
 uint32_t isa_bus_id;
@@ -309,30 +310,30 @@ void mp_tables_read_isa_irq_overrides(isa_irq_override_t *overrides) {
                 else {
                     // set interrupt polarity
                     if(entry->interrupt_polarity == 0b00) {
-                        overrides[entry->source_bus_irq].polarity = 0; // conforms to bus = active high
+                        overrides[entry->source_bus_irq].polarity = POLARITY_HIGH; // conforms to bus = active high
                     }
                     else if(entry->interrupt_polarity == 0b01) {
-                        overrides[entry->source_bus_irq].polarity = 0; // active high
+                        overrides[entry->source_bus_irq].polarity = POLARITY_HIGH; // active high
                     }
                     else if(entry->interrupt_polarity == 0b11) {
-                        overrides[entry->source_bus_irq].polarity = 1; // active low
+                        overrides[entry->source_bus_irq].polarity = POLARITY_LOW; // active low
                     }
                     else {
-                        overrides[entry->source_bus_irq].polarity = 0; // reserved, treat as conforms to bus
+                        overrides[entry->source_bus_irq].polarity = POLARITY_HIGH; // reserved, treat as conforms to bus
                     }
 
                     // set interrupt trigger mode
                     if(entry->interrupt_trigger_mode == 0b00) {
-                        overrides[entry->source_bus_irq].trigger_mode = 0; // conforms to bus = edge triggered
+                        overrides[entry->source_bus_irq].trigger_mode = TRIGGER_MODE_EDGE; // conforms to bus = edge triggered
                     }
                     else if(entry->interrupt_trigger_mode == 0b01) {
-                        overrides[entry->source_bus_irq].trigger_mode = 0; // edge triggered
+                        overrides[entry->source_bus_irq].trigger_mode = TRIGGER_MODE_EDGE; // edge triggered
                     }
                     else if(entry->interrupt_trigger_mode == 0b11) {
-                        overrides[entry->source_bus_irq].trigger_mode = 1; // level triggered
+                        overrides[entry->source_bus_irq].trigger_mode = TRIGGER_MODE_LEVEL; // level triggered
                     }
                     else {
-                        overrides[entry->source_bus_irq].trigger_mode = 0; // reserved, treat as conforms to bus
+                        overrides[entry->source_bus_irq].trigger_mode = TRIGGER_MODE_EDGE; // reserved, treat as conforms to bus
                     }
                 }
             }
@@ -384,6 +385,18 @@ void mp_tables_read_pci_irq_routing(pci_irq_routing_t **routing_ptr, int *number
                     routing[*number_of_entries].bus = entry->source_bus_id;
                     routing[*number_of_entries].device = (entry->source_bus_irq >> 2) & 0x1F;
                     routing[*number_of_entries].pin = (entry->source_bus_irq & 0b11) + 1; // convert to INT A-D
+                    if(entry->interrupt_polarity == 0b00 || entry->interrupt_polarity == 0b11 || entry->interrupt_polarity == 0b10) { // conforms to bus / active low / reserved
+                        routing[*number_of_entries].polarity = POLARITY_LOW;
+                    }
+                    else { // active high
+                        routing[*number_of_entries].polarity = POLARITY_HIGH;
+                    }
+                    if(entry->interrupt_trigger_mode == 0b00 || entry->interrupt_trigger_mode == 0b11 || entry->interrupt_trigger_mode == 0b10) { // conforms to bus / level triggered / reserved
+                        routing[*number_of_entries].trigger_mode = TRIGGER_MODE_LEVEL;
+                    }
+                    else { // edge triggered
+                        routing[*number_of_entries].trigger_mode = TRIGGER_MODE_EDGE;
+                    }
                     routing[*number_of_entries].gsi = gsi;
                     (*number_of_entries)++;
                 }
