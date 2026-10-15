@@ -20,6 +20,8 @@
 #define INTERRUPT_VECTOR_SCHEDULER 0xFD
 #define INTERRUPT_REFRESH_TLB 0xFE
 
+#define MAX_NUMBER_OF_THREADS_PER_PROCESSOR 4096
+
 typedef enum {
     SCHEDULER_STATE_KERNEL = 0,
     SCHEDULER_STATE_USER = 1,
@@ -50,7 +52,6 @@ typedef struct kernel_thread_t {
 
 typedef struct {
     uint32_t number_of_running_threads;
-    uint32_t tid_bitmap;
     kernel_thread_t *current_thread;
     kernel_thread_t *threads;
 } kernel_thread_list_t;

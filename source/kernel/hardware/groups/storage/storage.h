@@ -20,7 +20,7 @@ typedef struct storage_transfer_status_t {
     struct storage_transfer_status_t *up;
     uint32_t status;
     uint32_t slot;
-    uint32_t number_of_loaded_bytes;
+    uint32_t transferred_bytes;
     uint32_t number_of_all_bytes;
 } storage_transfer_status_t;
 

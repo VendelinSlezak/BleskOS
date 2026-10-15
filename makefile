@@ -117,12 +117,15 @@ run_qemu: $(IMAGE)
 debug: $(IMAGE)
 	@echo "[RUN] Starting QEMU..."
 	@qemu-system-i386 -drive file=$(IMAGE),format=raw,if=ide \
-                      -debugcon stdio \
-                      -no-reboot -d cpu_reset,guest_errors \
-                      -smp 1 \
-					  -s -S &
-	@gnome-terminal -- gdb -ex "target remote localhost:1234" $(BUILD_DIR)/kernel.elf
-	@echo "\n\n[RUN] QEMU exited"
+	                  -debugcon stdio \
+	                  -no-reboot -d cpu_reset,guest_errors \
+	                  -smp 1 -s -S & \
+	QEMU_PID=$$!; \
+	echo "[RUN] Starting GDB..."; \
+	gdb -ex "target remote localhost:1234" $(BUILD_DIR)/kernel.elf; \
+	echo "[RUN] Stopping QEMU..."; \
+	kill $$QEMU_PID; \
+	echo "[RUN] QEMU exited"
 
 # RUN IMAGE IN BOCHS
 run_bochs: $(IMAGE)

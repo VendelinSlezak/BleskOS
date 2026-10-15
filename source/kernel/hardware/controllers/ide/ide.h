@@ -115,6 +115,17 @@ typedef struct {
 } __attribute__((packed)) ata_identify_command_device_info_t;
 
 enum {
+    IDE_DMA_READ,
+    IDE_DMA_WRITE,
+};
+typedef struct {
+    uint32_t physical_address_of_buffer;
+    uint16_t byte_count;
+    uint16_t : 15;
+    uint16_t last_prd : 1;
+}__attribute__((packed)) ide_prd_t;
+
+enum {
     IDE_DATA_READY = 0,
     IDE_ERROR,
     IDE_TIMEOUT,
@@ -132,12 +143,32 @@ typedef struct {
     kernel_thread_t *waiting_thread_for_irq;
     void *timeout_thread;
     uint32_t transfer_status;
+
+    uint32_t number_of_iht_function_calls;
+    uint32_t number_of_expected_iht_function_calls;
+    uint32_t max_number_of_expected_iht_function_calls;
+    void (*iht_function)(uint32_t arguments_ptr);
+    uint32_t iht_function_arguments;
+
+    ide_prd_t *prdt;
 } ide_controller_data_t;
 
 typedef struct {
     uint32_t drive;
+    uint16_t dma;
     ata_identify_command_device_info_t device_info;
 } ide_controller_device_data_t;
+
+typedef struct {
+    hardware_t *controller;
+    uint32_t microseconds_timeout;
+    void (*send_command)(uint32_t argument);
+    uint32_t argument;
+    void *buffer;
+    uint32_t size;
+    uint32_t direction;
+    uint32_t drive;
+} ide_send_dma_command_arguments_t;
 
 typedef struct {
     hardware_t *controller;

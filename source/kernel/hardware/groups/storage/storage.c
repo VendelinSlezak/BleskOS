@@ -9,6 +9,7 @@
 */
 
 /* includes */
+#include <kernel/hardware/groups/logging/logging.h>
 #include <kernel/hardware/devices/memory/memory_allocators.h>
 #include <kernel/hardware/devices/cpu/scheduler.h>
 #include <kernel/hardware/main.h>
@@ -100,6 +101,14 @@ storage_transfer_status_t *storage_prepare_transfer(storage_device_t *storage_de
     return NULL;
 }
 
+void set_storage_transfer_status(storage_transfer_status_t *status, uint32_t new_status, int increase_in_bytes) {
+    status->status = new_status;
+    status->transferred_bytes += increase_in_bytes;
+    if(status->up != NULL) {
+        set_storage_transfer_status(status->up, new_status, increase_in_bytes);
+    }
+}
+
 void storage_read(storage_device_t *storage_device, uint64_t offset, uint32_t size, void *buffer, storage_transfer_status_t *status) {
     hardware_t *device = storage_device->device;
 
@@ -149,7 +158,7 @@ void storage_read(storage_device_t *storage_device, uint64_t offset, uint32_t si
         }
 
         // load all sectors that are aligned to buffer
-        uint32_t first_aligned_sector = (first_sector + 1);
+        uint64_t first_aligned_sector = (first_sector + 1);
         void *aligned_buffer = (buffer - skip_bytes_in_first_sector + storage_device->size_of_sector);
         uint32_t number_of_aligned_sectors = (number_of_sectors - 2);
         if(skip_bytes_in_first_sector == 0) {
@@ -225,7 +234,7 @@ void storage_write(storage_device_t *storage_device, uint64_t offset, uint32_t s
         }
 
         // load all sectors that are aligned to buffer
-        uint32_t first_aligned_sector = (first_sector + 1);
+        uint64_t first_aligned_sector = (first_sector + 1);
         void *aligned_buffer = (buffer - skip_bytes_in_first_sector + storage_device->size_of_sector);
         uint32_t number_of_aligned_sectors = (number_of_sectors - 2);
         if(skip_bytes_in_first_sector == 0) {

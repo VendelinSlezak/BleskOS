@@ -17,22 +17,22 @@ typedef struct {
     uint32_t size_of_sector;
     uint32_t max_number_of_sectors_per_one_request;
     uint32_t does_support_lba48;
-} parallel_ata_data_t;
+    uint16_t dma;
+} pata_data_t;
 
 typedef struct {
     uint16_t base;
+    uint64_t sector;
+    uint16_t number_of_sectors;
+    uint16_t words_of_sector;
+    uint8_t *buffer;
+    void *status;
+} pata_command_pio_arguments_t;
+
+typedef struct {
+    uint16_t base;
+    uint16_t dma_base;
     uint16_t number_of_sectors;
     uint64_t sector;
-} parallel_ata_command_arguments_t;
-
-typedef struct {
-    uint16_t base;
-    uint16_t words_of_sector;
-    uint8_t *buffer;
-} parallel_ata_read_sector_arguments_t;
-
-typedef struct {
-    uint16_t base;
-    uint16_t words_of_sector;
-    uint8_t *buffer;
-} parallel_ata_write_sector_arguments_t;
+    uint32_t direction;
+} pata_command_dma_arguments_t;

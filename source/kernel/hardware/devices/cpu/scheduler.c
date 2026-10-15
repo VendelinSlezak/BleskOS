@@ -33,11 +33,13 @@
 /* local variables */
 kernel_thread_list_t *kernel_threads = NULL;
 process_t *processes = NULL;
+uint8_t *kernel_tid_map = NULL;
 
 /* functions */
 void initialize_scheduler(void) {
     // create kernel thread list
     kernel_threads = kalloc(sizeof(kernel_thread_list_t) * number_of_logical_processors);
+    kernel_tid_map = kalloc(MAX_NUMBER_OF_THREADS_PER_PROCESSOR * sizeof(uint8_t) * number_of_logical_processors); // TODO: check overflow by number of processors
 
     // create main kernel thread
     kernel_thread_t *kernel_main_thread = block_alloc(sizeof(kernel_thread_t));
@@ -192,15 +194,19 @@ void *create_running_process_from_spawning_template(spawning_template_t *templat
 }
 
 uint32_t get_unique_kernel_tid(uint32_t target_logical_processor_index) {
-    for(int i = 0; i < 32; i++) {
-        uint32_t mask = (1 << i);
-        if((kernel_threads[target_logical_processor_index].tid_bitmap & mask) == 0) {
-            kernel_threads[target_logical_processor_index].tid_bitmap |= mask;
-            return (target_logical_processor_index * 32 + i + 1); // TID 0 is reserved
+    uint8_t *tid_map_offset = (uint8_t *) &kernel_tid_map[target_logical_processor_index * MAX_NUMBER_OF_THREADS_PER_PROCESSOR];
+    for(int i = 0; i < MAX_NUMBER_OF_THREADS_PER_PROCESSOR; i++) {
+        if(tid_map_offset[i] == false) {
+            tid_map_offset[i] = true;
+            return (target_logical_processor_index * MAX_NUMBER_OF_THREADS_PER_PROCESSOR + i + 1); // TID 0 is reserved
         }
     }
 
     return 0; // no available TIDs
+}
+
+void release_unique_kernel_tid(uint32_t target_logical_processor_index, uint32_t tid) {
+    kernel_tid_map[target_logical_processor_index * MAX_NUMBER_OF_THREADS_PER_PROCESSOR + tid - 1] = false;
 }
 
 uint32_t get_unique_user_process_tid(uint32_t target_logical_processor_index, process_t *program) {
@@ -287,7 +293,7 @@ kernel_thread_t *create_kernel_thread_with_flags(uint8_t *name, uint32_t process
     }
 
     // create new thread
-    log("\nCreating thread %s with id %d in kernel process on CPU%d", name, tid, processor_index);
+    // log("\nCreating thread %s with id %d in kernel process on CPU%d", name, tid, processor_index);
     kernel_thread_t *new_thread = block_alloc(sizeof(kernel_thread_t));
     new_thread->next = NULL;
     new_thread->id = tid;
@@ -456,7 +462,7 @@ uint32_t create_user_thread(process_t *process, void *entry_point, void *stack_p
         }
     }
 
-    log("\nCreated user thread %d in process %x on CPU%d", tid, process, target_logical_processor_index);
+    // log("\nCreated user thread %d in process %x on CPU%d", tid, process, target_logical_processor_index);
 
     return tid;
 }
@@ -732,14 +738,14 @@ void close_current_thread_interrupt(interrupt_stack_t *stack_of_interrupt) {
     logical_processor_t *lpdata = get_current_logical_processor_struct();
     if(lpdata->running_thread_state == SCHEDULER_STATE_KERNEL) {
         kernel_thread_t *current_thread = lpdata->current_kernel_thread;
-        log("\nClosing signal from kernel thread %d on CPU%d", current_thread->id, lpdata->index);
+        // log("\nClosing signal from kernel thread %d on CPU%d", current_thread->id, lpdata->index);
         current_thread->kill_me = true;
         extern void move_to_floating_stack(uint32_t new_esp, uint32_t new_eip, uint32_t argument);
         move_to_floating_stack((uint32_t) lpdata->floating_stack + KERNEL_STACK_SIZE, (uint32_t) &scheduler_interrupt, (uint32_t) stack_of_interrupt);
     }
     else { // lpdata->running_thread_state == SCHEDULER_STATE_USER
         user_thread_t *current_thread = lpdata->current_user_thread;
-        log("\nClosing signal from user thread %d in program %x on CPU%d", current_thread->id, lpdata->current_process, lpdata->index);
+        // log("\nClosing signal from user thread %d in program %x on CPU%d", current_thread->id, lpdata->current_process, lpdata->index);
         current_thread->delete_me = true;
         if(current_thread->delete_signal_handler_address == NULL || current_thread->delete_signal_running == true) {
             current_thread->kill_me = true;
@@ -753,14 +759,14 @@ void kill_current_thread_interrupt(interrupt_stack_t *stack_of_interrupt) {
     logical_processor_t *lpdata = get_current_logical_processor_struct();
     if(lpdata->running_thread_state == SCHEDULER_STATE_KERNEL) {
         kernel_thread_t *current_thread = lpdata->current_kernel_thread;
-        log("\nKilling signal from kernel thread %d on CPU%d", current_thread->id, lpdata->index);
+        // log("\nKilling signal from kernel thread %d on CPU%d", current_thread->id, lpdata->index);
         current_thread->kill_me = true;
         extern void move_to_floating_stack(uint32_t new_esp, uint32_t new_eip, uint32_t argument);
         move_to_floating_stack((uint32_t) lpdata->floating_stack + KERNEL_STACK_SIZE, (uint32_t) &scheduler_interrupt, (uint32_t) stack_of_interrupt);
     }
     else { // lpdata->running_thread_state == SCHEDULER_STATE_USER
         user_thread_t *current_thread = lpdata->current_user_thread;
-        log("\nKilling signal from user thread %d in program %x on CPU%d", current_thread->id, lpdata->current_process, lpdata->index);
+        // log("\nKilling signal from user thread %d in program %x on CPU%d", current_thread->id, lpdata->current_process, lpdata->index);
         current_thread->kill_me = true;
         extern void move_to_floating_stack(uint32_t new_esp, uint32_t new_eip, uint32_t argument);
         move_to_floating_stack((uint32_t) lpdata->floating_stack + KERNEL_STACK_SIZE, (uint32_t) &scheduler_interrupt, (uint32_t) stack_of_interrupt);
@@ -847,7 +853,7 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
         interrupt_thread_t *thread = current_interrupt_thread_handler->interrupt_thread;
         reset_interrupt_handler_thread_stack((uint32_t *)thread->kernel_stack_pointer, thread->function);
         kernel_interrupt_stack_t *interrupt_stack = (kernel_interrupt_stack_t *) thread->kernel_stack_pointer;
-        log("\nSwitching to interrupt handler thread %x on CPU%d to EIP %x", thread, lpdata->index, interrupt_stack->eip);
+        // log("\nSwitching to interrupt handler thread %x on CPU%d to EIP %x", thread, lpdata->index, interrupt_stack->eip);
         extern void exit_interrupt_to_thread(uint32_t stack_pointer);
         if(thread->page_directory_physical_address != NULL && thread->page_directory_physical_address != read_cr3()) {
             load_page_directory(thread->page_directory_physical_address);
@@ -952,7 +958,7 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                     }
                     if(current_thread->kill_me == true) {
                         uint32_t tid = current_thread->id;
-                        log("\nKilling user thread %d from %d running threads", tid, current_process->number_of_threads);
+                        // log("\nKilling user thread %d from %d running threads", tid, current_process->number_of_threads);
 
                         // set all threads that were created by this thread to be deleted
                         // we can do this because this thread can not now create more threads
@@ -1005,7 +1011,6 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
 
                         // free page directory if necessary
                         if(*current_thread->number_of_threads_in_page_directory == 0) {
-                            log("\nFreeing virtual space");
                             stop_everything_on_page_directory(current_process->running_executable, current_thread->page_directory_physical_address);
                             free_virtual_space(current_thread->page_directory_physical_address);
                             block_free(sizeof(uint32_t), current_thread->number_of_threads_in_page_directory);
@@ -1015,7 +1020,7 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                         kfree(current_thread->kernel_stack);
                         block_free(sizeof(user_thread_t), current_thread);
 
-                        log("\nUser thread %d is killed", tid);
+                        // log("\nUser thread %d is killed", tid);
 
                         continue;
                     }
@@ -1025,7 +1030,7 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                     }
                     if(current_thread->sleeping == true) {
                         if((int)(actual_time - current_thread->time_end_of_sleep) > 0) {
-                            log("\nUser thread %d is waken up", current_thread->id);
+                            // log("\nUser thread %d is waken up", current_thread->id);
                             current_thread->sleeping = false;
 
                             // increase number of running threads
@@ -1081,7 +1086,7 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                     // process flags
                     if(current_thread->kill_me == true) {
                         uint32_t tid = current_thread->id;
-                        log("\nKilling kernel thread %d", tid);
+                        // log("\nKilling kernel thread %d", tid);
 
                         // unlink from list
                         if(previous_thread == NULL) {
@@ -1104,7 +1109,7 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                         }
 
                         // free thread ID
-                        thread_list->tid_bitmap &= ~(1 << ((tid - 1) & 0x1F));
+                        release_unique_kernel_tid(lpdata->index, tid);
 
                         // remove thread if it was currently executed
                         if(lpdata->current_kernel_thread == current_thread) {
@@ -1118,7 +1123,7 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                         kfree(current_thread->kernel_stack);
                         block_free(sizeof(kernel_thread_t), current_thread);
 
-                        log("\nKernel thread %d is killed", tid);
+                        // log("\nKernel thread %d is killed", tid);
 
                         continue;
                     }
