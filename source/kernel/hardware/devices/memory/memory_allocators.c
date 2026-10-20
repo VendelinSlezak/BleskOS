@@ -79,6 +79,16 @@ void initialize_allocators(void) {
     }
 }
 
+void lock_kheap(void) {
+    lock_core();
+    LOCK_MUTEX(&kheap_mutex);
+}
+
+void unlock_kheap(void) {
+    UNLOCK_MUTEX(&kheap_mutex);
+    unlock_core();
+}
+
 void initialize_allocators_for_user_space(void) {
     log("\n[USER SPACE] %d MB available", (VM_USER_SPACE_END - VM_USER_SPACE_START + (1024 * 1024) - 1) / (1024 * 1024));
 
@@ -90,6 +100,7 @@ void initialize_allocators_for_user_space(void) {
         perm_allocator_num_of_allocations, perm_allocator_requested_size, perm_allocator_real_size / 1024, perm_allocator_phy_mem_mapped / 1024, permanent_kernel_allocator_base);
 
     // find end of kernel heap
+    lock_kheap();
     kernel_heap_metadata_t *kernel_heap_metadata = (kernel_heap_metadata_t *) VM_KERNEL_HEAP_START;
     kheap_entry_t *current_entry = (kheap_entry_t *) &kernel_heap_metadata->first_entry;
     kheap_entry_t *last_entry = current_entry;
@@ -115,6 +126,7 @@ void initialize_allocators_for_user_space(void) {
         last_entry->end,
         (permanent_kernel_allocator_base - VM_KERNEL_HEAP_START + (1024 * 1024) - 1) / (1024 * 1024));
     kernel_heap_metadata->memory_end = permanent_kernel_allocator_base;
+    unlock_kheap();
 
     log("\nUser space allocation initialized successfully");
 }
@@ -126,9 +138,11 @@ void *temp_phy_alloc(uint32_t phy_start, uint32_t size, uint32_t flags) {
     size = (((size + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE);
 
     // check if temporary allocator is working
+    lock_core();
     LOCK_MUTEX(&temp_alloc_mutex);
     if(temporary_kernel_allocator_base == NULL || temporary_kernel_allocator_free_size == 0 || size > temporary_kernel_allocator_free_size) {
         UNLOCK_MUTEX(&temp_alloc_mutex);
+        unlock_core();
         return NULL;
     }
 
@@ -143,6 +157,7 @@ void *temp_phy_alloc(uint32_t phy_start, uint32_t size, uint32_t flags) {
     temporary_kernel_allocator_free_size -= size;
 
     UNLOCK_MUTEX(&temp_alloc_mutex);
+    unlock_core();
     return allocated_address;
 }
 
@@ -160,9 +175,11 @@ void *perm_alloc(uint32_t size) {
     size = (((size + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE);
 
     // check if permanent allocator is working
+    lock_core();
     LOCK_MUTEX(&perm_alloc_mutex);
     if((permanent_kernel_allocator_base - size) < VM_PERM_ALLOCATOR_START) {
         UNLOCK_MUTEX(&perm_alloc_mutex);
+        unlock_core();
         return NULL;
     }
 
@@ -175,6 +192,7 @@ void *perm_alloc(uint32_t size) {
     perm_allocator_real_size += size;
 
     UNLOCK_MUTEX(&perm_alloc_mutex);
+    unlock_core();
     return allocated_address;
 }
 
@@ -185,9 +203,11 @@ void *perm_phy_alloc(uint32_t phy_start, uint32_t size, uint32_t flags) {
     size = (((size + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE);
 
     // check if permanent allocator is working
+    lock_core();
     LOCK_MUTEX(&perm_alloc_mutex);
     if((permanent_kernel_allocator_base - size) < VM_PERM_ALLOCATOR_START) {
         UNLOCK_MUTEX(&perm_alloc_mutex);
+        unlock_core();
         return NULL;
     }
 
@@ -198,11 +218,13 @@ void *perm_phy_alloc(uint32_t phy_start, uint32_t size, uint32_t flags) {
     perm_allocator_phy_mem_mapped += size;
 
     UNLOCK_MUTEX(&perm_alloc_mutex);
+    unlock_core();
     return allocated_address;
 }
 
 /* KERNEL HEAP */
 void kheap_dump(void) {
+    // lock_kheap();
     kernel_heap_metadata_t *kernel_heap_metadata = (kernel_heap_metadata_t *) VM_KERNEL_HEAP_START;
     log("\nACTUAL FREE POINTER: 0x%x - %d - 0x%x",
         kernel_heap_metadata->free_memory_start,
@@ -216,7 +238,7 @@ void kheap_dump(void) {
             current_entry->end,
             current_entry->prev,
             current_entry->next,
-            current_entry->end - (uint32_t)current_entry + sizeof(kheap_entry_t));
+            current_entry->end - ((uint32_t)current_entry + sizeof(kheap_entry_t)));
         if((uint32_t)current_entry->next != current_entry->end && current_entry->next != NULL) {
             log("\nFREE: start=0x%x, end=0x%x, size=%d",
                 current_entry->end,
@@ -225,6 +247,7 @@ void kheap_dump(void) {
         }
         current_entry = (kheap_entry_t *) current_entry->next;
     }
+    // unlock_kheap();
 }
 
 void *kalloc(uint32_t size) {
@@ -238,12 +261,10 @@ void *kalloc(uint32_t size) {
     size += sizeof(kheap_entry_t);
 
     // align size up to 4 bytes
-    if((size & 0x3) != 0x0) {
-        size = ((size & 0xFFFFFFFC) + 0x4);
-    }
+    size = (((size + 3) / 4) * 4);
 
     // find suitable space
-    LOCK_MUTEX(&kheap_mutex);
+    lock_kheap();
     kernel_heap_metadata_t *kernel_heap_metadata = (kernel_heap_metadata_t *) VM_KERNEL_HEAP_START;
     if(size > kernel_heap_metadata->free_memory_size) {
         // find biggest free space block
@@ -258,7 +279,7 @@ void *kalloc(uint32_t size) {
             current_entry = current_entry->next;
         }
         if(biggest_space == 0) {
-            UNLOCK_MUTEX(&kheap_mutex);
+            unlock_kheap();
             return NULL;
         }
 
@@ -269,7 +290,7 @@ void *kalloc(uint32_t size) {
 
         // check if it is enough
         if(biggest_space < size) {
-            UNLOCK_MUTEX(&kheap_mutex);
+            unlock_kheap();
             return NULL;
         }
     }
@@ -311,7 +332,7 @@ void *kalloc(uint32_t size) {
     new_entry->next = new_entry_next;
 
     void *allocated_address = (void *) ((uint32_t)new_entry + sizeof(kheap_entry_t));
-    UNLOCK_MUTEX(&kheap_mutex);
+    unlock_kheap();
     // log(" allocated at %x", allocated_address);
     return allocated_address;
 }
@@ -327,7 +348,7 @@ void *aligned_kalloc(uint32_t alignment, uint32_t size) {
     // log("\nALIGNED %d KALLOC request %d bytes", alignment, size);
 
     // find suitable space
-    LOCK_MUTEX(&kheap_mutex);
+    lock_kheap();
     kernel_heap_metadata_t *kernel_heap_metadata = (kernel_heap_metadata_t *) VM_KERNEL_HEAP_START;
     kheap_entry_t *new_entry;
     uint32_t new_entry_end;
@@ -438,7 +459,7 @@ void *aligned_kalloc(uint32_t alignment, uint32_t size) {
         }
     }
     if(can_be_block_allocated == false) {
-        UNLOCK_MUTEX(&kheap_mutex);
+        unlock_kheap();
         return NULL;
     }
 
@@ -464,7 +485,7 @@ void *aligned_kalloc(uint32_t alignment, uint32_t size) {
     new_entry->next = new_entry_next;
 
     void *allocated_address = (void *) ((uint32_t)new_entry + sizeof(kheap_entry_t));
-    UNLOCK_MUTEX(&kheap_mutex);
+    unlock_kheap();
     // log(" allocated at %x", allocated_address);
     return allocated_address;
 }
@@ -476,7 +497,7 @@ void kfree(void *allocation) {
 
     // log("\nKFREE request %x", allocation);
 
-    LOCK_MUTEX(&kheap_mutex);
+    lock_kheap();
     kernel_heap_metadata_t *kernel_heap_metadata = (kernel_heap_metadata_t *) VM_KERNEL_HEAP_START;
     kheap_entry_t *entry = (kheap_entry_t *) ((uint32_t)allocation - sizeof(kheap_entry_t));
     uint32_t entry_start = (uint32_t) entry;
@@ -512,7 +533,9 @@ void kfree(void *allocation) {
         kernel_heap_metadata->insert_entry = prev_entry;
     }
 
-    UNLOCK_MUTEX(&kheap_mutex);
+    // kheap_dump();
+
+    unlock_kheap();
 }
 
 void *krealloc(void *allocation, uint32_t new_size) {
@@ -522,7 +545,7 @@ void *krealloc(void *allocation, uint32_t new_size) {
 
     // log("\nKREALLOC request %x to %d bytes", allocation, new_size);
 
-    LOCK_MUTEX(&kheap_mutex);
+    lock_kheap();
     kernel_heap_metadata_t *kernel_heap_metadata = (kernel_heap_metadata_t *) VM_KERNEL_HEAP_START;
     kheap_entry_t *entry = (kheap_entry_t *) ((uint32_t)allocation - sizeof(kheap_entry_t));
     uint32_t entry_start = (uint32_t) entry;
@@ -533,18 +556,16 @@ void *krealloc(void *allocation, uint32_t new_size) {
     new_size += sizeof(kheap_entry_t);
 
     // align size up to 4 bytes
-    if((new_size & 0x3) != 0x0) {
-        new_size = ((new_size & 0xFFFFFFFC) + 0x4);
-    }
+    new_size = (((new_size + 3) / 4) * 4);
 
     // reallocate according to request
     if(new_size == sizeof(kheap_entry_t)) { // free allocation
-        UNLOCK_MUTEX(&kheap_mutex);
+        unlock_kheap();
         kfree(allocation);
         return NULL;
     }
     else if(new_size == entry_size) { // do nothing
-        UNLOCK_MUTEX(&kheap_mutex);
+        unlock_kheap();
         // log(" REALLOCATED IN SAME PLACE");
         return allocation;
     }
@@ -574,7 +595,7 @@ void *krealloc(void *allocation, uint32_t new_size) {
             vm_deallocate_pages(first_page, last_page - first_page + PAGE_SIZE);
         }
 
-        UNLOCK_MUTEX(&kheap_mutex);
+        unlock_kheap();
         // log(" REALLOCATED IN SAME PLACE");
         return allocation;
     }
@@ -606,7 +627,7 @@ void *krealloc(void *allocation, uint32_t new_size) {
                 vm_allocate_pages(first_page, last_page - first_page + PAGE_SIZE, VM_KERNEL);
             }
 
-            UNLOCK_MUTEX(&kheap_mutex);
+            unlock_kheap();
             // log(" REALLOCATED IN SAME PLACE");
             return allocation;
         }
@@ -692,13 +713,13 @@ void *krealloc(void *allocation, uint32_t new_size) {
             }
 
             void *entry_new_start_ptr = (void *) (entry_new_start + sizeof(kheap_entry_t));
-            UNLOCK_MUTEX(&kheap_mutex);
+            unlock_kheap();
             // log(" REALLOCATED: 0x%x -> 0x%x", allocation, entry_new_start_ptr);
             return entry_new_start_ptr;
         }
 
         // else try to allocate new block
-        UNLOCK_MUTEX(&kheap_mutex);
+        unlock_kheap();
         void *new_allocation = kalloc(new_size - sizeof(kheap_entry_t));
         if(new_allocation == NULL) {
             return NULL;
@@ -717,6 +738,7 @@ void *krealloc(void *allocation, uint32_t new_size) {
 
 /* BLOCK ALLOCATOR*/
 void *block_alloc(uint32_t size) {
+    lock_core();
     LOCK_MUTEX(&block_alloc_mutex);
     block_cell_metadata_t *metadata = block_alloc_cells[size];
 
@@ -741,10 +763,12 @@ void *block_alloc(uint32_t size) {
     void *allocation = metadata->allocations[metadata->lifo_index++];
 
     UNLOCK_MUTEX(&block_alloc_mutex);
+    unlock_core();
     return allocation;
 }
 
 void block_free(uint32_t size, void *allocation) {
+    lock_core();
     LOCK_MUTEX(&block_alloc_mutex);
     block_cell_metadata_t *metadata = block_alloc_cells[size];
 
@@ -753,6 +777,7 @@ void block_free(uint32_t size, void *allocation) {
         if(metadata->prev == NULL) {
             log("\n[ERROR] Block allocator is empty");
             UNLOCK_MUTEX(&block_alloc_mutex);
+            unlock_core();
             return;
         }
         metadata = metadata->prev;
@@ -773,4 +798,5 @@ void block_free(uint32_t size, void *allocation) {
     }
 
     UNLOCK_MUTEX(&block_alloc_mutex);
+    unlock_core();
 }

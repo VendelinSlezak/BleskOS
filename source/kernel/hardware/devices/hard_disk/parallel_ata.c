@@ -99,7 +99,7 @@ void initialize_parallel_ata(hardware_t *self) {
     data->dma = data_from_controller->dma;
 
     // add device to group
-    add_storage_device(self, &pata_functions, size_of_sector, number_of_sectors, 1);
+    add_storage_device(self, STORAGE_DEVICE_HARD_DISK, &pata_functions, size_of_sector, number_of_sectors, 1);
     log("\n[PATA] Parallel ATA hard disk %d has been initialized", self->id);
 
     self->is_initialized = true;
@@ -184,6 +184,7 @@ uint32_t pata_dma_transfer(hardware_t *self, uint64_t lba, uint32_t number_of_se
     hardware_t *controller = self->controller;
     ide_controller_data_t *controller_data = (ide_controller_data_t *) controller->data;
     uint32_t size_of_sector = data->size_of_sector;
+    uint16_t base = controller_data->base;
     uint16_t dma = data->dma;
 
     // send command
@@ -243,7 +244,6 @@ void ata_send_dma_command(uint32_t arguments_ptr) {
         outb(base + 5, ((sector >> 16) & 0xFF));
         outb(base + 7, (arguments->direction == IDE_DMA_READ) ? 0x25 : 0x35); // LBA48 DMA READ / WRITE command
     }
-    outb(dma_base + 0, inb(dma_base + 0) | (1 << 0)); // start DMA transfer
 }
 
 // this function assumes that lba is valid, and number of sectors is also valid with respect to lba and max number of sectors per request and buffer is as big as size of sectors

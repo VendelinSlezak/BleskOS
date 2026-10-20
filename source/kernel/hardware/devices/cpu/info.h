@@ -35,6 +35,7 @@ typedef struct {
 
     tss_t *tss;
 
+    uint32_t in_interrupt;
     uint32_t depth_of_lock;
 
     kernel_interrupt_stack_t *idle_thread_stack;
@@ -47,6 +48,9 @@ typedef struct {
     user_thread_t *current_user_thread;
     interrupt_thread_handler_t *current_interrupt_thread_handler;
     uint32_t in_interrupt_thread_handler;
+
+    void *pointers_to_clean;
+    kernel_thread_t *cleaning_thread;
 
     void *copy_on_write_page;
 

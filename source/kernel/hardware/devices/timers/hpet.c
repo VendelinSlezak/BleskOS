@@ -12,10 +12,12 @@
 #include <kernel/hardware/groups/logging/logging.h>
 #include <kernel/firmware/main.h>
 #include <kernel/hardware/devices/cpu/interrupt.h>
+#include <kernel/hardware/devices/cpu/mutex.h>
 #include <kernel/hardware/devices/timers/main.h>
 
 /* local variables */
 acpi_gas_t hpet_gas;
+mutex_t hpet_mutex;
 uint32_t hpet_counter_clk_period_fs;
 uint32_t ticks_per_microsecond;
 
@@ -93,10 +95,9 @@ int initialize_hpet(void) {
 
 uint64_t get_hpet_time_in_microseconds(void) {
     uint32_t high, low;
-    do {
-        high = acpi_gas_read(hpet_gas, 0xF4);
-        low = acpi_gas_read(hpet_gas, 0xF0);
-    } while(high != acpi_gas_read(hpet_gas, 0xF4));
-
+    LOCK_MUTEX(&hpet_mutex);
+    low = acpi_gas_read(hpet_gas, 0xF0);
+    high = acpi_gas_read(hpet_gas, 0xF4);
+    UNLOCK_MUTEX(&hpet_mutex);
     return (((uint64_t)high << 32) | low) / ticks_per_microsecond;
 }

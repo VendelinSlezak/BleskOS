@@ -91,7 +91,7 @@ void initialize_ide_entry_on_pci(hardware_t *device) {
                 ide_controller_data_t *ide_controller_data = kalloc(sizeof(ide_controller_data_t));
                 ide_controller_data->base = 0x170;
                 ide_controller_data->control = 0x376;
-                ide_controller_data->dma = dma_base_address;
+                ide_controller_data->dma = (dma_base_address + 8);
                 hardware_t *secondary_ide_controller = add_hardware(device, "Secondary IDE controller", NULL, ide_controller_data, initialize_ide_controller, NULL);
                 secondary_ide_controller->data = ide_controller_data;
                 ide_controllers = krealloc(ide_controllers, sizeof(hardware_t *) * (number_of_controllers + 1));
@@ -112,7 +112,7 @@ void initialize_ide_entry_on_pci(hardware_t *device) {
             ide_controller_data_t *ide_controller_data = kalloc(sizeof(ide_controller_data_t));
             ide_controller_data->base = pci_get_io(device, PCI_BAR2);
             ide_controller_data->control = (pci_get_io(device, PCI_BAR3) + 2);
-            ide_controller_data->dma = dma_base_address;
+            ide_controller_data->dma = (dma_base_address + 8);
             hardware_t *secondary_ide_controller = add_hardware(device, "Secondary IDE controller", NULL, ide_controller_data, initialize_ide_controller, NULL);
             secondary_ide_controller->data = ide_controller_data;
             ide_controllers = krealloc(ide_controllers, sizeof(hardware_t *) * (number_of_controllers + 1));
@@ -145,15 +145,12 @@ void initialize_ide_controller(hardware_t *self) {
 
         // stop transfers
         outb(dma + 0, (0 << 0));
-        outb(dma + 8, (0 << 0));
 
         // write PRDT address
         outd(dma + 4, prdt_pm);
-        outd(dma + 12, prdt_pm);
 
         // clear status bits
-        outb(dma + 10, (1 << 2) | (1 << 1));
-        outb(dma + 10, (1 << 2) | (1 << 1));
+        outb(dma + 2, (1 << 2) | (1 << 1));
     }
 
     // check drives
@@ -200,7 +197,7 @@ void initialize_ide_drive(hardware_t *device, uint8_t drive) {
                 log("\n[IDE] Drive %s is a hard disk", (drive == PATA_MASTER) ? "Master" : "Slave");
                 ide_controller_device_data_t *hard_disk_info = kalloc(sizeof(ide_controller_device_data_t));
                 hard_disk_info->drive = drive;
-                hard_disk_info->dma = (drive == PATA_MASTER) ? (data->dma + 0) : (data->dma + 8);
+                hard_disk_info->dma = data->dma;
                 memcpy(&hard_disk_info->device_info, &device_info, sizeof(ata_identify_command_device_info_t));
                 hardware_t *hard_disk = add_hardware(device, "PATA hard disk", NULL, hard_disk_info, initialize_parallel_ata, NULL);
                 init_hardware(hard_disk);
@@ -244,6 +241,8 @@ void ide_reset_controller(hardware_t *device) {
     ide_controller_data_t *data = (ide_controller_data_t *) device->data;
     uint16_t base = data->base;
     uint16_t control = data->control;
+
+    log("\n[IDE] Resetting controller 0x%04X", base);
 
     // we need to be sure that no transfer is in progress
     LOCK_MUTEX_WAIT_IN_SWITCHES(&data->mutex);
@@ -293,7 +292,7 @@ void ide_interrupt_handler(interrupt_stack_t *stack_of_interrupt) {
         if(data->interrupt_expected == false) {
             continue;
         }
-        else if(dma != NULL && (inb(dma + 2) & (1 << 2)) == 0 && (inb(dma + 10) & (1 << 2)) == 0) {
+        else if(dma != NULL && (inb(dma + 2) & (1 << 2)) == 0) {
             continue;
         }
 
@@ -312,12 +311,9 @@ void ide_interrupt_handler(interrupt_stack_t *stack_of_interrupt) {
         }
 
         // destroy timeout thread
-        kill_other_kernel_thread(data->timeout_thread);
-        data->timeout_thread = NULL;
-
-        // unblock waiting thread
-        if(data->max_number_of_expected_iht_function_calls == 0) {
-            unblock_kernel_thread(data->waiting_thread_for_irq);
+        if(data->timeout_thread != NULL) {
+            kill_other_kernel_thread(data->timeout_thread);
+            data->timeout_thread = NULL;
         }
 
         // prepare call of iht function
@@ -325,6 +321,11 @@ void ide_interrupt_handler(interrupt_stack_t *stack_of_interrupt) {
             data->number_of_expected_iht_function_calls++;
         }
         data->interrupt_expected = false;
+
+        // unblock waiting thread
+        if(data->max_number_of_expected_iht_function_calls == 0) {
+            unblock_kernel_thread(data->waiting_thread_for_irq);
+        }
     }
 }
 
@@ -334,14 +335,15 @@ void ide_interrupt_handler_thread(void) {
         while(data->number_of_iht_function_calls < data->number_of_expected_iht_function_calls) {
             data->number_of_iht_function_calls++;
             if(data->number_of_iht_function_calls == data->max_number_of_expected_iht_function_calls) {
+                data->iht_function(data->iht_function_arguments);
                 data->transfer_status = IDE_COMMAND_COMPLETED;
                 unblock_kernel_thread(data->waiting_thread_for_irq);
             }
             else {
                 data->interrupt_expected = true;
                 data->timeout_thread = create_sleeping_kernel_thread_on_processor("IDE timeout", data->interrupt_processor_index, (uint32_t)ide_timeout, (uint32_t []) { (uint32_t) ide_controllers[i] }, 1, 100000);
+                data->iht_function(data->iht_function_arguments);
             }
-            data->iht_function(data->iht_function_arguments);
         }
     }
 }
@@ -359,17 +361,16 @@ void ide_timeout(hardware_t *controller) {
     data->transfer_status = IDE_TIMEOUT;
     unblock_kernel_thread(data->waiting_thread_for_irq);
     unlock_core();
-    ide_reset_controller(controller);
 }
 
 /* functions for sending commands to controller */
-uint32_t ide_send_dma_command(hardware_t *controller, uint32_t drive, void *buffer, uint32_t size, uint32_t direction, void (*send_command)(uint32_t argument), uint32_t argument, uint32_t microseconds_timeout) {
+uint32_t ide_send_dma_command(hardware_t *controller, uint32_t drive, void *buffer_ptr, uint32_t size, uint32_t direction, void (*send_command)(uint32_t argument), uint32_t argument, uint32_t microseconds_timeout) {
     // be sure that controller is ours
     ide_controller_data_t *data = (ide_controller_data_t *) controller->data;
     LOCK_MUTEX_WAIT_IN_SWITCHES(&data->mutex); // TODO: replace mutex with waiting list where will be added all other waiting threads, which will be then unblocked
 
     // stop all DMA transfers
-    uint16_t dma = (drive == PATA_MASTER) ? (data->dma + 0) : (data->dma + 8);
+    uint16_t dma = data->dma;
     outb(dma + 0, (0 << 0));
 
     // select drive
@@ -377,17 +378,55 @@ uint32_t ide_send_dma_command(hardware_t *controller, uint32_t drive, void *buff
 
     // sending of command needs specific sequence to prevent race conditions, now we will block thread and only then complete sending
     data->max_number_of_expected_iht_function_calls = 0;
-    ide_send_dma_command_arguments_t arguments = {
-        .controller = controller,
-        .microseconds_timeout = microseconds_timeout,
-        .send_command = send_command,
-        .argument = argument,
-        .buffer = buffer,
-        .size = size,
-        .direction = direction,
-        .drive = drive,
-    };
-    block_current_thread_with_sequence_causing_block(ide_send_dma_command_after_block_sequence, (uint32_t) &arguments);
+    block_current_thread_but_keep_going();
+
+    // current thread is blocked and will wait for command completion
+    kernel_thread_t *current_thread = get_current_kernel_thread();
+    data->waiting_thread_for_irq = current_thread;
+    data->interrupt_expected = true;
+
+    // fill PRDT table with PRD entries
+    ide_prd_t *prdt = data->prdt;
+    uint32_t buffer = (uint32_t) buffer_ptr;
+    uint32_t bytes_to_skip_in_first_page = (buffer - (buffer / PAGE_SIZE * PAGE_SIZE));
+    uint32_t bytes_to_read_in_first_page = (PAGE_SIZE - bytes_to_skip_in_first_page);
+    if(bytes_to_read_in_first_page > size) {
+        bytes_to_read_in_first_page = size;
+    }
+    if(bytes_to_read_in_first_page > 0) {
+        prdt->physical_address_of_buffer = (uint32_t) (get_pm_of_vm_page(PAGE_MASK(buffer)) + bytes_to_skip_in_first_page);
+        prdt->byte_count = bytes_to_read_in_first_page;
+        size -= bytes_to_read_in_first_page;
+        buffer += bytes_to_read_in_first_page;
+        prdt->last_prd = (size == 0) ? 1 : 0;
+        prdt++;
+    }
+    while(size > 0) {
+        prdt->physical_address_of_buffer = (uint32_t) get_pm_of_vm_page(PAGE_MASK(buffer));
+        prdt->byte_count = (size > PAGE_SIZE) ? PAGE_SIZE : size;
+        size -= prdt->byte_count;
+        buffer += prdt->byte_count;
+        prdt->last_prd = (size == 0) ? 1 : 0;
+        prdt++;
+    }
+    mfence(); // TODO: is this needed?
+
+    // set direction of DMA transfer
+    outb(dma + 0, (direction == IDE_DMA_READ) ? (1 << 3) : (0 << 3));
+
+    // clear relevant status bits
+    outb(dma + 2, (1 << 2) | (1 << 1));
+
+    // create timeout thread, timeout MUST be always bigger than the time it takes to execute arguments->send_command()
+    data->timeout_thread = create_sleeping_kernel_thread_on_processor("IDE timeout", data->interrupt_processor_index, (uint32_t)ide_timeout, (uint32_t []) { (uint32_t) controller }, 1, microseconds_timeout);
+
+    // call functions which will send command to controller and trigger interrupt
+    send_command(argument);
+
+    // start DMA transfer
+    outb(dma + 0, inb(dma + 0) | (1 << 0));
+
+    switch_to_another_thread(); // now this thread is blocked, and will be unblocked either by arrival of interrupt, or timeout thread
 
     // thread was unblocked, that mean that either IRQ arrived, or timeout happened, in both cases, stop DMA transfer
     outb(dma + 0, (0 << 0));
@@ -403,57 +442,6 @@ uint32_t ide_send_dma_command(hardware_t *controller, uint32_t drive, void *buff
 
     // return status to caller to process it
     return data->transfer_status;
-}
-
-void ide_send_dma_command_after_block_sequence(uint32_t arguments_ptr) {
-    ide_send_dma_command_arguments_t *arguments = (ide_send_dma_command_arguments_t *) arguments_ptr;
-    ide_controller_data_t *data = (ide_controller_data_t *) arguments->controller->data;
-
-    // current thread is blocked and will wait for command completion
-    kernel_thread_t *current_thread = get_current_kernel_thread();
-    data->waiting_thread_for_irq = current_thread;
-    data->interrupt_expected = true;
-
-    // fill PRDT table with PRD entries
-    ide_prd_t *prdt = data->prdt;
-    uint32_t buffer = (uint32_t) arguments->buffer;
-    uint32_t size = arguments->size;
-    uint32_t bytes_to_skip_in_first_page = (buffer - (buffer / PAGE_SIZE * PAGE_SIZE));
-    uint32_t bytes_to_read_in_first_page = (PAGE_SIZE - bytes_to_skip_in_first_page);
-    if(bytes_to_read_in_first_page > size) {
-        bytes_to_read_in_first_page = size;
-    }
-    if(bytes_to_read_in_first_page > 0) {
-        prdt->physical_address_of_buffer = (uint32_t) (get_pm_of_vm_page(PAGE_MASK(buffer)) + bytes_to_skip_in_first_page);
-        prdt->byte_count = bytes_to_read_in_first_page;
-        size += bytes_to_read_in_first_page;
-        buffer += bytes_to_read_in_first_page;
-        prdt->last_prd = (size == 0) ? 1 : 0;
-        prdt++;
-    }
-    while(size > 0) {
-        prdt->physical_address_of_buffer = (uint32_t) get_pm_of_vm_page(PAGE_MASK(buffer));
-        prdt->byte_count = (size > PAGE_SIZE) ? PAGE_SIZE : size;
-        size -= prdt->byte_count;
-        buffer += prdt->byte_count;
-        prdt->last_prd = (size == 0) ? 1 : 0;
-        prdt++;
-    }
-
-    // set direction of DMA transfer
-    uint16_t dma = (arguments->drive == PATA_MASTER) ? (data->dma + 0) : (data->dma + 8);
-    outb(dma + 0, (arguments->direction == IDE_DMA_READ) ? (1 << 3) : (0 << 3));
-
-    // clear relevant status bits
-    outb(dma + 2, (1 << 2) | (1 << 1));
-
-    // create timeout thread, timeout MUST be always bigger than the time it takes to execute arguments->send_command()
-    data->timeout_thread = create_sleeping_kernel_thread_on_processor("IDE timeout", data->interrupt_processor_index, (uint32_t)ide_timeout, (uint32_t []) { (uint32_t) arguments->controller }, 1, arguments->microseconds_timeout);
-
-    // call functions which will send command to controller and trigger interrupt
-    arguments->send_command(arguments->argument);
-
-    // now this thread is blocked, and will be unblocked either by arrival of interrupt, or timeout thread
 }
 
 uint32_t ide_send_read_command(hardware_t *controller, uint32_t drive, void (*send_command)(uint32_t argument), uint32_t argument, uint32_t microseconds_timeout, void (*iht_function)(uint32_t arguments_ptr), uint32_t expected_irqs) {
@@ -474,30 +462,18 @@ uint32_t ide_send_read_command(hardware_t *controller, uint32_t drive, void (*se
     data->max_number_of_expected_iht_function_calls = expected_irqs;
 
     // sending of command needs specific sequence to prevent race conditions, now we will block thread and only then complete sending
-    ide_send_read_command_arguments_t arguments = {
-        .controller = controller,
-        .microseconds_timeout = microseconds_timeout,
-        .send_command = send_command,
-        .argument = argument,
-    };
-    block_current_thread_with_sequence_causing_block(ide_send_read_command_after_block_sequence, (uint32_t) &arguments);
+    block_current_thread_but_keep_going();
+
+    // create timeout thread, timeout MUST be always bigger than the time it takes to execute arguments->send_command()
+    data->timeout_thread = create_sleeping_kernel_thread_on_processor("IDE timeout", data->interrupt_processor_index, (uint32_t)ide_timeout, (uint32_t []) { (uint32_t) controller }, 1, microseconds_timeout);
+
+    // call functions which will send command to controller and trigger interrupt
+    send_command(argument);
+    switch_to_another_thread(); // now this thread is blocked, and will be unblocked either by arrival of interrupt, or timeout thread
 
     // thread was unblocked, that mean that either IRQ arrived, or timeout happened
     // in both cases, send status to caller to process it
     return data->transfer_status;
-}
-
-void ide_send_read_command_after_block_sequence(uint32_t arguments_ptr) {
-    ide_send_read_command_arguments_t *arguments = (ide_send_read_command_arguments_t *) arguments_ptr;
-    ide_controller_data_t *data = (ide_controller_data_t *) arguments->controller->data;
-
-    // create timeout thread, timeout MUST be always bigger than the time it takes to execute arguments->send_command()
-    data->timeout_thread = create_sleeping_kernel_thread_on_processor("IDE timeout", data->interrupt_processor_index, (uint32_t)ide_timeout, (uint32_t []) { (uint32_t) arguments->controller }, 1, arguments->microseconds_timeout);
-
-    // call functions which will send command to controller and trigger interrupt
-    arguments->send_command(arguments->argument);
-
-    // now this thread is blocked, and will be unblocked either by arrival of interrupt, or timeout thread
 }
 
 uint32_t ide_send_write_command(hardware_t *controller, uint32_t drive, void (*send_command)(uint32_t argument), uint32_t argument, uint32_t microseconds_timeout, void (*write_data)(uint32_t argument), uint32_t expected_irqs) {
@@ -531,30 +507,18 @@ uint32_t ide_send_write_command(hardware_t *controller, uint32_t drive, void (*s
     data->max_number_of_expected_iht_function_calls = (expected_irqs - 1); // first interrupt will be just acknowledgement of already sended data
 
     // sending of data needs specific sequence to prevent race conditions, now we will block thread and only then complete sending
-    ide_send_write_command_arguments_t arguments = {
-        .controller = controller,
-        .microseconds_timeout = microseconds_timeout,
-        .write_data = write_data,
-        .argument = argument,
-    };
-    block_current_thread_with_sequence_causing_block(ide_send_write_command_after_block_sequence, (uint32_t) &arguments);
+    block_current_thread_but_keep_going();
+
+    // create timeout thread, timeout MUST be always bigger than the time it takes to execute arguments->send_command()
+    data->timeout_thread = create_sleeping_kernel_thread_on_processor("IDE timeout", data->interrupt_processor_index, (uint32_t)ide_timeout, (uint32_t []) { (uint32_t) controller }, 1, microseconds_timeout);
+
+    // call functions which will send data to controller and trigger interrupt
+    write_data(argument);
+    switch_to_another_thread(); // now this thread is blocked, and will be unblocked either by arrival of interrupt, or timeout thread
 
     // thread was unblocked, that mean that either IRQ arrived, or timeout happened
     // in both cases, send status to caller to process it
     return data->transfer_status;
-}
-
-void ide_send_write_command_after_block_sequence(uint32_t arguments_ptr) {
-    ide_send_write_command_arguments_t *arguments = (ide_send_write_command_arguments_t *) arguments_ptr;
-    ide_controller_data_t *data = (ide_controller_data_t *) arguments->controller->data;
-
-    // create timeout thread, timeout MUST be always bigger than the time it takes to execute arguments->send_command()
-    data->timeout_thread = create_sleeping_kernel_thread_on_processor("IDE timeout", data->interrupt_processor_index, (uint32_t)ide_timeout, (uint32_t []) { (uint32_t) arguments->controller }, 1, arguments->microseconds_timeout);
-
-    // call functions which will send data to controller and trigger interrupt
-    arguments->write_data(arguments->argument);
-
-    // now this thread is blocked, and will be unblocked either by arrival of interrupt, or timeout thread
 }
 
 /* functions for checking controller state */

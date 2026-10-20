@@ -20,7 +20,8 @@
 #include <kernel/hardware/main.h>
 
 /* global variables */
-int in_interrupt = false;
+void (*lock_core)(void) = core_locking_before_initialization;
+void (*unlock_core)(void) = core_locking_before_initialization;
 
 /* local variables */
 void (*interrupt_handlers[256])(interrupt_stack_t *stack_of_interrupt);
@@ -28,7 +29,8 @@ interrupt_thread_handler_t interrupt_thread_handlers[256];
 
 /* functions */
 void global_interrupt_handler(uint32_t interrupt_number, interrupt_stack_t *stack_of_interrupt) {
-    in_interrupt = true;
+    logical_processor_t *lpdata = get_current_logical_processor_struct();
+    lpdata->in_interrupt = true;
 
     // log("\n[INTERRUPT] Interrupt number: %x %x handler: %x EIP: 0x%x", interrupt_number, stack_of_interrupt, interrupt_handlers[interrupt_number], stack_of_interrupt->eip);
 
@@ -65,7 +67,7 @@ void global_interrupt_handler(uint32_t interrupt_number, interrupt_stack_t *stac
         scheduler_interrupt(stack_of_interrupt);
     }
 
-    in_interrupt = false;
+    lpdata->in_interrupt = false;
 }
 
 void register_interrupt_handler(uint32_t interrupt_number, void (*handler)(interrupt_stack_t *stack_of_interrupt)) {
@@ -105,22 +107,31 @@ interrupt_description_t set_pci_interrupt_handler(hardware_t *device, void (*han
     return interrupt;
 }
 
-void lock_core(void) {
-    if(in_interrupt == true) {
+void core_locking_before_initialization(void) {
+    return;
+}
+
+void initialize_core_locking(void) {
+    lock_core = lock_core_after_initialization;
+    unlock_core = unlock_core_after_initialization;
+}
+
+void lock_core_after_initialization(void) {
+    logical_processor_t *lpdata = get_current_logical_processor_struct();
+    if(lpdata->in_interrupt == true) {
         return;
     }
-    logical_processor_t *lpdata = get_current_logical_processor_struct();
     if(lpdata->depth_of_lock == 0) {
         asm volatile("cli");
     }
     lpdata->depth_of_lock++;
 }
 
-void unlock_core(void) {
-    if(in_interrupt == true) {
+void unlock_core_after_initialization(void) {
+    logical_processor_t *lpdata = get_current_logical_processor_struct();
+    if(lpdata->in_interrupt == true) {
         return;
     }
-    logical_processor_t *lpdata = get_current_logical_processor_struct();
     if(lpdata->depth_of_lock > 0) {
         lpdata->depth_of_lock--;
         if(lpdata->depth_of_lock == 0) {

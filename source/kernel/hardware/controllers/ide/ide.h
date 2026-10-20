@@ -158,28 +158,3 @@ typedef struct {
     uint16_t dma;
     ata_identify_command_device_info_t device_info;
 } ide_controller_device_data_t;
-
-typedef struct {
-    hardware_t *controller;
-    uint32_t microseconds_timeout;
-    void (*send_command)(uint32_t argument);
-    uint32_t argument;
-    void *buffer;
-    uint32_t size;
-    uint32_t direction;
-    uint32_t drive;
-} ide_send_dma_command_arguments_t;
-
-typedef struct {
-    hardware_t *controller;
-    uint32_t microseconds_timeout;
-    void (*send_command)(uint32_t argument);
-    uint32_t argument;
-} ide_send_read_command_arguments_t;
-
-typedef struct {
-    hardware_t *controller;
-    uint32_t microseconds_timeout;
-    void (*write_data)(uint32_t argument);
-    uint32_t argument;
-} ide_send_write_command_arguments_t;

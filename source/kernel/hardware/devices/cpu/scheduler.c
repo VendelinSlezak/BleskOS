@@ -65,12 +65,51 @@ void initialize_scheduler(void) {
     }
     logical_processor_structs_ptr[get_current_logical_processor_index()].current_kernel_thread = kernel_main_thread;
 
+    // create cleaning threads
+    for(int i = 0; i < number_of_logical_processors; i++) {
+        logical_processor_structs_ptr[i].cleaning_thread = create_blocked_kernel_thread_on_processor("cleaning_thread", i, (uint32_t)&cleaning_thread, NULL, 0);
+    }
+
     // register scheduler interrupt handler
     register_interrupt_handler(INTERRUPT_SLEEP_FOR_THREAD, sleep_current_thread_interrupt);
     register_interrupt_handler(INTERRUPT_PREEMPETIVE_SCHEDULING, preemptive_scheduling_interrupt);
     register_interrupt_handler(INTERRUPT_VECTOR_EXIT_THREAD, close_current_thread_interrupt);
     register_interrupt_handler(INTERRUPT_VECTOR_SCHEDULER, scheduler_interrupt);
     register_interrupt_handler(INTERRUPT_REFRESH_TLB, refresh_tlb);
+}
+
+void add_pointer_to_clean(void *ptr) {
+    if(ptr == NULL) {
+        return;
+    }
+
+    // add pointer to list
+    lock_core();
+    logical_processor_t *lpdata = get_current_logical_processor_struct();
+    uint32_t *pointer_in_ptr = (uint32_t *) ptr;
+    *pointer_in_ptr = (uint32_t)(lpdata->pointers_to_clean);
+    lpdata->pointers_to_clean = ptr;
+    unblock_kernel_thread(lpdata->cleaning_thread);
+    unlock_core();
+}
+
+void cleaning_thread(void) {
+    logical_processor_t *lpdata = get_current_logical_processor_struct();
+    while(true) {
+        // free everything that is in the list now
+        lock_core();
+        uint32_t *ptr = lpdata->pointers_to_clean;
+        while(ptr != NULL) {
+            uint32_t *next_ptr = (uint32_t *)(*ptr);
+            // log("\nCPU%d free %x", lpdata->index, ptr);
+            kfree(ptr);
+            ptr = next_ptr;
+        }
+        lpdata->pointers_to_clean = NULL;
+        unlock_core();
+
+        block_current_thread();
+    }
 }
 
 uint32_t get_number_of_running_processes_on_processor(uint32_t logical_processor_index) {
@@ -168,7 +207,7 @@ void *create_running_process_from_spawning_template(spawning_template_t *templat
     process->thread_list_on_logical_processor[target_logical_processor_index].threads = user_main_thread;
     process->thread_list_on_logical_processor[target_logical_processor_index].current_thread = user_main_thread;
 
-    log("\nCreated user thread %d in process %x on CPU%d", user_main_thread->id, process, target_logical_processor_index);
+    // log("\nCreated user thread %d in process %x on CPU%d", user_main_thread->id, process, target_logical_processor_index);
 
     // add process to process list
     process->next = process;
@@ -181,8 +220,7 @@ void *create_running_process_from_spawning_template(spawning_template_t *templat
             __ATOMIC_RELEASE,
             __ATOMIC_RELAXED
         )
-    ) {}
-
+    );
 
     // move back to original page directory
     load_page_directory(original_page_directory);
@@ -206,7 +244,7 @@ uint32_t get_unique_kernel_tid(uint32_t target_logical_processor_index) {
 }
 
 void release_unique_kernel_tid(uint32_t target_logical_processor_index, uint32_t tid) {
-    kernel_tid_map[target_logical_processor_index * MAX_NUMBER_OF_THREADS_PER_PROCESSOR + tid - 1] = false;
+    kernel_tid_map[tid - 1] = false;
 }
 
 uint32_t get_unique_user_process_tid(uint32_t target_logical_processor_index, process_t *program) {
@@ -293,7 +331,6 @@ kernel_thread_t *create_kernel_thread_with_flags(uint8_t *name, uint32_t process
     }
 
     // create new thread
-    // log("\nCreating thread %s with id %d in kernel process on CPU%d", name, tid, processor_index);
     kernel_thread_t *new_thread = block_alloc(sizeof(kernel_thread_t));
     new_thread->next = NULL;
     new_thread->id = tid;
@@ -303,6 +340,7 @@ kernel_thread_t *create_kernel_thread_with_flags(uint8_t *name, uint32_t process
     new_thread->kill_me = false;
     new_thread->sleeping = (microseconds_to_sleep == 0) ? false : true;
     new_thread->time_end_of_sleep = (microseconds_to_sleep == 0) ? NULL : ((*get_time_in_microseconds)() + microseconds_to_sleep);
+    // log("\nCreating thread %s with id %d in kernel process on CPU%d T: %x S: %x", name, tid, processor_index, new_thread, new_thread->kernel_stack);
 
     // push arguments onto stack
     uint32_t *stack_pointer = (uint32_t *)(new_thread->kernel_stack + KERNEL_STACK_SIZE);
@@ -612,9 +650,6 @@ void sleep_for_thread(interrupt_stack_t *stack_of_interrupt, uint32_t microsecon
         // set sleeping flag
         current_thread->sleeping = true;
 
-        // atomically decrease number of running threads
-        __atomic_sub_fetch(&kernel_threads[lpdata->index].number_of_running_threads, 1, __ATOMIC_SEQ_CST);
-
         // log("\nKernel thread %d is sleeping for %d us", current_thread->id, microseconds);
     }
     else { // scheduler_state is SCHEDULER_STATE_USER
@@ -627,9 +662,6 @@ void sleep_for_thread(interrupt_stack_t *stack_of_interrupt, uint32_t microsecon
 
         // set sleeping flag
         current_thread->sleeping = true;
-
-        // atomically decrease number of running threads
-        __atomic_sub_fetch(&lpdata->current_process->thread_list_on_logical_processor[lpdata->index].number_of_running_threads, 1, __ATOMIC_SEQ_CST);
         
         // log("\nUser thread %d is sleeping for %d us", current_thread->id, microseconds);
     }
@@ -640,10 +672,6 @@ void sleep_for_thread(interrupt_stack_t *stack_of_interrupt, uint32_t microsecon
 
 void update_sleeping_kernel_thread(kernel_thread_t *thread, uint32_t microseconds) {
     // log("\nKernel thread %x is sleeping for %d us", thread, microseconds);
-    if(thread->sleeping == false) {
-        logical_processor_t *lpdata = get_current_logical_processor_struct();
-        __atomic_sub_fetch(&kernel_threads[lpdata->index].number_of_running_threads, 1, __ATOMIC_SEQ_CST);
-    }
     thread->time_end_of_sleep = ((*get_time_in_microseconds)() + microseconds);
     thread->sleeping = true;
 }
@@ -675,6 +703,16 @@ void block_current_thread_with_sequence_causing_block(void (*blocking_sequence)(
     }
     blocking_sequence(argument);
     switch_to_another_thread();
+}
+
+void block_current_thread_but_keep_going(void) {
+    logical_processor_t *lpdata = get_current_logical_processor_struct();
+    if(lpdata->running_thread_state == SCHEDULER_STATE_USER) {
+        lpdata->current_user_thread->is_blocked = true;
+    }
+    else if(lpdata->running_thread_state == SCHEDULER_STATE_KERNEL) {
+        lpdata->current_kernel_thread->is_blocked = true;
+    }
 }
 
 // TODO: if thread is executed, switch from it immediately
@@ -778,8 +816,8 @@ void kill_other_kernel_thread(kernel_thread_t *thread) {
     thread->kill_me = true;
 
     // stop execution if this thread runs on this logical processor
-    if(in_interrupt == true) {
-        logical_processor_t *lpdata = get_current_logical_processor_struct();
+    logical_processor_t *lpdata = get_current_logical_processor_struct();
+    if(lpdata->in_interrupt == true) {
         if(lpdata->running_thread_state == SCHEDULER_STATE_KERNEL && lpdata->current_kernel_thread == thread) {
             kernel_interrupt_stack_t *stack_of_interrupt = (kernel_interrupt_stack_t *) lpdata->current_kernel_thread->kernel_stack_pointer;
             stack_of_interrupt->eip = (uint32_t) &switch_to_another_thread;
@@ -805,7 +843,8 @@ uint32_t send_signal_to_current_user_thread(interrupt_stack_t *stack_of_interrup
 
 /* switch between threads */
 void preemptive_scheduling_interrupt(interrupt_stack_t *stack_of_interrupt) {
-    in_interrupt = true;
+    logical_processor_t *lpdata = get_current_logical_processor_struct();
+    lpdata->in_interrupt = true;
 
     // this interrupt can be invoked only by LAPIC timer or IPI so acknowledge interrupt on LAPIC
     lapic_send_eoi();
@@ -859,7 +898,7 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
             load_page_directory(thread->page_directory_physical_address);
         }
         lpdata->tss->esp0 = (uint32_t) thread->kernel_stack_pointer + sizeof(kernel_interrupt_stack_t); // set kernel stack for next thread
-        in_interrupt = false;
+        lpdata->in_interrupt = false;
         exit_interrupt_to_thread(thread->kernel_stack_pointer);
     }
     else {
@@ -900,7 +939,7 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                             false,
                             __ATOMIC_SEQ_CST,
                             __ATOMIC_SEQ_CST
-                        )) {}
+                        ));
                     }
                     else {
                         previous_process->next = current_process->next;
@@ -911,7 +950,7 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
 
                     // free process resources
                     lpdata->current_process = NULL;
-                    kfree(current_process);
+                    add_pointer_to_clean(current_process);
 
                     log("\nProgram %x removed from program list", current_process);
 
@@ -983,16 +1022,14 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                                 false,
                                 __ATOMIC_SEQ_CST,
                                 __ATOMIC_SEQ_CST
-                            )) {}
+                            ));
                         }
                         else {
                             previous_thread->next = current_thread->next;
                         }
 
                         // decrease number of running threads
-                        if(current_thread->sleeping == false) {
-                            __atomic_sub_fetch(&thread_list->number_of_running_threads, 1, __ATOMIC_SEQ_CST);
-                        }
+                        __atomic_sub_fetch(&thread_list->number_of_running_threads, 1, __ATOMIC_SEQ_CST);
                         __atomic_sub_fetch(&current_process->number_of_threads, 1, __ATOMIC_SEQ_CST);
 
                         // free thread ID
@@ -1016,8 +1053,8 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                             block_free(sizeof(uint32_t), current_thread->number_of_threads_in_page_directory);
                         }
 
-                        // free stack
-                        kfree(current_thread->kernel_stack);
+                        // add thread to free list
+                        add_pointer_to_clean(current_thread->kernel_stack);
                         block_free(sizeof(user_thread_t), current_thread);
 
                         // log("\nUser thread %d is killed", tid);
@@ -1032,9 +1069,6 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                         if((int)(actual_time - current_thread->time_end_of_sleep) > 0) {
                             // log("\nUser thread %d is waken up", current_thread->id);
                             current_thread->sleeping = false;
-
-                            // increase number of running threads
-                            __atomic_add_fetch(&thread_list->number_of_running_threads, 1, __ATOMIC_SEQ_CST);
                         }
                         else {
                             continue;
@@ -1058,7 +1092,7 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                     current_thread->time_of_running = 0;
                     lpdata->tss->esp0 = (uint32_t) current_thread->kernel_stack + KERNEL_STACK_SIZE; // set kernel stack for next thread
                     lapic_set_oneshot_interrupt(10, INTERRUPT_PREEMPETIVE_SCHEDULING); // set preempetive scheduler interrupt
-                    in_interrupt = false;
+                    lpdata->in_interrupt = false;
                     exit_interrupt_to_thread(current_thread->kernel_stack_pointer);
                 }
 
@@ -1090,23 +1124,51 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
 
                         // unlink from list
                         if(previous_thread == NULL) {
-                            while(!__atomic_compare_exchange_n(
+                            // unlink whole linked list from pointer
+                            kernel_thread_t *linked_list_pointer = __atomic_exchange_n(&thread_list->threads, NULL, __ATOMIC_SEQ_CST);
+
+                            // unlink thread from linked list
+                            kernel_thread_t *start_of_linked_list = linked_list_pointer;
+                            if(start_of_linked_list == current_thread) {
+                                start_of_linked_list = start_of_linked_list->next;
+                            }
+                            else {
+                                while(linked_list_pointer != NULL) {
+                                    if(linked_list_pointer->next == current_thread) {
+                                        linked_list_pointer->next = current_thread->next;
+                                        break;
+                                    }
+                                    linked_list_pointer = linked_list_pointer->next;
+                                }
+                            }
+
+                            // add linked list without current thread back to starting pointer
+                            void *expected = NULL;
+                            int success = (int) __atomic_compare_exchange_n(
                                 &thread_list->threads,
-                                &current_thread,
-                                current_thread->next,
+                                &expected,
+                                start_of_linked_list,
                                 false,
                                 __ATOMIC_SEQ_CST,
                                 __ATOMIC_SEQ_CST
-                            )) {}
+                            );
+                            if(!success) {
+                                // some threads were added by other processors
+                                linked_list_pointer = thread_list->threads;
+                                while(linked_list_pointer != NULL) {
+                                    linked_list_pointer = linked_list_pointer->next;
+                                }
+                                linked_list_pointer->next = start_of_linked_list; // we do not need to do this atomically, because processors can add new threads only to starting pointer
+                            }
+                            // else no thread were added, so linked list is successfully back
                         }
                         else {
+                            // unlink thread from middle / end of linked list
                             previous_thread->next = current_thread->next;
                         }
 
                         // decrease number of running threads
-                        if(current_thread->sleeping == false) {
-                            __atomic_sub_fetch(&thread_list->number_of_running_threads, 1, __ATOMIC_SEQ_CST);
-                        }
+                        __atomic_sub_fetch(&thread_list->number_of_running_threads, 1, __ATOMIC_SEQ_CST);
 
                         // free thread ID
                         release_unique_kernel_tid(lpdata->index, tid);
@@ -1119,8 +1181,8 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                             thread_list->current_thread = NULL;
                         }
 
-                        // free stack
-                        kfree(current_thread->kernel_stack);
+                        // free structures
+                        add_pointer_to_clean(current_thread->kernel_stack);
                         block_free(sizeof(kernel_thread_t), current_thread);
 
                         // log("\nKernel thread %d is killed", tid);
@@ -1135,9 +1197,6 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                         if((int)(actual_time - current_thread->time_end_of_sleep) > 0) {
                             // log("\nKernel thread %d is waken up", current_thread->id);
                             current_thread->sleeping = false;
-
-                            // increase number of running threads
-                            __atomic_add_fetch(&thread_list->number_of_running_threads, 1, __ATOMIC_SEQ_CST);
                         }
                         else {
                             continue;
@@ -1153,7 +1212,7 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                     if(current_thread->page_directory_physical_address != NULL && current_thread->page_directory_physical_address != read_cr3()) {
                         load_page_directory(current_thread->page_directory_physical_address);
                     }
-                    in_interrupt = false;
+                    lpdata->in_interrupt = false;
                     exit_interrupt_to_thread(current_thread->kernel_stack_pointer);
                 }
 
@@ -1172,7 +1231,7 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
     lapic_set_oneshot_interrupt(10, INTERRUPT_PREEMPETIVE_SCHEDULING); // TODO: wake from sleep exactly when it is needed for next sleeping thread
     extern void exit_interrupt_to_thread(uint32_t stack_pointer);
     load_page_directory(PM_KERNEL_BASE_PAGE_DIRECTORY);
-    in_interrupt = false;
+    lpdata->in_interrupt = false;
     exit_interrupt_to_thread((uint32_t)lpdata->idle_thread_stack);
 }
 
@@ -1194,9 +1253,9 @@ void close_current_thread(void) {
 }
 
 /* dumps */
-void log_all_threads_on_cpu(void) {
-    log("\n--- start of scheduler dump ---");
-    logical_processor_t *lpdata = get_current_logical_processor_struct();
+void log_all_threads_on_cpu(uint32_t index) {
+    log("\n--- start of scheduler dump CPU%d ---", index);
+    logical_processor_t *lpdata = get_logical_processor_struct_by_index(index);
     uint8_t *state_string = "IDLE";
     if(lpdata->running_thread_state == SCHEDULER_STATE_KERNEL) {
         state_string = "KERNEL";
@@ -1224,4 +1283,10 @@ void log_all_threads_on_cpu(void) {
         process = process->next;
     }
     log("\n--- end of scheduler dump ---");
+}
+
+void log_scheduler(void) {
+    for(int i = 0; i < number_of_logical_processors; i++) {
+        log_all_threads_on_cpu(i);
+    }
 }

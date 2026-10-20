@@ -29,8 +29,12 @@ typedef struct {
     uint32_t (*write)(hardware_t *device, uint64_t lba, uint32_t number_of_sectors, void *buffer, storage_transfer_status_t *status);
     uint64_t (*convert_lba_to_offset)(hardware_t *device, uint64_t lba);
 } storage_group_device_functions_t;
+enum {
+    STORAGE_DEVICE_HARD_DISK,
+};
 typedef struct {
     hardware_t *device;
+    uint32_t type;
     storage_group_device_functions_t *functions;
     uint32_t size_of_sector;
     uint64_t number_of_sectors;

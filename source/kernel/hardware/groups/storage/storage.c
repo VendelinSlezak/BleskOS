@@ -13,6 +13,7 @@
 #include <kernel/hardware/devices/memory/memory_allocators.h>
 #include <kernel/hardware/devices/cpu/scheduler.h>
 #include <kernel/hardware/main.h>
+#include <kernel/hardware/subsystems/filesystems/main.h>
 #include <kernel/libc/string.h>
 
 /* local variables */
@@ -23,9 +24,10 @@ void initialize_storage_group(void) {
     storage_group = kalloc(sizeof(storage_group_t));
 }
 
-void add_storage_device(hardware_t *device, storage_group_device_functions_t *functions, uint32_t size_of_sector, uint64_t number_of_sectors, uint32_t max_number_of_parallel_transfers) {
+void add_storage_device(hardware_t *device, uint32_t type, storage_group_device_functions_t *functions, uint32_t size_of_sector, uint64_t number_of_sectors, uint32_t max_number_of_parallel_transfers) {
     storage_device_t *storage_device = kalloc(sizeof(storage_device_t) + (sizeof(void *) * max_number_of_parallel_transfers));
     storage_device->device = device;
+    storage_device->type = type;
     storage_device->functions = functions;
     storage_device->size_of_sector = size_of_sector;
     storage_device->number_of_sectors = number_of_sectors;
@@ -41,7 +43,7 @@ void add_storage_device(hardware_t *device, storage_group_device_functions_t *fu
     storage_group->devices[storage_group->number_of_devices] = storage_device;
     storage_group->number_of_devices++;
 
-    // TODO: send signal to filesystem subsystem
+    add_device_to_filesystems_subsystem(storage_device);
 }
 
 void remove_storage_device(hardware_t *device) {
@@ -99,6 +101,29 @@ storage_transfer_status_t *storage_prepare_transfer(storage_device_t *storage_de
     }
 
     return NULL;
+}
+
+uint32_t storage_simple_read(storage_device_t *storage_device, uint64_t offset, uint32_t size, void *buffer) {
+    storage_transfer_status_t *status = storage_prepare_transfer(storage_device);
+    if(very_unlikely(status == NULL)) {
+        return ERROR;
+    }
+    storage_read(storage_device, offset, size, buffer, status);
+    uint32_t result = status->status;
+    kfree(status);
+    // log("\nTranfser result: %d", result);
+    return (result == STORAGE_TRANSFER_FINISHED) ? SUCCESS : ERROR;
+}
+
+uint32_t storage_simple_write(storage_device_t *storage_device, uint64_t offset, uint32_t size, void *buffer) {
+    storage_transfer_status_t *status = storage_prepare_transfer(storage_device);
+    if(very_unlikely(status == NULL)) {
+        return ERROR;
+    }
+    storage_write(storage_device, offset, size, buffer, status);
+    uint32_t result = status->status;
+    kfree(status);
+    return (result == STORAGE_TRANSFER_FINISHED) ? SUCCESS : ERROR;
 }
 
 void set_storage_transfer_status(storage_transfer_status_t *status, uint32_t new_status, int increase_in_bytes) {

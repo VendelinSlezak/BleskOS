@@ -63,11 +63,12 @@ void exception_general_protection_fault(interrupt_stack_t *stack_of_interrupt) {
 
 void null_page_fault_handler(interrupt_stack_t *stack_of_interrupt) {
     logical_processor_t *lpdata = get_current_logical_processor_struct();
-    log("\n[EXCEPTION] Null page fault in process %x thread %d on CPU%d by EIP 0x%x", lpdata->current_process, lpdata->current_user_thread->id, lpdata->index, stack_of_interrupt->eip);
     if(lpdata->running_thread_state == SCHEDULER_STATE_KERNEL) {
+        log("\nNull page fault from 0x%x", stack_of_interrupt->eip);
         kernel_panic("Null page fault in kernel space", stack_of_interrupt);
     }
     else {
+        log("\n[EXCEPTION] Null page fault in process %x thread %d on CPU%d by EIP 0x%x", lpdata->current_process, lpdata->current_user_thread->id, lpdata->index, stack_of_interrupt->eip);
         send_closing_signal_to_process(lpdata->current_process);
         close_running_thread(stack_of_interrupt);
     }

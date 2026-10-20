@@ -75,12 +75,42 @@ void strncpy(char* dest, const char *src, unsigned int n) {
     }
 }
 
+char *strcat(char *dest, const char *src) {
+    char *ptr = dest;
+    while (*ptr != '\0') {
+        ptr++;
+    }
+    while (*src != '\0') {
+        *ptr = *src;
+        ptr++;
+        src++;
+    }
+    *ptr = '\0';
+    return dest;
+}
+
 char *strchr(const char *string, int c) {
     while(*string) {
         if(*string == c) {
             return (char *) string;
         }
         string++;
+    }
+    return NULL;
+}
+
+char *strstr(const char *haystack, const char *needle) {
+    if (*needle == '\0') {
+        return (char *)haystack;
+    }
+    for (int i = 0; haystack[i] != '\0'; i++) {
+        int j = 0;
+        while (haystack[i + j] != '\0' && needle[j] != '\0' && haystack[i + j] == needle[j]) {
+            j++;
+        }
+        if (needle[j] == '\0') {
+            return (char *)(haystack + i);
+        }
     }
     return NULL;
 }

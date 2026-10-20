@@ -10,8 +10,6 @@
 
 #include <kernel/hardware/main.h>
 
-extern int in_interrupt;
-
 typedef struct {
     // segments
     uint32_t gs;
@@ -81,3 +79,6 @@ typedef struct interrupt_thread_handler_t {
     void *interrupt_thread;
     uint32_t processor_index;
 } interrupt_thread_handler_t;
+
+extern void (*lock_core)(void);
+extern void (*unlock_core)(void);

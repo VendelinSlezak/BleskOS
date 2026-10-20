@@ -76,6 +76,20 @@ void unlock_page_entry(uint32_t *page_entry) {
     __atomic_fetch_and(page_entry, ~VM_FLAG_SPINLOCK, __ATOMIC_RELEASE);
 }
 
+void lock_virtual_memory(uint32_t start, uint32_t size) {
+    uint32_t *pte = (uint32_t *) (VM_PAGE_TABLES + ((start >> 12) * 4));
+    for(uint32_t i = start; i < start + size; i += PAGE_SIZE, pte++) {
+        lock_page_entry(pte);
+    }
+}
+
+void unlock_virtual_memory(uint32_t start, uint32_t size) {
+    uint32_t *pte = (uint32_t *) (VM_PAGE_TABLES + ((start >> 12) * 4));
+    for(uint32_t i = start; i < start + size; i += PAGE_SIZE, pte++) {
+        unlock_page_entry(pte);
+    }
+}
+
 /* functions for (un)mapping pages */
 void refresh_tlb(interrupt_stack_t *stack_of_interrupt) {
     write_cr3(read_cr3());

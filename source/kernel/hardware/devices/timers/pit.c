@@ -12,11 +12,13 @@
 #include <kernel/hardware/groups/logging/logging.h>
 #include <kernel/hardware/devices/cpu/commands.h>
 #include <kernel/hardware/devices/cpu/interrupt.h>
+#include <kernel/hardware/devices/cpu/mutex.h>
 #include <kernel/hardware/devices/timers/main.h>
 
 /* local variables */
 uint64_t pit_interrupts = 0;
 uint64_t pit_previous_time = 0;
+mutex_t pit_mutex;
 
 /* functions */
 void initialize_pit(void) {
@@ -46,6 +48,7 @@ void pit_periodic_interrupt(interrupt_stack_t *stack_of_interrupt) {
 
 // TODO: implement absolutely correct couting of elapsed time
 uint64_t get_pit_time_in_microseconds(void) {
+    LOCK_MUTEX(&pit_mutex);
     uint64_t interrupts;
     uint16_t ticks_after_interrupt;
     while(true) {
@@ -79,5 +82,6 @@ uint64_t get_pit_time_in_microseconds(void) {
     }
     pit_previous_time = microseconds;
 
+    UNLOCK_MUTEX(&pit_mutex);
     return microseconds;
 }
