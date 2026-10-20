@@ -194,21 +194,21 @@ void vm_deallocate_pages(uint32_t vm_start_page, uint32_t size) {
     // claim all pages and set them as kernel pages
     uint32_t number_of_pages = (size >> 12);
     uint32_t *page_table_entry = (uint32_t *) (VM_PAGE_TABLES + (vm_start_page >> 10));
+    uint32_t vm_page_pointer = vm_start_page;
     for(uint32_t i = 0; i < number_of_pages; i++, page_table_entry++) {
+        // acquire page
         lock_page_entry(page_table_entry);
         if((*page_table_entry & VM_FLAG_PRESENT) == 0) {
             unlock_page_entry(page_table_entry);
             continue;
         }
         *page_table_entry = ((*page_table_entry & ~VM_FLAG_USER) | VM_FLAG_SPINLOCK);
-    }
 
-    // clear pages
-    memset((void *) vm_start_page, 0, size);
+        // clear page
+        memset((void *) vm_page_pointer, 0, PAGE_SIZE);
+        vm_page_pointer += PAGE_SIZE;
 
-    // deallocate pages
-    page_table_entry = (uint32_t *) (VM_PAGE_TABLES + (vm_start_page >> 10));
-    for(uint32_t i = 0; i < number_of_pages; i++, page_table_entry++) {
+        // free page
         pm_free_page((void *) PAGE_MASK(*page_table_entry));
         *page_table_entry = 0; // this will also clear the spinlock
     }
