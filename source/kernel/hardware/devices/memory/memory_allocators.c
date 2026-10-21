@@ -464,16 +464,18 @@ void *aligned_kalloc(uint32_t alignment, uint32_t size) {
     }
 
     // map pages
-    uint32_t first_page = PAGE_MASK((uint32_t)new_entry);
-    if(PAGE_OFFSET_MASK(new_entry_prev->end) != 0 && PAGE_MASK(new_entry_prev->end) == first_page) {
-        first_page += PAGE_SIZE;
+    uint32_t last_page_of_previous_allocation = PAGE_MASK(new_entry_prev->end - 1);
+    uint32_t first_page_of_this_allocation = PAGE_MASK((uint32_t)new_entry);
+    if(last_page_of_previous_allocation == first_page_of_this_allocation) {
+        first_page_of_this_allocation += PAGE_SIZE;
     }
-    uint32_t last_page = PAGE_MASK(new_entry_end - 1);
-    if(new_entry_next != NULL && PAGE_MASK((uint32_t)new_entry_next) == last_page) {
-        last_page -= PAGE_SIZE;
+    uint32_t last_page_of_this_allocation = PAGE_MASK(new_entry_end - 1);
+    uint32_t first_page_of_next_allocation = (new_entry_next == NULL) ? 0 : PAGE_MASK((uint32_t)new_entry_next);
+    if(last_page_of_this_allocation == first_page_of_next_allocation) {
+        last_page_of_this_allocation -= PAGE_SIZE;
     }
-    if(last_page >= first_page) {
-        vm_allocate_pages(first_page, last_page - first_page + PAGE_SIZE, VM_KERNEL);
+    if(last_page_of_this_allocation >= first_page_of_this_allocation) {
+        vm_allocate_pages(first_page_of_this_allocation, last_page_of_this_allocation - first_page_of_this_allocation + PAGE_SIZE, VM_KERNEL);
     }
 
     // clear allocation
@@ -507,16 +509,18 @@ void kfree(void *allocation) {
     kheap_entry_t *next_entry = entry->next;
 
     // unmap pages
-    uint32_t first_page = PAGE_MASK(entry_start);
-    if(PAGE_MASK(prev_entry->end - 1) == first_page) {
-        first_page += PAGE_SIZE;
+    uint32_t last_page_of_previous_allocation = PAGE_MASK(prev_entry->end - 1);
+    uint32_t first_page_of_this_allocation = PAGE_MASK((uint32_t)entry);
+    if(last_page_of_previous_allocation == first_page_of_this_allocation) {
+        first_page_of_this_allocation += PAGE_SIZE;
     }
-    uint32_t last_page = PAGE_MASK(entry_end - 1);
-    if(next_entry != NULL && PAGE_MASK((uint32_t)next_entry) == last_page) {
-        last_page -= PAGE_SIZE;
+    uint32_t last_page_of_this_allocation = PAGE_MASK(entry_end - 1);
+    uint32_t first_page_of_next_allocation = (next_entry == NULL) ? 0 : PAGE_MASK((uint32_t)next_entry);
+    if(last_page_of_this_allocation == first_page_of_next_allocation) {
+        last_page_of_this_allocation -= PAGE_SIZE;
     }
-    if(last_page >= first_page) {
-        vm_deallocate_pages(first_page, last_page - first_page + PAGE_SIZE);
+    if(last_page_of_this_allocation >= first_page_of_this_allocation) {
+        vm_deallocate_pages(first_page_of_this_allocation, last_page_of_this_allocation - first_page_of_this_allocation + PAGE_SIZE);
     }
 
     // remove entry from linked list
@@ -583,16 +587,18 @@ void *krealloc(void *allocation, uint32_t new_size) {
         }
 
         // unmap pages
-        uint32_t first_page = PAGE_MASK(entry_new_end);
-        if(PAGE_OFFSET_MASK(entry_new_end) != 0) {
-            first_page += PAGE_SIZE;
+        uint32_t last_page_of_previous_allocation = PAGE_MASK(entry->prev->end - 1);
+        uint32_t first_page_of_this_allocation = PAGE_MASK((uint32_t)entry);
+        if(last_page_of_previous_allocation == first_page_of_this_allocation) {
+            first_page_of_this_allocation += PAGE_SIZE;
         }
-        uint32_t last_page = PAGE_MASK(entry_end - 1);
-        if(entry->next != NULL && PAGE_MASK((uint32_t)entry->next) == last_page) {
-            last_page -= PAGE_SIZE;
+        uint32_t last_page_of_this_allocation = PAGE_MASK(entry_new_end - 1);
+        uint32_t first_page_of_next_allocation = (entry->next == NULL) ? 0 : PAGE_MASK((uint32_t)entry->next);
+        if(last_page_of_this_allocation == first_page_of_next_allocation) {
+            last_page_of_this_allocation -= PAGE_SIZE;
         }
-        if(last_page >= first_page) {
-            vm_deallocate_pages(first_page, last_page - first_page + PAGE_SIZE);
+        if(last_page_of_this_allocation >= first_page_of_this_allocation) {
+            vm_deallocate_pages(first_page_of_this_allocation, last_page_of_this_allocation - first_page_of_this_allocation + PAGE_SIZE);
         }
 
         unlock_kheap();
@@ -615,16 +621,18 @@ void *krealloc(void *allocation, uint32_t new_size) {
             }
 
             // map new pages
-            uint32_t first_page = PAGE_MASK(entry_end);
-            if(PAGE_OFFSET_MASK(entry_end) != 0) {
-                first_page += PAGE_SIZE;
+            uint32_t last_page_of_previous_allocation = PAGE_MASK(entry->prev->end - 1);
+            uint32_t first_page_of_this_allocation = PAGE_MASK((uint32_t)entry);
+            if(last_page_of_previous_allocation == first_page_of_this_allocation) {
+                first_page_of_this_allocation += PAGE_SIZE;
             }
-            uint32_t last_page = PAGE_MASK(entry_new_end - 1);
-            if(entry->next != NULL && PAGE_MASK((uint32_t)entry->next) == last_page) {
-                last_page -= PAGE_SIZE;
+            uint32_t last_page_of_this_allocation = PAGE_MASK(entry_new_end - 1);
+            uint32_t first_page_of_next_allocation = (entry->next == NULL) ? 0 : PAGE_MASK((uint32_t)entry->next);
+            if(last_page_of_this_allocation == first_page_of_next_allocation) {
+                last_page_of_this_allocation -= PAGE_SIZE;
             }
-            if(last_page >= first_page) {
-                vm_allocate_pages(first_page, last_page - first_page + PAGE_SIZE, VM_KERNEL);
+            if(last_page_of_this_allocation >= first_page_of_this_allocation) {
+                vm_allocate_pages(first_page_of_this_allocation, last_page_of_this_allocation - first_page_of_this_allocation + PAGE_SIZE, VM_KERNEL);
             }
 
             unlock_kheap();
