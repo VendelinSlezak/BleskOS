@@ -10,70 +10,80 @@
 
 /* includes */
 #include <syslib.h>
+#include <kernel/hardware/groups/human_input/human_input.h>
 
 /* local variables */
 syslib_t *syslib;
-virtual_hardware_t *virtual_hardware;
+uint32_t **start_of_lines;
+int first_shown_line;
+uint32_t last_line;
 
 /* functions */
-void main(syslib_t *syslib_ptr, virtual_hardware_t *virtual_hardware_ptr) {
+void main(syslib_t *syslib_ptr) {
     syslib = syslib_ptr;
-    virtual_hardware = virtual_hardware_ptr;
-    syslib->initialize(virtual_hardware);
-    syscall_create_thread(refresh_screen_thread, 0x10000000, delete_signal_handler);
-    while(1) {
-        if(virtual_hardware_ptr->consumer != virtual_hardware_ptr->producer) {
-            vh_human_input_event_t *event = &virtual_hardware_ptr->events[virtual_hardware_ptr->consumer];
-            if(event->type == VH_HUMAN_INPUT_EVENT_KEY_PRESSED) {
-                syslib->log("Key %d pressed, unicode %c", event->argument1, event->argument2);
-            }
-            else if(event->type == VH_HUMAN_INPUT_EVENT_KEY_RELEASED) {
-                syslib->log("Key %d released, unicode %c", event->argument1, event->argument2);
-            }
-            else if(event->type == VH_HUMAN_INPUT_EVENT_BUTTON_PRESSED) {
-                syslib->log("Button %d pressed at %d %d", event->argument1, event->argument2, event->argument3);
-            }
-            else if(event->type == VH_HUMAN_INPUT_EVENT_BUTTON_RELEASED) {
-                syslib->log("Button %d released at %d %d", event->argument1, event->argument2, event->argument3);
-            }
-            else if(event->type == VH_HUMAN_INPUT_EVENT_MOUSE_MOVEMENT) {
-                syslib->log("Mouse moved to %d %d wheel %d", event->argument1, event->argument2, event->argument3);
-            }
-            else if(event->type == VH_HUMAN_INPUT_NEW_SESSION) {
-                syslib->log("New session");
-            }
-            else if(event->type == VH_HUMAN_INPUT_OPEN_SESSION) {
-                syslib->log("Open session %d", event->argument1);
-            }
-            else if(event->type == VH_HUMAN_INPUT_CLOSE_SESSION) {
-                syslib->log("Close session %d", event->argument1);
-            }
-            virtual_hardware_ptr->consumer = (virtual_hardware_ptr->consumer + 1) % VH_HUMAN_INPUT_SIZE_OF_RING;
+    // syslib->initialize_screen(redraw_screen);
+    // syslib->add_key_event(KEY_UP_ARROW, VH_HUMAN_INPUT_EVENT_KEY_PRESSED, key_pressed, KEY_UP_ARROW);
+    // syslib->add_key_event(KEY_DOWN_ARROW, VH_HUMAN_INPUT_EVENT_KEY_PRESSED, key_pressed, KEY_DOWN_ARROW);
+
+    // // count number of lines
+    // last_line = 0;
+    // uint32_t *log = (uint32_t *) 0xB1000000;
+    // while(*log != '\0') {
+    //     if(*log == '\n') {
+    //         last_line++;
+    //     }
+    //     log++;
+    // }
+
+    // // parse lines
+    // start_of_lines = syslib->malloc(sizeof(uint32_t *) * (last_line + 1));
+    // log = (uint32_t *) 0xB1000000;
+    // uint32_t p = 0;
+    // start_of_lines[p] = log;
+    // while(*log != '\0') {
+    //     if(*log == '\n') {
+    //         log++;
+    //         start_of_lines[p++] = log;
+    //     }
+    //     else {
+    //         log++;
+    //     }
+    // }
+
+    // syslib->event_loop();
+}
+
+void redraw_screen(uint32_t width, uint32_t height) {
+    syslib->draw_window_background_color(0xFFFFFFFF);
+    uint32_t *log = start_of_lines[first_shown_line];
+    uint32_t x = 0;
+    uint32_t y = 0;
+    while(*log != '\0') {
+        if(*log == '\n') {
+            log++;
+            x = 0;
+            y += 16;
+        }
+        else {
+            syslib->draw_char(*log, x, y, 0xFF000000);
+            log++;
+            x += 8;
         }
     }
 }
 
-void refresh_screen_thread(void) {
-    while(1) {
-        if(virtual_hardware->flag_window_is_different_from_buffer == 1) {
-            if(    virtual_hardware->buffer_width != virtual_hardware->window_width
-                || virtual_hardware->buffer_height != virtual_hardware->window_height) {
-                virtual_hardware->buffer_width = virtual_hardware->window_width;
-                virtual_hardware->buffer_height = virtual_hardware->window_height;
-                uint32_t pixels = virtual_hardware->buffer_width * virtual_hardware->buffer_height;
-                for(int i = 0; i < pixels; i++) {
-                    virtual_hardware->buffer[i] = 0xFF00FF00;
-                }
-            }
-            syscall_virtual_hardware(VIRTUAL_HARDWARE_SCREEN_ID, VH_SCREEN_DEMAND_WINDOW_CHANGE); // buffer updated after window change
-        }
-        if(virtual_hardware->flag_buffer_is_on_screen == 0) {
-            syscall_virtual_hardware(VIRTUAL_HARDWARE_SCREEN_ID, VH_SCREEN_DEMAND_REDRAW); // copy buffer on screen
-        }
+void key_pressed(uint32_t identifier, uint32_t unicode) {
+    if(identifier == KEY_UP_ARROW) {
+        first_shown_line -= 5;
     }
-}
-
-void delete_signal_handler(void) {
-    syslib->log("Hello from delete signal thread");
-    syscall_close_thread();
+    else if(identifier == KEY_DOWN_ARROW) {
+        first_shown_line += 5;
+    }
+    if(first_shown_line < 0) {
+        first_shown_line = 0;
+    }
+    else if(first_shown_line >= last_line) {
+        first_shown_line = (last_line - 1);
+    }
+    syslib->update_screen();
 }

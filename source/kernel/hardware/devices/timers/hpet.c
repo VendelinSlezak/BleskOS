@@ -95,9 +95,11 @@ int initialize_hpet(void) {
 
 uint64_t get_hpet_time_in_microseconds(void) {
     uint32_t high, low;
+    lock_core();
     LOCK_MUTEX(&hpet_mutex);
     low = acpi_gas_read(hpet_gas, 0xF0);
     high = acpi_gas_read(hpet_gas, 0xF4);
     UNLOCK_MUTEX(&hpet_mutex);
+    unlock_core();
     return (((uint64_t)high << 32) | low) / ticks_per_microsecond;
 }

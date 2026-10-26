@@ -48,14 +48,13 @@ void pit_periodic_interrupt(interrupt_stack_t *stack_of_interrupt) {
 
 // TODO: implement absolutely correct couting of elapsed time
 uint64_t get_pit_time_in_microseconds(void) {
+    lock_core();
     LOCK_MUTEX(&pit_mutex);
     uint64_t interrupts;
     uint16_t ticks_after_interrupt;
     while(true) {
         // 32 bit system reads 64 bit value in 2 steps, so locking is required
-        lock_core();
         interrupts = pit_interrupts;
-        unlock_core();
 
         // get PIT ticks count after last interrupt
         outb(0x43, 0x00);
@@ -64,12 +63,9 @@ uint64_t get_pit_time_in_microseconds(void) {
         ticks_after_interrupt = (0xFFFF - ((high << 8) | low));
 
         // 32 bit system reads 64 bit value in 2 steps, so locking is required
-        lock_core();
         if(interrupts == pit_interrupts) {
-            unlock_core();
             break;
         }
-        unlock_core();
     }
 
     // calculate microseconds
@@ -83,5 +79,6 @@ uint64_t get_pit_time_in_microseconds(void) {
     pit_previous_time = microseconds;
 
     UNLOCK_MUTEX(&pit_mutex);
+    unlock_core();
     return microseconds;
 }

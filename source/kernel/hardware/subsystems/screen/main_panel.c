@@ -222,7 +222,7 @@ void main_panel_process_mouse_left_click_release(screen_part_t *part) {
 
 void start_program(screen_part_t *part, uint32_t index) {
     ramdisk_elf_program_t *new_program = &program_list->programs[index];
-    log("\nStarting program %s", new_program->name);
+    // log("\nStarting program %s", new_program->name);
 
     // if this part already shows program, close it
     running_executable_t *program_in_part = part->running_executable;
@@ -248,6 +248,10 @@ void start_program(screen_part_t *part, uint32_t index) {
     part->program_name = re->name;
     part->running_executable = re;
     part->state = PART_STATE_PROGRAM;
+    if(part->event_list != NULL) {
+        kfree(part->event_list);
+        part->event_list = NULL;
+    }
     part->show_remaining_sessions = false;
     part_with_focus = part;
 
@@ -258,7 +262,7 @@ void start_program(screen_part_t *part, uint32_t index) {
 void show_program(screen_part_t *part, uint32_t running_executable) {
     running_executable_t *re = (running_executable_t *) (running_executable);
 
-    log("\nShow program %s", re->name);
+    // log("\nShow program %s", re->name);
 
     // if program is already shown at other part, then change what is shown in that part to main panel
     if(re->part != part && re->part != NULL) {
@@ -272,6 +276,10 @@ void show_program(screen_part_t *part, uint32_t running_executable) {
     part->program_name = re->name;
     part->running_executable = re;
     part->state = PART_STATE_PROGRAM;
+    if(part->event_list != NULL) {
+        kfree(part->event_list);
+        part->event_list = NULL;
+    }
     part->show_remaining_sessions = false;
     screen_part_t *old_part_with_focus = part_with_focus;
     part_with_focus = part;
@@ -302,7 +310,7 @@ void draw_program(screen_part_t *part) {
     main_panel_data_t *data = (main_panel_data_t *) part->main_panel_data;
     running_executable_t *re = part->running_executable;
     uint32_t does_have_focus = (part == part_with_focus) ? true : false;
-    log("\ndraw program");
+    // log("\nDrawing program in part %x", part);
 
     block_t *first_block = create_first_block();
     block_t *big_block = add_block(&first_block, ADD_FROM_START, VERTICAL_BLOCK, NULL);
@@ -509,120 +517,16 @@ void dump_sessions(screen_part_t *part) {
 void add_session(screen_part_t *part, uint32_t argument) {
     part->show_remaining_sessions = false;
     vh_human_input_event(part->running_executable, VH_HUMAN_INPUT_NEW_SESSION, 0, 0, 0);
-
-    // running_executable_t *re = part->running_executable;
-    // if(re->number_of_sessions == MAX_NUMBER_OF_SESSIONS) {
-    //     log("\nProgram has reached maximum number of sessions");
-    //     return;
-    // }
-    // re->number_of_sessions++;
-    // re->sessions = (session_t **) krealloc(re->sessions, sizeof(session_t *) * re->number_of_sessions);
-    // session_t *new_session = (session_t *) kalloc(sizeof(session_t));
-    // re->sessions[re->number_of_sessions - 1] = new_session;
-    // memcpy(new_session->showed_name, "New session", 12);
-    // memcpy(new_session->name, "New session", 12);
-    // memset(new_session->id, 0, sizeof(new_session->id));
-
-    // // show session in this part if there is nothing else
-    // if(part->session == NULL) {
-    //     new_session->part = part;
-    //     part->session = new_session;
-    // }
-
-    // vh_human_input_event(part->running_executable, VH_HUMAN_INPUT_NEW_SESSION, (uint32_t) new_session, 0, 0);
-
-    // draw_view(active_view);
-    redraw_screen();
 }
 
 void open_session(screen_part_t *part, uint32_t argument) {
     part->show_remaining_sessions = false;
     vh_human_input_event(part->running_executable, VH_HUMAN_INPUT_OPEN_SESSION, argument, 0, 0);
-
-    // session_t *session = (session_t *) (argument);
-    // if(part->session == session) {
-    //     return;
-    // }
-
-    // // close session in actual part
-    // if(part->session != NULL) {
-    //     session_t *old_session = part->session;
-    //     old_session->part = NULL;
-    // }
-
-    // // session is opened in other part
-    // if(session->part != NULL && session->part != part) {
-    //     screen_part_t *other_part = session->part;
-    //     running_executable_t *re = other_part->running_executable;
-    //     other_part->running_executable = NULL;
-    //     other_part->session = NULL;
-    //     other_part->state = PART_STATE_MAIN_PANEL;
-    //     if(re->number_of_sessions > 1) {
-    //         for(int i = 0; i < re->number_of_sessions; i++) {
-    //             if(re->sessions[i]->part == NULL) {
-    //                 re->sessions[i]->part = other_part;
-    //                 other_part->running_executable = re;
-    //                 other_part->session = re->sessions[i];
-    //                 other_part->state = PART_STATE_PROGRAM;
-    //                 break;
-    //             }
-    //         }
-    //     }
-    // }
-
-    // // show session in part
-    // session->part = part;
-    // part->session = session;
-
-    // vh_screen_demand_redraw_from_program(part->running_executable);
-
-    // draw_view(active_view);
-    // redraw_screen();
 }
 
 void close_session(screen_part_t *part, uint32_t argument) {
     part->show_remaining_sessions = false;
     vh_human_input_event(part->running_executable, VH_HUMAN_INPUT_CLOSE_SESSION, argument, 0, 0);
-
-    // session_t *session = (session_t *) (argument);
-    // running_executable_t *re = part->running_executable;
-    // uint32_t session_index = 0;
-    // for(int i = 0; i < re->number_of_sessions; i++) {
-    //     if(re->sessions[i] == session) {
-    //         session_index = i;
-    //         memmove(&re->sessions[i], &re->sessions[i + 1], sizeof(session_t *) * (re->number_of_sessions - i - 1));
-    //         break;
-    //     }
-    // }
-    // re->number_of_sessions--;
-    // re->sessions = (session_t **) krealloc(re->sessions, sizeof(session_t *) * re->number_of_sessions);
-    // if(part->session == session) {
-    //     part->session = NULL;
-    //     for(int i = session_index; i < re->number_of_sessions; i++) {
-    //         if(re->sessions[i]->part == NULL) {
-    //             // log("\nit is session up %d", i);
-    //             re->sessions[i]->part = part;
-    //             part->session = re->sessions[i];
-    //             break;
-    //         }
-    //     }
-    //     if(part->session == NULL) {
-    //         for(int i = (session_index - 1); i >= 0; i--) {
-    //             if(re->sessions[i]->part == NULL) {
-    //                 // log("\nit is session down %d", i);
-    //                 re->sessions[i]->part = part;
-    //                 part->session = re->sessions[i];
-    //                 break;
-    //             }
-    //         }
-    //     }
-    // }
-    // log("\nsession index: %d", session_index);
-
-    // vh_human_input_event(part->running_executable, VH_HUMAN_INPUT_CLOSE_SESSION, (uint32_t) session, 0, 0);
-
-    // draw_view(active_view);
-    // redraw_screen();
 }
 
 void show_remaining_sessions_from_program(screen_part_t *part, uint32_t argument) {
@@ -652,7 +556,7 @@ void back_to_main_panel(screen_part_t *part, uint32_t argument) {
 
 void close_program(screen_part_t *part, uint32_t running_executable) {
     running_executable_t *re = (running_executable_t *) (running_executable);
-    log("\nClosing program %s", re->name);
+    // log("\nClosing program %s", re->name);
     send_closing_signal_to_process(re->process);
     // TODO: set timer, and if program is not closed, show "Program had not completed closing signal so far, do you want to kill it?"
 }

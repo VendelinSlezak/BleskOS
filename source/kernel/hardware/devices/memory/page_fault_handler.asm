@@ -32,6 +32,7 @@ extern pm_alloc_page
 extern kernel_panic
 extern get_copy_on_write_page
 extern null_page_fault_handler
+extern page_fault_in_kernel_space
 
 global page_fault_handler_i686
 page_fault_handler_i686:
@@ -221,8 +222,7 @@ page_fault_handler_i686:
         mov gs, ax
         
         push esp
-        push kernel_space_page_fault
-        call kernel_panic
+        call page_fault_in_kernel_space
 
     ; this situation should never occur, it is here mainly for debugging purposes
     .unknown_state:
@@ -246,6 +246,5 @@ page_fault_handler_i686:
         call kernel_panic
 
 unknown_type_page_fault db 'Page has unknown type', 0
-kernel_space_page_fault db 'Page fault in kernel space', 0
 
 ; TODO: special handler for one core

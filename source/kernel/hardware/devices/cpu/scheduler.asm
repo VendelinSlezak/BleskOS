@@ -17,15 +17,6 @@ idle_thread:
     pause
     jmp idle_thread
 
-global move_to_floating_stack
-move_to_floating_stack:
-    mov eax, [esp + 8]  ; get pointer to function
-    mov ebx, [esp + 12] ; get argument for function
-    mov esp, [esp + 4]  ; move to floating stack
-    push ebx            ; push argument
-    push 0x00000000     ; return address - function will never return, so we do not need it
-    jmp eax             ; start execution of function
-
 global exit_interrupt_to_thread
 exit_interrupt_to_thread:
     ; restore the thread's stack pointer

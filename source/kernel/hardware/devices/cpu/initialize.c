@@ -466,9 +466,6 @@ void initialize_running_logical_processor(int cpuid_supported, int msr_supported
     data->idle_thread_stack->fs = 0x10; // kernel data segment
     data->idle_thread_stack->gs = 0x10; // kernel data segment
 
-    // allocate floating stack
-    data->floating_stack = perm_alloc(KERNEL_STACK_SIZE);
-
     // allocate page for copy-on-write memory for this processor
     data->copy_on_write_page = perm_alloc(PAGE_SIZE);
 

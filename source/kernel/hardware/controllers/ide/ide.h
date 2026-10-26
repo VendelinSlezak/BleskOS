@@ -138,6 +138,9 @@ typedef struct {
 
     uint32_t interrupt_processor_index;
 
+    hardware_t *master_device;
+    hardware_t *slave_device;
+
     mutex_t mutex;
     uint32_t interrupt_expected;
     kernel_thread_t *waiting_thread_for_irq;

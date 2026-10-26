@@ -167,6 +167,8 @@ typedef struct {
 
     uint8_t flag_window_is_different_from_buffer;
     uint8_t flag_buffer_is_on_screen;
+    uint32_t max_window_width;
+    uint32_t max_window_height;
     uint32_t window_width;
     uint32_t window_height;
     uint32_t buffer_width;
@@ -176,6 +178,19 @@ typedef struct {
 } virtual_hardware_t;
 
 typedef struct {
-    void (*initialize)(virtual_hardware_t *virtual_hardware_ptr);
     void (*log)(char *string, ...);
+
+    uint64_t (*get_time_in_microseconds)(void);
+
+    void *(*malloc)(uint32_t size);
+    void *(*aligned_malloc)(uint32_t alignment, uint32_t size);
+    void *(*calloc)(uint32_t count, uint32_t size);
+    void *(*realloc)(void *ptr, uint32_t size);
+    void (*free)(void *ptr);
+
+    void (*event_loop)(void *root_element_ptr);
+    void (*update_screen)(void);
+    void (*draw_window_background_color)(uint32_t color);
+    void (*draw_char)(uint32_t character, uint32_t x, uint32_t y, uint32_t color);
+    void (*add_key_event)(uint32_t key, uint32_t state, void (*process_key)(uint32_t identifier, uint32_t unicode), uint32_t identifier);
 } syslib_t;

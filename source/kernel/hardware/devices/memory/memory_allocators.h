@@ -34,3 +34,13 @@ typedef struct block_cell_metadata {
     uint32_t lifo_index;
     void *allocations[NUMBER_OF_PREALLOCATED_BLOCKS_IN_CELL];
 } block_cell_metadata_t;
+
+typedef struct pool_t {
+    struct pool_t *next;
+    uint32_t size;
+    uint32_t count;
+    void *start;
+    void *ptr;
+    uint32_t free_count;
+    uint32_t alloc_count;
+} pool_t;

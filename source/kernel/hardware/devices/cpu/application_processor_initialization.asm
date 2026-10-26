@@ -40,7 +40,8 @@ application_processor_initialization_sequence:
     mov cr3, eax
 
     mov eax, cr0
-    or eax, 0x80000000 ; paging bit
+    or eax, 0x80000000 ; enable paging bit
+    and eax, ~((1 << 29) | (1 << 30)) ; enable caching
     mov cr0, eax
 
     ; set stack pointer

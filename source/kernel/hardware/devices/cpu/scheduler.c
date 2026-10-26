@@ -36,6 +36,14 @@ process_t *processes = NULL;
 uint8_t *kernel_tid_map = NULL;
 
 /* functions */
+void register_scheduler_interrupt_handlers(void) {
+    register_interrupt_handler(INTERRUPT_SLEEP_FOR_THREAD, sleep_current_thread_interrupt);
+    register_interrupt_handler(INTERRUPT_PREEMPETIVE_SCHEDULING, preemptive_scheduling_interrupt);
+    register_interrupt_handler(INTERRUPT_VECTOR_EXIT_THREAD, close_current_thread_interrupt);
+    register_interrupt_handler(INTERRUPT_VECTOR_SCHEDULER, scheduler_interrupt);
+    register_interrupt_handler(INTERRUPT_REFRESH_TLB, refresh_tlb);
+}
+
 void initialize_scheduler(void) {
     // create kernel thread list
     kernel_threads = kalloc(sizeof(kernel_thread_list_t) * number_of_logical_processors);
@@ -69,13 +77,6 @@ void initialize_scheduler(void) {
     for(int i = 0; i < number_of_logical_processors; i++) {
         logical_processor_structs_ptr[i].cleaning_thread = create_blocked_kernel_thread_on_processor("cleaning_thread", i, (uint32_t)&cleaning_thread, NULL, 0);
     }
-
-    // register scheduler interrupt handler
-    register_interrupt_handler(INTERRUPT_SLEEP_FOR_THREAD, sleep_current_thread_interrupt);
-    register_interrupt_handler(INTERRUPT_PREEMPETIVE_SCHEDULING, preemptive_scheduling_interrupt);
-    register_interrupt_handler(INTERRUPT_VECTOR_EXIT_THREAD, close_current_thread_interrupt);
-    register_interrupt_handler(INTERRUPT_VECTOR_SCHEDULER, scheduler_interrupt);
-    register_interrupt_handler(INTERRUPT_REFRESH_TLB, refresh_tlb);
 }
 
 void add_pointer_to_clean(void *ptr) {
@@ -208,6 +209,9 @@ void *create_running_process_from_spawning_template(spawning_template_t *templat
     process->thread_list_on_logical_processor[target_logical_processor_index].current_thread = user_main_thread;
 
     // log("\nCreated user thread %d in process %x on CPU%d", user_main_thread->id, process, target_logical_processor_index);
+
+    load_page_directory(new_page_directory);
+    copy_log_to_userspace((uint32_t *)0xB1000000); // TODO: as request of file
 
     // add process to process list
     process->next = process;
@@ -778,8 +782,7 @@ void close_current_thread_interrupt(interrupt_stack_t *stack_of_interrupt) {
         kernel_thread_t *current_thread = lpdata->current_kernel_thread;
         // log("\nClosing signal from kernel thread %d on CPU%d", current_thread->id, lpdata->index);
         current_thread->kill_me = true;
-        extern void move_to_floating_stack(uint32_t new_esp, uint32_t new_eip, uint32_t argument);
-        move_to_floating_stack((uint32_t) lpdata->floating_stack + KERNEL_STACK_SIZE, (uint32_t) &scheduler_interrupt, (uint32_t) stack_of_interrupt);
+        scheduler_interrupt(stack_of_interrupt);
     }
     else { // lpdata->running_thread_state == SCHEDULER_STATE_USER
         user_thread_t *current_thread = lpdata->current_user_thread;
@@ -788,8 +791,7 @@ void close_current_thread_interrupt(interrupt_stack_t *stack_of_interrupt) {
         if(current_thread->delete_signal_handler_address == NULL || current_thread->delete_signal_running == true) {
             current_thread->kill_me = true;
         }
-        extern void move_to_floating_stack(uint32_t new_esp, uint32_t new_eip, uint32_t argument);
-        move_to_floating_stack((uint32_t) lpdata->floating_stack + KERNEL_STACK_SIZE, (uint32_t) &scheduler_interrupt, (uint32_t) stack_of_interrupt);
+        scheduler_interrupt(stack_of_interrupt);
     }
 }
 
@@ -799,15 +801,13 @@ void kill_current_thread_interrupt(interrupt_stack_t *stack_of_interrupt) {
         kernel_thread_t *current_thread = lpdata->current_kernel_thread;
         // log("\nKilling signal from kernel thread %d on CPU%d", current_thread->id, lpdata->index);
         current_thread->kill_me = true;
-        extern void move_to_floating_stack(uint32_t new_esp, uint32_t new_eip, uint32_t argument);
-        move_to_floating_stack((uint32_t) lpdata->floating_stack + KERNEL_STACK_SIZE, (uint32_t) &scheduler_interrupt, (uint32_t) stack_of_interrupt);
+        scheduler_interrupt(stack_of_interrupt);
     }
     else { // lpdata->running_thread_state == SCHEDULER_STATE_USER
         user_thread_t *current_thread = lpdata->current_user_thread;
         // log("\nKilling signal from user thread %d in program %x on CPU%d", current_thread->id, lpdata->current_process, lpdata->index);
         current_thread->kill_me = true;
-        extern void move_to_floating_stack(uint32_t new_esp, uint32_t new_eip, uint32_t argument);
-        move_to_floating_stack((uint32_t) lpdata->floating_stack + KERNEL_STACK_SIZE, (uint32_t) &scheduler_interrupt, (uint32_t) stack_of_interrupt);
+        scheduler_interrupt(stack_of_interrupt);
     }
 }
 
@@ -909,18 +909,20 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
     for(int i = 0; i < 3; i++) {
         switch(lpdata->scheduler_state) {
             case SCHEDULER_STATE_USER: {
-                // move to next program
+                // move to next process
+                LOCK_MUTEX(&lpdata->checking_process);
                 process_t *previous_process = lpdata->current_process;
                 if(previous_process == NULL) {
                     lpdata->current_process = processes;
                 }
                 else {
-                    // log("\nProgram list current program %x on CPU%d", previous_process, lpdata->index);
+                    // log("\nProgram list current process %x on CPU%d", previous_process, lpdata->index);
                     lpdata->current_process = previous_process->next;
                 }
                 process_t *current_process = lpdata->current_process;
                 if(current_process == NULL || current_process->is_blocked == true) {
-                    // log("\nEnd of programs list on CPU%d", lpdata->index);
+                    // log("\nEnd of processes list on CPU%d", lpdata->index);
+                    UNLOCK_MUTEX(&lpdata->checking_process);
                     lpdata->scheduler_state = SCHEDULER_STATE_KERNEL;
                     break;
                 }
@@ -928,21 +930,58 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                 // remove program if it has no threads
                 // this must be done only from one logical processor to prevent ABA problem
                 if(lpdata->index == 0 && current_process->number_of_threads == 0) {
-                    log("\nRemoving program %x from program list", current_process);
+                    log("\nRemoving process %x from program list", current_process);
 
-                    // unlink program from list
+                    // unlink process from list
                     if(previous_process == NULL) {
-                        while(!__atomic_compare_exchange_n(
+                        // unlink whole linked list from pointer
+                        process_t *linked_list_pointer = __atomic_exchange_n(&processes, NULL, __ATOMIC_SEQ_CST);
+
+                        // unlink process from linked list
+                        process_t *start_of_linked_list = linked_list_pointer;
+                        if(start_of_linked_list == current_process) {
+                            start_of_linked_list = start_of_linked_list->next;
+                        }
+                        else {
+                            while(linked_list_pointer != NULL) {
+                                if(linked_list_pointer->next == current_process) {
+                                    linked_list_pointer->next = current_process->next;
+                                    break;
+                                }
+                                linked_list_pointer = linked_list_pointer->next;
+                            }
+                        }
+
+                        // add linked list without current process back to starting pointer
+                        void *expected = NULL;
+                        int success = (int) __atomic_compare_exchange_n(
                             &processes,
-                            &current_process,
-                            current_process->next,
+                            &expected,
+                            start_of_linked_list,
                             false,
                             __ATOMIC_SEQ_CST,
                             __ATOMIC_SEQ_CST
-                        ));
+                        );
+                        if(!success) {
+                            // some processes were added by other processors
+                            linked_list_pointer = processes;
+                            while(linked_list_pointer != NULL) {
+                                linked_list_pointer = linked_list_pointer->next;
+                            }
+                            linked_list_pointer->next = start_of_linked_list; // we do not need to do this atomically, because processors can add new threads only to starting pointer
+                        }
                     }
                     else {
                         previous_process->next = current_process->next;
+                    }
+
+                    // stop this program on all other logical processors
+                    for(int i = 1; i < number_of_logical_processors; i++) {
+                        LOCK_MUTEX(&logical_processor_structs_ptr[i].checking_process);
+                        if(logical_processor_structs_ptr[i].current_process == current_process) {
+                            logical_processor_structs_ptr[i].current_process = current_process->next;
+                        }
+                        UNLOCK_MUTEX(&logical_processor_structs_ptr[i].checking_process);
                     }
 
                     // stop everything connected to this program
@@ -952,9 +991,14 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                     lpdata->current_process = NULL;
                     add_pointer_to_clean(current_process);
 
-                    log("\nProgram %x removed from program list", current_process);
+                    log("\nProcess %x removed from program list", current_process);
 
+                    UNLOCK_MUTEX(&lpdata->checking_process);
                     lpdata->scheduler_state = SCHEDULER_STATE_KERNEL;
+                    continue;
+                }
+                else if(current_process->number_of_threads == 0) {
+                    UNLOCK_MUTEX(&lpdata->checking_process);
                     continue;
                 }
 
@@ -973,6 +1017,7 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                     user_thread_t *current_thread = thread_list->current_thread;
                     if(current_thread == NULL) {
                         // log("\nEnd of user threads list on CPU%d", lpdata->index);
+                        UNLOCK_MUTEX(&lpdata->checking_process);
                         lpdata->scheduler_state = SCHEDULER_STATE_KERNEL;
                         break;
                     }
@@ -1047,7 +1092,11 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                         __atomic_fetch_sub(current_thread->number_of_threads_in_page_directory, 1, __ATOMIC_SEQ_CST);
 
                         // free page directory if necessary
+                        // TODO: this should be atomic too
                         if(*current_thread->number_of_threads_in_page_directory == 0) {
+                            if(current_thread->page_directory_physical_address == read_cr3()) {
+                                load_page_directory(PM_KERNEL_BASE_PAGE_DIRECTORY);
+                            }
                             stop_everything_on_page_directory(current_process->running_executable, current_thread->page_directory_physical_address);
                             free_virtual_space(current_thread->page_directory_physical_address);
                             block_free(sizeof(uint32_t), current_thread->number_of_threads_in_page_directory);
@@ -1083,6 +1132,7 @@ void scheduler_interrupt(interrupt_stack_t *stack_of_interrupt) {
                     // log("\nSwitching to program %x to user thread %d on CPU%d to EIP %x", current_process, current_thread->id, lpdata->index, interrupt_stack->eip);
                     lpdata->running_thread_state = SCHEDULER_STATE_USER;
                     lpdata->current_process = current_process;
+                    UNLOCK_MUTEX(&lpdata->checking_process);
                     lpdata->current_user_thread = current_thread;
                     extern void exit_interrupt_to_thread(uint32_t stack_pointer);
                     if(current_thread->page_directory_physical_address != read_cr3()) {

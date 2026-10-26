@@ -49,6 +49,7 @@ void initialize_kernel(void) {
     initialize_timers();
     start_counting_time();
     initialize_core_locking();
+    register_scheduler_interrupt_handlers();
     initialize_all_application_processors();
     initialize_scheduler();
     initialize_hardware();

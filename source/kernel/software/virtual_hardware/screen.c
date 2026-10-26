@@ -40,6 +40,9 @@ void vh_screen_update_window_resolution(running_executable_t *re, uint32_t width
     move_temporarily_to_virtual_space(page_directory_of_virtual_hardware);
     spawning_template_t *template = re->template;
     virtual_hardware_t *virtual_hardware = template->virtual_hardware;
+    view_t *view = re->part->view;
+    virtual_hardware->max_window_width = view->width;
+    virtual_hardware->max_window_height = view->height;
     virtual_hardware->window_width = width;
     virtual_hardware->window_height = height;
     virtual_hardware->flag_window_is_different_from_buffer = 1;

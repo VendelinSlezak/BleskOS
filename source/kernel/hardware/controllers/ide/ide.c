@@ -157,6 +157,14 @@ void initialize_ide_controller(hardware_t *self) {
     initialize_ide_drive(self, PATA_MASTER);
     initialize_ide_drive(self, PATA_SLAVE);
     self->is_initialized = true;
+
+    // initialize devices
+    if(data->master_device != NULL) {
+        init_hardware(data->master_device);
+    }
+    if(data->slave_device != NULL) {
+        init_hardware(data->slave_device);
+    }
 }
 
 void initialize_ide_drive(hardware_t *device, uint8_t drive) {
@@ -200,7 +208,12 @@ void initialize_ide_drive(hardware_t *device, uint8_t drive) {
                 hard_disk_info->dma = data->dma;
                 memcpy(&hard_disk_info->device_info, &device_info, sizeof(ata_identify_command_device_info_t));
                 hardware_t *hard_disk = add_hardware(device, "PATA hard disk", NULL, hard_disk_info, initialize_parallel_ata, NULL);
-                init_hardware(hard_disk);
+                if(drive == PATA_MASTER) {
+                    data->master_device = hard_disk;
+                }
+                else {
+                    data->slave_device = hard_disk;
+                }
             }
             // else drive is not present
         }

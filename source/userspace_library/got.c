@@ -11,8 +11,26 @@
 #include <syslib.h>
 #include <userspace_library/main.h>
 #include <userspace_library/logging.h>
+#include <userspace_library/time.h>
+#include <userspace_library/bleskalloc.h>
+#include <userspace_library/screen.h>
+#include <userspace_library/bitmap_font.h>
+#include <userspace_library/simple_gui.h>
 
 const syslib_t syslib_got = {
-    &initialize,
-    &log
+    &log,
+
+    &get_time_in_microseconds,
+
+    &malloc,
+    &aligned_malloc,
+    &calloc,
+    &realloc,
+    &free,
+    
+    &event_loop,
+    &update_screen,
+    &draw_window_background_color,
+    &draw_char_on_screen,
+    &add_key_event,
 };

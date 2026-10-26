@@ -39,10 +39,10 @@ typedef struct {
     uint32_t depth_of_lock;
 
     kernel_interrupt_stack_t *idle_thread_stack;
-    void *floating_stack;
 
     scheduler_state_t scheduler_state;
     scheduler_state_t running_thread_state;
+    mutex_t checking_process;
     process_t *current_process;
     kernel_thread_t *current_kernel_thread;
     user_thread_t *current_user_thread;

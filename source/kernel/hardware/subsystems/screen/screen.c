@@ -286,13 +286,16 @@ void split_part_vertically(screen_part_t *part, uint32_t split, uint32_t split_t
     original_part->main_panel_data = part->main_panel_data;
     original_part->event_list = part->event_list;
     part_is_moving_to_part(part, original_part);
-    
+
     new_part->state = PART_STATE_MAIN_PANEL;
     new_part->main_panel_data = kalloc(sizeof(main_panel_data_t));
 
     part->state = PART_STATE_VERTICAL_SPLIT;
     part->split = split;
     part->is_processed = true;
+    part->program_name = NULL;
+    part->main_panel_data = NULL;
+    part->event_list = NULL;
 
     if(part_with_focus == part) {
         part_with_focus = original_part;
@@ -346,6 +349,9 @@ void split_part_horizontally(screen_part_t *part, uint32_t split, uint32_t split
     part->state = PART_STATE_HORIZONTAL_SPLIT;
     part->split = split;
     part->is_processed = true;
+    part->program_name = NULL;
+    part->main_panel_data = NULL;
+    part->event_list = NULL;
 
     if(part_with_focus == part) {
         part_with_focus = original_part;
@@ -360,6 +366,10 @@ void remove_part(screen_part_t *part) {
         screen_part_t *old_parent = part->parent;
         screen_part_t *new_parent = part->parent->second_child;
 
+        running_executable_t *re = part->running_executable;
+        if(re != NULL) {
+            re->part = NULL;
+        }
         kfree(part->main_panel_data);
         kfree(part->event_list);
         kfree(part);
@@ -368,7 +378,7 @@ void remove_part(screen_part_t *part) {
         new_parent->y = old_parent->y;
         new_parent->width = old_parent->width;
         new_parent->height = old_parent->height;
-        
+
         if(old_parent->parent == NULL) {
             ((view_t *)(old_parent->view))->global_part = new_parent;
         }
@@ -387,6 +397,10 @@ void remove_part(screen_part_t *part) {
         screen_part_t *old_parent = part->parent;
         screen_part_t *new_parent = part->parent->first_child;
 
+        running_executable_t *re = part->running_executable;
+        if(re != NULL) {
+            re->part = NULL;
+        }
         kfree(part->main_panel_data);
         kfree(part->event_list);
         kfree(part);
@@ -524,7 +538,9 @@ void part_move_split(screen_part_t *part, uint32_t split) {
                 part->first_child->height = part->height;
             }
             main_panel_data_t *main_panel_data = (main_panel_data_t *) part->main_panel_data;
-            main_panel_data->y_offset = 0; main_panel_data->vertical_scrollbar_position = 0;
+            if(main_panel_data != NULL) {
+                main_panel_data->y_offset = 0; main_panel_data->vertical_scrollbar_position = 0;
+            }
             part->first_child->is_processed = true;
             part = part->first_child;
             continue;
@@ -583,7 +599,9 @@ void part_move_split(screen_part_t *part, uint32_t split) {
                 part->second_child->height = part->height;
             }
             main_panel_data_t *main_panel_data = (main_panel_data_t *) part->main_panel_data;
-            main_panel_data->y_offset = 0; main_panel_data->vertical_scrollbar_position = 0;
+            if(main_panel_data != NULL) {
+                main_panel_data->y_offset = 0; main_panel_data->vertical_scrollbar_position = 0;
+            }
             part->second_child->is_processed = true;
             part = part->second_child;
             continue;
@@ -1308,7 +1326,7 @@ void screen_subsystem_event_loop(void) {
 
                 if(is_program_dragged == true && event->state.button_state[BUTTON_LEFT] == BUTTON_DRAGGED) {
                     screen_part_t *part = part_where_is_mouse_cursor();
-                    if(part_dragged_to != part) {
+                    if(part_dragged_to != part && (part->state == PART_STATE_PROGRAM || part->state == PART_STATE_MAIN_PANEL)) {
                         part_dragged_to = part;
                         draw_view(active_view);
                         redraw_screen();

@@ -120,24 +120,23 @@ spawning_template_t load_elf32_to_spawning_template(void *elf_data, void prepare
         return template;
     }
 
-    // read entry point
-    template.entry_point = header->e_entry;
-
     // prepare memory in new user space
     if(prepare_memory != NULL) {
         prepare_memory();
     }
 
     // load system libraries
-    if(load_static_elf32_to_memory(get_ramdisk_file_ptr("userspace_library.elf")) == ERROR) {
+    uint32_t syslib_entry_point = load_static_elf32_to_memory(get_ramdisk_file_ptr("userspace_library.elf"));
+    if(syslib_entry_point == NULL) {
         log("\n[ELF] Unable to load userspace library");
         free_virtual_space(template.page_directory);
         template.page_directory = 0;
         unlock_core();
         return template;
     }
-    template.syslib_got = get_elf_symbol_addr(get_ramdisk_file_ptr("userspace_library.elf"), "syslib_got");
-    log("\n[ELF] syslib_got: %x", template.syslib_got);
+    template.entry_point = syslib_entry_point;
+    
+    copy_data_into_template((void *) 0xB0000000, get_ramdisk_file_ptr("ter-v16n.psf"), get_ramdisk_file_size("ter-v16n.psf")); // TODO: remove this after storage virtual hardware
 
     // set up virtual hardware interface
     template.virtual_hardware = (void *) VM_VIRTUAL_HARDWARE_INTERFACE;
@@ -153,8 +152,8 @@ spawning_template_t load_elf32_to_spawning_template(void *elf_data, void prepare
     uint32_t *stack_pointer = (uint32_t *) (VM_USER_SPACE_END - PAGE_SIZE);
     stack_pointer -= 3;
     stack_pointer[0] = (uint32_t) (close_thread_function_ptr); // pointer to function to close thread in user space
-    stack_pointer[1] = (uint32_t) (template.syslib_got); // pointer to syslib functions
-    stack_pointer[2] = (uint32_t) (template.virtual_hardware); // pointer to virtual hardware interface
+    stack_pointer[1] = (uint32_t) (template.virtual_hardware); // pointer to virtual hardware interface
+    stack_pointer[2] = (uint32_t) (header->e_entry); // pointer to program entry point
     template.user_stack = stack_pointer;
     uint32_t *stack_page_table_entry = (uint32_t *) (VM_PAGE_TABLES + (((VM_USER_SPACE_END - PAGE_SIZE - PAGE_SIZE) >> 12) * 4));
     *stack_page_table_entry = (*stack_page_table_entry & ~(VM_FLAGS_TYPE | VM_FLAG_READ_WRITE)) | VM_COW_ALLOCATION;
@@ -164,7 +163,7 @@ spawning_template_t load_elf32_to_spawning_template(void *elf_data, void prepare
     return template;
 }
 
-int load_static_elf32_to_memory(void *elf_data) {
+uint32_t load_static_elf32_to_memory(void *elf_data) {
     Elf32_Ehdr *header = (Elf32_Ehdr *) elf_data;
     Elf32_Phdr *ph = (Elf32_Phdr *)((uint8_t *)elf_data + header->e_phoff);
 
@@ -176,7 +175,7 @@ int load_static_elf32_to_memory(void *elf_data) {
         // check if segment has vaild length
         if(ph->p_memsz < ph->p_filesz) {
             log("\nInvalid segment: memsz < filesz");
-            return ERROR;
+            return NULL;
         }
 
         // load segment to memory
@@ -210,7 +209,18 @@ int load_static_elf32_to_memory(void *elf_data) {
         }
     }
 
-    return SUCCESS;
+    return header->e_entry;
+}
+
+void copy_data_into_template(void *dst, void *src, uint32_t size) {
+    memcpy(dst, src, size);
+    uint32_t *page_table_entry = (uint32_t *) (VM_PAGE_TABLES + (((uint32_t)dst >> 12) * 4));
+    uint32_t first_page = ((uint32_t)dst >> 12);
+    uint32_t last_page = (((uint32_t)dst + size - 1) >> 12);
+    for(uint32_t j = first_page; j <= last_page; j++, page_table_entry++) {
+        *page_table_entry &= ~VM_FLAG_READ_WRITE;
+        *page_table_entry = (*page_table_entry & ~VM_FLAGS_TYPE) | VM_SPAWN_TEMPLATE;
+    }
 }
 
 void *get_elf_symbol_addr(void *elf_data, const uint8_t *symbol_name) {

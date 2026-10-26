@@ -9,5 +9,7 @@
 */
 
 #include <syslib.h>
+#include <userspace_library/screen.h>
+#include <userspace_library/simple_gui.h>
 
 extern virtual_hardware_t *virtual_hardware;

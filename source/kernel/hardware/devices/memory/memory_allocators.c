@@ -255,7 +255,9 @@ void *kalloc(uint32_t size) {
         return NULL;
     }
 
-    // log("\nKALLOC request %d bytes", size);
+    #ifdef KHEAP_FULL_DEBUG
+    log("\nKALLOC request %d bytes", size);
+    #endif
 
     // extend size for allocation metadata
     size += sizeof(kheap_entry_t);
@@ -333,7 +335,9 @@ void *kalloc(uint32_t size) {
 
     void *allocated_address = (void *) ((uint32_t)new_entry + sizeof(kheap_entry_t));
     unlock_kheap();
-    // log(" allocated at %x", allocated_address);
+    #ifdef KHEAP_FULL_DEBUG
+    log(" allocated at %x", allocated_address);
+    #endif
     return allocated_address;
 }
 
@@ -345,7 +349,9 @@ void *aligned_kalloc(uint32_t alignment, uint32_t size) {
         return kalloc(size);
     }
 
-    // log("\nALIGNED %d KALLOC request %d bytes", alignment, size);
+    #ifdef KHEAP_FULL_DEBUG
+    log("\nALIGNED %d KALLOC request %d bytes", alignment, size);
+    #endif
 
     // find suitable space
     lock_kheap();
@@ -475,6 +481,7 @@ void *aligned_kalloc(uint32_t alignment, uint32_t size) {
         last_page_of_this_allocation -= PAGE_SIZE;
     }
     if(last_page_of_this_allocation >= first_page_of_this_allocation) {
+        // log("\nAllocate: %x - %x", first_page_of_this_allocation, last_page_of_this_allocation + PAGE_SIZE);
         vm_allocate_pages(first_page_of_this_allocation, last_page_of_this_allocation - first_page_of_this_allocation + PAGE_SIZE, VM_KERNEL);
     }
 
@@ -488,7 +495,9 @@ void *aligned_kalloc(uint32_t alignment, uint32_t size) {
 
     void *allocated_address = (void *) ((uint32_t)new_entry + sizeof(kheap_entry_t));
     unlock_kheap();
-    // log(" allocated at %x", allocated_address);
+    #ifdef KHEAP_FULL_DEBUG
+    log(" allocated at %x", allocated_address);
+    #endif
     return allocated_address;
 }
 
@@ -497,7 +506,9 @@ void kfree(void *allocation) {
         return;
     }
 
-    // log("\nKFREE request %x", allocation);
+    #ifdef KHEAP_FULL_DEBUG
+    log("\nKFREE request %x", allocation);
+    #endif
 
     lock_kheap();
     kernel_heap_metadata_t *kernel_heap_metadata = (kernel_heap_metadata_t *) VM_KERNEL_HEAP_START;
@@ -520,6 +531,7 @@ void kfree(void *allocation) {
         last_page_of_this_allocation -= PAGE_SIZE;
     }
     if(last_page_of_this_allocation >= first_page_of_this_allocation) {
+        // log("\nDeallocate: %x - %x", first_page_of_this_allocation, last_page_of_this_allocation + PAGE_SIZE);
         vm_deallocate_pages(first_page_of_this_allocation, last_page_of_this_allocation - first_page_of_this_allocation + PAGE_SIZE);
     }
 
@@ -547,7 +559,9 @@ void *krealloc(void *allocation, uint32_t new_size) {
         return kalloc(new_size);
     }
 
-    // log("\nKREALLOC request %x to %d bytes", allocation, new_size);
+    #ifdef KHEAP_FULL_DEBUG
+    log("\nKREALLOC request %x to %d bytes", allocation, new_size);
+    #endif
 
     lock_kheap();
     kernel_heap_metadata_t *kernel_heap_metadata = (kernel_heap_metadata_t *) VM_KERNEL_HEAP_START;
@@ -570,11 +584,14 @@ void *krealloc(void *allocation, uint32_t new_size) {
     }
     else if(new_size == entry_size) { // do nothing
         unlock_kheap();
-        // log(" REALLOCATED IN SAME PLACE");
+        #ifdef KHEAP_FULL_DEBUG
+        log(" REALLOCATED IN SAME PLACE");
+        #endif
         return allocation;
     }
     else if(new_size < entry_size) { // shrink allocation
         uint32_t size_diff = entry_size - new_size;
+        uint32_t entry_old_end = entry->end;
         uint32_t entry_new_end = entry_start + new_size;
         entry->end = entry_new_end;
 
@@ -587,22 +604,22 @@ void *krealloc(void *allocation, uint32_t new_size) {
         }
 
         // unmap pages
-        uint32_t last_page_of_previous_allocation = PAGE_MASK(entry->prev->end - 1);
-        uint32_t first_page_of_this_allocation = PAGE_MASK((uint32_t)entry);
-        if(last_page_of_previous_allocation == first_page_of_this_allocation) {
-            first_page_of_this_allocation += PAGE_SIZE;
-        }
-        uint32_t last_page_of_this_allocation = PAGE_MASK(entry_new_end - 1);
+        uint32_t first_page_of_this_allocation = PAGE_MASK(entry_new_end);
+        first_page_of_this_allocation += (PAGE_OFFSET_MASK(entry_new_end) == 0) ? 0 : PAGE_SIZE;
+        uint32_t last_page_of_this_allocation = PAGE_MASK(entry_old_end - 1);
         uint32_t first_page_of_next_allocation = (entry->next == NULL) ? 0 : PAGE_MASK((uint32_t)entry->next);
         if(last_page_of_this_allocation == first_page_of_next_allocation) {
             last_page_of_this_allocation -= PAGE_SIZE;
         }
         if(last_page_of_this_allocation >= first_page_of_this_allocation) {
+            // log("\nDeallocate: %x - %x", first_page_of_this_allocation, last_page_of_this_allocation + PAGE_SIZE);
             vm_deallocate_pages(first_page_of_this_allocation, last_page_of_this_allocation - first_page_of_this_allocation + PAGE_SIZE);
         }
 
         unlock_kheap();
-        // log(" REALLOCATED IN SAME PLACE");
+        #ifdef KHEAP_FULL_DEBUG
+        log(" REALLOCATED IN SAME PLACE");
+        #endif
         return allocation;
     }
     else { // expand allocation
@@ -632,11 +649,14 @@ void *krealloc(void *allocation, uint32_t new_size) {
                 last_page_of_this_allocation -= PAGE_SIZE;
             }
             if(last_page_of_this_allocation >= first_page_of_this_allocation) {
+                // log("\nAllocate: %x - %x", first_page_of_this_allocation, last_page_of_this_allocation + PAGE_SIZE);
                 vm_allocate_pages(first_page_of_this_allocation, last_page_of_this_allocation - first_page_of_this_allocation + PAGE_SIZE, VM_KERNEL);
             }
 
             unlock_kheap();
-            // log(" REALLOCATED IN SAME PLACE");
+            #ifdef KHEAP_FULL_DEBUG
+            log(" REALLOCATED IN SAME PLACE");
+            #endif
             return allocation;
         }
 
@@ -670,6 +690,7 @@ void *krealloc(void *allocation, uint32_t new_size) {
                 last_page = (PAGE_MASK(entry_start) - PAGE_SIZE);
             }
             if(last_page >= first_page) { // map all pages that are below current entry and should be mapped
+                // log("\nAllocate: %x - %x", first_page, last_page + PAGE_SIZE);
                 vm_allocate_pages(first_page, last_page - first_page + PAGE_SIZE, VM_KERNEL);
             }
 
@@ -684,6 +705,7 @@ void *krealloc(void *allocation, uint32_t new_size) {
                     last_page -= PAGE_SIZE;
                 }
                 if(last_page >= first_page) { // map all pages that are above current entry and should be mapped
+                    // log("\nAllocate: %x - %x", first_page, last_page + PAGE_SIZE);
                     vm_allocate_pages(first_page, last_page - first_page + PAGE_SIZE, VM_KERNEL);
                 }
             }
@@ -706,6 +728,7 @@ void *krealloc(void *allocation, uint32_t new_size) {
                     last_page -= PAGE_SIZE;
                 }
                 if(last_page >= first_page) {
+                    // log("\nDeallocate: %x - %x", first_page, last_page + PAGE_SIZE);
                     vm_deallocate_pages(first_page, last_page - first_page + PAGE_SIZE);
                 }
             }
@@ -722,7 +745,9 @@ void *krealloc(void *allocation, uint32_t new_size) {
 
             void *entry_new_start_ptr = (void *) (entry_new_start + sizeof(kheap_entry_t));
             unlock_kheap();
-            // log(" REALLOCATED: 0x%x -> 0x%x", allocation, entry_new_start_ptr);
+            #ifdef KHEAP_FULL_DEBUG
+            log(" REALLOCATED: 0x%x -> 0x%x", allocation, entry_new_start_ptr);
+            #endif
             return entry_new_start_ptr;
         }
 
@@ -739,12 +764,14 @@ void *krealloc(void *allocation, uint32_t new_size) {
         // free old block
         kfree(allocation);
 
-        // log(" REALLOCATED: 0x%x -> 0x%x", allocation, new_allocation);
+        #ifdef KHEAP_FULL_DEBUG
+        log(" REALLOCATED: 0x%x -> 0x%x", allocation, new_allocation);
+        #endif
         return new_allocation;
     }
 }
 
-/* BLOCK ALLOCATOR*/
+/* BLOCK ALLOCATOR */
 void *block_alloc(uint32_t size) {
     lock_core();
     LOCK_MUTEX(&block_alloc_mutex);
@@ -807,4 +834,53 @@ void block_free(uint32_t size, void *allocation) {
 
     UNLOCK_MUTEX(&block_alloc_mutex);
     unlock_core();
+}
+
+/* POOL ALLOCATOR */
+pool_t *create_alloc_pool(uint32_t size, uint32_t count) {
+    pool_t *pool = kalloc(sizeof(pool_t));
+    pool->start = kalloc(size * count);
+    pool->count = count;
+    pool->ptr = pool->start;
+    pool->free_count = count;
+    pool->alloc_count = 0;
+    return pool;
+}
+
+void *pool_alloc(pool_t *pool) {
+    while(pool->free_count == 0) {
+        if(pool->next == NULL) {
+            pool->next = create_alloc_pool(pool->size, pool->count);
+        }
+        pool = pool->next;
+    }
+    pool->free_count--;
+    pool->alloc_count++;
+    void *ptr = pool->ptr;
+    pool->ptr += pool->size;
+    return pool->ptr;
+}
+
+void pool_free(pool_t *pool, void *ptr) {
+    while(ptr < pool->start || ptr > (pool->start + (pool->count * pool->size))) {
+        pool = pool->next;
+        if(pool == NULL) {
+            log("\n[ERROR] Invalid pointer passed to pool_free");
+            return;
+        }
+    }
+    pool->alloc_count--;
+    if(pool->alloc_count == 0 && pool->free_count == 0) {
+        kfree(pool->start);
+        pool->start = NULL;
+    }
+}
+
+void destroy_pool(pool_t *pool) {
+    while(pool != NULL) {
+        pool_t *next = pool->next;
+        kfree(pool->start);
+        kfree(pool);
+        pool = next;
+    }
 }

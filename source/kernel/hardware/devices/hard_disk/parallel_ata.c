@@ -97,12 +97,11 @@ void initialize_parallel_ata(hardware_t *self) {
     data->size_of_sector = size_of_sector;
     data->does_support_lba48 = is_lba48_supported;
     data->dma = data_from_controller->dma;
+    log("\n[PATA] Parallel ATA hard disk %d has been initialized", self->id);
+    self->is_initialized = true;
 
     // add device to group
     add_storage_device(self, STORAGE_DEVICE_HARD_DISK, &pata_functions, size_of_sector, number_of_sectors, 1);
-    log("\n[PATA] Parallel ATA hard disk %d has been initialized", self->id);
-
-    self->is_initialized = true;
 }
 
 /* functions for group */
