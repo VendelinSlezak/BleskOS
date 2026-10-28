@@ -15,7 +15,7 @@
 #include <userspace_library/bleskalloc.h>
 #include <userspace_library/screen.h>
 #include <userspace_library/bitmap_font.h>
-#include <userspace_library/simple_gui.h>
+#include <userspace_library/gui/gui.h>
 
 const syslib_t syslib_got = {
     &log,
@@ -30,7 +30,10 @@ const syslib_t syslib_got = {
     
     &event_loop,
     &update_screen,
-    &draw_window_background_color,
-    &draw_char_on_screen,
-    &add_key_event,
+    (void *(*)(void (*)(void *,  void *, int,  int), uint32_t, uint32_t, uint32_t (*)(void *, int)))&create_draw_area,
+    (void (*)(void *, int,  int,  uint32_t,  uint32_t))&draw_bitmap_char,
+    (void (*)(void *))&element_enable_scrollbars,
+    (uint32_t (*)(void *, int, int))&element_move_content_inside,
+    (void (*)(void *))&give_focus_to_element,
+    (void (*)(void *, uint32_t,  uint32_t (*)(void *, uint32_t,  uint32_t)))&add_key_event,
 };

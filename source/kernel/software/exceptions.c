@@ -69,6 +69,7 @@ void null_page_fault_handler(interrupt_stack_t *stack_of_interrupt) {
     }
     else {
         log("\n[EXCEPTION] Null page fault in process %x thread %d on CPU%d by EIP 0x%x", lpdata->current_process, lpdata->current_user_thread->id, lpdata->index, stack_of_interrupt->eip);
+        HALT_FOREVER
         send_closing_signal_to_process(lpdata->current_process);
         close_running_thread(stack_of_interrupt);
     }

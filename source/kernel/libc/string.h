@@ -9,5 +9,6 @@
 */
 
 extern void *memset(void *s, int c, size_t n);
+extern void dwmemset(void *s, uint32_t c, size_t n);
 extern void *memcpy(void *dest, const void *src, size_t len);
 extern void *memmove(void *dest, const void *src, size_t len);

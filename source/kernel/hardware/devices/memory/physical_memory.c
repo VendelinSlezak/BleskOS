@@ -85,7 +85,7 @@ void initialize_physical_memory(void) {
                 *(pm_stack_pointer++) = pm_page;
                 number_of_all_pages++;
             }
-            write_cr3(read_cr3());
+            write_cr3(get_current_page_directory());
 
             memset((void *) VM_FOR_CLEARING_MEMORY, 0, number_of_pages * PAGE_SIZE);
 
@@ -94,7 +94,7 @@ void initialize_physical_memory(void) {
         }
     }
     memset((void *) (VM_PAGE_TABLES + (((VM_KERNEL_SPACE_START + PAGE_TABLE_SIZE) >> 12) * sizeof(uint32_t))), 0, 253 * PAGE_SIZE); // clear content of page tables
-    write_cr3(read_cr3());
+    write_cr3(get_current_page_directory());
 
     // set pointer
     pm_stack_last_entry = pm_stack_pointer;

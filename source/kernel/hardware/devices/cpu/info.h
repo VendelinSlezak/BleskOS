@@ -38,6 +38,8 @@ typedef struct {
     uint32_t in_interrupt;
     uint32_t depth_of_lock;
 
+    uint32_t previous_page_directory_physical_address;
+
     kernel_interrupt_stack_t *idle_thread_stack;
 
     scheduler_state_t scheduler_state;

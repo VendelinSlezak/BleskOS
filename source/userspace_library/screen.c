@@ -10,6 +10,7 @@
 
 /* includes */
 #include <userspace_library/libc/math.h>
+#include <userspace_library/libc/string.h>
 #include <userspace_library/logging.h>
 
 /* global variables */
@@ -88,9 +89,12 @@ void draw_square(buffer_box_t *box, int x, int y, int width, int height, uint32_
     if(pos.drawable == false) {
         return;
     }
-    for(int i = pos.top; i < pos.bottom; i++) {
-        for(int j = pos.left; j < pos.right; j++) {
-            draw_pixel(box, j, i, color);
+    if(pos.width == box->buffer_width) {
+        dwmemset((void *)((uint32_t)box->buffer + ((box->y + pos.top) * box->buffer_width * 4)), color, pos.height * box->buffer_width);
+    }
+    else {
+        for(int line = pos.top; line < pos.bottom; line++) {
+            dwmemset((void *)((uint32_t)box->buffer + ((box->y + line) * box->buffer_width * 4) + ((box->x + pos.left) * 4)), color, pos.width);
         }
     }
 }

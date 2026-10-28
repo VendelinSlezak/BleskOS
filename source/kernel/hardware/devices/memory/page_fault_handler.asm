@@ -184,7 +184,7 @@ page_fault_handler_i686:
         add esp, 4 ; pop error code
         iretd
 
-    ; special case null page fault TODO: close when only user thread
+    ; special case null page fault
     .null_page_fault:
         pop ds
         popad
@@ -204,7 +204,7 @@ page_fault_handler_i686:
         push esp
         call null_page_fault_handler
 
-    ; special case page fault in kernel
+    ; special case page fault in kernel space
     .kernel_page_fault:
         pop ds
         popad

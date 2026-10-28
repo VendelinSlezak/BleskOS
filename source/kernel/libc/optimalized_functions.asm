@@ -47,6 +47,30 @@ memset:
 
     ret
 
+global dwmemset
+dwmemset:
+    push ebp
+    mov ebp, esp
+    push edi
+
+    mov edi, [ebp + 8]   ; destination
+    mov eax, [ebp + 12]  ; value
+    mov ecx, [ebp + 16]  ; count
+
+    ; test if count is zero
+    test ecx, ecx
+    jz .done
+
+    ; write bytes
+    rep stosd
+
+    .done:
+    mov eax, [ebp + 8] ; return original pointer
+    pop edi
+    pop ebp
+
+    ret
+
 global memcpy
 memcpy:
     push ebp

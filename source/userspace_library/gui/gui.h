@@ -11,23 +11,6 @@
 #include <syslib.h>
 #include <userspace_library/screen.h>
 
-typedef struct click_area_t {
-    uint32_t top;
-    uint32_t bottom;
-    uint32_t left;
-    uint32_t right;
-    uint32_t button;
-    void (*process_click)(struct click_area_t *area);
-    uint32_t identifier;
-} click_area_t;
-
-typedef struct key_event_t {
-    uint32_t key;
-    uint32_t state;
-    void (*process_key)(uint32_t identifier, uint32_t unicode);
-    uint32_t identifier;
-} key_event_t;
-
 typedef enum {
     ALIGN_LEFT,
     ALIGN_CENTER,
@@ -74,16 +57,6 @@ typedef struct {
     uint32_t height_of_text;
 } button_t;
 
-typedef struct {
-    uint32_t width;
-    uint32_t height;
-} dimensions_t;
-typedef struct {
-    uint32_t identifier;
-    dimensions_t (*get_content_dimensions)(uint32_t identifier);
-    void (*redraw_area)(uint32_t identifier, buffer_box_t *box, int x_offset, int y_offset);
-} draw_area_t;
-
 typedef enum {
     ELEMENT_TEXT_BLOCK,
     ELEMENT_BUTTON,
@@ -93,6 +66,10 @@ typedef enum {
     ELEMENT_TABLE_BOX,
 } element_type_t;
 typedef struct {
+    buffer_box_t screen_box;
+    uint32_t screen_box_x;
+    uint32_t screen_box_y;
+
     horizontal_alignment_t halign;
     vertical_alignment_t valign;
 
@@ -129,15 +106,25 @@ typedef struct {
     uint32_t max_content_height;
     uint32_t real_content_height;
 
+    int offset_x;
+    int offset_y;
+
     uint32_t enable_scrollbars;
-    uint32_t horizontal_scrollbar_offset;
-    uint32_t offset_x;
-    uint32_t vertical_scrollbar_offset;
-    uint32_t offset_y;
+    uint32_t horizontal_scrollbar_size;
+    uint32_t horizontal_scrollbar_slider_size;
+    uint32_t horizontal_scrollbar_slider_offset;
+    uint32_t vertical_scrollbar_size;
+    uint32_t vertical_scrollbar_slider_size;
+    uint32_t vertical_scrollbar_slider_offset;
 
     element_type_t type;
     void *data;
 } element_t;
+
+typedef struct {
+    void (*redraw_area)(element_t *element, buffer_box_t *box, int x_offset, int y_offset);
+    uint32_t (*process_wheel)(element_t *element, int movement);
+} draw_area_t;
 
 typedef struct {
     uint32_t width;
@@ -149,7 +136,6 @@ typedef struct {
     int number_of_elements_from_end;
     uint32_t number_of_elements;
     element_t **elements;
-    uint32_t end_offset;
     uint32_t wrap;
     uint32_t number_of_parts;
     box_part_t *parts;
@@ -174,3 +160,29 @@ typedef struct {
 
 #define ELEMENT_MAX_WIDTH 0x7FFFFFFF
 #define ELEMENT_MAX_HEIGHT 0x7FFFFFFF
+
+typedef enum {
+    DRAG_VERTICAL_SCROLLBAR,
+    DRAG_HORIZONTAL_SCROLLBAR,
+} gui_element_action_t;
+typedef struct {
+    uint32_t button;
+    uint32_t top;
+    uint32_t bottom;
+    uint32_t left;
+    uint32_t right;
+    element_t *element;
+    gui_element_action_t action;
+} click_area_t;
+
+typedef enum {
+    EVENT_WHEEL_MOVEMENT,
+    EVENT_KEY_PRESSED,
+} gui_element_event_t;
+typedef struct {
+    element_t *element;
+    gui_element_event_t event;
+    uint32_t in_focus;
+    uint32_t value;
+    void *process_function;
+} event_t;

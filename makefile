@@ -18,7 +18,7 @@ IMAGE = bleskos.img
 TARGET_BOOTLOADER_LIVE = $(BUILD_DIR)/bootloader_legacy/bootloader_live.img
 
 # those folders have their own makefiles
-SUBDIRS = source/bootloader_legacy source/kernel source/userspace_library source/test
+SUBDIRS = source/bootloader_legacy source/kernel source/userspace_library source/system_informations
 
 .PHONY: all headers build_subdirs build_live clean run_qemu run_bochs $(SUBDIRS)
 
@@ -108,7 +108,6 @@ build_live: build_subdirs
 run_qemu: $(IMAGE)
 	@echo "[RUN] Starting QEMU..."
 	@qemu-system-i386 -drive file=$(IMAGE),format=raw,if=floppy \
-					  -drive file=test_disk.img,format=raw,if=ide \
 					  -boot order=a \
                       -debugcon stdio \
                       -no-reboot -d cpu_reset,guest_errors \
@@ -119,7 +118,6 @@ run_qemu: $(IMAGE)
 debug: $(IMAGE)
 	@echo "[RUN] Starting QEMU..."
 	@qemu-system-i386 -drive file=$(IMAGE),format=raw,if=floppy \
-					  -drive file=test_disk.img,format=raw,if=ide \
 					  -boot order=a \
 	                  -debugcon stdio \
 	                  -no-reboot -d cpu_reset,guest_errors \

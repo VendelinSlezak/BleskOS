@@ -17,7 +17,7 @@
 #include <userspace_library/libc/string.h>
 #include <userspace_library/screen.h>
 #include <userspace_library/bitmap_font.h>
-#include <userspace_library/simple_gui.h>
+#include <userspace_library/gui/gui.h>
 #include <userspace_library/got.h>
 
 /* global variables */
@@ -55,31 +55,29 @@ void main(virtual_hardware_t *virtual_hardware_ptr, int entry_point(const syslib
     }
 
     /* testing */
-    element_t *hbox = create_hbox(ELEMENT_MAX_WIDTH);
-    hbox->valign = ALIGN_BOTTOM;
-    hbox->background_color = 0xFF000000;
-    box_t *box = hbox->data;
-    box->end_offset = 300;
-    box->wrap = true;
-    // element_set_content_dimensions(hbox, 0, 100, 0, ELEMENT_MAX_HEIGHT);
+    // element_t *hbox = create_hbox();
+    // hbox->valign = ALIGN_BOTTOM;
+    // box_t *box = hbox->data;
+    // box->wrap = true;
+    // element_set_content_dimensions(hbox, 0, 300, 0, ELEMENT_MAX_HEIGHT);
     // element_enable_scrollbars(hbox);
 
-    element_t *hb1 = create_button("Press me 1");
-    element_set_padding(hb1, 10, 10, 10, 10);
-    hb1->background_color = 0xFF00FF00;
-    add_element_to_box_from_start(hbox, hb1);
+    // element_t *hb1 = create_button("Press me 1");
+    // element_set_padding(hb1, 10, 10, 10, 10);
+    // hb1->background_color = 0xFF00FF00;
+    // add_element_to_box_from_start(hbox, hb1);
 
-    element_t *hb2 = create_button("Press me 2");
-    element_set_padding(hb2, 5, 5, 5, 5);
-    element_set_border(hb2, 3, 3, 1, 1, 0xFF000000);
-    element_set_margin(hb2, 5, 5, 5, 5);
-    hb2->background_color = 0xFF0000FF;
-    add_element_to_box_from_start(hbox, hb2);
+    // element_t *hb2 = create_button("Press me 2");
+    // element_set_padding(hb2, 5, 5, 5, 5);
+    // element_set_border(hb2, 3, 3, 1, 1, 0xFF000000);
+    // element_set_margin(hb2, 5, 5, 5, 5);
+    // hb2->background_color = 0xFF0000FF;
+    // add_element_to_box_from_start(hbox, hb2);
 
-    element_t *hb3 = create_button("Press me 3");
-    element_set_padding(hb3, 20, 20, 20, 20);
-    hb3->background_color = 0xFF00FFFF;
-    add_element_to_box_from_end(hbox, hb3);
+    // element_t *hb3 = create_button("Press me 3");
+    // element_set_padding(hb3, 20, 20, 20, 20);
+    // hb3->background_color = 0xFF00FFFF;
+    // add_element_to_box_from_end(hbox, hb3);
 
     // element_t *table = create_table(2, 2);
 
@@ -98,26 +96,24 @@ void main(virtual_hardware_t *virtual_hardware_ptr, int entry_point(const syslib
     // add_element_to_table_box(table, 1, 1, b4);
     // cell_set_alignment(table, 1, 1, ALIGN_CENTER, ALIGN_MIDDLE);
 
-    event_loop(hbox);
+    // event_loop(table);
     /* end of testing */
 
     entry_point(&syslib_got);
 }
 
 void update_screen(void) {
-    redraw_gui(virtual_hardware->buffer_width, virtual_hardware->buffer_height);
+    draw_element(screen_box, root_element, 0, 0);
     syscall_virtual_hardware(VIRTUAL_HARDWARE_SCREEN_ID, VH_SCREEN_DEMAND_REDRAW);
 }
 
-void redraw_gui(uint32_t width, uint32_t height) {
+void redraw_gui_main(uint32_t width, uint32_t height) {
     screen_box->width = width;
     screen_box->height = height;
-    draw_square(screen_box, 0, 0, width, height, 0xFFFFFFFF);
     if(very_unlikely(root_element == NULL)) {
         return;
     }
-    recalculate_element(root_element);
-    draw_element(screen_box, root_element, 0, 0);
+    redraw_gui(root_element, screen_box, width, height);
 }
 
 void catch_virtual_hardware_events(void) {
@@ -134,18 +130,28 @@ void catch_virtual_hardware_events(void) {
                 screen_box->width = virtual_hardware->buffer_width;
                 screen_box->height = virtual_hardware->buffer_height;
             }
-            redraw_gui(virtual_hardware->buffer_width, virtual_hardware->buffer_height);
+            redraw_gui_main(virtual_hardware->buffer_width, virtual_hardware->buffer_height);
             syscall_virtual_hardware(VIRTUAL_HARDWARE_SCREEN_ID, VH_SCREEN_DEMAND_WINDOW_CHANGE); // buffer updated after window change
         }
         if(virtual_hardware->flag_buffer_is_on_screen == 0) {
-            redraw_gui(virtual_hardware->buffer_width, virtual_hardware->buffer_height);
-            syscall_virtual_hardware(VIRTUAL_HARDWARE_SCREEN_ID, VH_SCREEN_DEMAND_REDRAW); // copy buffer on screen
+            update_screen(); // copy buffer on screen
         }
 
-        if(virtual_hardware->consumer != virtual_hardware->producer) {
+        uint32_t events_processed = 0;
+        uint32_t does_gui_need_redraw = false;
+        while(virtual_hardware->consumer != virtual_hardware->producer) {
             vh_human_input_event_t *event = &virtual_hardware->events[virtual_hardware->consumer];
-            process_event(event);
+            if(process_event(event) == true) {
+                does_gui_need_redraw = true;
+            }
             virtual_hardware->consumer = (virtual_hardware->consumer + 1) % VH_HUMAN_INPUT_SIZE_OF_RING;
+            events_processed++;
+            if(events_processed == VH_HUMAN_INPUT_SIZE_OF_RING) {
+                break;
+            }
+        }
+        if(does_gui_need_redraw == true) {
+            update_screen();
         }
 
         syscall_switch_thread();
@@ -158,14 +164,6 @@ void event_loop(void *root_element_ptr) {
         asm volatile("pause");
         syscall_switch_thread();
     }
-}
-
-void draw_window_background_color(uint32_t color) {
-    draw_square(screen_box, 0, 0, screen_box->width, screen_box->height, color);
-}
-
-void draw_char_on_screen(uint32_t character, uint32_t x, uint32_t y, uint32_t color) {
-    draw_bitmap_char(screen_box, x, y, character, color);
 }
 
 // TODO: management of sessions

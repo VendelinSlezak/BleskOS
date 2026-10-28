@@ -25,9 +25,13 @@
 
 /* functions */
 void vh_screen_copy_buffer(uint32_t *screen, uint32_t screen_width, uint32_t *buffer, uint32_t buffer_width, uint32_t buffer_height) {
-    for(uint32_t y = 0; y < buffer_height; y++) {
-        for(uint32_t x = 0; x < buffer_width; x++) {
-            screen[(y * screen_width) + x] = *buffer++;
+    if(screen_width == buffer_width) {
+        memcpy(screen, buffer, buffer_width * buffer_height * sizeof(uint32_t));
+    }
+    else {
+        for(uint32_t y = 0; y < buffer_height; y++) {
+            memcpy((void *)((uint32_t)screen + (y * screen_width * 4)), buffer, buffer_width * sizeof(uint32_t));
+            buffer += buffer_width;
         }
     }
 }
@@ -79,6 +83,7 @@ void vh_screen_doorbell(uint32_t demand) {
                 view_t *view = part->view;
                 vh_screen_copy_buffer(view->buffer + (view->width * 4 * (part->y + 31)) + (4 * part->x), view->width, virtual_hardware->buffer, part->width, part->height - 60);
                 draw_things_inside_program_area(part);
+                // redraw_part_of_screen(part->x, part->y + 31, virtual_hardware->buffer, part->width, 0, 0, part->width, part->height - 60); // TODO: apply this much faster solution
                 redraw_full_screen(view->buffer);
                 virtual_hardware->flag_buffer_is_on_screen = 1;
             }
@@ -91,6 +96,7 @@ void vh_screen_doorbell(uint32_t demand) {
             virtual_hardware_t *virtual_hardware = template->virtual_hardware;
             screen_part_t *part = re->part;
             view_t *view = part->view;
+            // redraw_part_of_screen(part->x, part->y + 31, virtual_hardware->buffer, part->width, 0, 0, part->width, part->height - 60); // TODO: apply this much faster solution
             vh_screen_copy_buffer(view->buffer + (view->width * 4 * (part->y + 31)) + (4 * part->x), view->width, virtual_hardware->buffer, part->width, part->height - 60);
             draw_things_inside_program_area(part);
             redraw_full_screen(view->buffer);

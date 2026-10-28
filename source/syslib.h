@@ -127,7 +127,7 @@ typedef struct {
     uint32_t does_have_focus;
 } screen_session_t;
 
-#define VH_HUMAN_INPUT_SIZE_OF_RING 32
+#define VH_HUMAN_INPUT_SIZE_OF_RING 128
 enum {
     VH_HUMAN_INPUT_EVENT_KEY_PRESSED = 1,
     VH_HUMAN_INPUT_EVENT_KEY_RELEASED = 2,
@@ -190,7 +190,10 @@ typedef struct {
 
     void (*event_loop)(void *root_element_ptr);
     void (*update_screen)(void);
-    void (*draw_window_background_color)(uint32_t color);
-    void (*draw_char)(uint32_t character, uint32_t x, uint32_t y, uint32_t color);
-    void (*add_key_event)(uint32_t key, uint32_t state, void (*process_key)(uint32_t identifier, uint32_t unicode), uint32_t identifier);
+    void *(*create_draw_area)(void (*redraw_area)(void *element, void *box, int x_offset, int y_offset), uint32_t full_width, uint32_t full_height, uint32_t (*process_wheel)(void *element, int movement));
+    void (*draw_bitmap_char)(void *box, int x, int y, uint32_t character, uint32_t color);
+    void (*element_enable_scrollbars)(void *element);
+    uint32_t (*element_move_content_inside)(void *element, int x_movement, int y_movement);
+    void (*give_focus_to_element)(void *element);
+    void (*add_key_event)(void *element, uint32_t key, uint32_t (*process)(void *element, uint32_t key, uint32_t unicode));
 } syslib_t;

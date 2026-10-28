@@ -7,11 +7,11 @@ LINKER_FLAGS = -m elf_i386
 SRC_DIR = $(ROOT_DIR)/source
 BUILD_DIR = $(ROOT_DIR)/build
 
-TEST_SRC_DIR = $(SRC_DIR)/test
+TEST_SRC_DIR = $(SRC_DIR)/system_informations
 C_SRCS = $(shell find $(TEST_SRC_DIR) -name "*.c")
 OBJS = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.c.o,$(C_SRCS))
 
-TARGET_ELF = $(BUILD_DIR)/test.elf
+TARGET_ELF = $(BUILD_DIR)/system_informations.elf
 
 .PHONY: all clean
 
@@ -25,7 +25,7 @@ $(BUILD_DIR)/%.c.o: $(SRC_DIR)/%.c
 $(TARGET_ELF): $(OBJS)
 	@echo "[INFO] Linking Test ELF ($@)..."
 	@$(LINKER) $(LINKER_FLAGS) -o $@ $(OBJS)
-	@cp $(TARGET_ELF) $(ROOT_DIR)/ramdisk/test.elf
+	@cp $(TARGET_ELF) $(ROOT_DIR)/ramdisk/system_informations.elf
 
 clean:
-	@rm -f $(TARGET_ELF) $(OBJS) $(ROOT_DIR)/ramdisk/test.elf
+	@rm -f $(TARGET_ELF) $(OBJS) $(ROOT_DIR)/ramdisk/system_informations.elf

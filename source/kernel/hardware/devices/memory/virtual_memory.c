@@ -25,20 +25,19 @@
 /* global variables */
 mutex_t creating_page_directory_mutex;
 
-/* local variables */
-uint32_t previous_page_directory;
-
 /* functions for changing virtual spaces */
 void move_temporarily_to_virtual_space(uint32_t page_directory) {
-    previous_page_directory = read_cr3();
-    if(read_cr3() != page_directory) {
-        write_cr3(page_directory);
+    logical_processor_t *lpdata = get_current_logical_processor_struct();
+    lpdata->previous_page_directory_physical_address = get_current_page_directory();
+    if(lpdata->previous_page_directory_physical_address != page_directory) {
+        load_page_directory(page_directory);
     }
 }
 
 void move_back_to_previous_virtual_space(void) {
-    if(read_cr3() != previous_page_directory) {
-        write_cr3(previous_page_directory);
+    logical_processor_t *lpdata = get_current_logical_processor_struct();
+    if(get_current_page_directory() != lpdata->previous_page_directory_physical_address) {
+        load_page_directory(lpdata->previous_page_directory_physical_address);
     }
 }
 
@@ -92,7 +91,7 @@ void unlock_virtual_memory(uint32_t start, uint32_t size) {
 
 /* functions for (un)mapping pages */
 void refresh_tlb(interrupt_stack_t *stack_of_interrupt) {
-    write_cr3(read_cr3());
+    write_cr3(get_current_page_directory());
     lapic_send_eoi();
     log("\nTLB flushed");
 }
@@ -146,7 +145,7 @@ void vm_unmap_pages(uint32_t vm_start_page, uint32_t size) {
         }
     }
     else {
-        write_cr3(read_cr3());
+        write_cr3(get_current_page_directory());
     }
 }
 
@@ -220,7 +219,7 @@ void vm_deallocate_pages(uint32_t vm_start_page, uint32_t size) {
         }
     }
     else {
-        write_cr3(read_cr3());
+        write_cr3(get_current_page_directory());
     }
 }
 
@@ -267,13 +266,17 @@ void vm_move_pages(int flush_tlb, uint32_t vm_old_start, uint32_t vm_new_start, 
 
     // flush TLB
     if(flush_tlb == true) {
-        write_cr3(read_cr3());
+        write_cr3(get_current_page_directory());
     }
 }
 
 /* functions for flushing TLB */
 void vm_refresh_mappings(void) {
-    write_cr3(read_cr3());
+    write_cr3(get_current_page_directory());
+}
+
+uint32_t get_current_page_directory(void) {
+    return PAGE_MASK(read_cr3());
 }
 
 void load_page_directory(uint32_t pm_page_directory) {

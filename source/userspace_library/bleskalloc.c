@@ -12,6 +12,7 @@
 
 /* includes */
 #include <userspace_library/libc/string.h>
+#include <userspace_library/logging.h>
 
 /* local variables */
 void *bleskalloc_ptr;
@@ -26,6 +27,7 @@ void initialize_bleskalloc(void) {
 void *malloc(uint32_t size) {
     size = (size + 3) / 4 * 4;
     if(bleskalloc_free_size < size) {
+        log("malloc: Out of memory during %d byte allocation", size);
         return NULL;
     }
     void *ptr = bleskalloc_ptr;
@@ -39,6 +41,7 @@ void *aligned_malloc(uint32_t alignment, uint32_t size) {
     uint32_t bytes_to_alignment_in_free_space = (alignment - ((uint32_t) bleskalloc_ptr & (alignment - 1)));
     if(bytes_to_alignment_in_free_space != alignment) {
         if(bleskalloc_free_size < bytes_to_alignment_in_free_space) {
+            log("malloc: Out of memory during %d alignment and %d byte allocation", alignment, size);
             return NULL;
         }
         else {

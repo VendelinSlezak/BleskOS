@@ -68,6 +68,13 @@ void *memset(void *dest, int value, size_t len) {
     return dest;
 }
 
+void dwmemset(void *dest, uint32_t value, size_t len) {
+    uint32_t *ptr = (uint32_t *) dest;
+    while(len--) {
+        *ptr++ = value;
+    }
+}
+
 void *memcpy(void *dest, const void *src, size_t len) {
     uint8_t *d = (uint8_t *) dest;
     const uint8_t *s = (const uint8_t *) src;

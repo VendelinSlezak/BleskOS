@@ -17,13 +17,20 @@
 #include <userspace_library/libc/string.h>
 
 /* local variables */
+uint32_t add_gui_actions;
+
 uint32_t number_of_click_areas;
 click_area_t **click_areas;
-uint32_t number_of_key_events;
-key_event_t **key_events;
+uint32_t number_of_events;
+event_t **events;
+
+element_t *gui_focus_element;
+element_t *gui_element_in_action;
+gui_element_action_t gui_element_action;
 
 /* functions */
-void process_event(vh_human_input_event_t *event) {
+uint32_t process_event(vh_human_input_event_t *event) {
+    uint32_t change_happened = false;
     switch(event->type) {
         case VH_HUMAN_INPUT_EVENT_BUTTON_PRESSED: {
             uint32_t button = event->argument1;
@@ -31,62 +38,149 @@ void process_event(vh_human_input_event_t *event) {
             uint32_t y = event->argument3;
             for(uint32_t i = 0; i < number_of_click_areas; i++) {
                 click_area_t *area = click_areas[i];
-                if(area->button == button && area->top >= y && area->bottom <= y && area->left >= x && area->right <= x) {
-                    area->process_click(area);
+                if(area->button == button && area->top <= y && area->bottom >= y && area->left <= x && area->right >= x) {
+                    switch(area->action) {
+                        case DRAG_HORIZONTAL_SCROLLBAR:
+                        case DRAG_VERTICAL_SCROLLBAR: {
+                            gui_element_in_action = area->element;
+                            gui_element_action = area->action;
+                            break;
+                        }
+                    }
                 }
+            }
+            break;
+        }
+        case VH_HUMAN_INPUT_EVENT_MOUSE_MOVEMENT: {
+            int x_movement = event->argument1;
+            int y_movement = event->argument2;
+            int z_movement = event->argument3;
+
+            for(uint32_t i = 0; i < number_of_events; i++) {
+                event_t *event = events[i];
+                if(event->in_focus == true && event->element != gui_focus_element) {
+                    break;
+                }
+                if(event->event == EVENT_WHEEL_MOVEMENT && z_movement != 0) {
+                    element_t *element = event->element;
+                    if(element->type == ELEMENT_DRAW_AREA) {
+                        draw_area_t *draw_area = element->data;
+                        if(draw_area->process_wheel(element, z_movement) == true) {
+                            change_happened = true;
+                        }
+                    }
+                }
+            }
+
+            if(gui_element_in_action == NULL) {
+                break;
+            }
+            switch(gui_element_action) {
+                case DRAG_VERTICAL_SCROLLBAR: {
+                    int new_slider_offset = (gui_element_in_action->vertical_scrollbar_slider_offset + y_movement);
+                    if(new_slider_offset < 0) {
+                        new_slider_offset = 0;
+                    }
+                    else if(new_slider_offset > (gui_element_in_action->vertical_scrollbar_size - gui_element_in_action->vertical_scrollbar_slider_size)) {
+                        new_slider_offset = (gui_element_in_action->vertical_scrollbar_size - gui_element_in_action->vertical_scrollbar_slider_size);
+                    }
+                    if(new_slider_offset != gui_element_in_action->vertical_scrollbar_slider_offset) {
+                        gui_element_in_action->vertical_scrollbar_slider_offset = new_slider_offset;
+                        recalculate_offset_from_vertical_scrollbar(gui_element_in_action);
+                        change_happened = true;
+                    }
+                    break;
+                }
+                case DRAG_HORIZONTAL_SCROLLBAR: {
+                    int new_slider_offset = (gui_element_in_action->horizontal_scrollbar_slider_offset + x_movement);
+                    if(new_slider_offset < 0) {
+                        new_slider_offset = 0;
+                    }
+                    else if(new_slider_offset > (gui_element_in_action->horizontal_scrollbar_size - gui_element_in_action->horizontal_scrollbar_slider_size)) {
+                        new_slider_offset = (gui_element_in_action->horizontal_scrollbar_size - gui_element_in_action->horizontal_scrollbar_slider_size);
+                    }
+                    if(new_slider_offset != gui_element_in_action->horizontal_scrollbar_slider_offset) {
+                        gui_element_in_action->horizontal_scrollbar_slider_offset = new_slider_offset;
+                        recalculate_offset_from_horizontal_scrollbar(gui_element_in_action);
+                        change_happened = true;
+                    }
+                }
+            }
+            break;
+        }
+        case VH_HUMAN_INPUT_EVENT_BUTTON_RELEASED: {
+            if(gui_element_action == DRAG_VERTICAL_SCROLLBAR || gui_element_action == DRAG_HORIZONTAL_SCROLLBAR) {
+                gui_element_in_action = NULL;
             }
             break;
         }
         case VH_HUMAN_INPUT_EVENT_KEY_PRESSED: {
             uint32_t key = event->argument1;
             uint32_t unicode = event->argument2;
-            for(uint32_t i = 0; i < number_of_key_events; i++) {
-                key_event_t *key_event = key_events[i];
-                if(key_event->key == key && key_event->state == VH_HUMAN_INPUT_EVENT_KEY_PRESSED) {
-                    key_event->process_key(key_event->identifier, unicode);
+            for(uint32_t i = 0; i < number_of_events; i++) {
+                event_t *event = events[i];
+                if(event->in_focus == true && event->element != gui_focus_element) {
+                    break;
                 }
-            }
-            break;
-        }
-        case VH_HUMAN_INPUT_EVENT_KEY_RELEASED: {
-            uint32_t key = event->argument1;
-            uint32_t unicode = event->argument2;
-            for(uint32_t i = 0; i < number_of_key_events; i++) {
-                key_event_t *key_event = key_events[i];
-                if(key_event->key == key && key_event->state == VH_HUMAN_INPUT_EVENT_KEY_RELEASED) {
-                    key_event->process_key(key_event->identifier, unicode);
+                if(event->event == EVENT_KEY_PRESSED) {
+                    uint32_t (*process_event)(element_t *element, uint32_t key, uint32_t unicode) = event->process_function;
+                    if(process_event(event->element, key, unicode) == true) {
+                        change_happened = true;
+                    }
                 }
             }
             break;
         }
     }
+
+    return change_happened;
 }
 
-void add_click_area(uint32_t button, uint32_t x, uint32_t y, uint32_t width, uint32_t height, void (*process_click)(click_area_t *area), uint32_t identifier) {
+void add_click_area(uint32_t button, buffer_box_t *box, element_t *element, gui_element_action_t action) {
+    if(add_gui_actions == false) {
+        return;
+    }
+
     click_area_t *area = malloc(sizeof(click_area_t));
     area->button = button;
-    area->left = x;
-    area->top = y;
-    area->right = (x + width - 1);
-    area->bottom = (y + height - 1);
-    area->process_click = process_click;
-    area->identifier = identifier;
+    area->left = box->x;
+    area->top = box->y;
+    area->right = (box->x + box->width - 1);
+    area->bottom = (box->y + box->height - 1);
+    area->element = element;
+    area->action = action;
 
     click_areas = realloc(click_areas, sizeof(click_area_t *) * (number_of_click_areas + 1));
     click_areas[number_of_click_areas] = area;
     number_of_click_areas++;
 }
 
-void add_key_event(uint32_t key, uint32_t state, void (*process_key)(uint32_t identifier, uint32_t unicode), uint32_t identifier) {
-    key_event_t *event = malloc(sizeof(key_event_t));
-    event->key = key;
-    event->state = state;
-    event->process_key = process_key;
-    event->identifier = identifier;
+void add_event(element_t *element, gui_element_event_t event_type, uint32_t in_focus, uint32_t value, void *process_function) {
+    if(add_gui_actions == false) {
+        return;
+    }
 
-    key_events = realloc(key_events, sizeof(key_event_t *) * (number_of_key_events + 1));
-    key_events[number_of_key_events] = event;
-    number_of_key_events++;
+    event_t *event = malloc(sizeof(event_t));
+    event->element = element;
+    event->event = event_type;
+    event->in_focus = in_focus;
+    event->value = value;
+    event->process_function = process_function;
+    events = realloc(events, sizeof(event_t *) * (number_of_events + 1));
+    events[number_of_events] = event;
+    number_of_events++;
+}
+
+void add_key_event(element_t *element, uint32_t key, uint32_t (*process)(element_t *element, uint32_t key, uint32_t unicode)) {
+    event_t *event = malloc(sizeof(event_t));
+    event->element = element;
+    event->event = EVENT_KEY_PRESSED;
+    event->in_focus = true;
+    event->value = key;
+    event->process_function = process;
+    events = realloc(events, sizeof(event_t *) * (number_of_events + 1));
+    events[number_of_events] = event;
+    number_of_events++;
 }
 
 void draw_vertical_scrollbar(buffer_box_t *box, uint32_t x, uint32_t y, uint32_t size, uint32_t slider_size, uint32_t slider_offset) {
@@ -94,9 +188,101 @@ void draw_vertical_scrollbar(buffer_box_t *box, uint32_t x, uint32_t y, uint32_t
     draw_square(box, x, y + slider_offset, 10, slider_size, 0xFF888888);
 }
 
+void recalculate_vertical_scrollbar_from_offset(element_t *element) {
+    uint32_t shown_content_height = element->real_content_height;
+    shown_content_height -= (element->horizontal_scrollbar_size == 0) ? 0 : 10;
+    uint32_t max_y = (element->full_content_height - shown_content_height);
+
+    element->vertical_scrollbar_size = shown_content_height;
+    element->vertical_scrollbar_slider_size = (shown_content_height * element->vertical_scrollbar_size / element->full_content_height);
+    if(element->offset_y >= max_y) {
+        element->offset_y = max_y;
+        element->vertical_scrollbar_slider_offset = (element->vertical_scrollbar_size - element->vertical_scrollbar_slider_size);
+    }
+    else {
+        element->vertical_scrollbar_slider_offset = (element->offset_y * element->vertical_scrollbar_size / element->full_content_height);
+    }
+}
+
+void recalculate_offset_from_vertical_scrollbar(element_t *element) {
+    uint32_t shown_content_height = element->real_content_height;
+    shown_content_height -= (element->horizontal_scrollbar_size == 0) ? 0 : 10;
+    if((element->vertical_scrollbar_slider_offset + element->vertical_scrollbar_slider_size) == element->vertical_scrollbar_size) {
+        element->offset_y = (element->full_content_height - shown_content_height);
+    }
+    else {
+        element->offset_y = (element->vertical_scrollbar_slider_offset * element->full_content_height / shown_content_height);
+    }
+}
+
 void draw_horizontal_scrollbar(buffer_box_t *box, uint32_t x, uint32_t y, uint32_t size, uint32_t slider_size, uint32_t slider_offset) {
     draw_square(box, x, y, size, 10, 0xFFAAAAAA);
     draw_square(box, x + slider_offset, y, slider_size, 10, 0xFF888888);
+}
+
+void recalculate_horizontal_scrollbar_from_offset(element_t *element) {
+    uint32_t shown_content_width = element->real_content_width;
+    shown_content_width -= (element->vertical_scrollbar_size == 0) ? 0 : 10;
+    uint32_t max_x = element->full_content_width - shown_content_width;
+
+    element->horizontal_scrollbar_size = shown_content_width;
+    element->horizontal_scrollbar_slider_size = (shown_content_width * element->horizontal_scrollbar_size / element->full_content_width);
+    if(element->offset_x >= max_x) {
+        element->offset_x = max_x;
+        element->horizontal_scrollbar_slider_offset = (element->horizontal_scrollbar_size - element->horizontal_scrollbar_slider_size);
+    }
+    else {
+        element->horizontal_scrollbar_slider_offset = (element->offset_x * element->horizontal_scrollbar_size / element->full_content_width);
+    }
+}
+
+void recalculate_offset_from_horizontal_scrollbar(element_t *element) {
+    uint32_t shown_content_width = element->real_content_width;
+    shown_content_width -= (element->vertical_scrollbar_size == 0) ? 0 : 10;
+    if((element->horizontal_scrollbar_slider_offset + element->horizontal_scrollbar_slider_size) == element->horizontal_scrollbar_size) {
+        element->offset_x = (element->full_content_width - shown_content_width);
+    }
+    else {
+        element->offset_x = (element->horizontal_scrollbar_slider_offset * element->full_content_width / shown_content_width);
+    }
+}
+
+void recalculate_scrollbars_from_offsets(element_t *element) {
+    // find out which scrollbars are needed
+    uint32_t vertical_scrollbar = (element->full_content_height > element->real_content_height) ? true : false;
+    uint32_t horizontal_scrollbar = (element->full_content_width > element->real_content_width) ? true : false;
+    if(vertical_scrollbar == true) {
+        horizontal_scrollbar = (element->full_content_width > (element->real_content_width - 10)) ? true : false;
+    }
+    if(horizontal_scrollbar == true) {
+        vertical_scrollbar = (element->full_content_height > (element->real_content_height - 10)) ? true : false;
+    }
+
+    // set basic values
+    if(vertical_scrollbar == false) {
+        element->vertical_scrollbar_size = 0;
+        element->vertical_scrollbar_slider_size = 0;
+        element->vertical_scrollbar_slider_offset = 0;
+    }
+    else {
+        element->vertical_scrollbar_size = vertical_scrollbar;
+    }
+    if(horizontal_scrollbar == false) {
+        element->horizontal_scrollbar_size = 0;
+        element->horizontal_scrollbar_slider_size = 0;
+        element->horizontal_scrollbar_slider_offset = 0;
+    }
+    else {
+        element->horizontal_scrollbar_size = horizontal_scrollbar;
+    }
+
+    // recalculate real values
+    if(vertical_scrollbar == true) {
+        recalculate_vertical_scrollbar_from_offset(element);
+    }
+    if(horizontal_scrollbar == true) {
+        recalculate_horizontal_scrollbar_from_offset(element);
+    }
 }
 
 element_t *create_text_block(uint8_t *string, uint32_t color) {
@@ -309,17 +495,15 @@ void draw_button(buffer_box_t *box, button_t *button, uint32_t x, uint32_t y) {
     draw_bitmap_string(box, x + 9, y + 1 + 2, button->text, 0xFF000000);
 }
 
-element_t *create_draw_area(uint32_t identifier, void (*redraw_area)(uint32_t identifier, buffer_box_t *box, int x_offset, int y_offset), dimensions_t (*get_content_dimensions)(uint32_t identifier)) {
+element_t *create_draw_area(void (*redraw_area)(element_t *element, buffer_box_t *box, int x_offset, int y_offset), uint32_t full_width, uint32_t full_height, uint32_t (*process_wheel)(element_t *element, int movement)) {
     draw_area_t *draw_area = malloc(sizeof(draw_area_t));
-    draw_area->identifier = identifier;
     draw_area->redraw_area = redraw_area;
-    draw_area->get_content_dimensions = get_content_dimensions;
-    dimensions_t dim = get_content_dimensions(identifier);
+    draw_area->process_wheel = process_wheel;
     element_t *element = calloc(sizeof(element_t), 1);
     element->type = ELEMENT_DRAW_AREA;
     element->data = draw_area;
-    element->full_content_width = dim.width;
-    element->full_content_height = dim.height;
+    element->full_content_width = full_width;
+    element->full_content_height = full_height;
     element->real_content_width = 0;
     element->real_content_height = 0;
     element_set_dimensions(element, 0, ELEMENT_MAX_WIDTH, 0, ELEMENT_MAX_HEIGHT);
@@ -327,12 +511,11 @@ element_t *create_draw_area(uint32_t identifier, void (*redraw_area)(uint32_t id
     return element;
 }
 
-element_t *create_hbox(uint32_t end_offset) {
+element_t *create_hbox(void) {
     box_t *hbox = malloc(sizeof(box_t));
     hbox->number_of_elements = 0;
     hbox->number_of_elements_from_start = 0;
     hbox->number_of_elements_from_end = 0;
-    hbox->end_offset = end_offset;
     hbox->wrap = false;
     hbox->number_of_parts = 0;
     element_t *element = calloc(sizeof(element_t), 1);
@@ -343,12 +526,11 @@ element_t *create_hbox(uint32_t end_offset) {
     return element;
 }
 
-element_t *create_vbox(uint32_t end_offset) {
+element_t *create_vbox(void) {
     box_t *vbox = malloc(sizeof(box_t));
     vbox->number_of_elements = 0;
     vbox->number_of_elements_from_start = 0;
     vbox->number_of_elements_from_end = 0;
-    vbox->end_offset = end_offset;
     vbox->wrap = false;
     vbox->number_of_parts = 0;
     element_t *element = calloc(sizeof(element_t), 1);
@@ -440,10 +622,49 @@ void element_set_content_dimensions(element_t *element, uint32_t min_w, uint32_t
 
 void element_enable_scrollbars(element_t *element) {
     element->enable_scrollbars = true;
-    element->vertical_scrollbar_offset = 0;
-    element->offset_x = 0;
-    element->horizontal_scrollbar_offset = 0;
-    element->offset_y = 0;
+    element->horizontal_scrollbar_size = 0;
+    element->horizontal_scrollbar_slider_size = 0;
+    element->horizontal_scrollbar_slider_offset = 0;
+    element->vertical_scrollbar_size = 0;
+    element->vertical_scrollbar_slider_size = 0;
+    element->vertical_scrollbar_slider_offset = 0;
+}
+
+uint32_t element_move_content_inside(element_t *element, int x_movement, int y_movement) {
+    int old_x = element->offset_x;
+    int old_y = element->offset_y;
+
+    int max_x = element->full_content_width - element->real_content_width;
+    max_x += (element->vertical_scrollbar_slider_size != 0) ? 10 : 0;
+    element->offset_x += x_movement;
+    if(element->offset_x < 0) {
+        element->offset_x = 0;
+    }
+    if(element->offset_x > max_x) {
+        element->offset_x = max_x;
+    }
+
+    int max_y = element->full_content_height - element->real_content_height;
+    max_y += (element->horizontal_scrollbar_slider_size != 0) ? 10 : 0;
+    element->offset_y += y_movement;
+    if(element->offset_y < 0) {
+        element->offset_y = 0;
+    }
+    if(element->offset_y > max_y) {
+        element->offset_y = max_y;
+    }
+
+    if(old_x != element->offset_x || old_y != element->offset_y) {
+        recalculate_scrollbars_from_offsets(element);
+        return true; // something changed
+    }
+    else {
+        return false; // nothing changed
+    }
+}
+
+void give_focus_to_element(element_t *element) {
+    gui_focus_element = element;
 }
 
 void cell_set_alignment(element_t *element, uint32_t column, uint32_t line, horizontal_alignment_t halign, vertical_alignment_t valign) {
@@ -483,10 +704,6 @@ void recalculate_element(element_t *element) {
             break;
         }
         case ELEMENT_DRAW_AREA: {
-            draw_area_t *draw_area = element->data;
-            dimensions_t dim = draw_area->get_content_dimensions(draw_area->identifier);
-            element->full_content_width = dim.width;
-            element->full_content_height = dim.height;
             break;
         }
         case ELEMENT_HBOX: {
@@ -507,15 +724,12 @@ void recalculate_element(element_t *element) {
                 element->full_content_width += inside_element->real_width;
                 element->full_content_height = (inside_element->real_height > element->full_content_height) ? inside_element->real_height : element->full_content_height;
             }
-            if(element->full_content_width < box->end_offset) {
-                element->full_content_width = box->end_offset;
-            }
-            else if(box->wrap == true) {
+            if(box->wrap == true && element->full_content_width > element->max_content_width) {
                 // count number of parts
                 uint32_t part_width = 0;
                 for(int i = 0; i < box->number_of_elements; i++) {
                     element_t *inside_element = box->elements[i];
-                    if((part_width + inside_element->real_width) > box->end_offset) {
+                    if((part_width + inside_element->real_width) > element->max_content_width) {
                         box->number_of_parts++;
                         if(part_width > 0) { // this element is the first in a new part
                             part_width = inside_element->real_width;
@@ -537,7 +751,7 @@ void recalculate_element(element_t *element) {
                 uint32_t part = 0;
                 for(int i = 0; i < box->number_of_elements; i++) {
                     element_t *inside_element = box->elements[i];
-                    if((box->parts[part].width + inside_element->real_width) > box->end_offset) {
+                    if((box->parts[part].width + inside_element->real_width) > element->max_content_width) {
                         if(box->parts[part].number_of_elements > 0) { // this element is the first in a new part
                             part++;
                             box->parts[part].width = inside_element->real_width;
@@ -587,15 +801,12 @@ void recalculate_element(element_t *element) {
                 element->full_content_width = (inside_element->real_width > element->full_content_width) ? inside_element->real_width : element->full_content_width;
                 element->full_content_height += inside_element->real_height;
             }
-            if(element->full_content_height < box->end_offset) {
-                element->full_content_height = box->end_offset;
-            }
-            else if(box->wrap == true) {
+            if(box->wrap == true && element->full_content_height > element->max_content_height) {
                 // count number of parts
                 uint32_t part_height = 0;
                 for(int i = 0; i < box->number_of_elements; i++) {
                     element_t *inside_element = box->elements[i];
-                    if((part_height + inside_element->real_height) > box->end_offset) {
+                    if((part_height + inside_element->real_height) > element->max_content_height) {
                         box->number_of_parts++;
                         if(part_height > 0) { // this element is the first in a new part
                             part_height = inside_element->real_height;
@@ -617,7 +828,7 @@ void recalculate_element(element_t *element) {
                 uint32_t part = 0;
                 for(int i = 0; i < box->number_of_elements; i++) {
                     element_t *inside_element = box->elements[i];
-                    if((box->parts[part].height + inside_element->real_height) > box->end_offset) {
+                    if((box->parts[part].height + inside_element->real_height) > element->max_content_height) {
                         if(box->parts[part].number_of_elements > 0) { // this element is the first in a new part
                             part++;
                             box->parts[part].width = inside_element->real_width;
@@ -721,10 +932,27 @@ void recalculate_element(element_t *element) {
     element->real_width = (element->min_width > element->real_width) ? element->min_width : element->real_width;
     element->real_height = (element->max_height < element->real_height) ? element->max_height : element->real_height;
     element->real_height = (element->min_height > element->real_height) ? element->min_height : element->real_height;
+
+    // calculate scrollbars
+    if(element->enable_scrollbars == true && element->real_content_width > 10 && element->real_content_height > 10) {
+        recalculate_scrollbars_from_offsets(element);
+    }
+    else {
+        element->vertical_scrollbar_size = 0;
+        element->vertical_scrollbar_slider_size = 0;
+        element->vertical_scrollbar_slider_offset = 0;
+        element->horizontal_scrollbar_size = 0;
+        element->horizontal_scrollbar_slider_size = 0;
+        element->horizontal_scrollbar_slider_offset = 0;
+    }
 }
 
 // box defines square on screen where element will be drawn, x and y are offsets relative to box
 void draw_element(buffer_box_t *box, element_t *element, uint32_t x, uint32_t y) {
+    memcpy(&element->screen_box, box, sizeof(buffer_box_t));
+    element->screen_box_x = x;
+    element->screen_box_y = y;
+
     // draw borders
     if(element->border_top != 0) {
         draw_square(box,
@@ -784,18 +1012,24 @@ void draw_element(buffer_box_t *box, element_t *element, uint32_t x, uint32_t y)
         }
         case ELEMENT_DRAW_AREA: {
             draw_area_t *draw_area = element->data;
+            position_t pos = calculate_real_position_in_box(box, x, y, element->real_content_width, element->real_content_height);
+            if(pos.drawable == false) {
+                break;
+            }
             buffer_box_t draw_area_box = {
-                .buffer = malloc(element->real_content_width * element->real_content_height * 4),
-                .buffer_width = element->real_content_width,
-                .buffer_height = element->real_content_height,
-                .x = 0,
-                .y = 0,
-                .width = element->real_content_width,
-                .height = element->real_content_height,
+                .buffer = box->buffer,
+                .buffer_width = box->buffer_width,
+                .buffer_height = box->buffer_height,
+                .x = box->x + pos.left,
+                .y = box->y + pos.top,
+                .width = pos.width,
+                .height = pos.height,
             };
-            draw_area->redraw_area(draw_area->identifier, &draw_area_box, element->offset_x, element->offset_y);
-            copy_buffer_between_boxes(&draw_area_box, box);
-            free(draw_area_box.buffer);
+            draw_square(&draw_area_box, 0, 0, element->real_content_width, element->real_content_height, 0xFF000000);
+            draw_area->redraw_area(element, &draw_area_box, element->offset_x, element->offset_y);
+            if(draw_area->process_wheel != NULL) {
+                add_event(element, EVENT_WHEEL_MOVEMENT, true, NULL, NULL);
+            }
             break;
         }
         case ELEMENT_HBOX: {
@@ -814,7 +1048,7 @@ void draw_element(buffer_box_t *box, element_t *element, uint32_t x, uint32_t y)
                 .height = pos.height,
             };
             if(hbox->wrap == false || hbox->number_of_parts == 0) {
-                if(element->full_content_width >= hbox->end_offset) {
+                if(element->full_content_width >= element->max_content_width) {
                     uint32_t x_offset = 0;
                     for(int i = 0; i < hbox->number_of_elements; i++) {
                         element_t *inside_element = hbox->elements[i];
@@ -858,7 +1092,7 @@ void draw_element(buffer_box_t *box, element_t *element, uint32_t x, uint32_t y)
                     }
 
                     // draw all elements from end
-                    x_offset = hbox->end_offset;
+                    x_offset = element->max_content_width;
                     for(int i = (hbox->number_of_elements - 1); i >= hbox->number_of_elements_from_start; i--) {
                         element_t *inside_element = hbox->elements[i];
                         x_offset -= inside_element->real_width;
@@ -941,7 +1175,7 @@ void draw_element(buffer_box_t *box, element_t *element, uint32_t x, uint32_t y)
                 .height = pos.height,
             };
             if(vbox->wrap == false || vbox->number_of_parts == 0) {
-                if(element->full_content_width >= vbox->end_offset) {
+                if(element->full_content_width >= element->max_content_height) {
                     uint32_t y_offset = 0;
                     for(int i = 0; i < vbox->number_of_elements; i++) {
                         element_t *inside_element = vbox->elements[i];
@@ -985,7 +1219,7 @@ void draw_element(buffer_box_t *box, element_t *element, uint32_t x, uint32_t y)
                     }
 
                     // draw all elements from end
-                    y_offset = vbox->end_offset;
+                    y_offset = element->max_content_height;
                     for(int i = (vbox->number_of_elements - 1); i >= vbox->number_of_elements_from_start; i--) {
                         element_t *inside_element = vbox->elements[i];
                         y_offset -= inside_element->real_height;
@@ -1145,38 +1379,80 @@ void draw_element(buffer_box_t *box, element_t *element, uint32_t x, uint32_t y)
     }
 
     // draw scrollbars
-    if(element->enable_scrollbars == true && element->real_content_width > 10 && element->real_content_height > 10) {
-        uint32_t vertical_scrollbar = (element->full_content_height > element->real_content_height) ? true : false;
-        uint32_t horizontal_scrollbar = (element->full_content_width > element->real_content_width) ? true : false;
-        if(vertical_scrollbar == true) {
-            horizontal_scrollbar = (element->full_content_width > (element->real_content_width - 10)) ? true : false;
-        }
-        if(horizontal_scrollbar == true) {
-            vertical_scrollbar = (element->full_content_height > (element->real_content_height - 10)) ? true : false;
-        }
-
+    if(element->enable_scrollbars == true) {
+        uint32_t vertical_scrollbar = (element->vertical_scrollbar_slider_size != 0) ? true : false;
+        uint32_t horizontal_scrollbar = (element->horizontal_scrollbar_slider_size != 0) ? true : false;
         if(vertical_scrollbar == true && horizontal_scrollbar == true) {
-            uint32_t vs_size = (element->real_content_height - 10);
-            uint32_t vs_slider_size = ((element->real_content_height - 10) * vs_size / element->full_content_height);
-            element->vertical_scrollbar_offset = (element->vertical_scrollbar_offset > (vs_size - vs_slider_size)) ? (vs_size - vs_slider_size) : element->vertical_scrollbar_offset;
-            uint32_t hs_size = (element->real_content_width - 10);
-            uint32_t hs_slider_size = ((element->real_content_width - 10) * hs_size / element->full_content_width);
-            element->horizontal_scrollbar_offset = (element->horizontal_scrollbar_offset > (hs_size - hs_slider_size)) ? (hs_size - hs_slider_size) : element->horizontal_scrollbar_offset;
             draw_square(box, x + element->real_content_width - 10, y + element->real_content_height - 10, 10, 10, 0xFF666666);
-            draw_vertical_scrollbar(box, x + element->real_content_width - 10, y, vs_size, vs_slider_size, element->vertical_scrollbar_offset);
-            draw_horizontal_scrollbar(box, x, y + element->real_content_height - 10, hs_size, hs_slider_size, element->horizontal_scrollbar_offset);
+            draw_vertical_scrollbar(box, x + element->real_content_width - 10, y, element->vertical_scrollbar_size, element->vertical_scrollbar_slider_size, element->vertical_scrollbar_slider_offset);
+            buffer_box_t vs_box = {
+                .buffer = box->buffer,
+                .buffer_width = box->buffer_width,
+                .buffer_height = box->buffer_height,
+                .x = box->x + x + element->real_content_width - 10,
+                .y = box->y + y,
+                .width = 10,
+                .height = element->vertical_scrollbar_size,
+            };
+            add_click_area(1, &vs_box, element, DRAG_VERTICAL_SCROLLBAR);
+            draw_horizontal_scrollbar(box, x, y + element->real_content_height - 10, element->horizontal_scrollbar_size, element->horizontal_scrollbar_slider_size, element->horizontal_scrollbar_slider_offset);
+            buffer_box_t hs_box = {
+                .buffer = box->buffer,
+                .buffer_width = box->buffer_width,
+                .buffer_height = box->buffer_height,
+                .x = box->x + x,
+                .y = box->y + y + element->real_content_height - 10,
+                .width = element->horizontal_scrollbar_size,
+                .height = 10,
+            };
+            add_click_area(1, &hs_box, element, DRAG_HORIZONTAL_SCROLLBAR);
         }
         else if(vertical_scrollbar == true) {
-            uint32_t vs_size = element->real_content_height;
-            uint32_t vs_slider_size = (element->real_content_height * vs_size / element->full_content_height);
-            element->vertical_scrollbar_offset = (element->vertical_scrollbar_offset > (vs_size - vs_slider_size)) ? (vs_size - vs_slider_size) : element->vertical_scrollbar_offset;
-            draw_vertical_scrollbar(box, x + element->real_content_width - 10, y, vs_size, vs_slider_size, element->vertical_scrollbar_offset);
+            draw_vertical_scrollbar(box, x + element->real_content_width - 10, y, element->vertical_scrollbar_size, element->vertical_scrollbar_slider_size, element->vertical_scrollbar_slider_offset);
+            buffer_box_t vs_box = {
+                .buffer = box->buffer,
+                .buffer_width = box->buffer_width,
+                .buffer_height = box->buffer_height,
+                .x = box->x + x + element->real_content_width - 10,
+                .y = box->y + y,
+                .width = 10,
+                .height = element->vertical_scrollbar_size,
+            };
+            add_click_area(1, &vs_box, element, DRAG_VERTICAL_SCROLLBAR);
         }
         else if(horizontal_scrollbar == true) {
-            uint32_t hs_size = element->real_content_width;
-            uint32_t hs_slider_size = (element->real_content_width * hs_size / element->full_content_width);
-            element->horizontal_scrollbar_offset = (element->horizontal_scrollbar_offset > (hs_size - hs_slider_size)) ? (hs_size - hs_slider_size) : element->horizontal_scrollbar_offset;
-            draw_horizontal_scrollbar(box, x, y + element->real_content_height - 10, hs_size, hs_slider_size, element->horizontal_scrollbar_offset);
+            draw_horizontal_scrollbar(box, x, y + element->real_content_height - 10, element->horizontal_scrollbar_size, element->horizontal_scrollbar_slider_size, element->horizontal_scrollbar_slider_offset);
+            buffer_box_t hs_box = {
+                .buffer = box->buffer,
+                .buffer_width = box->buffer_width,
+                .buffer_height = box->buffer_height,
+                .x = box->x + x,
+                .y = box->y + y + element->real_content_height - 10,
+                .width = element->horizontal_scrollbar_size,
+                .height = 10,
+            };
+            add_click_area(1, &hs_box, element, DRAG_HORIZONTAL_SCROLLBAR);
         }
     }
+}
+
+void reset_gui_actions(void) {
+    add_gui_actions = true;
+    if(click_areas == NULL) {
+        return;
+    }
+    for(int i = 0; i < number_of_click_areas; i++) {
+        free(click_areas[i]);
+    }
+    free(click_areas);
+    click_areas = NULL;
+    number_of_click_areas = 0;
+}
+
+void redraw_gui(element_t *root_element, buffer_box_t *screen_box, uint32_t width, uint32_t height) {
+    reset_gui_actions();
+    element_set_content_dimensions(root_element, 0, width, 0, height);
+    recalculate_element(root_element);
+    draw_element(screen_box, root_element, 0, 0);
+    add_gui_actions = false;
 }
