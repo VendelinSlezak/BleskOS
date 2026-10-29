@@ -51,11 +51,8 @@ void monitor_mode_add_functions(monitor_mode_t *mode) {
     uint32_t bytes_per_line = mode->bytes_per_line;
     if(bpp == 32) {
         if(bytes_per_line == width*4) {
-            mode->redraw_cycles = width*height;
+            mode->redraw_cycles = width*height*4;
             redraw_full_screen = monitor_redraw_screen_32bpp_no_padding;
-
-            // TODO: implement sse
-            // redraw_full_screen = monitor_redraw_screen_32bpp_no_padding_sse2;
         }
         else {
             mode->redraw_cycles = height;
@@ -108,7 +105,8 @@ void monitor_mode_add_functions(monitor_mode_t *mode) {
         redraw_part_of_screen = monitor_redraw_part_of_screen_8bpp;
     }
     else {
-        log("\n[DEFAULT GRAPHIC CONTROLLER] ERROR: Unsupported BPP mode selected");
+        log("\n[MONITOR] ERROR: Unsupported BPP mode selected");
+        // TODO: error
     }
     mode->redraw_full_screen = redraw_full_screen;
     mode->redraw_part_of_screen = redraw_part_of_screen;
@@ -159,68 +157,8 @@ void monitor_redraw_screen_32bpp_no_padding(hardware_t *monitor, void *double_bu
     monitor_data_t *data = monitor->data;
     void *dst = data->actual_mode->linear_frame_buffer;
     void *src = double_buffer;
-    uint32_t pixels = (uint32_t) data->actual_mode->redraw_cycles;
-
-    // copy all pixels
-    asm volatile (
-        "rep movsl"
-        : "+D"(dst), "+S"(src), "+c"(pixels)
-        :
-        : "memory"
-    );
-}
-
-void monitor_redraw_screen_32bpp_no_padding_sse2(hardware_t *monitor, void *double_buffer) {
-    monitor_data_t *data = monitor->data;
-    void *dst = data->actual_mode->linear_frame_buffer;
-    void *src = double_buffer;
-    
-    uint32_t total_pixels = (uint32_t) data->actual_mode->redraw_cycles;
-    uint32_t unrolled_loops = total_pixels / 16;
-    uint32_t remaining_pixels = total_pixels % 16;
-
-    asm volatile (
-        // save registers
-        "sub $64, %%esp\n\t"
-        "movups %%xmm0, 0(%%esp)\n\t"
-        "movups %%xmm1, 16(%%esp)\n\t"
-        "movups %%xmm2, 32(%%esp)\n\t"
-        "movups %%xmm3, 48(%%esp)\n\t"
-
-        // copy pixels in unrolled loops
-        "test %%ecx, %%ecx\n\t"
-        "jz 2f\n\t"
-        "1:\n\t"
-            "movaps 0(%%esi),  %%xmm0\n\t"
-            "movaps 16(%%esi), %%xmm1\n\t"
-            "movaps 32(%%esi), %%xmm2\n\t"
-            "movaps 48(%%esi), %%xmm3\n\t"
-            
-            "movntps %%xmm0, 0(%%edi)\n\t"
-            "movntps %%xmm1, 16(%%edi)\n\t"
-            "movntps %%xmm2, 32(%%edi)\n\t"
-            "movntps %%xmm3, 48(%%edi)\n\t"
-
-            "add $64, %%esi\n\t"
-            "add $64, %%edi\n\t"
-        "loop 1b\n\t"
-
-        // copy remaining pixels
-        "2:\n\t"
-        "mov %3, %%ecx\n\t"
-        "rep movsl\n\t"
-
-        // restore registers
-        "movups 0(%%esp),  %%xmm0\n\t"
-        "movups 16(%%esp), %%xmm1\n\t"
-        "movups 32(%%esp), %%xmm2\n\t"
-        "movups 48(%%esp), %%xmm3\n\t"
-        "add $64, %%esp\n\t"
-
-        : "+D"(dst), "+S"(src), "+c"(unrolled_loops)
-        : "r"(remaining_pixels)
-        : "memory"
-    );
+    uint32_t bytes = (uint32_t) data->actual_mode->redraw_cycles;
+    memcpy(dst, src, bytes);
 }
 
 void monitor_redraw_screen_32bpp_with_padding(hardware_t *monitor, void *double_buffer) {
@@ -229,21 +167,13 @@ void monitor_redraw_screen_32bpp_with_padding(hardware_t *monitor, void *double_
     uint32_t *src = double_buffer;
 
     uint32_t rows = data->actual_mode->redraw_cycles;
-    uint32_t pixels_per_line = data->actual_mode->active_width;
-    uint32_t padding_bytes = data->actual_mode->bytes_per_line - (pixels_per_line * 4);
-
-    asm volatile (
-        "cld\n\t"
-        "1:\n\t"
-            "mov %[pixels_per_line], %%ecx\n\t"
-            "rep movsl\n\t"
-            "add %[padding_bytes], %%edi\n\t"
-            "dec %%ebx\n\t"
-        "jnz 1b\n\t"
-        : "+S"(src), "+D"(dst), "+b"(rows)
-        : [pixels_per_line] "g"(pixels_per_line), [padding_bytes] "g"(padding_bytes)
-        : "ecx", "memory"
-    );
+    uint32_t src_bytes_per_line = data->actual_mode->active_width * 4;
+    uint32_t dst_bytes_per_line = data->actual_mode->bytes_per_line;
+    for(int i = 0; i < rows; i++) {
+        memcpy(dst, src, src_bytes_per_line);
+        dst += dst_bytes_per_line;
+        src += src_bytes_per_line;
+    }
 }
 
 void monitor_redraw_screen_24bpp_no_padding(hardware_t *monitor, void *double_buffer) {

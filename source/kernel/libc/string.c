@@ -12,8 +12,123 @@
 #include <stdarg.h>
 #include <kernel/libc/stdlib.h>
 #include <kernel/libc/ctype.h>
+#include <kernel/hardware/devices/cpu/commands.h>
+
+/* global variables */
+void *(*memcpy)(void *dst, void *src, size_t len) = memcpy_i386;
+void *(*memcpynt)(void *dst, void *src, size_t len) = memcpy_i386;
+void (*memcpynt_finish)(void) = memcpynt_finish_i386;
 
 /* functions */
+void *memcpy_i386(void *dst, void *src, size_t len) {
+    void *original_dest = dst;
+    extern void memcpy1(void *dst, void *src, uint32_t len);
+    extern void memcpy4(void *dst, void *src, uint32_t len);
+    uint32_t blocks = len / 4 * 4;
+    memcpy4(dst, src, blocks);
+    memcpy1(dst + blocks, src + blocks, len - blocks);
+    return original_dest;
+}
+
+void memcpynt_finish_i386(void) {
+    return;
+}
+
+void *memcpy_sse(void *dst, void *src, size_t len) {
+    extern void memcpy1(void *dst, void *src, uint32_t len);
+    extern void memcpy128a(void *dst, void *src, uint32_t len);
+    extern void memcpy128u(void *dst, void *src, uint32_t len);
+    extern void memcpynt128a(void *dst, void *src, uint32_t len);
+    extern void memcpynt128u(void *dst, void *src, uint32_t len);
+
+    // small block are copied faster by good old rep movsd
+    if(len < 2048) {
+        return memcpy_i386(dst, src, len);
+    }
+
+    // align destination to 16 bytes
+    void *original_dest = dst;
+    if(((uint32_t)dst % 16) != 0) {
+        uint32_t bytes_to_align_dst = 16 - ((uint32_t)dst % 16);
+        memcpy1(dst, src, bytes_to_align_dst);
+        dst += bytes_to_align_dst;
+        src += bytes_to_align_dst;
+        len -= bytes_to_align_dst;
+    }
+
+    // copy by 128b blocks
+    uint32_t bytes_to_copy_by_blocks = len / 128 * 128;
+    if(len < (1024 * 1024)) { // TODO: set treshold by half size of L3 cache
+        if(((uint32_t)src % 16) == 0) {
+            memcpy128a(dst, src, bytes_to_copy_by_blocks);
+        }
+        else {
+            memcpy128u(dst, src, bytes_to_copy_by_blocks);
+        }
+        len -= bytes_to_copy_by_blocks;
+    }
+    else {
+        if(((uint32_t)src % 16) == 0) {
+            memcpynt128a(dst, src, bytes_to_copy_by_blocks);
+        }
+        else {
+            memcpynt128u(dst, src, bytes_to_copy_by_blocks);
+        }
+        sfence();
+    }
+    len -= bytes_to_copy_by_blocks;
+
+    // copy rest of bytes
+    uint32_t bytes_to_align = ((uint32_t)len % 128);
+    if(bytes_to_align != 128) {
+        dst += bytes_to_copy_by_blocks;
+        src += bytes_to_copy_by_blocks;
+        memcpy_i386(dst, src, bytes_to_align);
+    }
+
+    return original_dest;
+}
+
+void *memcpynt_sse(void *dst, void *src, size_t len) {
+    extern void memcpy1(void *dst, void *src, uint32_t len);
+    extern void memcpynt128a(void *dst, void *src, uint32_t len);
+    extern void memcpynt128u(void *dst, void *src, uint32_t len);
+
+    // align destination to 16 bytes
+    void *original_dest = dst;
+    if(((uint32_t)dst % 16) != 0) {
+        uint32_t bytes_to_align_dst = 16 - ((uint32_t)dst % 16);
+        memcpy1(dst, src, bytes_to_align_dst);
+        dst += bytes_to_align_dst;
+        src += bytes_to_align_dst;
+        len -= bytes_to_align_dst;
+    }
+
+    // copy by 128b blocks
+    uint32_t bytes_to_copy_by_blocks = len / 128 * 128;
+    if(((uint32_t)src % 16) == 0) {
+        memcpynt128a(dst, src, bytes_to_copy_by_blocks);
+    }
+    else {
+        memcpynt128u(dst, src, bytes_to_copy_by_blocks);
+    }
+    len -= bytes_to_copy_by_blocks;
+
+    // copy rest of bytes
+    uint32_t bytes_to_align = ((uint32_t)len % 128);
+    if(bytes_to_align != 128) {
+        dst += bytes_to_copy_by_blocks;
+        src += bytes_to_copy_by_blocks;
+        memcpy_i386(dst, src, bytes_to_align);
+    }
+
+    return original_dest;
+}
+
+void memcpynt_finish_sse(void) {
+    sfence();
+}
+
 size_t strlen(const char *str) {
     size_t length = 0;
     

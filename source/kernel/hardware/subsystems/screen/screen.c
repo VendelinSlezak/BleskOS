@@ -64,7 +64,7 @@ void initialize_screen_subsystem(void) {
 
     event_list = kalloc(sizeof(human_input_event_list_t));
 
-    global_double_buffer = kalloc(get_size_of_double_buffer());
+    global_double_buffer = aligned_kalloc(4096, get_size_of_double_buffer());
 
     view_t *view = kalloc(sizeof(view_t));
     view->is_active = true;

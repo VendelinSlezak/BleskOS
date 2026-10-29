@@ -155,6 +155,11 @@ inline void mfence(void) {
     asm volatile("mfence" : : : "memory");
 }
 
+inline void sfence(void) {
+    // sfence
+    asm volatile("sfence" : : : "memory");
+}
+
 inline uint64_t rdtsc(void) {
     // rdtsc
     uint32_t low, high;

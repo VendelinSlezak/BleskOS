@@ -10,6 +10,7 @@
 
 /* includes */
 #include <syslib.h>
+#include <kernel/hardware/devices/cpu/commands.h>
 #include <kernel/hardware/devices/memory/memory_allocators.h>
 #include <kernel/software/syscall.h>
 #include <kernel/hardware/groups/logging/logging.h>
@@ -26,14 +27,15 @@
 /* functions */
 void vh_screen_copy_buffer(uint32_t *screen, uint32_t screen_width, uint32_t *buffer, uint32_t buffer_width, uint32_t buffer_height) {
     if(screen_width == buffer_width) {
-        memcpy(screen, buffer, buffer_width * buffer_height * sizeof(uint32_t));
+        memcpynt(screen, buffer, buffer_width * buffer_height * sizeof(uint32_t));
     }
     else {
         for(uint32_t y = 0; y < buffer_height; y++) {
-            memcpy((void *)((uint32_t)screen + (y * screen_width * 4)), buffer, buffer_width * sizeof(uint32_t));
+            memcpynt((void *)((uint32_t)screen + (y * screen_width * 4)), buffer, buffer_width * sizeof(uint32_t));
             buffer += buffer_width;
         }
     }
+    memcpynt_finish();
 }
 
 void vh_screen_update_window_resolution(running_executable_t *re, uint32_t width, uint32_t height) {

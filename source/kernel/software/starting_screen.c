@@ -38,7 +38,7 @@ void show_starting_screen(void) {
     }
 
     // draw starting screen
-    uint32_t *buffer = kalloc(get_size_of_double_buffer());
+    uint32_t *buffer = aligned_kalloc(4096, get_size_of_double_buffer());
     for(uint32_t i = 0; i < get_size_of_double_buffer() / 4; i++) {
         buffer[i] = 0xFF000000;
     }

@@ -318,9 +318,16 @@ void initialize_bootstrap_processor(void) {
     ltr(0x28 + (data->index * 8)); // GDT selector for TSS segment
     data->tss = (tss_t *) (tss + (data->index * PAGE_SIZE)); // set pointer to TSS in processor specific structure
     data->tss->ss0 = 0x10; // kernel data segment
-    
+
     // initialize rest
     initialize_running_logical_processor(cpuid_supported, msr_supported);
+
+    // initialize libc according to available instruction sets
+    if(data->is_sse_supported) {
+        memcpy = memcpy_sse;
+        memcpynt = memcpynt_sse;
+        memcpynt_finish = memcpynt_finish_sse;
+    }
 }
 
 void processor_log_capabilities(void) {
